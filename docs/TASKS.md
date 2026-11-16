@@ -51,6 +51,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **S8** Missed clicks (DESIGN §3 "Missed clicks"): power grace window + "MAX!" flash, red "No power" meter, mini shot when power is missed, huge slice when accuracy is missed, cancel with no stroke when only the start click happens. Gameplay change → own branch `dev/S8-missed-clicks`, re-record baseline-v2 and explain *(Dev, Nov 16, in `dev/feel-pass-1`: `NO_ACC_ERR = 0.6`; every table row unit-tested in tests/missed-clicks.test.js)*
 - [ ] **S9** *(later, design feature)* Overpower zone past 100%: more distance, smaller impact zone. Needs designer playtesting first
 - [x] **S10** Wider accuracy window (designer playtest: "too hard"). Today `SWEET = 0.024` means a perfect window of ~48 ms. Start at `SWEET = 0.05` (~100 ms) and make small misses curve gently (`CURVE_SHAPE` tunable: 1 = linear as today, 2 = quadratic). Final values are set by the designer through X8 tune links *(Dev, Nov 16: `SWEET = 0.05`, `CURVE_SHAPE = 1` by default; one baseline-v2 shot moved)*
+- [ ] **S11** Lie on the meter (DESIGN §3 "Lie"): per-surface `maxPower` + `sweetScale` (club override for sand wedge), replacing the hidden `lie` multiplier. Meter grays out above the cap and turns around at it (S8 rules apply at the cap), the accuracy zone is drawn at its real width, and the HUD lie line shows it. Tests: cap enforced, ⚑ mark matches the real distance, window width per surface, sand-wedge override
 
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
