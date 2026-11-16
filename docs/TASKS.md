@@ -7,7 +7,7 @@
 ## Roadmap at a glance
 | # | Phase | Status | Branch |
 |---|---|---|---|
-| 0 | Foundation and engine refactor | **NEXT** | `dev/F-engine-refactor` |
+| 0 | Foundation and engine refactor | in review | `dev/F-engine-refactor` |
 | A | Review gate A (after Phase 0) | todo | `review/A-<role>` |
 | 1–4 | Swing, physics, slopes, putting | mostly built, missing tests and small gaps | covered by Phase 0 + `dev/gaps-1-4` |
 | 5 | Rain | todo | `dev/W-rain` |
@@ -22,17 +22,17 @@
 Goal: **one shared engine, holes as data, pure logic with tests, and both holes playing exactly like today.**
 
 - [x] **F1** 🅿️ `AGENTS.md`, `CLAUDE.md` and `docs/` set up *(PM, Nov 16)*
-- [ ] **F0** **Record a baseline first, before changing any code.** Write a script that plays ~10 scripted shots per hole through `window.__golf.testHit(power, acc)` with wind forced to 0 and from known positions, and records the resting positions and strokes into `tests/fixtures/baseline.json`. After the refactor, the same shots must land within a 0.5 m tolerance.
-- [ ] **F2** Test setup: `tests/` with `node --test`. No dependencies needed. Document the command in AGENTS.md.
-- [ ] **F3** Fixed-timestep **accumulator** (constant 1/240 s steps, no leftover partial step). Keep the ×1.35 flight speed-up as a config value.
-- [ ] **F4** `src/core/config.js`: move every tunable out of the logic.
-- [ ] **F5** `src/core/rng.js`: seeded RNG used for wind and lip-outs (no `Math.random()` in core).
-- [ ] **F6** Split the engine into `src/core/` (pure) and `src/game/` (Three.js/DOM), following DESIGN §9. **Use hole 2's slope-aware physics as the base**, since it's a superset of hole 1's.
-- [ ] **F7** Holes as modules: `src/holes/hole1.js`, `hole2.js`, `sets.js`. Shared base surfaces plus `surfaceOverrides`. Hole 1's `heightAt` returns 0.
-- [ ] **F8** Single page: `index.html` loads a hole by `?hole=pl-01` / `?hole=pl-02` (a temporary hole switcher until Phase 7). Delete `hole2.html` after the switch works, and make `hole2.html` redirect to `index.html?hole=pl-02` so old links still work.
-- [ ] **F9** Unit tests for the core: swing (determinism, hook vs slice sign, power 0/1), ball (flat roll distance per surface, uphill shorter than downhill, steep slope creeps, cup capture vs lip-out, water/OB penalty), terrain (gradient of a known bump).
-- [ ] **F10** Debug overlay (backtick key): state, speed, surface, slope, wind, wetness, meter values, fps.
-- [ ] **F11** Update the README: how to play both holes, how to run locally with a server, how to run tests.
+- [x] **F0** **Record a baseline first, before changing any code.** Write a script that plays ~10 scripted shots per hole through `window.__golf.testHit(power, acc)` with wind forced to 0 and from known positions, and records the resting positions and strokes into `tests/fixtures/baseline.json`. After the refactor, the same shots must land within a 0.5 m tolerance. *(Dev, Nov 16: 19 shots via `tools/baseline.mjs`, recorded at 60 fps and also at 30/144 fps because the old code varied with frame rate; replayed by `tests/baseline.test.js`.)*
+- [x] **F2** Test setup: `tests/` with `node --test`. No dependencies needed. Document the command in AGENTS.md. *(Command: `node --test`.)*
+- [x] **F3** Fixed-timestep **accumulator** (constant 1/240 s steps, no leftover partial step). Keep the ×1.35 flight speed-up as a config value. *(`play.advance()`; a test checks identical results at 24–240 fps.)*
+- [x] **F4** `src/core/config.js`: move every tunable out of the logic.
+- [x] **F5** `src/core/rng.js`: seeded RNG used for wind and lip-outs (no `Math.random()` in core). *(Seed from `?seed=`, else from the clock in the game layer.)*
+- [x] **F6** Split the engine into `src/core/` (pure) and `src/game/` (Three.js/DOM), following DESIGN §9. **Use hole 2's slope-aware physics as the base**, since it's a superset of hole 1's.
+- [x] **F7** Holes as modules: `src/holes/hole1.js`, `hole2.js`, `sets.js`. Shared base surfaces plus `surfaceOverrides`. Hole 1's `heightAt` returns 0.
+- [x] **F8** Single page: `index.html` loads a hole by `?hole=pl-01` / `?hole=pl-02` (a temporary hole switcher until Phase 7). Delete `hole2.html` after the switch works, and make `hole2.html` redirect to `index.html?hole=pl-02` so old links still work.
+- [x] **F9** Unit tests for the core: swing (determinism, hook vs slice sign, power 0/1), ball (flat roll distance per surface, uphill shorter than downhill, steep slope creeps, cup capture vs lip-out, water/OB penalty), terrain (gradient of a known bump).
+- [x] **F10** Debug overlay (backtick key): state, speed, surface, slope, wind, wetness, meter values, fps.
+- [x] **F11** Update the README: how to play both holes, how to run locally with a server, how to run tests.
 
 **Done when:** the baseline shots match, all tests pass, both holes play from one engine, and nothing in `src/core/` imports Three.js.
 
@@ -44,8 +44,8 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **S3** Hook or slice from early or late, forced slice when there's no 3rd click
 - [x] **S4** Aim rotation (keys and on-screen buttons)
 - [x] **S5** Club table, auto-pick plus manual change
-- [ ] **S6** Unit tests → done in F9
-- [ ] **S7** Per-hole bag (`bag` field) instead of separate club arrays → done in F7
+- [x] **S6** Unit tests → done in F9
+- [x] **S7** Per-hole bag (`bag` field) instead of separate club arrays → done in F7
 
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
@@ -55,14 +55,14 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **P5** Surface table *(but duplicated, see F7)*
 - [x] **P6** Water/OB +1 penalty, ball replaced
 - [x] **P7** Lie penalty (rough, bunker, sand wedge exception)
-- [ ] **P8** Deterministic tests → F0 + F9
+- [x] **P8** Deterministic tests → F0 + F9
 
 ## Phase 3: Hills and slopes
 - [x] **T1** `heightAt` + `gradAt` + `normalAt` *(hole 2 only)*
 - [x] **T2** Slope gravity on the roll (5/7 G)
 - [x] **T3** STATIC/CREEP rest logic on slopes
 - [x] **T4** Hilly test hole (hole 2)
-- [ ] **T5** Tests → F9
+- [x] **T5** Tests → F9
 - [ ] **T6** *(optional)* Uphill or downhill lie changes the launch angle a little
 
 ## Phase 4: Putting and greens
@@ -71,7 +71,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **G3** Cup capture plus lip-out
 - [ ] **G4** Slope grid as a **toggle** (H key + setting) instead of painted on the texture
 - [x] **G5** Test green with breaks (hole 2: two levels, ridge, hump)
-- [ ] **G6** Tests → F9
+- [x] **G6** Tests → F9
 - [ ] **G7** *(nice)* Putt preview: show the first ~30% of the predicted line, with no break shown (keeps the skill)
 
 ## Phase 5: Rain
