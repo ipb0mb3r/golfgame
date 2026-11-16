@@ -63,6 +63,7 @@ The overpower zone (S9) is a separate, later idea and isn't part of S8.
 
 ### Tunables (today)
 `METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.024`, `CURVE_K = 28`.
+🟡 **S10 (designer playtest, 2026-11-16): the accuracy window is too hard.** Try `SWEET = 0.05` first (≈100 ms perfect window instead of ≈48 ms), with small misses curving gently. The designer picks the final values with `?tune=` links (X8). Tap delay on phones makes tight windows feel even harder; if needed, a later task can add an input offset.
 Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/38, SW 75/46 (sand), Putter. Each hole can limit the bag (hole 1 has no driver).
 
 ### Acceptance
