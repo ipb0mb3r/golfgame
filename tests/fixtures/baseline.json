@@ -1,7 +1,11 @@
 {
-  "note": "Golden shots recorded from the pre-refactor pages (index.html = hole 1, hole2.html = hole 2) by tools/baseline.mjs. Fixed frame time 1/60 s, wind 0, Math.random seeded. Positions in meters. A refactor must land within 0.5 m.",
+  "note": "Golden shots recorded from the pre-refactor pages (index.html = hole 1, hole2.html = hole 2) by tools/baseline.mjs. Fixed frame time 1/60 s, wind 0, Math.random seeded. Positions in meters. A refactor must land within 0.5 m. endAtFps = the same shot in the old pages at 30 and 144 fps (null when that run reached the shot from a different spot).",
   "recordedWith": {
     "fps": 60,
+    "otherFps": [
+      30,
+      144
+    ],
     "pages": {
       "pl-01": "index.html",
       "pl-02": "hole2.html"
@@ -30,6 +34,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 4.1516,
+          "z": -157.759,
+          "strokes": 1
+        },
+        "144": {
+          "x": 4.1552,
+          "z": -157.8963,
+          "strokes": 1
+        }
       }
     },
     {
@@ -53,6 +69,10 @@
         "state": "aim",
         "strokes": 2,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": null,
+        "144": null
       }
     },
     {
@@ -76,6 +96,10 @@
         "state": "holed",
         "strokes": 3,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": null,
+        "144": null
       }
     },
     {
@@ -99,6 +123,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Fringe"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 3.5977,
+          "z": -136.7111,
+          "strokes": 1
+        },
+        "144": {
+          "x": 3.5944,
+          "z": -136.5875,
+          "strokes": 1
+        }
       }
     },
     {
@@ -122,6 +158,10 @@
         "state": "aim",
         "strokes": 2,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": null,
+        "144": null
       }
     },
     {
@@ -145,6 +185,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Bunker (−15% power)"
+      },
+      "endAtFps": {
+        "30": {
+          "x": -9.9865,
+          "z": -150.5105,
+          "strokes": 1
+        },
+        "144": {
+          "x": -9.9796,
+          "z": -150.4811,
+          "strokes": 1
+        }
       }
     },
     {
@@ -168,6 +220,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Fringe"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 18.1976,
+          "z": -150.9187,
+          "strokes": 1
+        },
+        "144": {
+          "x": 18.1915,
+          "z": -150.898,
+          "strokes": 1
+        }
       }
     },
     {
@@ -191,6 +255,18 @@
         "state": "aim",
         "strokes": 2,
         "lie": "Tee box"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 0,
+          "z": 0,
+          "strokes": 2
+        },
+        "144": {
+          "x": 0,
+          "z": 0,
+          "strokes": 2
+        }
       }
     },
     {
@@ -214,6 +290,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Rough (−15% power)"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 41.7002,
+          "z": -136.448,
+          "strokes": 1
+        },
+        "144": {
+          "x": 41.6686,
+          "z": -136.401,
+          "strokes": 1
+        }
       }
     },
     {
@@ -237,6 +325,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Fairway"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 12.7542,
+          "z": -284.9993,
+          "strokes": 1
+        },
+        "144": {
+          "x": 12.7516,
+          "z": -285.005,
+          "strokes": 1
+        }
       }
     },
     {
@@ -260,6 +360,10 @@
         "state": "aim",
         "strokes": 2,
         "lie": "Rough (−15% power)"
+      },
+      "endAtFps": {
+        "30": null,
+        "144": null
       }
     },
     {
@@ -283,6 +387,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Fairway"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 12.0556,
+          "z": -208.0458,
+          "strokes": 1
+        },
+        "144": {
+          "x": 12.0319,
+          "z": -208.2758,
+          "strokes": 1
+        }
       }
     },
     {
@@ -306,6 +422,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Rough (−15% power)"
+      },
+      "endAtFps": {
+        "30": {
+          "x": -8.0316,
+          "z": -258.6303,
+          "strokes": 1
+        },
+        "144": {
+          "x": -7.9989,
+          "z": -258.7209,
+          "strokes": 1
+        }
       }
     },
     {
@@ -329,6 +457,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 24.82,
+          "z": -438.4705,
+          "strokes": 1
+        },
+        "144": {
+          "x": 24.8194,
+          "z": -438.4698,
+          "strokes": 1
+        }
       }
     },
     {
@@ -352,6 +492,18 @@
         "state": "holed",
         "strokes": 2,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 25.9108,
+          "z": -447.8874,
+          "strokes": 2
+        },
+        "144": {
+          "x": 25.8756,
+          "z": -447.8428,
+          "strokes": 2
+        }
       }
     },
     {
@@ -375,6 +527,18 @@
         "state": "holed",
         "strokes": 1,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 26.0269,
+          "z": -447.8592,
+          "strokes": 1
+        },
+        "144": {
+          "x": 26.0379,
+          "z": -447.8045,
+          "strokes": 1
+        }
       }
     },
     {
@@ -398,6 +562,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 26.628,
+          "z": -449.5329,
+          "strokes": 1
+        },
+        "144": {
+          "x": 26.6274,
+          "z": -449.5318,
+          "strokes": 1
+        }
       }
     },
     {
@@ -421,6 +597,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Green"
+      },
+      "endAtFps": {
+        "30": {
+          "x": 27.053,
+          "z": -446.7095,
+          "strokes": 1
+        },
+        "144": {
+          "x": 27.0544,
+          "z": -446.7097,
+          "strokes": 1
+        }
       }
     },
     {
@@ -444,6 +632,18 @@
         "state": "aim",
         "strokes": 1,
         "lie": "Rough (−15% power)"
+      },
+      "endAtFps": {
+        "30": {
+          "x": -35.7636,
+          "z": -346.7379,
+          "strokes": 1
+        },
+        "144": {
+          "x": -35.7468,
+          "z": -346.6937,
+          "strokes": 1
+        }
       }
     }
   ]

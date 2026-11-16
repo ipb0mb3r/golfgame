@@ -4,8 +4,13 @@
 // each ball comes to rest. Run it once against the old pages to make
 // tests/fixtures/baseline.json, then again after a change to compare.
 //
-//   node tools/baseline.mjs record  [--fps 60]          writes tests/fixtures/baseline.json
-//   node tools/baseline.mjs check   [--fps 60]          plays the same shots, prints differences
+//   node tools/baseline.mjs record                      writes tests/fixtures/baseline.json
+//   node tools/baseline.mjs check   [--fps 60]          plays the same shots in the new page, prints differences
+//   node tools/baseline.mjs check --pages old --fps 144  same, but against the old pages (to see their spread)
+//
+// `record` plays everything at 60 fps (the reference) and again at 30 and 144 fps. The old code
+// took a leftover partial physics step each frame, so its results depend on the frame rate; the
+// fixture keeps all three so the tests can tell a real change from that old frame-rate wobble.
 //
 // Needs Playwright with a Chromium browser (not needed for `node --test`).
 // Three.js is loaded from node_modules or THREE_MODULE=/path/to/three.module.js, so it works
@@ -23,7 +28,7 @@ const require = createRequire(import.meta.url);
 
 const args = process.argv.slice(2);
 const mode = args[0] || 'check';
-const fps = Number(args[args.indexOf('--fps') + 1]) || 60;
+const fpsArg = Number(args[args.indexOf('--fps') + 1]) || 60;
 const pagesArg = args.includes('--pages') ? args[args.indexOf('--pages') + 1] : (mode === 'record' ? 'old' : 'new');
 
 // Which page plays which hole. "old" = the pre-refactor files, "new" = the single index.html.
@@ -61,7 +66,7 @@ function threeSource() {
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 
-async function run() {
+async function run(fps) {
   const { chromium } = require('playwright');
   // Fixed frame time: every rendered frame advances the game by exactly 1/fps seconds.
   const three = threeSource() + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\n`;
@@ -125,22 +130,33 @@ async function run() {
 }
 
 const r6 = v => Math.round(v * 1e4) / 1e4;
-const results = await run();
 if (mode === 'record') {
+  const fps = 60;
+  const results = await run(fps);
+  const other = { 30: await run(30), 144: await run(144) };
   const out = {
     note: 'Golden shots recorded from the pre-refactor pages (index.html = hole 1, hole2.html = hole 2) by tools/baseline.mjs. ' +
-      `Fixed frame time 1/${fps} s, wind 0, Math.random seeded. Positions in meters. A refactor must land within ${0.5} m.`,
-    recordedWith: { fps, pages: PAGES.old },
+      `Fixed frame time 1/${fps} s, wind 0, Math.random seeded. Positions in meters. A refactor must land within 0.5 m. ` +
+      'endAtFps = the same shot in the old pages at 30 and 144 fps (null when that run reached the shot from a different spot).',
+    recordedWith: { fps, otherFps: [30, 144], pages: PAGES.old },
     tolerance: 0.5,
     shots: results.map(r => ({
       scenario: r.scenario, hole: r.hole, ...r.shot,
       start: { x: r6(r.start.x), y: r6(r.start.y), z: r6(r.start.z), club: r.start.club, aim: r6(r.start.aim), strokes: r.start.strokes },
       end: { x: r6(r.end.x), y: r6(r.end.y), z: r6(r.end.z), state: r.end.state, strokes: r.end.strokes, lie: r.end.lie },
+      // The same shot in the old pages at other frame rates (same start position)
+      endAtFps: Object.fromEntries(Object.entries(other).map(([f, rs]) => {
+        const o = rs.find(q => q.scenario === r.scenario && q.start.strokes === r.start.strokes);
+        // Only comparable when that run hit this shot from (almost) the same place
+        const same = o && Math.hypot(o.start.x - r.start.x, o.start.z - r.start.z) < 0.01;
+        return [f, same ? { x: r6(o.end.x), z: r6(o.end.z), strokes: o.end.strokes } : null];
+      })),
     })),
   };
   writeFileSync(FIXTURE, JSON.stringify(out, null, 2) + '\n');
   console.log(`wrote ${out.shots.length} shots to ${FIXTURE}`);
 } else {
+  const results = await run(fpsArg);
   const base = JSON.parse(readFileSync(FIXTURE, 'utf8'));
   let worst = 0, bad = 0;
   console.log('scenario | shot | club (old/new) | end (old) | end (new) | Δ m | strokes');
