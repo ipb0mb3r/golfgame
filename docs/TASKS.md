@@ -53,6 +53,12 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **S10** Wider accuracy window (designer playtest: "too hard"). Today `SWEET = 0.024` means a perfect window of ~48 ms. Start at `SWEET = 0.05` (~100 ms) and make small misses curve gently (`CURVE_SHAPE` tunable: 1 = linear as today, 2 = quadratic). Final values are set by the designer through X8 tune links
 - [ ] **S11** Lie on the meter (DESIGN §3 "Lie"): per-surface `maxPower` + `sweetScale` (club override for sand wedge), replacing the hidden `lie` multiplier. Meter grays out above the cap and turns around at it (S8 rules apply at the cap), the accuracy zone is drawn at its real width, and the HUD lie line shows it. Tests: cap enforced, ⚑ mark matches the real distance, window width per surface, sand-wedge override
 
+**Next swing/HUD tasks (from Feel pass 1 QA + designer, 2026-11-16)**
+- [ ] **S12** ⚑ mark honest on elevation: the ⚑ is ~9% short when hitting up to hole 2's raised green (QA F3). Use the same landing simulation as the aim ring, including the cap. Test: ⚑ power finishes within ~2 m of the pin uphill, downhill and flat
+- [ ] **S13** Auto-pick rules (designer): the **Driver is auto-picked only on the tee**, and only when the distance makes sense. In a bunker, the **sand wedge** is auto-picked. Otherwise, the club that reaches the pin within its cap. The player can still choose any club manually. Tests per lie
+- [ ] **S14** 🅿️ *(design question, decide before touching putting)* Should putting be **2 clicks** (start + power, no accuracy)? Until decided, putts keep 3 clicks, and a missed 3rd click on a putt stays mild (designer, 2026-11-16)
+- [ ] **H1** Mobile HUD pass (designer plays on a phone): intro card fits or scrolls in portrait and landscape (M5/B7), debug overlay doesn't cover the HUD (X7), the centre flash text wraps instead of running under the minimap, the ⚑ icon isn't clipped at the top of the meter (QA F2), meter labels readable over sand (QA F4)
+
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
 - [x] **P2** Flight: gravity, wind, curve
