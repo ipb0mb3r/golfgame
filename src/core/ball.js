@@ -84,7 +84,11 @@ export function createBall({ terrain, surfaces, cup, wind, rng }) {
     const pull = Math.hypot(ax, az);
     const hold = S.decel * STATIC;   // ...but a stopped ball stays put on gentle slopes
     let sp = Math.hypot(vel.x, vel.z);
-    if (sp < STOP_SPEED && pull <= hold) return rest({ type: 'stopped', surface: s });
+    if (sp < STOP_SPEED && pull <= hold) {
+      // A ball that comes to rest over the cup (possible only after a lip-out) drops in.
+      if (dist2D(pos, cup) < CUP_R) return rest({ type: 'holed', how: 'roll' });
+      return rest({ type: 'stopped', surface: s });
+    }
     vel.x += ax * dt; vel.z += az * dt;
     // ...and the grass slows it down (a bit less at a crawl, so it can trickle down steep slopes)
     sp = Math.hypot(vel.x, vel.z);
@@ -97,14 +101,16 @@ export function createBall({ terrain, surfaces, cup, wind, rng }) {
     if (b.rollT > ROLL_TIMEOUT) return rest({ type: 'stopped', surface: terrain.surfaceAt(pos.x, pos.z) }); // safety net
     const dh = dist2D(pos, cup);
     if (dh < CUP_R) {
+      // After a lip-out the ball can't drop until it has left the cup (G8): it is still over the
+      // cup on the next steps, slower, and used to get captured almost every time.
+      if (b.lipped) return null;
       if (ns < CUP_CAPTURE_SPEED) return rest({ type: 'holed', how: 'roll' });
-      if (!b.lipped) { // too fast: lip out, lose speed and get knocked sideways
-        b.lipped = true;
-        const a = (rng() - 0.5) * LIP_OUT.spread, c = Math.cos(a), sn = Math.sin(a);
-        const vx = vel.x, vz = vel.z;
-        vel.x = (vx * c - vz * sn) * LIP_OUT.keep; vel.z = (vx * sn + vz * c) * LIP_OUT.keep;
-        return { type: 'lippedOut' };
-      }
+      // Too fast: lip out, lose speed and get knocked sideways
+      b.lipped = true;
+      const a = (rng() - 0.5) * LIP_OUT.spread, c = Math.cos(a), sn = Math.sin(a);
+      const vx = vel.x, vz = vel.z;
+      vel.x = (vx * c - vz * sn) * LIP_OUT.keep; vel.z = (vx * sn + vz * c) * LIP_OUT.keep;
+      return { type: 'lippedOut' };
     } else if (dh > CUP_R * LIP_OUT.rearm) b.lipped = false;
     return null;
   }

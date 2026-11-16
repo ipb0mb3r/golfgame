@@ -19,3 +19,21 @@ export function rollFrom(hole, x, z, vx, vz, maxSteps = 240 * 60) {
   for (let i = 0; i < maxSteps && play.ball.moving; i++) { const ev = play.step(); if (ev) events.push(ev); }
   return { pos: play.ball.pos, ev: events[events.length - 1] || null, events, play };
 }
+
+// Play a swing on the meter with clicks at scripted times (seconds after the first click, which is
+// at t = 0). `cap` = the lie's power cap (S11). The meter is ticked in steps of `dt`, like frames. Returns { result, events, meter }.
+import { createMeter, pressMeter, tickMeter } from '../src/core/swing.js';
+export function scriptedSwing(clickTimes, { dt = 1 / 1000, maxT = 10, cap = 1 } = {}) {
+  const meter = createMeter(cap), events = [];
+  const clicks = [0, ...clickTimes];
+  let i = 0, result = null;
+  for (let k = 0; k * dt <= maxT && !result; k++) {
+    const t = k * dt;
+    while (!result && i < clicks.length && clicks[i] <= t + 1e-9) { result = pressMeter(meter); i++; }
+    if (result) break;
+    const r = tickMeter(meter, dt);
+    if (meter.event) events.push({ t: t + dt, event: meter.event });
+    result = r;
+  }
+  return { result, events, meter };
+}

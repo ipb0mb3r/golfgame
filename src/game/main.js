@@ -1,12 +1,15 @@
 // Boot and game loop. Loads the hole from ?hole=<id> (default pl-01), wires the pure core
 // (src/core) to the Three.js / DOM layer. Rules live in core; this file only reacts to them.
+// Designer links (X8): ?scenario=<id> starts at a named spot, ?tune=NAME:value overrides tunables.
 import * as THREE from 'three';
+import { applyTune, tuneSummary } from '../core/tune.js';
 import { MAX_FRAME_DT, MAX_METER_DT, AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH } from '../core/config.js';
 import { createHolePlay } from '../core/play.js';
-import { createMeter, resetMeter, pressMeter, tickMeter } from '../core/swing.js';
+import { createMeter, resetMeter, pressMeter, tickMeter, isSwinging } from '../core/swing.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
-import { resolveHole } from '../holes/sets.js';
+import { resolveHole, getHole } from '../holes/sets.js';
+import { resolveScenario } from '../holes/scenarios.js';
 import { parseSeed } from '../core/rng.js';
 import { paintCourse } from './coursePainter.js';
 import { createRenderer, buildScene } from './scene.js';
@@ -18,22 +21,39 @@ import { createDebug } from './debug.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
+// ?tune= first, before anything reads the tunables (only whitelisted names, numbers, clamped)
+const tune = applyTune(params.get('tune'));
+const requestedScenario = params.get('scenario');
+const { scenario, unknown: unknownScenario } = resolveScenario(requestedScenario);
 const requestedHole = params.get('hole');
-const { hole, unknown: unknownHole } = resolveHole(requestedHole);
-// The seed drives wind and lip-outs. ?seed=<n> (0 included) replays the same wind; otherwise it changes each visit.
-const seed = parseSeed(params.get('seed')) ?? (Date.now() >>> 0);
+const { hole, unknown: unknownHole } = scenario ? { hole: getHole(scenario.hole), unknown: false } : resolveHole(requestedHole);
+// The seed drives wind and lip-outs. ?seed=<n> (0 included) replays the same wind; a scenario has its
+// own fixed seed; otherwise it changes each visit.
+const seed = parseSeed(params.get('seed')) ?? scenario?.seed ?? (Date.now() >>> 0);
+// A scenario restarts from this seed on every try: first load, intro card and "Play again" (F1)
+const start = scenario ? { ...scenario, seed } : null;
 
 const play = createHolePlay(hole, { seed });
 const { terrain, cup, tee, ball, wind } = play;
 const meter = createMeter();
 
 setupHolePage(hole, tee, cup);
+const notices = [];
 if (unknownHole) {
   console.warn(`Pocket Links: unknown hole "${requestedHole}", playing ${hole.id} instead.`);
-  const n = $('notice');
-  n.textContent = `There is no hole "${requestedHole}", so you're playing Hole ${hole.number}.`;
-  n.hidden = false;
+  notices.push(`There is no hole "${requestedHole}", so you're playing Hole ${hole.number}.`);
 }
+if (unknownScenario) {
+  console.warn(`Pocket Links: unknown scenario "${requestedScenario}".`);
+  notices.push(`There is no scenario "${requestedScenario}", so you're starting from the tee.`);
+}
+if (scenario) notices.push(`Test spot: ${scenario.name}. ${scenario.text}`);
+if (tune.rejected.length) {
+  console.warn('Pocket Links: ignored tune values', tune.rejected);
+  notices.push(`Ignored in ?tune=: ${tune.rejected.map(r => `"${r.text}" (${r.why})`).join(', ')}.`);
+}
+if (notices.length) { const n = $('notice'); n.textContent = notices.join(' '); n.hidden = false; }
+if (tune.set.length) { const b = $('tuned'); b.textContent = `TUNED · ${tuneSummary(tune)}`; b.hidden = false; }
 const courseCanvas = paintCourse(hole, terrain.surfaceAt);
 const canvas = $('game');
 const renderer = createRenderer(canvas);
@@ -50,7 +70,7 @@ const debug = createDebug($('debug'));
 let state = 'intro';
 let timers = [];
 const later = (fn, ms) => timers.push(setTimeout(fn, ms));
-const aiming = () => state === 'aim' || state === 'power' || state === 'accuracy';
+const aiming = () => state === 'aim' || isSwinging(state);
 const shown = { x: 0, y: 0, z: 0 }; // where the ball is drawn (differs from the ball only while it drops in the cup)
 let holedT = 0;
 
@@ -59,7 +79,7 @@ const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putte
 
 function resetGame() {
   timers.forEach(clearTimeout); timers = [];
-  play.reset();
+  play.reset(start);
   hud.hideResult();
   prepareShot(true);
 }
@@ -76,16 +96,27 @@ function prepareShot(snapCamera = false) {
 // The three-click swing
 function onSwingInput() {
   if (!aiming()) return;
-  if (state === 'aim') input.releaseAim();
-  const fire = pressMeter(meter);
-  if (fire) hit(fire.power, fire.acc);
+  // The top of the meter is the lie's power cap for this club (S11)
+  if (state === 'aim') { input.releaseAim(); meter.cap = play.lieOf().maxPower; }
+  const result = pressMeter(meter);
+  if (result) endSwing(result);
   else state = meter.phase;
   updateHud();
 }
 
-function hit(power, acc) {
+// The meter finished a swing (DESIGN §3 "Missed clicks"): hit, or a cancelled swing goes back to aim with no stroke.
+function endSwing(result) {
+  if (result.outcome === 'cancel') {
+    hud.flash('Swing cancelled', 'No stroke counted');
+    state = 'aim'; resetMeter(meter); updateHud();
+    return;
+  }
+  hit(result.power, result.acc, result.outcome);
+}
+
+function hit(power, acc, outcome = 'normal') {
   meter.power = power;
-  const shot = play.hit(power, acc);
+  const shot = play.hit(power, acc, outcome);
   hud.flash(shot.label);
   state = shot.kind === 'putt' ? 'roll' : 'flight';
   updateHud();
@@ -171,10 +202,11 @@ function frame() {
     if (dir) play.aim += dir * dt * (play.club.putter ? AIM_SPEED_PUTT : AIM_SPEED);
   }
   // Swing meter
-  if (state === 'power' || state === 'accuracy') {
-    const fire = tickMeter(meter, meterDt);
-    if (meter.changed) { state = 'accuracy'; updateHud(); }
-    if (fire) hit(fire.power, fire.acc);
+  if (isSwinging(state)) {
+    const result = tickMeter(meter, meterDt);
+    if (meter.event === 'max') hud.flash('MAX!', 'Click now for full power');
+    if (meter.event) { state = meter.phase; updateHud(); }
+    if (result) endSwing(result);
   }
   // Ball physics
   if (state === 'flight' || state === 'roll') {
@@ -218,7 +250,7 @@ function debugText(fps) {
   const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
   const f = (n, k = 2) => n.toFixed(k);
   return [
-    `hole   ${hole.id}  seed ${seed}`,
+    `hole   ${hole.id}  seed ${seed}${scenario ? `  scenario ${scenario.id}` : ''}`,
     `state  ${state}  (ball ${ball.phase})`,
     `stroke ${play.strokes}  club ${play.club.name}`,
     `pos    ${f(p.x)} ${f(p.y)} ${f(p.z)}`,
@@ -228,12 +260,13 @@ function debugText(fps) {
     `wind   ${f(wind.x)} ${f(wind.z)} m/s (${f(Math.hypot(wind.x, wind.z) * MPS_TO_MPH, 0)} mph)`,
     `wet    ${hole.weather?.wetness ?? 0} (${hole.weather?.type ?? 'clear'})`,
     `meter  ${meter.phase}  value ${f(meter.value, 3)}  power ${f(meter.power, 3)}`,
+    ...(tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : []),
     `fps    ${f(fps, 0)}`,
   ].join('\n');
 }
 
 // Start behind the tee looking down the hole, with the intro card on top
-play.reset(); prepareShot(true); state = 'intro'; updateHud();
+play.reset(start); prepareShot(true); state = 'intro'; updateHud();
 requestAnimationFrame(frame);
 
 // Handy for testing in the browser console and for tools/baseline.mjs
@@ -242,7 +275,7 @@ const windHandle = {
   set(x, y, z) { wind.x = x; wind.y = y; wind.z = z; updateHud(); return windHandle; },
 };
 window.__golf = {
-  hole: hole.id, play,
+  hole: hole.id, play, meter, scenario: scenario?.id ?? null, tune: tune.set,
   get state() { return state; }, get ball() { return ball.pos; }, get strokes() { return play.strokes; },
   get clubIdx() { return play.clubIdx; }, set clubIdx(v) { play.clubIdx = v; },
   get aim() { return play.aim; }, set aim(v) { play.aim = v; },
@@ -250,5 +283,5 @@ window.__golf = {
   surfaceAt: terrain.surfaceAt, heightAt: terrain.heightAt, gradAt: terrain.gradAt,
   HOLE: cup, WATER_Y: hole.features.waterY, slopeText: hud.slopeText,
   place(x, z) { ball.pos.x = x; ball.pos.z = z; prepareShot(true); },
-  testHit(pw, acc = 0) { if (state !== 'aim') return; hit(pw, acc); },
+  testHit(pw, acc = 0, outcome = 'normal') { if (state !== 'aim') return; hit(pw, acc, outcome); },
 };

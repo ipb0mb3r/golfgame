@@ -82,6 +82,31 @@ test('cup: a slow ball over the cup drops, a fast one lips out', () => {
   assert.ok(Math.hypot(fast.pos.x, fast.pos.z + 3) > CUP_R, 'ended away from the cup');
 });
 
+test('G8: a ball faster than the capture speed stays out at realistic speeds (3.5–5 m/s)', () => {
+  const hole = testHole({ cup: { x: 0, z: -3 } });
+  let lips = 0;
+  for (const v of [3.5, 4, 4.5, 5]) {
+    // v is the speed at the cup: start 0.4 m short of it so the green barely slows the ball first.
+    // Straight over the middle and off-centre, with several seeds so the random deflection varies.
+    for (const x0 of [0, 0.08, -0.15]) for (let seed = 1; seed <= 25; seed++) {
+      const play = createHolePlay(hole, { seed });
+      play.ball.pos.x = x0; play.ball.pos.z = -2.6; play.ball.pos.y = 0;
+      play.ball.launch({ kind: 'putt', vel: { x: 0, y: 0, z: -v }, curve: { x: 0, y: 0, z: 0 }, spinFactor: 1 });
+      const events = [];
+      for (let i = 0; i < 240 * 60 && play.ball.moving; i++) { const ev = play.step(); if (ev) events.push(ev); }
+      assert.ok(events.some(e => e.type === 'lippedOut'), `${v} m/s x ${x0} seed ${seed}: lipped out`);
+      assert.notEqual(events.at(-1).type, 'holed', `${v} m/s x ${x0} seed ${seed}: stayed out`);
+      lips++;
+    }
+  }
+  assert.equal(lips, 4 * 3 * 25);
+});
+
+test('G8: just under the capture speed still drops', () => {
+  const hole = testHole({ cup: { x: 0, z: -3 } });
+  for (const v of [2.6, 2.9]) assert.deepEqual(rollFrom(hole, 0, 0, 0, -v).ev, { type: 'holed', how: 'roll' }, `${v} m/s`);
+});
+
 test('a ball landing on the fly next to the cup goes straight in', () => {
   const play = createHolePlay(testHole({ cup: { x: 0, z: -2 } }), { seed: 1 });
   play.ball.pos.x = 0; play.ball.pos.z = -2; play.ball.pos.y = 1;

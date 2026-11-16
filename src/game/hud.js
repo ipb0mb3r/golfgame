@@ -1,5 +1,6 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
-import { M2Y, METER_MIN, PUTT, MPS_TO_MPH, TIMING, AUTO_CLUB_REACH, HUD } from '../core/config.js';
+import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD } from '../core/config.js';
+import { sweetHalfWidth } from '../core/swing.js';
 import { dist2D, dirFromAim, rightFromAim } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
@@ -8,9 +9,11 @@ const meterPct = p => ((p - METER_MIN) / (1 - METER_MIN)) * 100;
 const HINTS = {
   aim: 'Aim and pick a club, then click or press Space to swing',
   power: 'Click again to set POWER',
+  grace: 'MAX! Click now for full power',
+  nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
 };
-const isAiming = s => s === 'aim' || s === 'power' || s === 'accuracy';
+const isAiming = s => s === 'aim' || s === 'power' || s === 'grace' || s === 'nopower' || s === 'accuracy';
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 
@@ -36,6 +39,21 @@ export function setupHolePage(hole, tee, cup) {
 export function createHud(play) {
   const { cup, terrain, surfaces, wind, bag } = play;
   let msgTimer = 0;
+  // The lie on the meter (S11): the green impact zone at its real width (SWEET × sweetScale) and the
+  // grayed-out part above the power cap.
+  function drawLie({ maxPower, sweetScale }) {
+    const h = sweetHalfWidth(sweetScale), sw = $('sweet').style;
+    sw.left = `${meterPct(-h)}%`; sw.width = `${meterPct(h) - meterPct(-h)}%`;
+    const cap = $('capShade').style;
+    cap.left = `${meterPct(maxPower)}%`; cap.display = maxPower < 1 ? 'block' : 'none';
+  }
+  // "Rough · max 85% · harder timing"
+  function lieText({ maxPower, sweetScale }) {
+    const parts = [surfaces[play.lie].name];
+    if (maxPower < 1) parts.push(`max ${Math.round(maxPower * 100)}%`);
+    if (sweetScale < 1) parts.push('harder timing'); else if (sweetScale > 1) parts.push('easier timing');
+    return parts.join(' · ');
+  }
 
   function flash(text, sub = '') {
     const m = $('msg');
@@ -66,13 +84,14 @@ export function createHud(play) {
     const club = bag[play.clubIdx];
     $('strokeTxt').textContent = Math.min(play.strokes + (aiming ? 1 : 0), play.hole.maxStrokes);
     $('distTxt').textContent = distText(state);
-    const lf = play.lieFactorFor();
-    $('lieTxt').textContent = surfaces[play.lie].name + (lf < 1 ? ` (−${Math.round((1 - lf) * 100)}% power)` : '');
+    const lie = play.lieOf();
+    $('lieTxt').textContent = lieText(lie);
+    drawLie(lie);
     $('slopeTxt').textContent = aiming ? slopeText() : '-';
     $('clubName').textContent = club.name;
     const reach = play.clubReach();
     $('clubDist').textContent = `max ${yd(reach)} yd`;
-    const need = club.putter ? (play.puttPlaysLike() + PUTT.pinTickExtra) / play.puttMax : play.distToCup() * AUTO_CLUB_REACH / reach;
+    const need = play.pinPower();
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('hint').textContent = HINTS[state] || '';
@@ -84,7 +103,8 @@ export function createHud(play) {
 
   function updateMeter(state, value, power) {
     $('marker').style.left = `${meterPct(value)}%`;
-    const fillTo = state === 'power' ? value : (state === 'aim' ? 0 : power);
+    const fillTo = state === 'power' ? value : state === 'grace' ? play.lieOf().maxPower : (state === 'aim' || state === 'nopower') ? 0 : power;
+    $('meterBar').classList.toggle('nopower', state === 'nopower');
     $('meterFill').style.width = `${meterPct(fillTo) - meterPct(0)}%`;
     // wind arrow relative to the direction you're facing
     const d = dirFromAim(play.aim), r = rightFromAim(play.aim);

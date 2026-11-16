@@ -6,6 +6,14 @@ import { readFileSync } from 'node:fs';
 import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 
+import { applyTune } from '../src/core/tune.js';
+
+// v1 checks PHYSICS ONLY (flight, bounce, roll, slopes); v2 checks swing feel (AGENTS.md rule 8).
+// These shots were recorded from the old pages, so they replay with the old swing mapping: a neutral
+// lie window (S11 sweetScale 1) and the linear curve (S10 CURVE_SHAPE 1). Otherwise the new, gentler
+// swing would turn the old hook/slice inputs into different shots.
+applyTune('tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1,CURVE_SHAPE:1');
+
 const base = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
 export function replay(shot) {

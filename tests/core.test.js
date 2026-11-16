@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
 import { BASE_SURFACES, getEffectiveSurface, makeSurfaceTable } from '../src/core/surfaces.js';
 import { createRng } from '../src/core/rng.js';
-import { makeBag, lieFactor, CLUBS } from '../src/core/clubs.js';
+import { makeBag, lieFor, CLUBS } from '../src/core/clubs.js';
 import { resultName, resultText } from '../src/core/scoring.js';
 import { createHolePlay } from '../src/core/play.js';
 import { HOLES, SETS, getHole, DEFAULT_HOLE } from '../src/holes/sets.js';
@@ -65,10 +65,9 @@ test('bags: hole 1 has no driver, the putter is always last; sand wedge lie', ()
   assert.equal(makeBag().length, 8);
   assert.throws(() => makeBag(['7i']));
   const s = makeSurfaceTable(hole1);
-  assert.equal(lieFactor(CLUBS.sw, 'sand', s), 0.85);
-  assert.equal(lieFactor(CLUBS['7i'], 'sand', s), 0.6);
-  assert.equal(lieFactor(CLUBS['7i'], 'rough', s), 0.85);
-  assert.equal(lieFactor(CLUBS.putter, 'rough', s), 1);
+  assert.deepEqual(lieFor(CLUBS.sw, 'sand', s), { maxPower: 0.85, sweetScale: 0.7 });
+  assert.deepEqual(lieFor(CLUBS['7i'], 'sand', s), { maxPower: 0.6, sweetScale: 0.5 });
+  assert.deepEqual(lieFor(CLUBS.sw, 'rough', s), { maxPower: 0.85, sweetScale: 0.7 }, 'the override is for sand only');
 });
 
 test('auto club: 7 iron off hole 1 tee, driver off hole 2 tee, putter on the green', () => {

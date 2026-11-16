@@ -7,7 +7,7 @@ import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js
 import { createRng } from './rng.js';
 import { makeTerrain } from './terrain.js';
 import { makeSurfaceTable } from './surfaces.js';
-import { makeBag, lieFactor } from './clubs.js';
+import { makeBag, lieFor } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
 
@@ -31,8 +31,8 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
-    reset, newWind, prepare, hit, advance, step, returnToLastPos, landingPoint, clubReach, puttPlaysLike,
-    lieFactorFor, distToCup, slope, simulate,
+    reset, newWind, prepare, hit, swing, advance, step, returnToLastPos, landingPoint, clubReach, puttPlaysLike,
+    lieOf, pinPower, distToCup, slope, simulate,
   };
 
   function newWind() {
@@ -41,19 +41,27 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     set(wind, Math.sin(a) * s, 0, -Math.cos(a) * s);
   }
 
-  function reset() {
-    p.strokes = 0;
+  // Back to the start of the hole. `start` (optional, from a designer scenario, X8) puts the ball
+  // somewhere else: { ball: { x, z }, strokes, wind: { x, z }, seed }. With a `seed`, the random
+  // numbers (wind, lip-outs) restart from it, so every retry of a scenario is identical (F1).
+  function reset(start = null) {
+    if (start?.seed != null) rng.reseed(start.seed);
+    p.strokes = start?.strokes ?? 0;
     copy(ball.pos, tee);
+    if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }
     newWind();
+    if (start?.wind) set(wind, start.wind.x, 0, start.wind.z);
     prepare();
   }
 
   function distToCup() { return dist2D(ball.pos, cup); }
-  function lieFactorFor(i = p.clubIdx) { return lieFactor(bag[i], p.lie, surfaces); }
+  // The lie for club i from where the ball is (S11): { maxPower, sweetScale }
+  function lieOf(i = p.clubIdx) { return lieFor(bag[i], p.lie, surfaces); }
 
-  // Where a full-power, dead-straight shot comes down, allowing for the hills (no wind)
-  function landingPoint(i, a = p.aim) {
-    const { vel } = launchVelocity(bag[i], 1, a, lieFactorFor(i));
+  // Where a dead-straight shot at `power` comes down, allowing for the hills (no wind).
+  // Default power = the lie's cap, i.e. the strongest shot possible from here.
+  function landingPoint(i, a = p.aim, power = lieOf(i).maxPower) {
+    const { vel } = launchVelocity(bag[i], power, a);
     const q = { ...ball.pos };
     const h = LANDING_SIM.dt;
     for (let k = 0; k < LANDING_SIM.maxSteps; k++) {
@@ -64,6 +72,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return q;
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
+  // The ⚑ mark on the meter: the power that reaches the pin with this club, on the meter's 0..1 scale
+  // (power % maps straight to the club's distance on every lie, so the mark is honest; above the cap
+  // it sits in the grayed-out part = out of reach).
+  function pinPower(i = p.clubIdx) {
+    if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
+    return distToCup() * AUTO_CLUB_REACH / dist2D(ball.pos, landingPoint(i, p.aim, 1));
+  }
   // Putts: a slope adds or removes "distance" (uphill plays longer)
   function puttPlaysLike() { return distToCup() + ROLL_G * (cup.y - ball.pos.y) / surfaces.green.decel; }
 
@@ -83,13 +98,20 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     }
   }
 
-  // Hit the ball. power 0..1, acc = meter value at the 3rd click. Returns the resolved shot.
-  function hit(power, accuracy) {
+  // A finished swing from the meter: hit it, or for a cancelled swing do nothing (no stroke).
+  // Returns the resolved shot, or null when cancelled.
+  function swing(result) {
+    if (!result || result.outcome === 'cancel') return null;
+    return hit(result.power, result.acc, result.outcome);
+  }
+
+  // Hit the ball. power 0..1, acc = meter value at the 3rd click, outcome from the meter. Returns the resolved shot.
+  function hit(power, accuracy, outcome = 'normal') {
     p.strokes++;
     copy(lastPos, ball.pos);
     const shot = resolveShot({
-      club: p.club, power, acc: accuracy, aim: p.aim, lieFactor: lieFactorFor(),
-      puttMax: p.puttMax, greenDecel: surfaces.green.decel,
+      club: p.club, power, acc: accuracy, aim: p.aim, lie: lieOf(),
+      puttMax: p.puttMax, greenDecel: surfaces.green.decel, outcome,
     });
     p.isPutt = shot.kind === 'putt';
     copy(p.shotDir, shot.dir);
