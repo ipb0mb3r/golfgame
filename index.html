@@ -71,6 +71,7 @@
   #resultTitle { font-size: 40px; text-align: center; margin: 0; color: var(--accent); }
   #resultText { text-align: center; font-size: 16px; color: var(--text); }
   .card a { color: var(--accent); }
+  .card .notice { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,212,71,.15); color: var(--accent); font-size: 14px; }
   kbd { background: #2c4a37; border-radius: 4px; padding: 1px 6px; font-size: 13px; }
 
   /* Debug overlay (backtick key) */
@@ -144,6 +145,7 @@
 <div id="intro" class="overlay">
   <div class="card">
     <h1>Pocket Links</h1>
+    <p id="notice" class="notice" hidden></p>
     <h2 id="introSub"></h2>
     <ol id="introSteps"></ol>
     <p id="introBlurb"></p>

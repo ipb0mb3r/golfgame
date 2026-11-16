@@ -5,8 +5,8 @@
 // tests/fixtures/baseline.json, then again after a change to compare.
 //
 //   node tools/baseline.mjs record                      writes tests/fixtures/baseline.json
-//   node tools/baseline.mjs check   [--fps 60]          plays the same shots in the new page, prints differences
-//   node tools/baseline.mjs check --pages old --fps 144  same, but against the old pages (to see their spread)
+//   node tools/baseline.mjs check   [--fps 60]          replays each recorded shot in the new page from its
+//                                                       recorded start, prints differences, exit code 1 on a problem
 //
 // `record` plays everything at 60 fps (the reference) and again at 30 and 144 fps. The old code
 // took a leftover partial physics step each frame, so its results depend on the frame rate; the
@@ -66,7 +66,7 @@ function threeSource() {
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 
-async function run(fps) {
+async function openBrowser(fps) {
   const { chromium } = require('playwright');
   // Fixed frame time: every rendered frame advances the game by exactly 1/fps seconds.
   const three = threeSource() + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\n`;
@@ -93,16 +93,26 @@ async function run(fps) {
     body = body.replace('renderer.render(scene, camera);', 'if (!window.__noRender) renderer.render(scene, camera);');
     return route.fulfill({ body, contentType: TYPES[extname(file)] || 'text/plain' });
   });
+  return { browser, ctx };
+}
 
+async function startHole(ctx, hole) {
+  const page = await ctx.newPage();
+  page.on('pageerror', e => console.error('page error:', e.message));
+  await page.goto(`http://golf.test/${PAGES[pagesArg][hole]}`);
+  await page.waitForFunction(() => window.__golf && window.__golf.state === 'intro');
+  await page.evaluate(() => document.getElementById('startBtn').click());
+  await page.waitForFunction(() => window.__golf.state === 'aim');
+  await page.evaluate(() => window.__golf.wind.set(0, 0, 0));
+  return page;
+}
+
+// record: play each scenario's shots in a row, each from where the previous one stopped
+async function run(fps) {
+  const { browser, ctx } = await openBrowser(fps);
   const results = [];
   for (const sc of SCENARIOS) {
-    const page = await ctx.newPage();
-    page.on('pageerror', e => console.error('page error:', e.message));
-    await page.goto(`http://golf.test/${PAGES[pagesArg][sc.hole]}`);
-    await page.waitForFunction(() => window.__golf && window.__golf.state === 'intro');
-    await page.evaluate(() => document.getElementById('startBtn').click());
-    await page.waitForFunction(() => window.__golf.state === 'aim');
-    await page.evaluate(() => window.__golf.wind.set(0, 0, 0));
+    const page = await startHole(ctx, sc.hole);
     if (sc.place) {
       await page.evaluate(([x, z]) => window.__golf.place(x, z), [sc.place.x, sc.place.z]);
     }
@@ -123,6 +133,37 @@ async function run(fps) {
       if (end.state !== 'aim') break;
     }
     await page.close();
+  }
+  await browser.close();
+  process.stdout.write('\n');
+  return results;
+}
+
+// check: replay every recorded shot on its own, from its recorded start position (like
+// tests/baseline.test.js), so one shot's difference doesn't carry into the next. Needs __golf.place.
+async function replay(fps, shots) {
+  const { browser, ctx } = await openBrowser(fps);
+  const results = [];
+  const pages = {};
+  for (const shot of shots) {
+    let page = pages[shot.hole] || (pages[shot.hole] = await startHole(ctx, shot.hole));
+    if (!(await page.evaluate(() => typeof window.__golf.place === 'function'))) throw new Error('check needs window.__golf.place (the new index.html)');
+    // Back to aiming (after a holed shot the result card is up)
+    await page.waitForFunction(() => ['aim', 'result'].includes(window.__golf.state), null, { timeout: 600000 });
+    if (await page.evaluate(() => window.__golf.state) === 'result') {
+      await page.evaluate(() => document.getElementById('againBtn').click());
+      await page.waitForFunction(() => window.__golf.state === 'aim');
+    }
+    const start = await page.evaluate(([x, z]) => {
+      const g = window.__golf;
+      g.wind.set(0, 0, 0); g.place(x, z);
+      return { club: document.getElementById('clubName').textContent, aim: g.aim, strokes: g.strokes };
+    }, [shot.start.x, shot.start.z]);
+    await page.evaluate(([p, a, off]) => { const g = window.__golf; g.aim = g.aim + off; g.testHit(p, a); }, [shot.power, shot.acc, shot.aimOff]);
+    await page.waitForFunction(() => ['aim', 'result', 'holed'].includes(window.__golf.state), null, { timeout: 600000 });
+    const end = await page.evaluate(() => { const g = window.__golf; return { x: g.ball.x, z: g.ball.z, state: g.state, strokes: g.strokes }; });
+    results.push({ start, end });
+    process.stdout.write('.');
   }
   await browser.close();
   process.stdout.write('\n');
@@ -156,20 +197,34 @@ if (mode === 'record') {
   writeFileSync(FIXTURE, JSON.stringify(out, null, 2) + '\n');
   console.log(`wrote ${out.shots.length} shots to ${FIXTURE}`);
 } else {
-  const results = await run(fpsArg);
   const base = JSON.parse(readFileSync(FIXTURE, 'utf8'));
+  const results = await replay(fpsArg, base.shots);
   let worst = 0, bad = 0;
-  console.log('scenario | shot | club (old/new) | end (old) | end (new) | Δ m | strokes');
+  console.log('ok? | shot | club (old/new) | end (old) | end (new) | Δ m | strokes taken (old/new) | note');
   results.forEach((r, i) => {
     const b = base.shots[i];
-    const d = Math.hypot(r.end.x - b.end.x, r.end.z - b.end.z);
-    worst = Math.max(worst, d);
-    const ok = d <= base.tolerance && r.end.strokes === b.end.strokes && r.start.club === b.start.club;
+    const off = e => Math.hypot(r.end.x - e.x, r.end.z - e.z);
+    const d = off(b.end);
+    const took = r.end.strokes - r.start.strokes, tookOld = b.end.strokes - b.start.strokes;
+    let note = '';
+    let close = d <= base.tolerance;
+    if (!close) {
+      // Same exception as tests/baseline.test.js: the old page itself landed this shot in different
+      // places at different frame rates (its leftover partial step). Accept a match with one of those.
+      const alts = Object.entries(b.endAtFps || {}).filter(([, e]) => e);
+      const spread = Math.max(0, ...alts.map(([, e]) => Math.hypot(e.x - b.end.x, e.z - b.end.z)));
+      const match = alts.find(([, e]) => off(e) <= base.tolerance && e.strokes - b.start.strokes === took);
+      if (spread > base.tolerance && match) {
+        close = true;
+        note = `old page spread ${spread.toFixed(2)} m across frame rates; matches its ${match[0]} fps result (${off(match[1]).toFixed(3)} m)`;
+      }
+    }
+    const ok = close && took === tookOld && r.start.club === b.start.club;
     if (!ok) bad++;
-    console.log(`${ok ? 'ok ' : 'BAD'} ${r.scenario} | p${r.shot.power} a${r.shot.acc} | ${b.start.club}/${r.start.club} | ` +
-      `(${b.end.x.toFixed(2)}, ${b.end.z.toFixed(2)}) | (${r.end.x.toFixed(2)}, ${r.end.z.toFixed(2)}) | ${d.toFixed(3)} | ${b.end.strokes}/${r.end.strokes}`);
+    worst = Math.max(worst, close ? 0 : d);
+    console.log(`${ok ? 'ok ' : 'BAD'} | #${i + 1} ${b.scenario} p${b.power} a${b.acc} | ${b.start.club}/${r.start.club} | ` +
+      `(${b.end.x.toFixed(2)}, ${b.end.z.toFixed(2)}) | (${r.end.x.toFixed(2)}, ${r.end.z.toFixed(2)}) | ${d.toFixed(3)} | ${tookOld}/${took} | ${note}`);
   });
-  if (results.length !== base.shots.length) { bad++; console.log(`shot count differs: ${base.shots.length} vs ${results.length}`); }
-  console.log(`worst difference ${worst.toFixed(3)} m, ${bad} problem(s)`);
+  console.log(bad ? `${bad} problem(s)` : `all ${results.length} shots match`);
   process.exitCode = bad ? 1 : 0;
 }

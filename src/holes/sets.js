@@ -11,4 +11,11 @@ export const SETS = [
   { id: 'slope-test', name: 'Slope Test', holes: ['pl-02'] },
 ];
 
-export const getHole = id => HOLES[id] || HOLES[DEFAULT_HOLE];
+// ?hole= value → hole. Ids are matched case-insensitively. An unknown id falls back to the
+// default hole and reports `unknown: true` so the page can say so.
+export function resolveHole(id) {
+  const key = (id ?? '').trim().toLowerCase();
+  if (!key) return { hole: HOLES[DEFAULT_HOLE], unknown: false };
+  return HOLES[key] ? { hole: HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
+}
+export const getHole = id => resolveHole(id).hole;

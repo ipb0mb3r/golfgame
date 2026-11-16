@@ -3,10 +3,15 @@
 <head>
 <meta charset="utf-8">
 <title>Pocket Links: Hole 2</title>
-<!-- Hole 2 now runs in the shared engine. Old links keep working. -->
-<meta http-equiv="refresh" content="0; url=index.html?hole=pl-02">
+<!-- Hole 2 now runs in the shared engine. Old links keep working, with their other query
+     parameters (e.g. ?seed=42) and #hash. -->
 <link rel="canonical" href="index.html?hole=pl-02">
-<script>location.replace('index.html?hole=pl-02' + location.hash);</script>
+<script>
+  var q = new URLSearchParams(location.search);
+  q.set('hole', 'pl-02');
+  location.replace('index.html?' + q.toString() + location.hash);
+</script>
+<noscript><meta http-equiv="refresh" content="0; url=index.html?hole=pl-02"></noscript>
 </head>
 <body>
 <p>Hole 2 has moved: <a href="index.html?hole=pl-02">play it here</a>.</p>

@@ -112,3 +112,21 @@ test('src/core is pure: no Three.js, no DOM, no Math.random', () => {
     assert.doesNotMatch(src, /Math\.random/, `${f} uses Math.random`);
   }
 });
+
+test('?hole= ids are case-insensitive; an unknown id falls back to hole 1 and says so', async () => {
+  const { resolveHole } = await import('../src/holes/sets.js');
+  assert.deepEqual(resolveHole('PL-02'), { hole: hole2, unknown: false });
+  assert.deepEqual(resolveHole(' pl-02 '), { hole: hole2, unknown: false });
+  assert.deepEqual(resolveHole(null), { hole: hole1, unknown: false });
+  assert.deepEqual(resolveHole(''), { hole: hole1, unknown: false });
+  assert.deepEqual(resolveHole('pl-99'), { hole: hole1, unknown: true });
+});
+
+test('?seed=: 0 is a valid seed; missing or junk gives null', async () => {
+  const { parseSeed } = await import('../src/core/rng.js');
+  assert.equal(parseSeed('0'), 0);
+  assert.equal(parseSeed('42'), 42);
+  assert.equal(parseSeed('-7'), -7);
+  for (const bad of [null, undefined, '', '  ', 'abc']) assert.equal(parseSeed(bad), null);
+  assert.notDeepEqual(Array.from({ length: 3 }, createRng(0)), Array.from({ length: 3 }, createRng(1)));
+});

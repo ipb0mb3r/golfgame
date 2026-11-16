@@ -1,4 +1,11 @@
 // Seeded random numbers (mulberry32). Core code never calls Math.random().
+// ?seed= value → integer seed, or null when missing or not a number. 0 is a valid seed.
+export function parseSeed(text) {
+  if (text === null || text === undefined || String(text).trim() === '') return null;
+  const n = Number(text);
+  return Number.isFinite(n) ? Math.trunc(n) : null;
+}
+
 export function createRng(seed = 1) {
   let s = seed | 0;
   return () => {

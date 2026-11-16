@@ -6,7 +6,8 @@ import { createHolePlay } from '../core/play.js';
 import { createMeter, resetMeter, pressMeter, tickMeter } from '../core/swing.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
-import { getHole } from '../holes/sets.js';
+import { resolveHole } from '../holes/sets.js';
+import { parseSeed } from '../core/rng.js';
 import { paintCourse } from './coursePainter.js';
 import { createRenderer, buildScene } from './scene.js';
 import { createProps } from './props.js';
@@ -17,15 +18,22 @@ import { createDebug } from './debug.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
-const hole = getHole(params.get('hole'));
-// The seed drives wind and lip-outs. ?seed=<n> replays the same wind; otherwise it changes each visit.
-const seed = Number(params.get('seed')) || (Date.now() >>> 0);
+const requestedHole = params.get('hole');
+const { hole, unknown: unknownHole } = resolveHole(requestedHole);
+// The seed drives wind and lip-outs. ?seed=<n> (0 included) replays the same wind; otherwise it changes each visit.
+const seed = parseSeed(params.get('seed')) ?? (Date.now() >>> 0);
 
 const play = createHolePlay(hole, { seed });
 const { terrain, cup, tee, ball, wind } = play;
 const meter = createMeter();
 
 setupHolePage(hole, tee, cup);
+if (unknownHole) {
+  console.warn(`Pocket Links: unknown hole "${requestedHole}", playing ${hole.id} instead.`);
+  const n = $('notice');
+  n.textContent = `There is no hole "${requestedHole}", so you're playing Hole ${hole.number}.`;
+  n.hidden = false;
+}
 const courseCanvas = paintCourse(hole, terrain.surfaceAt);
 const canvas = $('game');
 const renderer = createRenderer(canvas);
@@ -173,7 +181,7 @@ function frame() {
     for (const ev of play.advance(dt)) onEvent(ev);
     if (state === 'flight' && ball.phase === 'roll') state = 'roll';
     if (state === 'flight') props.addTrail(ball.pos);
-    $('distTxt').textContent = hud.distText();
+    $('distTxt').textContent = hud.distText(state);
   }
   // Holed: the ball drops into the cup
   if (state === 'holed' || state === 'result') {

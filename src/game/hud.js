@@ -53,9 +53,11 @@ export function createHud(play) {
     if (Math.abs(side) >= HUD.slopeMinPct) parts.push(`breaks ${side > 0 ? 'left' : 'right'}`);
     return parts.length ? parts.join(' · ') : 'Flat';
   }
-  function distText() {
+  // The ↑/↓ elevation hint compares the ground under the ball with the cup, so it is hidden while
+  // the ball is in the air (its height then is not the ground's).
+  function distText(state) {
     const ball = play.ball.pos, dh = cup.y - ball.y;
-    return `${yd(dist2D(ball, cup))} yd` + (Math.abs(dh) >= HUD.elevMinM ? ` (${dh > 0 ? '↑' : '↓'}${Math.round(Math.abs(dh) * M2Y)})` : '');
+    return `${yd(dist2D(ball, cup))} yd` + (state !== 'flight' && Math.abs(dh) >= HUD.elevMinM ? ` (${dh > 0 ? '↑' : '↓'}${Math.round(Math.abs(dh) * M2Y)})` : '');
   }
 
   // state = game state, power = locked power (for the white mark)
@@ -63,7 +65,7 @@ export function createHud(play) {
     const aiming = isAiming(state);
     const club = bag[play.clubIdx];
     $('strokeTxt').textContent = Math.min(play.strokes + (aiming ? 1 : 0), play.hole.maxStrokes);
-    $('distTxt').textContent = distText();
+    $('distTxt').textContent = distText(state);
     const lf = play.lieFactorFor();
     $('lieTxt').textContent = surfaces[play.lie].name + (lf < 1 ? ` (−${Math.round((1 - lf) * 100)}% power)` : '');
     $('slopeTxt').textContent = aiming ? slopeText() : '-';
