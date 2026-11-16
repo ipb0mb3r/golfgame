@@ -13,6 +13,7 @@ const HINTS = {
   nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
 };
+const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 const isAiming = s => s === 'aim' || s === 'power' || s === 'grace' || s === 'nopower' || s === 'accuracy';
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
@@ -58,9 +59,24 @@ export function createHud(play) {
   function flash(text, sub = '') {
     const m = $('msg');
     m.innerHTML = text + (sub ? `<small>${sub}</small>` : '');
+    fitFlash(m);
     m.classList.add('show');
     clearTimeout(msgTimer);
     msgTimer = setTimeout(() => m.classList.remove('show'), TIMING.flash);
+  }
+
+  // H1: the flash text is centred and wraps. Its width stops short of any panel beside it (the
+  // minimap and wind box, or the scorecard on a wide screen), so it never runs under them.
+  function fitFlash(m) {
+    const cx = innerWidth / 2, cy = m.getBoundingClientRect().top + m.offsetHeight / 2, gap = 8;
+    let half = cx - 12;
+    for (const id of ['info', 'side']) {
+      const r = $(id).getBoundingClientRect();
+      if (r.bottom < cy - FLASH_BAND || r.top > cy + FLASH_BAND) continue; // not beside the text
+      if (r.left > cx) half = Math.min(half, r.left - cx - gap);
+      else if (r.right < cx) half = Math.min(half, cx - r.right - gap);
+    }
+    m.style.maxWidth = `${Math.max(half * 2, FLASH_MIN_W)}px`;
   }
 
   // "Uphill 4% · breaks left": the slope under the ball, relative to where you're aiming
@@ -94,6 +110,7 @@ export function createHud(play) {
     const need = play.pinPower();
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
+    $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
     $('hint').textContent = HINTS[state] || '';
     const pm = $('powerMark');
     if (state === 'accuracy' || state === 'flight' || state === 'roll') { pm.style.display = 'block'; pm.style.left = `${meterPct(power)}%`; }

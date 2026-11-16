@@ -43,8 +43,16 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 - Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc, as before), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
 - If the marker reaches `METER_MIN` without a third click, the shot is a huge slice (see "Missed clicks").
 - Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S.
-- A **⚑ mark** on the meter shows roughly the power needed to reach the pin, adjusted for elevation.
-- The club is picked automatically each shot (the one that reaches the pin) and the player can change it. The putter is used on the green.
+- A **⚑ mark** on the meter shows the power needed to reach the pin, adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way to the pin, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1).
+- The club is picked automatically each shot (see "Club auto-pick") and the player can change to any club in the bag.
+
+### Club auto-pick ✅ (task S13, decided 2026-11-16 by the game designer)
+In this order (`clubs.pickClub`):
+1. **Green**, or the fringe closer than `FRINGE_PUTT_DIST` (18 m): the putter.
+2. **Bunker:** the sand wedge (if the hole's bag has one), however far the pin is.
+3. **Everywhere else:** the shortest club that reaches the pin within the lie's cap (its capped reach, hills included, is at least `AUTO_CLUB_REACH` × the distance). **The Driver only counts on the tee**, so it is picked only from the tee and only when the 3 Wood doesn't get there. When nothing reaches, the longest club that counts (the 3 Wood off the fairway).
+
+The player can still pick any club with ▲ ▼ / W S, including the Driver from the fairway.
 - The meter runs in real time (`meterDt` capped at 0.1s) so slow devices don't make it easier.
 
 ### Missed clicks ✅ (task S8, decided 2026-11-16 by the game designer)
@@ -87,7 +95,7 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 
 Starting values. The designer tunes them with `?tune=` (X8), e.g. `?tune=rough.maxPower:0.8,sand.sweetScale:0.6,sw.sand.maxPower:0.9` (each clamped: `maxPower` 0.1–1, `sweetScale` 0.2–3). Later hooks: rain (W2) and slope lie (T6) may reduce `sweetScale` through the same function.
 
-How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` (a hole can override them in `surfaceOverrides`); a club can override them per surface with `lieOverrides` in `clubs.js`. `clubs.lieFor(club, surface, surfaces)` is the one function that decides the lie (`play.lieOf()` for the ball's lie and current club). The meter's top is `meter.cap`; `resolveShot` also clamps power to the cap. The aim ring and club reach show the capped full shot. `play.pinPower()` places the ⚑ mark on the full 0–1 scale (above the cap = out of reach, shown in the gray part). The putter's override is in `clubs.js` (`lieOverrides` for fringe and green).
+How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` (a hole can override them in `surfaceOverrides`); a club can override them per surface with `lieOverrides` in `clubs.js`. `clubs.lieFor(club, surface, surfaces)` is the one function that decides the lie (`play.lieOf()` for the ball's lie and current club). The meter's top is `meter.cap`; `resolveShot` also clamps power to the cap. The aim ring and club reach show the capped full shot. `play.pinPower()` places the ⚑ mark on the full 0–1 scale (above the cap = out of reach, shown in the gray part): since S12 it searches (bisection) for the power whose `play.landingPoint()` carry is 95% of the distance, instead of scaling the full-power carry, which was ~9% short up to a raised green. `landingPoint()` integrates the arc exactly and stops where it crosses the ground, so the aim ring, reach and ⚑ agree with the real flight to a few cm. The putter's override is in `clubs.js` (`lieOverrides` for fringe and green).
 
 ### Tunables (today)
 `METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.05`, `CURVE_SHAPE = 2`, `CURVE_K = 28`.
