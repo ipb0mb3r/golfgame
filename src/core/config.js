@@ -61,3 +61,6 @@ export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole
 
 // --- Game-layer timing (ms) ---
 export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500 };
+
+// --- HUD display thresholds ---
+export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02 };
