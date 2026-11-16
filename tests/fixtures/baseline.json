@@ -1,0 +1,450 @@
+{
+  "note": "Golden shots recorded from the pre-refactor pages (index.html = hole 1, hole2.html = hole 2) by tools/baseline.mjs. Fixed frame time 1/60 s, wind 0, Math.random seeded. Positions in meters. A refactor must land within 0.5 m.",
+  "recordedWith": {
+    "fps": 60,
+    "pages": {
+      "pl-01": "index.html",
+      "pl-02": "hole2.html"
+    }
+  },
+  "tolerance": 0.5,
+  "shots": [
+    {
+      "scenario": "h1 full then chip and putts",
+      "hole": "pl-01",
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": 4.1533,
+        "y": 0,
+        "z": -157.8238,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h1 full then chip and putts",
+      "hole": "pl-01",
+      "power": 0.5,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 4.1533,
+        "y": 0,
+        "z": -157.8238,
+        "club": "Putter",
+        "aim": -3.1153,
+        "strokes": 1
+      },
+      "end": {
+        "x": 4.0351,
+        "y": 0,
+        "z": -153.3324,
+        "state": "aim",
+        "strokes": 2,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h1 full then chip and putts",
+      "hole": "pl-01",
+      "power": 0.8,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 4.0351,
+        "y": 0,
+        "z": -153.3324,
+        "club": "Putter",
+        "aim": -3.1153,
+        "strokes": 2
+      },
+      "end": {
+        "x": 4.0047,
+        "y": -0.02,
+        "z": -152.18,
+        "state": "holed",
+        "strokes": 3,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h1 three-quarter tee shot",
+      "hole": "pl-01",
+      "power": 0.85,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": 3.6101,
+        "y": 0,
+        "z": -137.1854,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Fringe"
+      }
+    },
+    {
+      "scenario": "h1 three-quarter tee shot",
+      "hole": "pl-01",
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 3.6101,
+        "y": 0,
+        "z": -137.1854,
+        "club": "Putter",
+        "aim": 0.0263,
+        "strokes": 1
+      },
+      "end": {
+        "x": 3.9729,
+        "y": 0,
+        "z": -150.97,
+        "state": "aim",
+        "strokes": 2,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h1 hook",
+      "hole": "pl-01",
+      "power": 0.95,
+      "acc": 0.06,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": -9.2262,
+        "y": 0,
+        "z": -148.2078,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Bunker (−15% power)"
+      }
+    },
+    {
+      "scenario": "h1 slice",
+      "hole": "pl-01",
+      "power": 0.95,
+      "acc": -0.06,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": 18.1884,
+        "y": 0,
+        "z": -150.8518,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Fringe"
+      }
+    },
+    {
+      "scenario": "h1 pulled into the pond",
+      "hole": "pl-01",
+      "power": 0.6,
+      "acc": 0,
+      "aimOff": -0.22,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "state": "aim",
+        "strokes": 2,
+        "lie": "Tee box"
+      }
+    },
+    {
+      "scenario": "h1 forced max slice",
+      "hole": "pl-01",
+      "power": 0.9,
+      "acc": -0.2,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "club": "7 Iron",
+        "aim": 0.0263,
+        "strokes": 0
+      },
+      "end": {
+        "x": 41.6847,
+        "y": 0,
+        "z": -136.4371,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Rough (−15% power)"
+      }
+    },
+    {
+      "scenario": "h2 driver, then 3 wood",
+      "hole": "pl-02",
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 2.9999,
+        "z": 0,
+        "club": "Driver",
+        "aim": 0.058,
+        "strokes": 0
+      },
+      "end": {
+        "x": 12.6966,
+        "y": -0.2312,
+        "z": -285.5399,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Fairway"
+      }
+    },
+    {
+      "scenario": "h2 driver, then 3 wood",
+      "hole": "pl-02",
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 12.6966,
+        "y": -0.2312,
+        "z": -285.5399,
+        "club": "5 Iron",
+        "aim": 0.0817,
+        "strokes": 1
+      },
+      "end": {
+        "x": 26.6644,
+        "y": 3.0816,
+        "z": -456.9895,
+        "state": "aim",
+        "strokes": 2,
+        "lie": "Rough (−15% power)"
+      }
+    },
+    {
+      "scenario": "h2 short drive into the hill",
+      "hole": "pl-02",
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 2.9999,
+        "z": 0,
+        "club": "Driver",
+        "aim": 0.058,
+        "strokes": 0
+      },
+      "end": {
+        "x": 12.0573,
+        "y": 1.9346,
+        "z": -208.0969,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Fairway"
+      }
+    },
+    {
+      "scenario": "h2 hook off the tee",
+      "hole": "pl-02",
+      "power": 0.95,
+      "acc": 0.07,
+      "aimOff": 0,
+      "start": {
+        "x": 0,
+        "y": 2.9999,
+        "z": 0,
+        "club": "Driver",
+        "aim": 0.058,
+        "strokes": 0
+      },
+      "end": {
+        "x": -8.0306,
+        "y": -1.1245,
+        "z": -258.6214,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Rough (−15% power)"
+      }
+    },
+    {
+      "scenario": "h2 approach from the lay-up zone",
+      "hole": "pl-02",
+      "power": 0.9,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 18,
+        "y": 0.9816,
+        "z": -330,
+        "club": "9 Iron",
+        "aim": 0.0677,
+        "strokes": 0
+      },
+      "end": {
+        "x": 24.8158,
+        "y": 3.0403,
+        "z": -438.4707,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h2 approach from the lay-up zone",
+      "hole": "pl-02",
+      "power": 0.8,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 24.8158,
+        "y": 3.0403,
+        "z": -438.4707,
+        "club": "Putter",
+        "aim": 0.1236,
+        "strokes": 1
+      },
+      "end": {
+        "x": 25.889,
+        "y": 3.8254,
+        "z": -447.8588,
+        "state": "holed",
+        "strokes": 2,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h2 uphill putt to the top tier",
+      "hole": "pl-02",
+      "power": 0.9,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 20,
+        "y": 2.7504,
+        "z": -430,
+        "club": "Putter",
+        "aim": 0.3218,
+        "strokes": 0
+      },
+      "end": {
+        "x": 26.0336,
+        "y": 3.8254,
+        "z": -447.8241,
+        "state": "holed",
+        "strokes": 1,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h2 downhill putt",
+      "hole": "pl-02",
+      "power": 0.35,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 28,
+        "y": 3.9281,
+        "z": -452,
+        "club": "Putter",
+        "aim": -2.6779,
+        "strokes": 0
+      },
+      "end": {
+        "x": 26.628,
+        "y": 3.8924,
+        "z": -449.5329,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h2 side-hill putt (breaks)",
+      "hole": "pl-02",
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "start": {
+        "x": 14,
+        "y": 3.5726,
+        "z": -446,
+        "club": "Putter",
+        "aim": 1.4056,
+        "strokes": 0
+      },
+      "end": {
+        "x": 27.053,
+        "y": 3.8304,
+        "z": -446.7095,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Green"
+      }
+    },
+    {
+      "scenario": "h2 left toward the pond",
+      "hole": "pl-02",
+      "power": 0.5,
+      "acc": 0,
+      "aimOff": -0.5,
+      "start": {
+        "x": 4,
+        "y": -1.0296,
+        "z": -250,
+        "club": "Driver",
+        "aim": 0.1107,
+        "strokes": 0
+      },
+      "end": {
+        "x": -35.7637,
+        "y": 1.7985,
+        "z": -346.738,
+        "state": "aim",
+        "strokes": 1,
+        "lie": "Rough (−15% power)"
+      }
+    }
+  ]
+}
