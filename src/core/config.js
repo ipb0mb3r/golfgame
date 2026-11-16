@@ -47,7 +47,11 @@ export const PUTT = {
   rangeMax: 36,
   pinTickExtra: 0.3,  // the ⚑ mark aims this far past the cup
 };
-export const LANDING_SIM = { dt: 1 / 60, maxSteps: 900 }; // aim-ring / reach prediction (no wind, no curve)
+export const LANDING_SIM = {          // aim-ring / reach / ⚑ prediction (no wind, no curve)
+  dt: 1 / 60, maxSteps: 900,
+  pinMaxPower: 1.5,                  // S12: the ⚑ search looks up to this power (above 1 = out of reach)
+  pinIters: 24,                      // ...and halves the range this many times (1.5 / 2^24 ≈ 0.0000001)
+};
 
 // --- Ball (§4) ---
 export const BALL_R = 0.09;          // drawn a bit bigger than real so you can see it

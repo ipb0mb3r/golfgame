@@ -1,3 +1,5 @@
+import { AUTO_CLUB_REACH, FRINGE_PUTT_DIST } from './config.js';
+
 // Club table (DESIGN.md §3). carry = meters a full, straight shot carries on flat ground.
 export const CLUBS = {
   driver: { id: 'driver', name: 'Driver',  carry: 215, loft: 12 },
@@ -26,4 +28,26 @@ export function makeBag(ids = FULL_BAG) {
 export function lieFor(club, surfaceId, surfaces) {
   const s = surfaces[surfaceId], o = club.lieOverrides?.[surfaceId] ?? {};
   return { maxPower: o.maxPower ?? s.maxPower ?? 1, sweetScale: o.sweetScale ?? s.sweetScale ?? 1 };
+}
+
+// The auto-pick for the next shot (S13, designer rules, DESIGN §3 "Club auto-pick"). The player can
+// still change to any club in the bag. Returns an index into `bag`.
+//   lie   the surface the ball sits on
+//   dist  meters to the pin
+//   reach (i) => meters a full shot with bag[i] carries from here (the lie's cap and the hills included)
+// Rules, in order:
+//   1. Green, or fringe closer than FRINGE_PUTT_DIST: the putter.
+//   2. Bunker: the sand wedge (when the bag has one).
+//   3. Otherwise the shortest club whose reach is at least AUTO_CLUB_REACH × dist. The Driver only
+//      counts on the tee, so it is picked only from the tee and only when nothing shorter gets there.
+//      When nothing reaches, the longest club that counts.
+export function pickClub(bag, { lie, dist, reach }) {
+  const putter = bag.length - 1;
+  if (lie === 'green' || (lie === 'fringe' && dist < FRINGE_PUTT_DIST)) return putter;
+  if (lie === 'sand') { const sw = bag.findIndex(c => c.id === 'sw'); if (sw >= 0) return sw; }
+  const allowed = [];
+  for (let i = 0; i < putter; i++) if (bag[i].id !== 'driver' || lie === 'tee') allowed.push(i);
+  let pick = allowed[0] ?? putter;
+  for (const i of allowed) if (reach(i) >= dist * AUTO_CLUB_REACH) pick = i;
+  return pick;
 }

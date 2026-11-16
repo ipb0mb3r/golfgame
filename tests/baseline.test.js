@@ -13,6 +13,8 @@ import { applyTune } from '../src/core/tune.js';
 // lie window (S11 sweetScale 1) and the linear curve (S10 CURVE_SHAPE 1). Otherwise the new, gentler
 // swing would turn the old hook/slice inputs into different shots.
 applyTune('tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1,CURVE_SHAPE:1');
+// For the same reason each shot is hit with the club the old page used: the auto-pick is a swing
+// rule, and S13 changed it (no Driver off the fairway). baseline-v2 and tests/autopick.test.js check it.
 
 const base = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
@@ -21,20 +23,22 @@ export function replay(shot) {
   play.wind.x = play.wind.z = 0;
   play.ball.pos.x = shot.start.x; play.ball.pos.z = shot.start.z;
   play.prepare();
-  const club = play.club.name, aim = play.aim;
+  const picked = play.club.name, aim = play.aim;
+  play.clubIdx = play.bag.findIndex(c => c.name === shot.start.club);
+  const club = play.club.name;
   play.strokes = shot.start.strokes;
   play.aim += shot.aimOff;
   play.hit(shot.power, shot.acc);
   const ev = play.simulate();
   if (ev && ev.type === 'penalty') play.returnToLastPos();
   const { x, y, z } = play.ball.pos;
-  return { club, aim, ev, end: { x, y, z, strokes: play.strokes } };
+  return { club, picked, aim, ev, end: { x, y, z, strokes: play.strokes } };
 }
 
 for (const [i, shot] of base.shots.entries()) {
   test(`baseline #${i + 1} ${shot.scenario} (power ${shot.power}, acc ${shot.acc})`, t => {
     const r = replay(shot);
-    assert.equal(r.club, shot.start.club, 'auto-picked club');
+    assert.equal(r.club, shot.start.club, 'the old club is in the bag');
     assert.ok(Math.abs(r.aim - shot.start.aim) < 1e-3, 'auto aim at the pin');
     const off = e => Math.hypot(r.end.x - e.x, r.end.z - e.z);
     const d = off(shot.end);
