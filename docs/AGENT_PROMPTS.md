@@ -14,6 +14,9 @@
  Reviewers (parallel, read-only, fresh sessions) → reviews/<gate>-<role>.md
       ▼
  Owner marks findings → Dev fix pass (dev/Q*-fixes) → Tech Lead (gate B only, last)
+
+ After EVERY dev PR (not just at gates):
+ QA agent plays the PR build → reviews/qa-<branch>.md → Alexis playtests for feel → PM review → merge
       ▼
  PM turns the Tech Lead's proposals into new tasks in docs/TASKS.md
 ```
@@ -111,6 +114,32 @@ Role: Engine developer. Branch: dev/Q<gate>-fixes.
 Read every report in reviews/ for gate <A|B>. Apply ONLY findings marked APPROVED by the owner.
 For each one: fix it, add or adjust tests, and write "FIXED: <short note>" under the finding.
 Don't change gameplay unless the finding requires it. The baseline tests must still pass.
+```
+
+---
+
+## QA / playtester (after every dev PR, fresh session)
+```
+[SHARED HEADER]
+Role: QA / playtester. You do NOT modify game code.
+PR to test: <PR link>. Check out its branch and serve it locally (see AGENTS.md).
+1. Read the PR description and the task IDs it claims, and their acceptance criteria in docs/TASKS.md
+   and docs/DESIGN.md.
+2. Play it in a headless browser (e.g. Playwright). Use window.__golf for scripted shots and
+   take screenshots. Cover:
+   - a full play-through of every hole, keyboard and mouse/touch input
+   - each acceptance criterion of the claimed tasks
+   - edge cases: water and OB penalties, bunker lie, lip-out, max-stroke pick-up, restart,
+     ball resting on a steep slope, very short and very long putts
+   - viewports: desktop 1920x1080, phone portrait 390x844, phone landscape
+   - console errors and warnings, frame rate (note it if it drops below ~50 fps)
+   - regression: what worked on main still works on this branch
+3. Run node --test and report the results.
+4. Write reviews/qa-<branch-name>.md: a PASS/FAIL table per acceptance criterion, then bugs
+   (ID, severity, steps to reproduce, expected vs actual, screenshot), then "feel notes" for
+   the game designer (anything that looked odd, even if it isn't a bug).
+5. Commit only that file to branch review/qa-<branch-name> and open a PR.
+Keep it factual. Don't propose refactors (that's the reviewers' job).
 ```
 
 ---

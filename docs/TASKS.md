@@ -105,6 +105,12 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 
 ---
 
+## Merge checklist (every dev PR)
+1. QA agent report in `reviews/qa-<branch>.md`, with no High bugs open
+2. 🅿️ Alexis playtests for feel
+3. PM review against the plan
+4. 🅿️ Alexis merges
+
 ## Review gates
 Reviewers only read code and write reports in `reviews/`. You decide which findings get fixed.
 

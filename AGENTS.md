@@ -10,9 +10,10 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 ## Team roles
 | Role | Who | Writes code? |
 |---|---|---|
-| Owner | Alexis | Approves every merge to `main` |
-| Project manager | Claude (PM thread) | No. Maintains `docs/`, plans tasks and writes prompts |
+| Owner / Game designer | Alexis | No. Owns the game vision and feel, playtests before each merge, approves every merge to `main` |
+| Project manager | Claude (PM thread) | No. Maintains `docs/`, plans tasks, writes prompts, reviews PRs against the plan |
 | Engine developer | Dev agent | Yes. Works on `dev/*` branches |
+| QA / playtester | Independent agent, after each dev PR | No. Plays the PR build in a headless browser and writes a report in `reviews/` |
 | Reviewers (Security, Scalability, Maintainability, Compatibility, Testing) | Independent agents | No. They write reports in `reviews/` |
 | Tech lead | Independent agent, runs last | No. Writes a report in `reviews/` |
 
