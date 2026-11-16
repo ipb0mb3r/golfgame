@@ -61,7 +61,6 @@ export default {
     trail: 400,
     minimap: { w: 96, h: 160, mobileW: 78, mobileH: 130 },
   },
-  hud: { slope: false },
   intro: {
     subtitle: 'Par 3 · {yards} yards',
     steps: [

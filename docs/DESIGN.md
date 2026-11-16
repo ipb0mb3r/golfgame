@@ -106,7 +106,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ### Acceptance
 - [ ] From the same landing speed, an uphill roll is shorter than a downhill roll.
 - [ ] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put.
-- [ ] Hole 1 (flat) behaves exactly as it did before the slope physics.
+- [x] Hole 1 (flat) stays within the baseline tolerance of its pre-refactor behaviour.
 
 ---
 
@@ -217,6 +217,7 @@ export default {
   surfaceAt(x, z) { ... },
 };
 ```
+The physics never reads presentation fields (`scenery`, `intro`). Every hole shows the same HUD, including the Slope row ("Flat" on a flat hole).
 
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.

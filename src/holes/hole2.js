@@ -128,7 +128,6 @@ export default {
     trail: 600,
     minimap: { w: 60, h: 220, mobileW: 46, mobileH: 168 },
   },
-  hud: { slope: true },
   intro: {
     subtitle: 'Par 5 · {yards} yards · <i>prototype</i>',
     steps: [

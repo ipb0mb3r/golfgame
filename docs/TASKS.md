@@ -103,6 +103,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **X4** Wind
 - [ ] **X5** Shot result line (carry and total distance in yards)
 - [ ] **X6** Upgrade Three.js from 0.160 to the current release (pinned version + Subresource Integrity). Do this after Phase 0, in its own PR, and check that the baseline tests still pass
+- [ ] **X7** *(low priority)* The debug overlay (backtick) can overlap the HUD panel on short screens: move or shrink it
 
 ---
 

@@ -1,0 +1,556 @@
+{
+  "note": "Golden shots from the shared engine (Phase 0+), recorded by tools/record-baseline-v2.mjs. Must replay within the tolerance. Re-record only for an intentional feel change, and say why in the PR.",
+  "tolerance": 0.01,
+  "shots": [
+    {
+      "name": "h1 full then chip and putts #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4.152201338167507,
+        "y": 0,
+        "z": -157.78365085036867,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 full then chip and putts #2",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 4.1533,
+        "z": -157.8238
+      },
+      "strokes": 1,
+      "power": 0.5,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4.034271752166645,
+        "y": 0,
+        "z": -153.3019688862892,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 full then chip and putts #3",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 4.0351,
+        "z": -153.3324
+      },
+      "strokes": 2,
+      "power": 0.8,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4.005691405046146,
+        "y": 0,
+        "z": -152.21604638414487,
+        "event": "holed",
+        "strokes": 3,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 three-quarter tee shot #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.85,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 3.597549412087639,
+        "y": 0,
+        "z": -136.70687765932865,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 three-quarter tee shot #2",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 3.6101,
+        "z": -137.1854
+      },
+      "strokes": 1,
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 3.9736921073983194,
+        "y": 0,
+        "z": -151.00040803863337,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 hook #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0.06,
+      "aimOff": 0,
+      "end": {
+        "x": -9.984731381022314,
+        "y": 0,
+        "z": -150.46992984567657,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 slice #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": -0.06,
+      "aimOff": 0,
+      "end": {
+        "x": 18.192374744737535,
+        "y": 0,
+        "z": -150.87731810560567,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 pulled into the pond #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.6,
+      "acc": 0,
+      "aimOff": -0.22,
+      "end": {
+        "x": 0,
+        "y": 0,
+        "z": 0,
+        "event": "penalty",
+        "strokes": 2,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 forced max slice #1",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": -0.2,
+      "aimOff": 0,
+      "end": {
+        "x": 41.70875216053816,
+        "y": 0,
+        "z": -136.4709582316079,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 driver, then 3 wood #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 12.692602904496209,
+        "y": -0.23008576791447247,
+        "z": -285.57388198712965,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 driver, then 3 wood #2",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 12.6966,
+        "z": -285.5399
+      },
+      "strokes": 1,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 26.66474004519247,
+        "y": 3.0849489746021836,
+        "z": -456.9800215047713,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "5i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 short drive into the hill #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 12.053551413008254,
+        "y": 1.935441896673839,
+        "z": -208.09167805170804,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 hook off the tee #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0.07,
+      "aimOff": 0,
+      "end": {
+        "x": -8.022639553152244,
+        "y": -1.1281945668536606,
+        "z": -258.67484973547636,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 approach from the lay-up zone #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 18,
+        "z": -330
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 24.814742274989488,
+        "y": 3.040356838345634,
+        "z": -438.4713326111777,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "9i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 approach from the lay-up zone #2",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 24.8158,
+        "z": -438.4707
+      },
+      "strokes": 1,
+      "power": 0.8,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 25.866782359406415,
+        "y": 3.8388974472399546,
+        "z": -447.83062524787545,
+        "event": "holed",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 uphill putt to the top tier #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 20,
+        "z": -430
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 26.040341395631554,
+        "y": 3.840988247512219,
+        "z": -447.78886959953047,
+        "event": "holed",
+        "strokes": 1,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 downhill putt #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 28,
+        "z": -452
+      },
+      "strokes": 0,
+      "power": 0.35,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 26.628016161349105,
+        "y": 3.8923918764802488,
+        "z": -449.53289981086675,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 side-hill putt (breaks) #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 14,
+        "z": -446
+      },
+      "strokes": 0,
+      "power": 0.7,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 27.05296652098558,
+        "y": 3.8303819529742884,
+        "z": -446.7095249444895,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h2 left toward the pond #1",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 4,
+        "z": -250
+      },
+      "strokes": 0,
+      "power": 0.5,
+      "acc": 0,
+      "aimOff": -0.5,
+      "end": {
+        "x": -35.74664651165735,
+        "y": 1.7904315585381014,
+        "z": -346.6934316408689,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "h1 tee shot in seeded wind",
+      "hole": "pl-01",
+      "seed": 11,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 3.771145917218348,
+        "y": 0,
+        "z": -152.38124719446657,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": -0.21201355123220217,
+          "z": 2.906984162498081
+        }
+      }
+    },
+    {
+      "name": "h2 drive in seeded wind",
+      "hole": "pl-02",
+      "seed": 23,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": -0.03,
+      "aimOff": 0,
+      "end": {
+        "x": 20.162543949353235,
+        "y": 0.33773581472068687,
+        "z": -218.56600062738585,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0.20671546312334926,
+          "z": -0.31373680156995626
+        }
+      }
+    },
+    {
+      "name": "h2 approach in seeded wind",
+      "hole": "pl-02",
+      "seed": 37,
+      "start": {
+        "x": 18,
+        "z": -330
+      },
+      "strokes": 1,
+      "power": 0.9,
+      "acc": 0.02,
+      "aimOff": 0,
+      "end": {
+        "x": 24.628780592476755,
+        "y": 2.92463649191248,
+        "z": -434.3964863126172,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": -0.561043778558118,
+          "z": 5.455230346321126
+        }
+      }
+    }
+  ]
+}

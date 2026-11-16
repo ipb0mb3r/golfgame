@@ -19,7 +19,6 @@ export function setupHolePage(hole, tee, cup) {
   const yards = yd(dist2D(tee, cup));
   document.title = `Pocket Links: Hole ${hole.number}`;
   $('holeTitle').textContent = `HOLE ${hole.number} · PAR ${hole.par}`;
-  $('slopeRow').style.display = hole.hud.slope ? '' : 'none';
   const it = hole.intro;
   $('introSub').innerHTML = `Hole ${hole.number} · ` + it.subtitle.replace('{yards}', yards);
   $('introSteps').innerHTML = it.steps.map(s => `<li>${s}</li>`).join('');

@@ -30,13 +30,20 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 |---|---|
 | Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (ES modules don't load from `file://`) |
 | Run tests | `node --test` (from the repo root; finds every `tests/*.test.js`) |
-| Check the baseline in a browser | `node tools/baseline.mjs check` (dev only, needs Playwright) |
+| Check the old-pages baseline in a browser | `node tools/baseline.mjs check` (dev/QA only, needs Playwright, see Tools) |
+| Re-record baseline v2 | `node tools/record-baseline-v2.mjs` (only for an intentional feel change, see coding rule 8) |
 
 ## Current state (Nov 2026)
 - One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`.
 - Rules in `src/core/` (pure, tested), holes as data in `src/holes/`, Three.js and the page in `src/game/`.
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
-- Tests: `node --test`. Recorded baseline shots in `tests/fixtures/baseline.json`.
+- Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
+
+## Tools (dev and QA only, never part of the game)
+- **`tools/baseline.mjs`** plays scripted shots in a headless Chromium through `window.__golf.testHit` and compares where each ball stops. `record` captured `tests/fixtures/baseline.json` from the pre-refactor pages (F0); `check` replays those shots against today's `index.html` and prints a table (`--fps 30|60|144`, `--pages old|new`). The page clock is replaced by a fixed frame time, so results don't depend on machine speed.
+- **Install Playwright** (once, outside the repo or with `--no-save`): `npm install --no-save playwright && npx playwright install chromium`. When unpkg is unreachable, point the tool at a local copy of Three.js with `THREE_MODULE=/path/to/three.module.js` (e.g. from `npm pack three@0.160.0`).
+- **The QA agent uses it** to check a PR build in a real browser. The game and `node --test` never need Playwright; keep it out of `package.json` dependencies and out of `src/`.
+- **`tools/record-baseline-v2.mjs`** (plain Node) writes `tests/fixtures/baseline-v2.json` from the current engine. See coding rule 8.
 
 ## Branch and PR rules
 - `main` must always be playable, because GitHub Pages serves it. **Nobody pushes directly to `main`.**
@@ -55,3 +62,4 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 5. Run all tests before and after your change. Don't open a PR with failing tests.
 6. Stay within your task. List any unrelated problems you find at the end of the PR instead of fixing them.
 7. If the code and `docs/DESIGN.md` disagree, ask in the PR. Don't silently change either one.
+8. **Baselines.** `tests/fixtures/baseline.json` (old pages → engine, 0.5 m tolerance) is frozen. `tests/fixtures/baseline-v2.json` is recorded from the engine itself and must replay within **0.01 m**. A PR that intentionally changes the feel re-records v2 (`node tools/record-baseline-v2.mjs`) and explains in the PR description what changed and why. A PR that isn't meant to change the feel must pass v2 untouched.

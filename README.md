@@ -28,7 +28,7 @@ The intro and score cards link from one hole to the other. Old links to `hole2.h
 2. Second click sets **power**. The ⚑ mark on the meter is roughly the power needed to reach the pin.
 3. The marker swings back. Third click sets **accuracy**: stop it on the green line for a straight shot. Too early curves the ball left (hook), too late curves it right (slice).
 
-Wind (top right) pushes the ball while it is in the air. The rough and bunkers cost you power. Water and out of bounds cost a penalty stroke. On hole 2 the ball follows the hills, and the **Slope** readout (top left) tells you if you are hitting uphill or downhill and which way a putt breaks.
+Wind (top right) pushes the ball while it is in the air. The rough and bunkers cost you power. Water and out of bounds cost a penalty stroke. On hole 2 the ball follows the hills. The **Slope** readout (top left) tells you if you are hitting uphill or downhill and which way a putt breaks.
 
 ## Run it on your own computer
 
@@ -50,7 +50,7 @@ You need [Node.js](https://nodejs.org/) 20 or newer. Nothing to install:
 node --test
 ```
 
-This runs the unit tests for the game rules in `src/core/` and replays the recorded baseline shots (`tests/fixtures/baseline.json`) to check that both holes still play the same.
+This runs the unit tests for the game rules in `src/core/` and replays the recorded baseline shots: `tests/fixtures/baseline.json` (recorded from the old pages, must match within 0.5 m) and `tests/fixtures/baseline-v2.json` (recorded from the current engine, must match within 0.01 m).
 
 `tools/baseline.mjs` re-records or re-checks those shots in a real (headless) browser. It is only for developers and needs [Playwright](https://playwright.dev/): `node tools/baseline.mjs check`.
 
@@ -71,7 +71,7 @@ src/core/             the game rules in plain JavaScript (no Three.js, no page c
 src/holes/            one file per hole (layout, hills, surfaces, scenery) and sets.js
 src/game/             the Three.js scene, camera, HUD, input and debug overlay
 tests/                node --test files and the baseline shots
-tools/baseline.mjs    records / checks the baseline shots in a browser
+tools/                baseline.mjs checks the old-pages baseline in a browser; record-baseline-v2.mjs re-records v2
 ```
 
 **Adding a hole** means adding a file in `src/holes/` (copy the shape of `hole1.js` or `hole2.js`) and one line in `src/holes/sets.js`. The engine itself is never copied. See `docs/DESIGN.md` for the full plan.
