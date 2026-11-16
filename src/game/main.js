@@ -30,6 +30,8 @@ const { hole, unknown: unknownHole } = scenario ? { hole: getHole(scenario.hole)
 // The seed drives wind and lip-outs. ?seed=<n> (0 included) replays the same wind; a scenario has its
 // own fixed seed; otherwise it changes each visit.
 const seed = parseSeed(params.get('seed')) ?? scenario?.seed ?? (Date.now() >>> 0);
+// A scenario restarts from this seed on every try: first load, intro card and "Play again" (F1)
+const start = scenario ? { ...scenario, seed } : null;
 
 const play = createHolePlay(hole, { seed });
 const { terrain, cup, tee, ball, wind } = play;
@@ -77,7 +79,7 @@ const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putte
 
 function resetGame() {
   timers.forEach(clearTimeout); timers = [];
-  play.reset(scenario);
+  play.reset(start);
   hud.hideResult();
   prepareShot(true);
 }
@@ -264,7 +266,7 @@ function debugText(fps) {
 }
 
 // Start behind the tee looking down the hole, with the intro card on top
-play.reset(scenario); prepareShot(true); state = 'intro'; updateHud();
+play.reset(start); prepareShot(true); state = 'intro'; updateHud();
 requestAnimationFrame(frame);
 
 // Handy for testing in the browser console and for tools/baseline.mjs

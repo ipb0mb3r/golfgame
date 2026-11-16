@@ -42,8 +42,10 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   }
 
   // Back to the start of the hole. `start` (optional, from a designer scenario, X8) puts the ball
-  // somewhere else: { ball: { x, z }, strokes, wind: { x, z } }.
+  // somewhere else: { ball: { x, z }, strokes, wind: { x, z }, seed }. With a `seed`, the random
+  // numbers (wind, lip-outs) restart from it, so every retry of a scenario is identical (F1).
   function reset(start = null) {
+    if (start?.seed != null) rng.reseed(start.seed);
     p.strokes = start?.strokes ?? 0;
     copy(ball.pos, tee);
     if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }

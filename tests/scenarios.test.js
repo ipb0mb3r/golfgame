@@ -33,3 +33,32 @@ test('resolveScenario: case-insensitive, unknown ids are reported', () => {
   assert.deepEqual(resolveScenario(null), { scenario: null, unknown: false });
   for (const bad of ['nope', 'constructor', '__proto__', 'toString']) assert.deepEqual(resolveScenario(bad), { scenario: null, unknown: true }, bad);
 });
+
+test('F1: every retry of a scenario uses the same seed (first load, intro card, Play again)', () => {
+  for (const [id, sc] of Object.entries(SCENARIOS)) {
+    const hole = HOLES[sc.hole];
+    // what the page does: one play object, reset at load, again on "Tee off" and on every "Play again"
+    const play = createHolePlay(hole, { seed: sc.seed });
+    const runs = [];
+    for (let attempt = 0; attempt < 4; attempt++) {
+      play.reset(sc);
+      const wind = { x: play.wind.x, z: play.wind.z };
+      play.hit(0.6, 0.12);                    // a curved shot, so wind and RNG matter
+      const ev = play.simulate();
+      runs.push({ wind, ev: ev.type, pos: { ...play.ball.pos }, strokes: play.strokes });
+    }
+    for (const r of runs.slice(1)) assert.deepEqual(r, runs[0], `${id}: retry differs`);
+    // and the same as a fresh page load
+    const fresh = createHolePlay(hole, { seed: sc.seed }); fresh.reset(sc);
+    assert.deepEqual({ x: fresh.wind.x, z: fresh.wind.z }, runs[0].wind, `${id}: fresh load`);
+  }
+});
+
+test('F1: random numbers used during a try (lip-outs, wind) do not change the next try', () => {
+  const sc = SCENARIOS['h2-side-slope'];          // seeded wind (no fixed wind)
+  const play = createHolePlay(HOLES[sc.hole], { seed: sc.seed });
+  play.reset(sc); const first = { ...play.wind };
+  for (let i = 0; i < 3; i++) play.newWind();       // draws from the same RNG, like a lip-out does
+  play.reset(sc);
+  assert.deepEqual({ ...play.wind }, first);
+});
