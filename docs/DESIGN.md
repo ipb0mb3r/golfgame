@@ -59,6 +59,28 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 | **Start only**: no click after the first one, marker reaches `METER_MIN` | **Swing cancelled**, back to aim, nothing happens | **No** | "Swing cancelled" |
 
 Tunables (config.js): `POWER_GRACE = 0.15` s, `NO_ACC_ERR`, `MISSED_POWER_FRACTION = 0.15`.
+
+### Lie: power cap and accuracy window ❌ (task S11, decided 2026-11-16 by the game designer)
+**Principle:** the lie changes the swing itself, and the player can **see** it on the meter before swinging. What you see on the meter is what you get.
+
+- Each surface has `maxPower` (power cap, 0–1) and `sweetScale` (multiplies `SWEET`).
+- **The cap is the top of the meter.** The part above the cap is **grayed out**. The marker turns around at the cap, and the S8 rules (grace window, "MAX!", missed clicks) apply at the cap instead of at 1.
+- **This replaces the hidden `lie` power multiplier.** Power % maps directly to the club's distance, so the ⚑ mark stays honest.
+- **The accuracy zone is drawn at its real width** (`SWEET × sweetScale`) on the meter.
+- HUD lie line: e.g. "Rough · max 85% · harder timing".
+- Clubs can override per surface (the sand wedge in a bunker).
+
+| Surface | `maxPower` | `sweetScale` |
+|---|---|---|
+| Tee | 1.00 | 1.2 |
+| Fairway | 1.00 | 1.0 |
+| Fringe | 0.95 | 1.0 |
+| Rough | 0.85 | 0.7 |
+| Bunker | 0.60 | 0.5 |
+| Bunker + sand wedge | 0.85 | 0.7 |
+| Green (putter) | 1.00 | 1.5 |
+
+Starting values. The designer tunes them with `?tune=` (X8). Later hooks: rain (W2) and slope lie (T6) may reduce `sweetScale` through the same function.
 The overpower zone (S9) is a separate, later idea and isn't part of S8.
 
 ### Tunables (today)
@@ -86,7 +108,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - **Rest:** on a slope, a stopped ball stays put if the slope force is below `decel × STATIC`. Otherwise it creeps (below `CREEP` m/s, friction blends down so the ball trickles instead of stopping dead).
 - **Cup:** the ball drops if it's within `CUP_R` and slower than 3.2 m/s. A faster ball **lips out** (it's deflected and slowed). A ball landing on the fly within `CUP_R × 1.4` goes straight in.
 - **Penalties:** water or out of bounds gives +1 stroke and the ball goes back to the last position.
-- **Lie:** the surface the ball rests on multiplies the next shot's power (`lie`). The sand wedge ignores the bunker penalty.
+- **Lie:** today the surface multiplies the next shot's power (`lie`), and the sand wedge has its own bunker value. 🟡 **S11 replaces this** with a visible power cap and accuracy window (see §3 "Lie").
 - **Timestep:** a fixed-step accumulator: only whole 1/240 s steps, the remainder waits for the next frame, so a shot ends in the same place at any frame rate. The flight is sped up ×1.35 for game feel (`FLIGHT_SPEEDUP`).
 
 ### Known problems fixed in Phase 0
