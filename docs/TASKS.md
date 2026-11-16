@@ -102,8 +102,15 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **X3** Dev hotkeys: R = reset to tee, T = teleport the ball to the clicked point (debug only)
 - [x] **X4** Wind
 - [ ] **X5** Shot result line (carry and total distance in yards)
+- [ ] **X6** Upgrade Three.js from 0.160 to the current release (pinned version + Subresource Integrity). Do this after Phase 0, in its own PR, and check that the baseline tests still pass
 
 ---
+
+## Merge checklist (every dev PR)
+1. QA agent report in `reviews/qa-<branch>.md`, with no High bugs open
+2. 🅿️ Alexis playtests for feel
+3. PM review against the plan
+4. 🅿️ Alexis merges
 
 ## Review gates
 Reviewers only read code and write reports in `reviews/`. You decide which findings get fixed.
