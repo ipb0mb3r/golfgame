@@ -47,6 +47,10 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **S6** Unit tests → done in F9
 - [ ] **S7** Per-hole bag (`bag` field) instead of separate club arrays → done in F7
 
+**Phase 1 follow-ups (designer decisions)**
+- [ ] **S8** Missed clicks (DESIGN §3 "Missed clicks"): power grace window + "MAX!" flash, red "No power" meter, mini shot when power is missed, huge slice when accuracy is missed, cancel with no stroke when only the start click happens. Gameplay change → own branch `dev/S8-missed-clicks`, re-record baseline-v2 and explain
+- [ ] **S9** *(later, design feature)* Overpower zone past 100%: more distance, smaller impact zone. Needs designer playtesting first
+
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
 - [x] **P2** Flight: gravity, wind, curve
@@ -73,6 +77,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **G5** Test green with breaks (hole 2: two levels, ridge, hump)
 - [ ] **G6** Tests → F9
 - [ ] **G7** *(nice)* Putt preview: show the first ~30% of the predicted line, with no break shown (keeps the skill)
+- [ ] **G8** Fix lip-outs (QA B6): after a lip-out the ball is still inside `CUP_R` on the next step and gets captured, so 498 of 499 lip-outs drop in. Push the ball outside the capture radius (or ignore capture for a short time after `lippedOut`). Changes gameplay → re-record baseline-v2 and explain why. Test: a ball faster than the capture speed over the cup stays out at realistic speeds (3.5–5 m/s), not just 8 m/s
 
 ## Phase 5: Rain
 - [ ] **W1** `weather` field on holes. A hole set can also override it (same holes, rainy day)
@@ -93,7 +98,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **M2** Hole set select built from `sets.js` (no hardcoded list). Replaces the F8 `?hole=` switcher, but keep `?hole=` as a dev shortcut
 - [ ] **M3** Pause menu (Esc / button): Resume, Restart Hole, Quit to Menu
 - [ ] **M4** Settings: debug overlay, putt grid, saved in localStorage (try/catch)
-- [ ] **M5** Works on mobile (touch-sized buttons, portrait and landscape)
+- [ ] **M5** Works on mobile (touch-sized buttons, portrait and landscape). Known (QA B7): in phone landscape (844x390) the intro card is taller than the screen and cuts off the title and Tee off button. Cards must fit or scroll; also X7 (debug overlay vs HUD)
 - [ ] **M6** Tests: the menu → play → quit → play cycle leaves no leftover state
 
 ## Phase 8: Small polish (only if useful for testing)
