@@ -16,6 +16,6 @@ export const SETS = [
 export function resolveHole(id) {
   const key = (id ?? '').trim().toLowerCase();
   if (!key) return { hole: HOLES[DEFAULT_HOLE], unknown: false };
-  return HOLES[key] ? { hole: HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
+  return Object.hasOwn(HOLES, key) ? { hole: HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
 }
 export const getHole = id => resolveHole(id).hole;

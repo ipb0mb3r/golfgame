@@ -120,6 +120,8 @@ test('?hole= ids are case-insensitive; an unknown id falls back to hole 1 and sa
   assert.deepEqual(resolveHole(null), { hole: hole1, unknown: false });
   assert.deepEqual(resolveHole(''), { hole: hole1, unknown: false });
   assert.deepEqual(resolveHole('pl-99'), { hole: hole1, unknown: true });
+  assert.deepEqual(resolveHole('constructor'), { hole: hole1, unknown: true });
+  assert.deepEqual(resolveHole('__proto__'), { hole: hole1, unknown: true });
 });
 
 test('?seed=: 0 is a valid seed; missing or junk gives null', async () => {
