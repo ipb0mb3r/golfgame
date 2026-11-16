@@ -1,6 +1,8 @@
 # QA report: PR #6 "Phase 0: shared engine, holes as data, tests" (`dev/F-engine-refactor`)
 
 **Commit tested:** `927f1940a9da115a89a83f6146aa67c1d49f208b` ("PM review: slope row on every hole, baseline v2, docs follow-ups"). This is the branch head after the PM follow-ups; nothing newer was on the remote when I finished.
+> **Screenshots** were removed from this branch to keep the repo small. They're still viewable in commit `72d906f` of PR #8.
+
 **Compared against:** `main` at `a5dcc00` (old `index.html` + `hole2.html`).
 **Date:** 2026-11-16 · **Role:** QA / playtester (no game code changed)
 
