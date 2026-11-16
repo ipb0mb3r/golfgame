@@ -94,7 +94,8 @@ function prepareShot(snapCamera = false) {
 // The three-click swing
 function onSwingInput() {
   if (!aiming()) return;
-  if (state === 'aim') input.releaseAim();
+  // The top of the meter is the lie's power cap for this club (S11)
+  if (state === 'aim') { input.releaseAim(); meter.cap = play.lieOf().maxPower; }
   const result = pressMeter(meter);
   if (result) endSwing(result);
   else state = meter.phase;

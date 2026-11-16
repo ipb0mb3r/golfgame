@@ -31,10 +31,13 @@ const mode = args[0] || 'check';
 const fpsArg = Number(args[args.indexOf('--fps') + 1]) || 60;
 const pagesArg = args.includes('--pages') ? args[args.indexOf('--pages') + 1] : (mode === 'record' ? 'old' : 'new');
 
+const NEUTRAL_LIE = 'tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1';
 // Which page plays which hole. "old" = the pre-refactor files, "new" = the single index.html.
 const PAGES = {
   old: { 'pl-01': 'index.html', 'pl-02': 'hole2.html' },
-  new: { 'pl-01': 'index.html?hole=pl-01', 'pl-02': 'index.html?hole=pl-02' },
+  // The shots were recorded before S11 gave each lie its own accuracy window; replay them with a
+  // neutral window so they keep checking the physics (same as tests/baseline.test.js).
+  new: { 'pl-01': `index.html?hole=pl-01&tune=${NEUTRAL_LIE}`, 'pl-02': `index.html?hole=pl-02&tune=${NEUTRAL_LIE}` },
 };
 
 // Scripted shots. Each scenario loads the hole fresh, optionally drops the ball somewhere

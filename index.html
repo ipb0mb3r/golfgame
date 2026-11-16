@@ -43,6 +43,9 @@
     background: linear-gradient(90deg, #2a3b55 0%, #2a3b55 16.67%, #1d2a1f 16.67%); border: 2px solid rgba(255,255,255,.75); }
   #meterFill { position: absolute; top: 0; bottom: 0; left: 16.67%; width: 0; background: linear-gradient(90deg, #ffb13b, #ff5a36); }
   #sweet { position: absolute; top: 0; bottom: 0; left: calc(16.67% - 4.17%); width: 8.33%; background: rgba(87,224,122,.55); border-left: 2px solid var(--good); border-right: 2px solid var(--good); }
+  /* S11: above the lie's power cap the meter is out of reach */
+  #capShade { position: absolute; top: 0; bottom: 0; right: 0; display: none;
+    background: repeating-linear-gradient(135deg, rgba(150,150,150,.75) 0 6px, rgba(110,110,110,.75) 6px 12px); }
   #pinTick { position: absolute; top: -2px; bottom: -2px; width: 3px; background: #fff; box-shadow: 0 0 4px #000; }
   #pinTick::after { content: "⚑"; position: absolute; top: 3px; left: 5px; font-size: 13px; color: #fff; text-shadow: 0 0 3px #000; }
   #powerMark { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; display: none; }
@@ -133,6 +136,7 @@
     <div id="meterBar">
       <div id="meterFill"></div>
       <div id="sweet"></div>
+      <div id="capShade"></div>
       <div id="pinTick"></div>
       <div id="powerMark"></div>
       <div id="marker"></div>

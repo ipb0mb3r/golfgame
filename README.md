@@ -30,7 +30,7 @@ The intro and score cards link from one hole to the other. Old links to `hole2.h
 
 Missed a click? If the meter reaches the top, you still get full power by clicking within a moment ("MAX!"). Miss that and the meter turns red ("NO POWER"): a click then is only a mini shot, and no click cancels the swing without costing a stroke. Forgetting the third click is a big slice ("Shanked!").
 
-Wind (top right) pushes the ball while it is in the air. The rough and bunkers cost you power. Water and out of bounds cost a penalty stroke. On hole 2 the ball follows the hills. The **Slope** readout (top left) tells you if you are hitting uphill or downhill and which way a putt breaks.
+Wind (top right) pushes the ball while it is in the air. The rough and bunkers cap your power (the gray part of the meter is out of reach) and make the green timing zone narrower; the Lie line says so, e.g. "Rough · max 85% · harder timing". Water and out of bounds cost a penalty stroke. On hole 2 the ball follows the hills. The **Slope** readout (top left) tells you if you are hitting uphill or downhill and which way a putt breaks.
 
 ## Run it on your own computer
 
@@ -58,7 +58,7 @@ Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind ev
 | [`?scenario=h2-green-step`](https://ipb0mb3r.github.io/golfgame/?scenario=h2-green-step) | Hole 2, putt up the step between the green levels |
 | [`?scenario=h2-side-slope`](https://ipb0mb3r.github.io/golfgame/?scenario=h2-side-slope) | Hole 2, fairway side slope toward the pond |
 
-**Tune links** change a feel setting for that visit only, e.g. [`?tune=SWEET:0.08`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.08) (a wider perfect zone) or [`?tune=SWEET:0.06,CURVE_SHAPE:2`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.06,CURVE_SHAPE:2) (small misses curve gently). A pink **TUNED** badge above the meter shows a tuned game is running. Only these names work, numbers only, and each is clamped to a safe range (see `TUNABLES` in `src/core/config.js`): `SWEET`, `CURVE_SHAPE`, `CURVE_K`, `METER_SPEED`, `POWER_GRACE`, `NO_ACC_ERR`, `MISSED_POWER_FRACTION`, `CUP_CAPTURE_SPEED`, `WIND_K`, `FLIGHT_SPEEDUP`. Scenarios and tunes combine: `?scenario=h2-green-step&tune=SWEET:0.04`.
+**Tune links** change a feel setting for that visit only, e.g. [`?tune=SWEET:0.08`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.08) (a wider perfect zone) or [`?tune=SWEET:0.06,CURVE_SHAPE:2`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.06,CURVE_SHAPE:2) (small misses curve gently). A pink **TUNED** badge above the meter shows a tuned game is running. Only these names work, numbers only, and each is clamped to a safe range (see `TUNABLES` in `src/core/config.js`): `SWEET`, `CURVE_SHAPE`, `CURVE_K`, `METER_SPEED`, `POWER_GRACE`, `NO_ACC_ERR`, `MISSED_POWER_FRACTION`, `CUP_CAPTURE_SPEED`, `WIND_K`, `FLIGHT_SPEEDUP`. The lie values work too: `<surface>.maxPower` and `<surface>.sweetScale` for `tee`, `fairway`, `fringe`, `rough`, `sand`, `green`, plus the sand wedge's bunker values `sw.sand.maxPower` and `sw.sand.sweetScale`, e.g. [`?tune=rough.maxPower:0.8,sand.sweetScale:0.6`](https://ipb0mb3r.github.io/golfgame/?scenario=h1-bunker&tune=rough.maxPower:0.8,sand.sweetScale:0.6). Scenarios and tunes combine: `?scenario=h2-green-step&tune=SWEET:0.04`.
 
 ## Run the tests
 

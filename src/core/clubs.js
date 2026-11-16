@@ -6,7 +6,8 @@ export const CLUBS = {
   '7i':   { id: '7i',     name: '7 Iron',  carry: 150, loft: 26 },
   '9i':   { id: '9i',     name: '9 Iron',  carry: 125, loft: 32 },
   pw:     { id: 'pw',     name: 'P Wedge', carry: 105, loft: 38 },
-  sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46, sandLie: 0.85 }, // the sand wedge ignores most of the bunker penalty
+  sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46,
+            lieOverrides: { sand: { maxPower: 0.85, sweetScale: 0.7 } } }, // the sand wedge is made for bunkers
   putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true },
 };
 export const FULL_BAG = ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'];
@@ -18,9 +19,9 @@ export function makeBag(ids = FULL_BAG) {
   return bag;
 }
 
-// Power multiplier for hitting this club from this surface.
-export function lieFactor(club, surfaceId, surfaces) {
-  if (club.putter) return 1;
-  if (surfaceId === 'sand' && club.sandLie) return club.sandLie;
-  return surfaces[surfaceId].lie;
+// The lie for hitting this club from this surface (S11): { maxPower, sweetScale }.
+// The surface's values, unless the club overrides them for that surface (the sand wedge in a bunker).
+export function lieFor(club, surfaceId, surfaces) {
+  const s = surfaces[surfaceId], o = club.lieOverrides?.[surfaceId] ?? {};
+  return { maxPower: o.maxPower ?? s.maxPower ?? 1, sweetScale: o.sweetScale ?? s.sweetScale ?? 1 };
 }

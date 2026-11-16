@@ -6,6 +6,14 @@ import { readFileSync } from 'node:fs';
 import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 
+import { applyTune } from '../src/core/tune.js';
+
+// These shots were recorded from the old pages, before S11 gave each lie its own accuracy window.
+// They check the physics (flight, bounce, roll), so they replay with a neutral window (sweetScale 1)
+// on the surfaces they start from; otherwise the tee's wider window turns the ±0.06 hook/slice shots
+// straight. The swing-feel changes themselves are covered by baseline v2 and the swing tests.
+applyTune('tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1');
+
 const base = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
 export function replay(shot) {
