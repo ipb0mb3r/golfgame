@@ -46,6 +46,8 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **S5** Club table, auto-pick plus manual change
 - [ ] **S6** Unit tests → done in F9
 - [ ] **S7** Per-hole bag (`bag` field) instead of separate club arrays → done in F7
+- [ ] **S8** Missed clicks (DESIGN §3 "Missed clicks"): power grace window + "MAX!" flash, red "No power" meter, mini shot when power is missed, huge slice when accuracy is missed, cancel with no stroke when only the start click happens. Gameplay change → own branch `dev/S8-missed-clicks`, re-record baseline-v2 and explain
+- [ ] **S9** *(later, design feature)* Overpower zone past 100%: more distance, smaller impact zone. Needs designer playtesting first
 
 ## Phase 2: Ball physics
 - [x] **P1** Ball states

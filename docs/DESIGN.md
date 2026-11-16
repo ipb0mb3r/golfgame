@@ -37,15 +37,29 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 | Click | Action | Result |
 |---|---|---|
 | 1 | Start the swing | The meter fills from 0 toward 1 |
-| 2 | Set the power | Locks the power. The marker reverses toward the impact zone. If the meter reaches 1, the power is set to 1 automatically |
+| 2 | Set the power | Locks the power. The marker reverses toward the impact zone. See "Missed clicks" for what happens when the meter reaches 1 |
 | 3 | Set the accuracy | The marker's distance from the impact zone at 0 sets the hook or slice |
 
 - Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. The curve is proportional to the error.
-- If the marker reaches `METER_MIN` without a third click, the shot is a forced maximum slice.
+- If the marker reaches `METER_MIN` without a third click, the shot is a forced slice. 🟡 Being made much bigger in S8 (see "Missed clicks").
 - Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S.
 - A **⚑ mark** on the meter shows roughly the power needed to reach the pin, adjusted for elevation.
 - The club is picked automatically each shot (the one that reaches the pin) and the player can change it. The putter is used on the green.
 - The meter runs in real time (`meterDt` capped at 0.1s) so slow devices don't make it easier.
+
+### Missed clicks ❌ (task S8, decided 2026-11-16 by the game designer)
+**Principle:** every click has one clear meaning, and doing all 3 clicks is always the best outcome. The player must always be able to see what the next click will do.
+
+| What the player does | Result | Stroke? | Feedback |
+|---|---|---|---|
+| All 3 clicks | Normal shot | Yes | As today |
+| Power click within `POWER_GRACE` (≈0.15 s) after the meter reaches 1 | Counts as power = 1, then a normal accuracy click | Yes | "MAX!" flash when the meter reaches 1 |
+| Start + power, **no 3rd click** (marker reaches `METER_MIN`) | **Huge slice**, curve error `NO_ACC_ERR` (≈3× today's forced slice) | Yes | "Shanked!" |
+| Start, **no power click** (grace window passed), then a click on the way back | **Mini shot**: power = `MISSED_POWER_FRACTION` (≈0.15), accuracy taken from where the click lands | Yes | Meter turns red with "No power" after the grace window, then "Topped!" |
+| **Start only**: no click after the first one, marker reaches `METER_MIN` | **Swing cancelled**, back to aim, nothing happens | **No** | "Swing cancelled" |
+
+Tunables (config.js): `POWER_GRACE = 0.15` s, `NO_ACC_ERR`, `MISSED_POWER_FRACTION = 0.15`.
+The overpower zone (S9) is a separate, later idea and isn't part of S8.
 
 ### Tunables (today)
 `METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.024`, `CURVE_K = 28`.
@@ -55,6 +69,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - [ ] The same (power, acc, club, lie) always gives the same launch parameters (unit test).
 - [ ] Early and late timings give opposite curve signs (unit test).
 - [ ] Power 0 and power 1 are both handled without errors.
+- [ ] S8: each row of the "Missed clicks" table gives its result (unit tests on the meter state machine with scripted click times), and a cancelled swing doesn't change the stroke count.
 
 ---
 
