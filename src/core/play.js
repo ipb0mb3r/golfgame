@@ -31,7 +31,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
-    reset, newWind, prepare, hit, advance, step, returnToLastPos, landingPoint, clubReach, puttPlaysLike,
+    reset, newWind, prepare, hit, swing, advance, step, returnToLastPos, landingPoint, clubReach, puttPlaysLike,
     lieFactorFor, distToCup, slope, simulate,
   };
 
@@ -41,10 +41,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     set(wind, Math.sin(a) * s, 0, -Math.cos(a) * s);
   }
 
-  function reset() {
-    p.strokes = 0;
+  // Back to the start of the hole. `start` (optional, from a designer scenario, X8) puts the ball
+  // somewhere else: { ball: { x, z }, strokes, wind: { x, z } }.
+  function reset(start = null) {
+    p.strokes = start?.strokes ?? 0;
     copy(ball.pos, tee);
+    if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }
     newWind();
+    if (start?.wind) set(wind, start.wind.x, 0, start.wind.z);
     prepare();
   }
 
@@ -83,13 +87,20 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     }
   }
 
-  // Hit the ball. power 0..1, acc = meter value at the 3rd click. Returns the resolved shot.
-  function hit(power, accuracy) {
+  // A finished swing from the meter: hit it, or for a cancelled swing do nothing (no stroke).
+  // Returns the resolved shot, or null when cancelled.
+  function swing(result) {
+    if (!result || result.outcome === 'cancel') return null;
+    return hit(result.power, result.acc, result.outcome);
+  }
+
+  // Hit the ball. power 0..1, acc = meter value at the 3rd click, outcome from the meter. Returns the resolved shot.
+  function hit(power, accuracy, outcome = 'normal') {
     p.strokes++;
     copy(lastPos, ball.pos);
     const shot = resolveShot({
       club: p.club, power, acc: accuracy, aim: p.aim, lieFactor: lieFactorFor(),
-      puttMax: p.puttMax, greenDecel: surfaces.green.decel,
+      puttMax: p.puttMax, greenDecel: surfaces.green.decel, outcome,
     });
     p.isPutt = shot.kind === 'putt';
     copy(p.shotDir, shot.dir);

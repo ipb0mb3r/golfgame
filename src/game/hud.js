@@ -1,5 +1,5 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
-import { M2Y, METER_MIN, PUTT, MPS_TO_MPH, TIMING, AUTO_CLUB_REACH, HUD } from '../core/config.js';
+import { M2Y, METER_MIN, SWEET, PUTT, MPS_TO_MPH, TIMING, AUTO_CLUB_REACH, HUD } from '../core/config.js';
 import { dist2D, dirFromAim, rightFromAim } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
@@ -8,9 +8,11 @@ const meterPct = p => ((p - METER_MIN) / (1 - METER_MIN)) * 100;
 const HINTS = {
   aim: 'Aim and pick a club, then click or press Space to swing',
   power: 'Click again to set POWER',
+  grace: 'MAX! Click now for full power',
+  nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
 };
-const isAiming = s => s === 'aim' || s === 'power' || s === 'accuracy';
+const isAiming = s => s === 'aim' || s === 'power' || s === 'grace' || s === 'nopower' || s === 'accuracy';
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 
@@ -36,6 +38,9 @@ export function setupHolePage(hole, tee, cup) {
 export function createHud(play) {
   const { cup, terrain, surfaces, wind, bag } = play;
   let msgTimer = 0;
+  // The green impact zone is drawn from SWEET (which a ?tune= link may change)
+  const sw = $('sweet').style;
+  sw.left = `${meterPct(-SWEET)}%`; sw.width = `${meterPct(SWEET) - meterPct(-SWEET)}%`;
 
   function flash(text, sub = '') {
     const m = $('msg');
@@ -84,7 +89,8 @@ export function createHud(play) {
 
   function updateMeter(state, value, power) {
     $('marker').style.left = `${meterPct(value)}%`;
-    const fillTo = state === 'power' ? value : (state === 'aim' ? 0 : power);
+    const fillTo = state === 'power' ? value : state === 'grace' ? 1 : (state === 'aim' || state === 'nopower') ? 0 : power;
+    $('meterBar').classList.toggle('nopower', state === 'nopower');
     $('meterFill').style.width = `${meterPct(fillTo) - meterPct(0)}%`;
     // wind arrow relative to the direction you're facing
     const d = dirFromAim(play.aim), r = rightFromAim(play.aim);
