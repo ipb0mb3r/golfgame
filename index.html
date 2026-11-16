@@ -127,6 +127,11 @@
     #swingBtn { padding: 8px 10px; }
     #club .name b { font-size: 14px; }
   }
+  /* Short screens (phone landscape): the minimap shrinks, keeping its shape, so it ends above the
+     meter and controls (H1, PR #15). After the narrow-screen rules so it wins on small phones too. */
+  @media (max-height: 500px) {
+    #minimap { width: auto; height: min(var(--mm-h, 220px), calc(100vh - 240px)); }
+  }
 </style>
 <script type="importmap">
   { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }

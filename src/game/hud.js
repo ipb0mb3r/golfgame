@@ -35,6 +35,7 @@ export function setupHolePage(hole, tee, cup) {
   $('minimap').width = mm.w; $('minimap').height = mm.h;
   root.setProperty('--mm-mobile-w', `${mm.mobileW}px`);
   root.setProperty('--mm-mobile-h', `${mm.mobileH}px`);
+  root.setProperty('--mm-h', `${mm.h}px`);
 }
 
 export function createHud(play) {

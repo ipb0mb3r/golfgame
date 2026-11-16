@@ -5,6 +5,8 @@ import { testHole } from './helpers.js';
 import { createHolePlay } from '../src/core/play.js';
 import { CLUBS, makeBag, pickClub } from '../src/core/clubs.js';
 import { FRINGE_PUTT_DIST } from '../src/core/config.js';
+import { getHole } from '../src/holes/sets.js';
+import { SCENARIOS } from '../src/holes/scenarios.js';
 
 // A flat hole: the ball sits on `lie` at the tee spot, the cup is `dist` meters straight ahead.
 function pickOn(lie, dist, bag) {
@@ -44,11 +46,33 @@ test('rough: the club that reaches within the rough cap (85%)', () => {
   assert.equal(picked('rough', 240), '3w', 'never the Driver');
 });
 
-test('bunker: the sand wedge, near or far', () => {
+test('bunker near the green: the sand wedge, when it reaches within its 85% cap', () => {
   assert.equal(picked('sand', 20), 'sw');
-  assert.equal(picked('sand', 150), 'sw');
+  assert.equal(picked('sand', 60), 'sw', 'sand wedge reach from sand: 0.85 × 75 = 63.75 m ≥ 57 m');
   // no sand wedge in the bag: the normal rule, inside the bunker cap (60%)
   assert.equal(picked('sand', 70, ['3w', '5i', '7i', '9i', 'pw', 'putter']), '9i');
+});
+
+test('far bunker: the club that gets there within the 60% bunker cap, never the sand wedge or the Driver', () => {
+  // 9 Iron from sand: 0.6 × 125 = 75 m ≥ 71.25 m
+  assert.equal(picked('sand', 75), '9i');
+  assert.equal(picked('sand', 100), '5i', '0.6 × 170 = 102 m');
+  assert.equal(picked('sand', 250), '3w', 'nothing reaches: the longest club that counts, not the Driver');
+});
+
+test('hole 2 fairway bunker (h2-fairway-bunker): a long club, not the sand wedge, not the Driver', () => {
+  const s = SCENARIOS['h2-fairway-bunker'];
+  const play = createHolePlay(getHole(s.hole), { seed: s.seed });
+  play.reset(s);
+  assert.equal(play.lie, 'sand');
+  assert.equal(play.club.id, '3w');
+});
+
+test('hole 1 greenside bunker (h1-bunker): the sand wedge', () => {
+  const s = SCENARIOS['h1-bunker'];
+  const play = createHolePlay(getHole(s.hole), { seed: s.seed });
+  play.reset(s);
+  assert.equal(play.club.id, 'sw');
 });
 
 test('fringe: the putter when close, otherwise a club', () => {
@@ -77,7 +101,8 @@ test('pickClub on its own (pure): reach comes from the caller', () => {
   const id = (lie, dist) => bag[pickClub(bag, { lie, dist, reach })].id;
   assert.equal(id('tee', 210), 'driver');
   assert.equal(id('fairway', 210), '3w');
-  assert.equal(id('sand', 200), 'sw');
+  assert.equal(id('sand', 60), 'sw');
+  assert.equal(id('sand', 200), '3w');
   assert.equal(id('green', 200), 'putter');
   assert.equal(CLUBS[id('rough', 100)].carry, 105);
 });

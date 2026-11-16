@@ -43,13 +43,13 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 - Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc, as before), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
 - If the marker reaches `METER_MIN` without a third click, the shot is a huge slice (see "Missed clicks").
 - Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S.
-- A **⚑ mark** on the meter shows the power needed to reach the pin, adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way to the pin, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1).
+- A **⚑ mark** on the meter shows the power needed to reach the pin, adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way to the pin, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1). The ⚑ doesn't account for the ball rolling back off a tier: reading a ridge is the player's job (PM on PR #15; aiming the ⚑ at the pin's tier is a possible later idea).
 - The club is picked automatically each shot (see "Club auto-pick") and the player can change to any club in the bag.
 
 ### Club auto-pick ✅ (task S13, decided 2026-11-16 by the game designer)
 In this order (`clubs.pickClub`):
 1. **Green**, or the fringe closer than `FRINGE_PUTT_DIST` (18 m): the putter.
-2. **Bunker:** the sand wedge (if the hole's bag has one), however far the pin is.
+2. **Bunker:** the sand wedge (if the hole's bag has one) when it reaches the pin within its own bunker cap (85%): it is the bunker club near the green. From a far bunker, rule 3 applies inside the 60% bunker cap (never the Driver), so a fairway bunker is a real recovery choice (PM on PR #15).
 3. **Everywhere else:** the shortest club that reaches the pin within the lie's cap (its capped reach, hills included, is at least `AUTO_CLUB_REACH` × the distance). **The Driver only counts on the tee**, so it is picked only from the tee and only when the 3 Wood doesn't get there. When nothing reaches, the longest club that counts (the 3 Wood off the fairway).
 
 The player can still pick any club with ▲ ▼ / W S, including the Driver from the fairway.
