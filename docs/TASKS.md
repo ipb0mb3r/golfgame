@@ -50,6 +50,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 **Phase 1 follow-ups (designer decisions)**
 - [ ] **S8** Missed clicks (DESIGN §3 "Missed clicks"): power grace window + "MAX!" flash, red "No power" meter, mini shot when power is missed, huge slice when accuracy is missed, cancel with no stroke when only the start click happens. Gameplay change → own branch `dev/S8-missed-clicks`, re-record baseline-v2 and explain
 - [ ] **S9** *(later, design feature)* Overpower zone past 100%: more distance, smaller impact zone. Needs designer playtesting first
+- [ ] **S10** Wider accuracy window (designer playtest: "too hard"). Today `SWEET = 0.024` means a perfect window of ~48 ms. Start at `SWEET = 0.05` (~100 ms) and make small misses curve gently (`CURVE_SHAPE` tunable: 1 = linear as today, 2 = quadratic). Final values are set by the designer through X8 tune links
 
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
@@ -109,6 +110,10 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **X5** Shot result line (carry and total distance in yards)
 - [ ] **X6** Upgrade Three.js from 0.160 to the current release (pinned version + Subresource Integrity). Do this after Phase 0, in its own PR, and check that the baseline tests still pass
 - [ ] **X7** *(low priority)* The debug overlay (backtick) can overlap the HUD panel on short screens: move or shrink it
+- [ ] **X8** Designer test links (work on a phone, no keyboard needed):
+  - `?scenario=<id>` starts the ball at a named spot with a fixed seed: at least `h1-bunker`, `h1-green`, `h1-pond-carry`, `h2-fairway-bunker`, `h2-cross-bunker`, `h2-green-step`, `h2-side-slope`. Scenarios live in data (`src/holes/scenarios.js`), not code
+  - `?tune=NAME:value,NAME:value` overrides tunables from `config.js` for that visit only (whitelisted names, numbers only, clamped to a sane range), shown in a small "TUNED" badge so a tuned build is never mistaken for the real one
+  - A short list of scenario links in the README
 
 ---
 
