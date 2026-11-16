@@ -73,7 +73,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 
 ---
 
-## 4. Ball physics ✅ (flat) / ✅ (slopes, hole 2 only)
+## 4. Ball physics ✅ (one engine for both holes since Phase 0)
 
 ### Ball states
 `aim → power → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. Penalties go through `wait`.
@@ -86,12 +86,13 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - **Cup:** the ball drops if it's within `CUP_R` and slower than 3.2 m/s. A faster ball **lips out** (it's deflected and slowed). A ball landing on the fly within `CUP_R × 1.4` goes straight in.
 - **Penalties:** water or out of bounds gives +1 stroke and the ball goes back to the last position.
 - **Lie:** the surface the ball rests on multiplies the next shot's power (`lie`). The sand wedge ignores the bunker penalty.
-- **Timestep:** fixed sub-steps of 1/240 s. The flight is sped up ×1.35 for game feel.
+- **Timestep:** a fixed-step accumulator: only whole 1/240 s steps, the remainder waits for the next frame, so a shot ends in the same place at any frame rate. The flight is sped up ×1.35 for game feel (`FLIGHT_SPEEDUP`).
 
-### Known problems to fix in Phase 0
-- ⚠️ The last sub-step uses the leftover time, so results change slightly with frame rate → switch to an accumulator (task F3).
-- ⚠️ The lip-out and the wind use `Math.random()` → switch to the seeded RNG (task F5).
-- ⚠️ The physics constants and surface values are duplicated in two files with different values (task F6/F7).
+### Known problems fixed in Phase 0
+- ✅ The last sub-step used the leftover time, so results changed with frame rate (the F0 baseline measured up to 2.4 m between 30, 60 and 144 fps) → accumulator (F3).
+- ✅ The lip-out and the wind used `Math.random()` → seeded RNG (F5). The game seeds it from `?seed=<n>` or, without it, from the clock.
+- ✅ The physics constants and surface values were duplicated in two files → `src/core/config.js` and `surfaces.js` + `surfaceOverrides` (F6/F7).
+- Since hole 1 now uses the slope-aware roll (stop speed 0.06 m/s and the `CREEP` friction blend instead of its old 0.03 m/s stop) and the hill-aware reach estimate, its rolls end a few centimetres differently. All baseline shots are within 0.5 m.
 
 ### Surface table (today's values: `rest` / `keep` / `decel` / `lie`)
 | Surface | rest | keep | decel | lie | Notes |
@@ -120,7 +121,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ### Acceptance
 - [ ] From the same landing speed, an uphill roll is shorter than a downhill roll.
 - [ ] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put.
-- [ ] Hole 1 (flat) behaves exactly as it did before the slope physics.
+- [x] Hole 1 (flat) stays within the baseline tolerance of its pre-refactor behaviour.
 
 ---
 
@@ -141,7 +142,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ## 7. Weather ❌ (wind ✅)
 
 ### Wind ✅
-Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball in the air. It will come from the seeded RNG, and a hole can set `windMax` or a fixed wind.
+Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball in the air. It comes from the seeded RNG, and a hole can set `windMax` or a fixed wind (`wind: { x, z }`).
 
 ### Rain ❌ (Phase 5)
 - Each hole has `weather: { type: 'clear' | 'rain', wetness: 0..1 }`.
@@ -196,7 +197,9 @@ src/
     terrain.js             ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
     swing.js               meter state machine + resolveShot(...) → launch velocity / curve / spin
     ball.js                ball simulation: step(dt) for flight, bounce, roll, cup, penalties → emits events
-    round.js               round state, scorecard, hole sequencing
+    play.js                one hole's rules: strokes, lie, auto club, penalties, fixed-step accumulator (added in Phase 0)
+    scoring.js             score names and result text (added in Phase 0)
+    round.js               round state, scorecard, hole sequencing (Phase 6)
   holes/
     hole1.js               Pocket Links #1: flat par 3
     hole2.js               Pocket Links #2: hilly par 5
@@ -210,6 +213,8 @@ src/
 tests/
   *.test.js                node --test
   fixtures/baseline.json   golden shots recorded from the pre-refactor code
+tools/
+  baseline.mjs             records / checks the baseline shots in a headless browser (dev only, needs Playwright)
 ```
 
 ### Hole module contract
@@ -227,6 +232,7 @@ export default {
   surfaceAt(x, z) { ... },
 };
 ```
+The physics never reads presentation fields (`scenery`, `intro`). Every hole shows the same HUD, including the Slope row ("Flat" on a flat hole).
 
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.

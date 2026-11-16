@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Pocket Links: Hole 1</title>
+<title>Pocket Links</title>
 <style>
   :root {
     --panel: rgba(12, 28, 20, 0.72);
@@ -71,12 +71,18 @@
   #resultTitle { font-size: 40px; text-align: center; margin: 0; color: var(--accent); }
   #resultText { text-align: center; font-size: 16px; color: var(--text); }
   .card a { color: var(--accent); }
+  .card .notice { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,212,71,.15); color: var(--accent); font-size: 14px; }
   kbd { background: #2c4a37; border-radius: 4px; padding: 1px 6px; font-size: 13px; }
+
+  /* Debug overlay (backtick key) */
+  #debug { position: fixed; left: 12px; bottom: 150px; margin: 0; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
+    color: #e9ffe9; background: rgba(0,0,0,.66); border-radius: 8px; padding: 8px 10px; pointer-events: none; white-space: pre; z-index: 5; }
+  #debug.hidden { display: none; }
 
   @media (max-width: 560px) {
     #info { font-size: 12px; min-width: 0; padding: 8px 10px; }
     #info .title { font-size: 14px; }
-    #minimap { width: 78px; height: 130px; }
+    #minimap { width: var(--mm-mobile-w); height: var(--mm-mobile-h); }
     #windBox { font-size: 12px; padding: 6px 8px; }
     #msg { font-size: 26px; }
     .aimBtn { padding: 8px 14px; }
@@ -95,10 +101,11 @@
 <canvas id="game"></canvas>
 
 <div id="info" class="panel">
-  <div class="title">HOLE 1 · PAR 3</div>
+  <div class="title" id="holeTitle">HOLE</div>
   <div>Stroke: <b id="strokeTxt">1</b></div>
   <div>To pin: <b id="distTxt">-</b></div>
   <div>Lie: <b id="lieTxt">Tee box</b></div>
+  <div id="slopeRow">Slope: <b id="slopeTxt">Flat</b></div>
 </div>
 
 <div id="side">
@@ -106,7 +113,7 @@
     <svg id="windArrow" viewBox="0 0 40 40"><circle cx="20" cy="20" r="18" fill="rgba(255,255,255,.12)" stroke="rgba(255,255,255,.5)"/><path d="M20 5 L29 20 L23 20 L23 34 L17 34 L17 20 L11 20 Z" fill="#7fd0ff"/></svg>
     <div><div style="color:var(--muted);font-size:11px">WIND</div><b id="windTxt">0 mph</b></div>
   </div>
-  <canvas id="minimap" width="96" height="160"></canvas>
+  <canvas id="minimap" width="60" height="220"></canvas>
 </div>
 
 <div id="msg"></div>
@@ -127,7 +134,7 @@
     <button class="aimBtn" id="aimL">◀<span> Aim</span></button>
     <div id="club" class="panel">
       <button id="clubPrev" title="Longer club">‹</button>
-      <div class="name"><b id="clubName">7 Iron</b><small id="clubDist">max 164 yd</small></div>
+      <div class="name"><b id="clubName">-</b><small id="clubDist">-</small></div>
       <button id="clubNext" title="Shorter club">›</button>
     </div>
     <button class="aimBtn" id="aimR"><span>Aim </span>▶</button>
@@ -138,19 +145,12 @@
 <div id="intro" class="overlay">
   <div class="card">
     <h1>Pocket Links</h1>
-    <h2>Hole 1 · Par 3 · 166 yards</h2>
-    <ol>
-      <li><b>Aim</b> with <kbd>◀</kbd> <kbd>▶</kbd> (arrow keys or the buttons). The yellow ring shows where a full-power shot lands.</li>
-      <li><b>Pick a club</b> with <kbd>▲</kbd> <kbd>▼</kbd> or the ‹ › buttons. The best club is chosen for you.</li>
-      <li><b>Swing in three clicks</b> (mouse, tap, or <kbd>Space</kbd>):
-        <br>1st click starts the meter,
-        <br>2nd click sets <b>power</b> (the ⚑ mark is roughly the pin),
-        <br>3rd click sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> to hit it straight. Too early hooks left, too late slices right.</li>
-      <li>Watch the <b>wind</b> arrow (top right). It pushes the ball in the air.</li>
-    </ol>
-    <p>Sink it in as few strokes as you can. Water costs a penalty stroke.</p>
+    <p id="notice" class="notice" hidden></p>
+    <h2 id="introSub"></h2>
+    <ol id="introSteps"></ol>
+    <p id="introBlurb"></p>
     <button class="big" id="startBtn">Tee off</button>
-    <p style="text-align:center;margin-bottom:0"><a href="hole2.html">Try Hole 2 (prototype par 5 with hills) →</a></p>
+    <p style="text-align:center;margin-bottom:0"><a id="introLink" href="#"></a></p>
   </div>
 </div>
 
@@ -159,687 +159,13 @@
     <h1 id="resultTitle">Par</h1>
     <p id="resultText"></p>
     <button class="big" id="againBtn">Play again</button>
-    <p style="text-align:center;margin-bottom:0"><a href="hole2.html">Next: Hole 2 (prototype) →</a></p>
+    <p style="text-align:center;margin-bottom:0"><a id="resultLink" href="#"></a></p>
   </div>
 </div>
 
-<script type="module">
-import * as THREE from 'three';
+<pre id="debug" class="hidden"></pre>
 
-// =====================================================================
-// Constants (all distances in meters; shown to the player in yards)
-// World axes: x = left/right, y = up, -z = toward the green.
-// =====================================================================
-const M2Y = 1.09361;
-const G = 9.81;
-const PAR = 3;
-const MAX_STROKES = 10;
-const TEE = new THREE.Vector3(0, 0, 0);
-const HOLE = new THREE.Vector3(4, 0, -152);
-const CUP_R = 0.22;      // generous arcade-size cup
-const BALL_R = 0.09;     // drawn a bit bigger than real so you can see it
-const WIND_K = 0.2;      // how strongly wind pushes the ball in the air
-const CURVE_K = 28;      // how strongly a mistimed 3rd click curves the ball
-const SWEET = 0.024;     // half-width of the "perfect" zone on the meter
-const METER_SPEED = 1.0; // meter units per second
-const METER_MIN = -0.2;  // left end of the meter (accuracy zone)
-
-const CLUBS = [
-  { name: '3 Wood',  carry: 195, loft: 17 },
-  { name: '5 Iron',  carry: 170, loft: 21 },
-  { name: '7 Iron',  carry: 150, loft: 26 },
-  { name: '9 Iron',  carry: 125, loft: 32 },
-  { name: 'P Wedge', carry: 105, loft: 38 },
-  { name: 'S Wedge', carry: 75,  loft: 46, sand: true },
-  { name: 'Putter',  carry: 0,   loft: 0,  putter: true },
-];
-const PUTTER = CLUBS.length - 1;
-
-// How each surface treats the ball. rest = bounce height kept, keep = speed kept on a bounce,
-// decel = rolling friction (m/s per second), lie = power multiplier when hitting from it.
-const SURF = {
-  tee:     { name: 'Tee box', rest: .30, keep: .40, decel: 2.4, lie: 1 },
-  fairway: { name: 'Fairway', rest: .30, keep: .42, decel: 2.4, lie: 1 },
-  fringe:  { name: 'Fringe',  rest: .25, keep: .36, decel: 3.2, lie: .97 },
-  green:   { name: 'Green',   rest: .22, keep: .32, decel: 1.1, lie: 1 },
-  rough:   { name: 'Rough',   rest: .15, keep: .22, decel: 5.5, lie: .85 },
-  sand:    { name: 'Bunker',  rest: .02, keep: .06, decel: 18,  lie: .6 },
-  water:   { name: 'Water' },
-  ob:      { name: 'Out of bounds' },
-};
-
-// =====================================================================
-// Course layout: one function decides what surface is at any (x, z)
-// =====================================================================
-const GREEN = { cx: 3, cz: -150, rx: 15, rz: 12 };
-const BUNKERS = [
-  { cx: -15, cz: -147, rx: 6, rz: 4.5 },
-  { cx: 9,   cz: -166, rx: 8, rz: 3.2 },
-  { cx: 19,  cz: -140, rx: 3.5, rz: 3 },
-];
-const POND = { cx: -20, cz: -92, rx: 13, rz: 10 };
-
-function ell(x, z, e, grow = 0) {
-  const dx = (x - e.cx) / (e.rx + grow), dz = (z - e.cz) / (e.rz + grow);
-  return dx * dx + dz * dz;
-}
-function fairwayCenter(z) { return 5 * Math.sin((z + 20) / 35); }
-function inFairway(x, z) {
-  if (z > -22 || z < -136) return false;
-  const taper = Math.min((-22 - z) / 8, (z + 136) / 8, 1);
-  return Math.abs(x - fairwayCenter(z)) < 13 * Math.sqrt(taper);
-}
-function surfaceAt(x, z) {
-  if (Math.abs(x) > 55 || z > 18 || z < -200) return 'ob';
-  if (Math.abs(x) < 3.5 && z > -4 && z < 4) return 'tee';
-  if (ell(x, z, POND) < 1) return 'water';
-  for (const b of BUNKERS) if (ell(x, z, b) < 1) return 'sand';
-  if (ell(x, z, GREEN) < 1) return 'green';
-  if (ell(x, z, GREEN, 1.8) < 1) return 'fringe';
-  if (inFairway(x, z)) return 'fairway';
-  return 'rough';
-}
-
-// Tiny seeded random so the scenery is the same every time
-function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-
-// =====================================================================
-// Paint the course onto a canvas (used as the ground texture and minimap)
-// =====================================================================
-const MAP = { x0: -60, x1: 60, z0: -180, z1: 20 };  // area covered by the painted texture
-const TEX_RES = 7.5; // pixels per meter
-const courseCanvas = document.createElement('canvas');
-(function paintCourse() {
-  const W = (MAP.x1 - MAP.x0) * TEX_RES, H = (MAP.z1 - MAP.z0) * TEX_RES;
-  courseCanvas.width = W; courseCanvas.height = H;
-  const ctx = courseCanvas.getContext('2d');
-  const img = ctx.createImageData(W, H);
-  const r = rng(7);
-  for (let j = 0; j < H; j++) {
-    const z = MAP.z0 + (j + 0.5) / TEX_RES;     // row 0 = far end (behind the green)
-    for (let i = 0; i < W; i++) {
-      const x = MAP.x0 + (i + 0.5) / TEX_RES;
-      const s = surfaceAt(x, z);
-      const n = (r() - 0.5) * 10;
-      let c;
-      switch (s) {
-        case 'tee':     c = [118, 192, 82]; break;
-        case 'fairway': c = (Math.floor(z / 5) & 1) ? [112, 182, 70] : [101, 169, 62]; break;
-        case 'fringe':  c = [96, 172, 66]; break;
-        case 'green':   c = (Math.floor((x - z) / 2.5) & 1) ? [126, 206, 92] : [117, 196, 85]; break;
-        case 'sand':    c = [232, 214, 160]; break;
-        case 'water':   c = [58, 128, 196]; break;
-        case 'ob':      c = [62, 120, 46]; break;
-        default:        c = [74, 140, 52];
-      }
-      const k = (j * W + i) * 4;
-      img.data[k] = c[0] + n; img.data[k + 1] = c[1] + n; img.data[k + 2] = c[2] + n * 0.5; img.data[k + 3] = 255;
-    }
-  }
-  ctx.putImageData(img, 0, 0);
-})();
-
-// =====================================================================
-// Three.js scene
-// =====================================================================
-const canvas = document.getElementById('game');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-const scene = new THREE.Scene();
-const SKY = 0x9fd3ff;
-scene.background = new THREE.Color(SKY);
-scene.fog = new THREE.Fog(SKY, 160, 480);
-const camera = new THREE.PerspectiveCamera(55, 1, 0.05, 1500);
-
-scene.add(new THREE.HemisphereLight(0xdff2ff, 0x3a5a2a, 1.6));
-const sun = new THREE.DirectionalLight(0xfff3dd, 1.6);
-sun.position.set(-60, 120, 40);
-scene.add(sun);
-
-// Ground: a big plain rough plane, then the painted course on top
-const ground = new THREE.Mesh(new THREE.PlaneGeometry(1600, 1600), new THREE.MeshLambertMaterial({ color: 0x3d7a30 }));
-ground.rotation.x = -Math.PI / 2; ground.position.y = -0.02;
-scene.add(ground);
-
-const courseTex = new THREE.CanvasTexture(courseCanvas);
-courseTex.colorSpace = THREE.SRGBColorSpace;
-courseTex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-const course = new THREE.Mesh(
-  new THREE.PlaneGeometry(MAP.x1 - MAP.x0, MAP.z1 - MAP.z0),
-  new THREE.MeshLambertMaterial({ map: courseTex })
-);
-course.rotation.x = -Math.PI / 2;
-course.position.set((MAP.x0 + MAP.x1) / 2, 0, (MAP.z0 + MAP.z1) / 2);
-scene.add(course);
-
-// Cup + flag
-const cup = new THREE.Mesh(new THREE.CircleGeometry(CUP_R, 24), new THREE.MeshBasicMaterial({ color: 0x111111 }));
-cup.rotation.x = -Math.PI / 2; cup.position.set(HOLE.x, 0.006, HOLE.z);
-scene.add(cup);
-const cupRim = new THREE.Mesh(new THREE.RingGeometry(CUP_R, CUP_R + 0.03, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-cupRim.rotation.x = -Math.PI / 2; cupRim.position.set(HOLE.x, 0.007, HOLE.z);
-scene.add(cupRim);
-const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.6, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
-pole.position.set(HOLE.x, 1.3, HOLE.z);
-scene.add(pole);
-const flagGeo = new THREE.PlaneGeometry(0.9, 0.55, 12, 4);
-flagGeo.translate(0.45, 0, 0);
-const flagBase = flagGeo.attributes.position.array.slice();
-const flag = new THREE.Mesh(flagGeo, new THREE.MeshLambertMaterial({ color: 0xff3b3b, side: THREE.DoubleSide }));
-flag.position.set(HOLE.x, 2.3, HOLE.z);
-scene.add(flag);
-
-// Tee markers
-for (const sx of [-2.6, 2.6]) {
-  const m = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshLambertMaterial({ color: 0x2b6cff }));
-  m.position.set(sx, 0.14, -1.2); scene.add(m);
-}
-// White out-of-bounds stakes
-{
-  const stakeGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 6);
-  const stakeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-  for (let z = 15; z > -200; z -= 12) for (const sx of [-55, 55]) {
-    const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, 0.5, z); scene.add(s);
-  }
-}
-
-// Trees (instanced so hundreds are cheap)
-{
-  const r = rng(42);
-  const spots = [];
-  while (spots.length < 170) {
-    const x = (r() - 0.5) * 280, z = 70 - r() * 340;
-    if (z < 0 && z > -140 && Math.abs(x - fairwayCenter(z)) < 27) continue;
-    if (ell(x, z, GREEN, 16) < 1) continue;
-    if (ell(x, z, POND, 4) < 1) continue;
-    if (Math.abs(x) < 16 && z > -20 && z < 20) continue;
-    if (Math.abs(x) < 10 && z > 0) continue; // keep the view behind the tee open
-    spots.push([x, z, 0.8 + r() * 0.7]);
-  }
-  const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 3, 6); trunkGeo.translate(0, 1.5, 0);
-  const leafGeo = new THREE.ConeGeometry(2.4, 6, 7); leafGeo.translate(0, 5.5, 0);
-  const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x6b4a2b }), spots.length);
-  const leaves = new THREE.InstancedMesh(leafGeo, new THREE.MeshLambertMaterial({ color: 0x2f6b34, flatShading: true }), spots.length);
-  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), sc = new THREE.Vector3();
-  const col = new THREE.Color();
-  spots.forEach(([x, z, s], i) => {
-    q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), r() * 6.28);
-    m.compose(v.set(x, 0, z), q, sc.set(s, s, s));
-    trunks.setMatrixAt(i, m); leaves.setMatrixAt(i, m);
-    leaves.setColorAt(i, col.setHSL(0.3 + r() * 0.06, 0.45, 0.25 + r() * 0.1));
-  });
-  scene.add(trunks, leaves);
-}
-// Distant hills and clouds
-{
-  const hillMat = new THREE.MeshLambertMaterial({ color: 0x4f8a45 });
-  const r = rng(9);
-  for (let i = 0; i < 14; i++) {
-    const a = (i / 14) * Math.PI * 2, d = 330 + r() * 80;
-    const h = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), hillMat);
-    h.scale.set(70 + r() * 40, 25 + r() * 25, 70 + r() * 40);
-    h.position.set(Math.sin(a) * d, -8, -80 + Math.cos(a) * d);
-    scene.add(h);
-  }
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
-  for (let i = 0; i < 12; i++) {
-    const g = new THREE.Group();
-    for (let k = 0; k < 4; k++) {
-      const p = new THREE.Mesh(new THREE.SphereGeometry(6 + r() * 6, 12, 8), cloudMat);
-      p.position.set(k * 9 - 13, r() * 3, r() * 6); p.scale.y = 0.55; g.add(p);
-    }
-    g.position.set((r() - 0.5) * 600, 70 + r() * 40, -80 - (r() - 0.3) * 500);
-    scene.add(g);
-  }
-}
-
-// Ball, shadow, flight trail
-const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 20, 14), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333333 }));
-scene.add(ballMesh);
-const shadow = new THREE.Mesh(new THREE.CircleGeometry(BALL_R * 1.1, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
-shadow.rotation.x = -Math.PI / 2; scene.add(shadow);
-const TRAIL_N = 400;
-const trailPos = new Float32Array(TRAIL_N * 3);
-const trailGeo = new THREE.BufferGeometry();
-trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPos, 3));
-trailGeo.setDrawRange(0, 0);
-const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 }));
-trail.frustumCulled = false;
-scene.add(trail);
-let trailCount = 0;
-
-// Aim guide: dots along the line + a ring where a full-power shot lands
-const DOTS = 40;
-const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.22, 10), new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.85 }), DOTS);
-dots.frustumCulled = false; scene.add(dots);
-const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
-ring.rotation.x = -Math.PI / 2; scene.add(ring);
-
-// =====================================================================
-// Game state
-// =====================================================================
-const ball = new THREE.Vector3();      // ball position (y = height above ground)
-const vel = new THREE.Vector3();
-const lastPos = new THREE.Vector3();   // where the last shot was hit from (for penalties)
-const curve = new THREE.Vector3();     // sideways push from a hook/slice
-const shotDir = new THREE.Vector3(0, 0, -1);
-const wind = new THREE.Vector3();
-let state = 'intro';   // intro | aim | power | accuracy | flight | roll | wait | holed | result
-let aim = 0, clubIdx = 2, strokes = 0, meterP = 0, power = 0, lie = 'tee';
-let firstBounce = true, spinFactor = 1, lipped = false, isPutt = false, puttMax = 10;
-let aimHold = 0;
-let timers = [];
-const later = (fn, ms) => timers.push(setTimeout(fn, ms));
-
-const dirFromAim = a => new THREE.Vector3(Math.sin(a), 0, -Math.cos(a));
-const rightFromAim = a => new THREE.Vector3(Math.cos(a), 0, Math.sin(a));
-const dist2D = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
-const yd = m => Math.round(m * M2Y);
-
-function lieFactor(club, s) {
-  if (club.putter) return 1;
-  if (s === 'sand') return club.sand ? 0.85 : 0.6;
-  return SURF[s].lie;
-}
-function clubReach(i) { return i === PUTTER ? puttMax : CLUBS[i].carry * lieFactor(CLUBS[i], lie); }
-
-function newWind() {
-  const a = Math.random() * Math.PI * 2, s = Math.random() * 5.5;
-  wind.set(Math.sin(a) * s, 0, -Math.cos(a) * s);
-}
-
-function resetGame() {
-  timers.forEach(clearTimeout); timers = [];
-  strokes = 0;
-  ball.copy(TEE);
-  newWind();
-  document.getElementById('result').classList.add('hidden');
-  prepareShot(true);
-}
-
-function prepareShot(snapCamera = false) {
-  state = 'aim';
-  vel.set(0, 0, 0);
-  ball.y = 0;
-  lie = surfaceAt(ball.x, ball.z);
-  aim = Math.atan2(HOLE.x - ball.x, -(HOLE.z - ball.z));
-  const d = dist2D(ball, HOLE);
-  puttMax = Math.min(36, Math.max(6, Math.round(d * 1.5)));
-  // Auto-pick a club: putter on/near the green, else the shortest club that gets there
-  if (lie === 'green' || (lie === 'fringe' && d < 18)) clubIdx = PUTTER;
-  else {
-    clubIdx = 0;
-    for (let i = 0; i < PUTTER; i++) if (clubReach(i) >= d * 0.95) clubIdx = i;
-  }
-  meterP = 0; power = 0;
-  trailCount = 0; trailGeo.setDrawRange(0, 0);
-  updateHud();
-  if (snapCamera) snapCam();
-}
-
-// ---------------------------------------------------------------------
-// The three-click swing
-// ---------------------------------------------------------------------
-function onSwingInput() {
-  if (state === 'aim') { state = 'power'; meterP = 0; power = 0; aimHold = 0; }
-  else if (state === 'power') { power = meterP; state = 'accuracy'; }
-  else if (state === 'accuracy') { hit(meterP); }
-  updateHud();
-}
-
-function hit(acc) {
-  // acc > 0: clicked early (hook, ball curves left). acc < 0: clicked late (slice, curves right).
-  let err = Math.abs(acc) <= SWEET ? 0 : acc;
-  strokes++;
-  lastPos.copy(ball);
-  const club = CLUBS[clubIdx];
-  const p = Math.max(power, 0.02);
-  if (err === 0) flash(power > 0.97 ? 'Perfect!' : 'Nice shot!');
-  else flash(err > 0 ? (err < 0.07 ? 'Slight hook' : 'Hook!') : (err > -0.07 ? 'Slight slice' : 'Slice!'));
-
-  firstBounce = true; lipped = false;
-  if (club.putter) {
-    isPutt = true;
-    const ang = aim - err * 0.25;
-    const D = p * puttMax;
-    const v0 = Math.sqrt(2 * SURF.green.decel * D);
-    vel.set(Math.sin(ang) * v0, 0, -Math.cos(ang) * v0);
-    shotDir.set(Math.sin(ang), 0, -Math.cos(ang));
-    state = 'roll';
-  } else {
-    isPutt = false;
-    const theta = THREE.MathUtils.degToRad(club.loft);
-    const carry = p * club.carry * lieFactor(club, lie);
-    const v = Math.sqrt(carry * G / Math.sin(2 * theta));
-    const d = dirFromAim(aim);
-    vel.copy(d).multiplyScalar(v * Math.cos(theta)); vel.y = v * Math.sin(theta);
-    curve.copy(rightFromAim(aim)).multiplyScalar(-err * CURVE_K * (v / 43));
-    spinFactor = THREE.MathUtils.clamp(1.2 - club.loft / 40, 0.3, 1);
-    shotDir.copy(d);
-    state = 'flight';
-  }
-  updateHud();
-}
-
-// ---------------------------------------------------------------------
-// Ball physics (run in small fixed steps for stability)
-// ---------------------------------------------------------------------
-function physics(dt) {
-  if (state === 'flight') {
-    vel.y -= G * dt;
-    vel.x += (wind.x * WIND_K + curve.x) * dt;
-    vel.z += (wind.z * WIND_K + curve.z) * dt;
-    ball.addScaledVector(vel, dt);
-    if (ball.y <= 0) { ball.y = 0; land(); }
-  } else if (state === 'roll') {
-    const s = surfaceAt(ball.x, ball.z);
-    if (s === 'water' || s === 'ob') return penalty(s);
-    const sp = Math.hypot(vel.x, vel.z);
-    const ns = sp - SURF[s].decel * dt;
-    if (ns <= 0.03) { vel.set(0, 0, 0); return stopped(); }
-    vel.x *= ns / sp; vel.z *= ns / sp;
-    ball.x += vel.x * dt; ball.z += vel.z * dt;
-    const dh = dist2D(ball, HOLE);
-    if (dh < CUP_R) {
-      if (ns < 3.2) return holed();
-      if (!lipped) { // too fast: lip out, lose speed and get knocked sideways
-        lipped = true;
-        const a = (Math.random() - 0.5) * 0.8, c = Math.cos(a), sn = Math.sin(a);
-        const vx = vel.x, vz = vel.z;
-        vel.x = (vx * c - vz * sn) * 0.6; vel.z = (vx * sn + vz * c) * 0.6;
-        flash('Lipped out!');
-      }
-    } else if (dh > CUP_R * 1.5) lipped = false;
-  }
-}
-
-function land() {
-  const s = surfaceAt(ball.x, ball.z);
-  if (s === 'water' || s === 'ob') return penalty(s);
-  if (dist2D(ball, HOLE) < CUP_R * 1.4) return holed(); // straight in!
-  const S = SURF[s];
-  let keep = S.keep;
-  if (firstBounce) { keep *= spinFactor; firstBounce = false; }
-  vel.x *= keep; vel.z *= keep;
-  vel.y = -vel.y * S.rest;
-  if (vel.y < 1.2) { vel.y = 0; state = 'roll'; }
-}
-
-function stopped() {
-  state = 'wait';
-  if (strokes >= MAX_STROKES) { later(() => showResult(true), 900); return; }
-  const s = surfaceAt(ball.x, ball.z);
-  flash(SURF[s].name, `${yd(dist2D(ball, HOLE))} yd to the pin`);
-  later(() => prepareShot(), 1300);
-}
-
-function penalty(s) {
-  state = 'wait';
-  vel.set(0, 0, 0);
-  strokes++;
-  flash(s === 'water' ? 'Splash!' : 'Out of bounds!', '+1 penalty stroke');
-  later(() => {
-    if (strokes >= MAX_STROKES) return showResult(true);
-    ball.copy(lastPos); prepareShot(true);
-  }, 1700);
-}
-
-let holedT = 0;
-function holed() {
-  state = 'holed'; holedT = 0;
-  vel.set(0, 0, 0);
-  const names = { '-2': 'Eagle!', '-1': 'Birdie!', '0': 'Par', '1': 'Bogey', '2': 'Double bogey', '3': 'Triple bogey' };
-  flash(strokes === 1 ? 'HOLE IN ONE!' : 'In the hole!');
-  later(() => showResult(false, names[strokes - PAR]), 1600);
-}
-
-function showResult(pickedUp, name) {
-  state = 'result';
-  const diff = strokes - PAR;
-  let title = pickedUp ? 'Picked up' : (strokes === 1 ? 'Hole in one!' : (name || `+${diff}`));
-  document.getElementById('resultTitle').textContent = title;
-  document.getElementById('resultText').textContent = pickedUp
-    ? `You reached the ${MAX_STROKES}-stroke limit. Shake it off and try again!`
-    : `You finished in ${strokes} stroke${strokes > 1 ? 's' : ''} on a par ${PAR}` +
-      (diff < 0 ? ` (${-diff} under par).` : diff === 0 ? '.' : ` (${diff} over par).`);
-  document.getElementById('result').classList.remove('hidden');
-}
-
-// =====================================================================
-// HUD
-// =====================================================================
-const $ = id => document.getElementById(id);
-const meterPct = p => ((p - METER_MIN) / (1 - METER_MIN)) * 100;
-let msgTimer = 0;
-function flash(text, sub = '') {
-  const m = $('msg');
-  m.innerHTML = text + (sub ? `<small>${sub}</small>` : '');
-  m.classList.add('show');
-  clearTimeout(msgTimer);
-  msgTimer = setTimeout(() => m.classList.remove('show'), 1500);
-}
-
-function updateHud() {
-  $('strokeTxt').textContent = Math.min(strokes + (state === 'aim' || state === 'power' || state === 'accuracy' ? 1 : 0), MAX_STROKES);
-  $('distTxt').textContent = `${yd(dist2D(ball, HOLE))} yd`;
-  const lf = lieFactor(CLUBS[clubIdx], lie);
-  $('lieTxt').textContent = SURF[lie].name + (lf < 1 ? ` (−${Math.round((1 - lf) * 100)}% power)` : '');
-  $('clubName').textContent = CLUBS[clubIdx].name;
-  $('clubDist').textContent = `max ${yd(clubReach(clubIdx))} yd`;
-  const need = clubIdx === PUTTER ? (dist2D(ball, HOLE) + 0.3) / puttMax : dist2D(ball, HOLE) * 0.95 / clubReach(clubIdx);
-  $('pinTick').style.left = `calc(${meterPct(Math.min(need, 1))}% - 1px)`;
-  $('pinTick').style.display = need <= 1.02 ? 'block' : 'none';
-  const hints = {
-    aim: 'Aim and pick a club, then click or press Space to swing',
-    power: 'Click again to set POWER',
-    accuracy: 'Click on the green line for a straight shot!',
-  };
-  $('hint').textContent = hints[state] || '';
-  const pm = $('powerMark');
-  if (state === 'accuracy' || state === 'flight' || state === 'roll') { pm.style.display = 'block'; pm.style.left = `${meterPct(power)}%`; }
-  else pm.style.display = 'none';
-  const sp = wind.length();
-  $('windTxt').textContent = `${(sp * 2.237).toFixed(0)} mph`;
-}
-
-function updateMeterVisuals() {
-  $('marker').style.left = `${meterPct(meterP)}%`;
-  const fillTo = state === 'power' ? meterP : (state === 'aim' ? 0 : power);
-  $('meterFill').style.width = `${meterPct(fillTo) - meterPct(0)}%`;
-  // wind arrow relative to the direction you're facing
-  const d = dirFromAim(aim), r = rightFromAim(aim);
-  const rel = Math.atan2(wind.dot(r), wind.dot(d));
-  $('windArrow').style.transform = `rotate(${rel}rad)`;
-}
-
-// Minimap
-const mm = $('minimap'), mctx = mm.getContext('2d');
-function mmXY(x, z) { return [(x - MAP.x0) / (MAP.x1 - MAP.x0) * mm.width, (z - MAP.z0) / (MAP.z1 - MAP.z0) * mm.height]; }
-function drawMinimap(target) {
-  mctx.drawImage(courseCanvas, 0, 0, mm.width, mm.height);
-  const [hx, hz] = mmXY(HOLE.x, HOLE.z);
-  mctx.fillStyle = '#ff3b3b'; mctx.fillRect(hx - 1, hz - 7, 2, 7); mctx.fillRect(hx, hz - 7, 5, 3);
-  const [bx, bz] = mmXY(ball.x, ball.z);
-  if (target && (state === 'aim' || state === 'power' || state === 'accuracy')) {
-    const [tx, tz] = mmXY(target.x, target.z);
-    mctx.strokeStyle = '#ffd447'; mctx.lineWidth = 1.5; mctx.setLineDash([3, 2]);
-    mctx.beginPath(); mctx.moveTo(bx, bz); mctx.lineTo(tx, tz); mctx.stroke(); mctx.setLineDash([]);
-    mctx.beginPath(); mctx.arc(tx, tz, 3, 0, 7); mctx.stroke();
-  }
-  mctx.fillStyle = '#fff'; mctx.strokeStyle = '#000'; mctx.lineWidth = 1;
-  mctx.beginPath(); mctx.arc(bx, bz, 2.5, 0, 7); mctx.fill(); mctx.stroke();
-}
-
-// =====================================================================
-// Camera
-// =====================================================================
-const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
-const wantPos = new THREE.Vector3(), wantLook = new THREE.Vector3();
-function cameraGoal() {
-  const d = dirFromAim(aim);
-  if (state === 'intro' || state === 'aim' || state === 'power' || state === 'accuracy') {
-    if (clubIdx === PUTTER) {
-      wantPos.copy(ball).addScaledVector(d, -3.5); wantPos.y = 1.6;
-      wantLook.copy(ball).addScaledVector(d, 5);
-    } else {
-      wantPos.copy(ball).addScaledVector(d, -7); wantPos.y = 2.6;
-      wantLook.copy(ball).addScaledVector(d, 30); wantLook.y = 0;
-    }
-    return 5;
-  }
-  if (state === 'flight' || state === 'roll') {
-    const back = isPutt ? 3.5 : 11;
-    wantPos.copy(ball).addScaledVector(shotDir, -back); wantPos.y = Math.max(ball.y * 0.6 + (isPutt ? 1.6 : 3.5), 1.2);
-    wantLook.copy(ball);
-    return isPutt ? 3 : 2.2;
-  }
-  return 1.5; // wait / holed / result: drift toward the last goal
-}
-function snapCam() { cameraGoal(); camPos.copy(wantPos); camLook.copy(wantLook); }
-function updateCamera(dt) {
-  const k = cameraGoal();
-  const a = 1 - Math.exp(-k * dt);
-  camPos.lerp(wantPos, a); camLook.lerp(wantLook, a);
-  camera.position.copy(camPos); camera.lookAt(camLook);
-}
-
-// =====================================================================
-// Input
-// =====================================================================
-function changeClub(step) {
-  if (state !== 'aim') return;
-  clubIdx = THREE.MathUtils.clamp(clubIdx + step, 0, PUTTER);
-  updateHud();
-}
-canvas.addEventListener('pointerdown', e => { e.preventDefault(); onSwingInput(); });
-$('swingBtn').addEventListener('pointerdown', e => { e.preventDefault(); onSwingInput(); });
-$('clubPrev').addEventListener('click', () => changeClub(-1));
-$('clubNext').addEventListener('click', () => changeClub(1));
-for (const [id, dir] of [['aimL', -1], ['aimR', 1]]) {
-  const b = $(id);
-  b.addEventListener('pointerdown', e => { e.preventDefault(); if (state === 'aim') aimHold = dir; });
-  for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { aimHold = 0; });
-}
-const keysDown = new Set();
-window.addEventListener('keydown', e => {
-  if (e.code === 'Space') { e.preventDefault(); if (!e.repeat) onSwingInput(); }
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keysDown.add('L'); e.preventDefault(); }
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') { keysDown.add('R'); e.preventDefault(); }
-  if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); changeClub(-1); }
-  if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); changeClub(1); }
-});
-window.addEventListener('keyup', e => {
-  if (e.code === 'ArrowLeft' || e.code === 'KeyA') keysDown.delete('L');
-  if (e.code === 'ArrowRight' || e.code === 'KeyD') keysDown.delete('R');
-});
-window.addEventListener('blur', () => { keysDown.clear(); aimHold = 0; });
-$('startBtn').addEventListener('click', () => { $('intro').classList.add('hidden'); resetGame(); });
-$('againBtn').addEventListener('click', resetGame);
-
-function resize() {
-  const w = window.innerWidth, h = window.innerHeight;
-  renderer.setSize(w, h, false);
-  camera.aspect = w / h; camera.updateProjectionMatrix();
-}
-window.addEventListener('resize', resize);
-resize();
-
-// =====================================================================
-// Main loop
-// =====================================================================
-const clock = new THREE.Clock();
-let t = 0;
-const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3();
-function frame() {
-  const rawDt = clock.getDelta();
-  const dt = Math.min(rawDt, 0.05);        // physics/camera step (capped so a hiccup can't teleport the ball)
-  const meterDt = Math.min(rawDt, 0.1);    // the meter follows real time so slow devices don't make it easier
-  t += dt;
-
-  // Aiming
-  if (state === 'aim') {
-    const dir = (keysDown.has('R') ? 1 : 0) - (keysDown.has('L') ? 1 : 0) + aimHold;
-    if (dir) aim += Math.sign(dir) * dt * (clubIdx === PUTTER ? 0.3 : 0.45);
-  }
-  // Swing meter
-  if (state === 'power') {
-    meterP += meterDt * METER_SPEED;
-    if (meterP >= 1) { meterP = 1; power = 1; state = 'accuracy'; updateHud(); }
-  } else if (state === 'accuracy') {
-    meterP -= meterDt * METER_SPEED;
-    if (meterP <= METER_MIN) { meterP = METER_MIN; hit(METER_MIN); }
-  }
-  // Ball physics
-  if (state === 'flight' || state === 'roll') {
-    let simT = dt * (isPutt ? 1 : 1.35);
-    while (simT > 1e-6 && (state === 'flight' || state === 'roll')) {
-      const h = Math.min(1 / 240, simT); physics(h); simT -= h;
-    }
-    if (state === 'flight' && trailCount < TRAIL_N) {
-      trailPos.set([ball.x, ball.y + BALL_R, ball.z], trailCount * 3);
-      trailCount++; trailGeo.setDrawRange(0, trailCount); trailGeo.attributes.position.needsUpdate = true;
-    }
-    $('distTxt').textContent = `${yd(dist2D(ball, HOLE))} yd`;
-  }
-  if (state === 'holed' || state === 'result') {
-    holedT += dt;
-    ball.x += (HOLE.x - ball.x) * Math.min(1, dt * 10);
-    ball.z += (HOLE.z - ball.z) * Math.min(1, dt * 10);
-    ball.y = Math.max(-0.3, -holedT * 1.2);
-  }
-
-  // Ball + shadow
-  ballMesh.position.set(ball.x, ball.y + BALL_R, ball.z);
-  shadow.position.set(ball.x, 0.012, ball.z);
-  shadow.visible = ball.y > -0.01;
-  shadow.material.opacity = 0.35 / (1 + ball.y * 0.15);
-  shadow.scale.setScalar(1 + ball.y * 0.02);
-
-  // Aim guide
-  const aiming = state === 'aim' || state === 'power' || state === 'accuracy';
-  let target = null;
-  dots.visible = ring.visible = aiming;
-  if (aiming) {
-    const d = dirFromAim(aim);
-    const len = clubIdx === PUTTER ? Math.min(dist2D(ball, HOLE), puttMax) : clubReach(clubIdx);
-    target = ball.clone().addScaledVector(d, len);
-    for (let i = 0; i < DOTS; i++) {
-      const f = (i + 1) / (DOTS + 1);
-      tmpV.copy(ball).addScaledVector(d, len * f); tmpV.y = 0.03;
-      tmpM.makeRotationX(-Math.PI / 2).setPosition(tmpV);
-      const s = clubIdx === PUTTER ? 0.25 : 1;
-      tmpM.scale(new THREE.Vector3(s, s, s));
-      dots.setMatrixAt(i, tmpM);
-    }
-    dots.instanceMatrix.needsUpdate = true;
-    ring.position.set(target.x, 0.04, target.z);
-    ring.scale.setScalar(clubIdx === PUTTER ? 0.15 : 1 + len / 80);
-  }
-
-  // Waving flag
-  const fp = flagGeo.attributes.position.array;
-  for (let i = 0; i < fp.length; i += 3) {
-    const x = flagBase[i];
-    fp[i + 2] = Math.sin(x * 6 - t * 6) * 0.07 * x;
-  }
-  flagGeo.attributes.position.needsUpdate = true;
-  flag.rotation.y = Math.atan2(-wind.z, wind.x) || 0;
-
-  updateMeterVisuals();
-  updateCamera(dt);
-  drawMinimap(target);
-  renderer.render(scene, camera);
-  requestAnimationFrame(frame);
-}
-
-// Start behind the tee looking at the hole, with the intro card on top
-ball.copy(TEE); newWind(); prepareShot(true); state = 'intro'; updateHud();
-requestAnimationFrame(frame);
-
-// Handy for testing in the browser console
-window.__golf = { get state() { return state; }, get ball() { return ball; }, get strokes() { return strokes; },
-  get clubIdx() { return clubIdx; }, get aim() { return aim; }, set aim(v) { aim = v; }, wind, swing: onSwingInput, surfaceAt,
-  testHit(pw, acc = 0) { if (state !== 'aim') return; power = pw; hit(acc); } };
-</script>
+<!-- The game: src/game/main.js picks the hole from ?hole=pl-01 / ?hole=pl-02 (default pl-01) -->
+<script type="module" src="src/game/main.js"></script>
 </body>
 </html>

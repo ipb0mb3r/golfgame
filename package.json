@@ -1,0 +1,10 @@
+{
+  "name": "pocket-links",
+  "private": true,
+  "type": "module",
+  "description": "Browser 3-click arcade golf. No build step and no dependencies: open index.html through a local server.",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python3 -m http.server 8000"
+  }
+}
