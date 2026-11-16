@@ -83,13 +83,15 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 | Bunker + sand wedge | 0.85 | 0.7 |
 | Green (putter) | 1.00 | 1.5 |
 
+**Putter:** the putter ignores `maxPower` on the fringe and the green (a club override, like the sand wedge), so a full putt always uses the whole putt range. It keeps the surface's `sweetScale` (green ×1.5, fringe ×1.0). Decided by the PM on PR #12.
+
 Starting values. The designer tunes them with `?tune=` (X8), e.g. `?tune=rough.maxPower:0.8,sand.sweetScale:0.6,sw.sand.maxPower:0.9` (each clamped: `maxPower` 0.1–1, `sweetScale` 0.2–3). Later hooks: rain (W2) and slope lie (T6) may reduce `sweetScale` through the same function.
 
-How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` (a hole can override them in `surfaceOverrides`); a club can override them per surface with `lieOverrides` in `clubs.js`. `clubs.lieFor(club, surface, surfaces)` is the one function that decides the lie (`play.lieOf()` for the ball's lie and current club). The meter's top is `meter.cap`; `resolveShot` also clamps power to the cap. The aim ring and club reach show the capped full shot. `play.pinPower()` places the ⚑ mark on the full 0–1 scale (above the cap = out of reach, shown in the gray part). The putter uses the surface values too (green 1.5, fringe 0.95 / 1.0).
+How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` (a hole can override them in `surfaceOverrides`); a club can override them per surface with `lieOverrides` in `clubs.js`. `clubs.lieFor(club, surface, surfaces)` is the one function that decides the lie (`play.lieOf()` for the ball's lie and current club). The meter's top is `meter.cap`; `resolveShot` also clamps power to the cap. The aim ring and club reach show the capped full shot. `play.pinPower()` places the ⚑ mark on the full 0–1 scale (above the cap = out of reach, shown in the gray part). The putter's override is in `clubs.js` (`lieOverrides` for fringe and green).
 
 ### Tunables (today)
-`METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.05`, `CURVE_SHAPE = 1`, `CURVE_K = 28`.
-✅ **S10 (designer playtest, 2026-11-16): the accuracy window was too hard.** `SWEET` went from 0.024 to 0.05 (≈100 ms perfect window instead of ≈48 ms). `CURVE_SHAPE` stays 1 (linear) until the designer picks a value with `?tune=` links (X8), e.g. `?tune=CURVE_SHAPE:2`. Tap delay on phones makes tight windows feel even harder; if needed, a later task can add an input offset.
+`METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.05`, `CURVE_SHAPE = 2`, `CURVE_K = 28`.
+✅ **S10 (designer playtest, 2026-11-16): the accuracy window was too hard.** `SWEET` went from 0.024 to 0.05 (≈100 ms perfect window instead of ≈48 ms). `CURVE_SHAPE = 2` (quadratic) is the default (PM decision on PR #12): far-end hooks and slices are unchanged, only small misses curve more gently. Compare with linear through `?tune=CURVE_SHAPE:1`. Tap delay on phones makes tight windows feel even harder; if needed, a later task can add an input offset.
 Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/38, SW 75/46 (sand), Putter. Each hole can limit the bag (hole 1 has no driver).
 
 ### Acceptance

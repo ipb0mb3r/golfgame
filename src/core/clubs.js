@@ -8,7 +8,9 @@ export const CLUBS = {
   pw:     { id: 'pw',     name: 'P Wedge', carry: 105, loft: 38 },
   sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46,
             lieOverrides: { sand: { maxPower: 0.85, sweetScale: 0.7 } } }, // the sand wedge is made for bunkers
-  putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true },
+  putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true,
+            // no power cap where you putt; the surface's sweetScale still applies (PM, PR #12)
+            lieOverrides: { fringe: { maxPower: 1 }, green: { maxPower: 1 } } },
 };
 export const FULL_BAG = ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'];
 

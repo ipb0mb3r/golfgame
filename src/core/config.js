@@ -22,7 +22,7 @@ export const MAX_METER_DT = 0.1;     // the meter follows real time, capped, so 
 export let METER_SPEED = 1.0;        // meter units per second
 export const METER_MIN = -0.2;       // left end of the meter (accuracy zone)
 export let SWEET = 0.05;             // half-width of the "perfect" zone around 0 (S10: was 0.024, ≈48 ms → ≈100 ms)
-export let CURVE_SHAPE = 1;          // S10: how a miss grows: 1 = linear (error = acc), 2 = quadratic (small misses curve gently)
+export let CURVE_SHAPE = 2;          // S10: how a miss grows: 1 = linear (error = acc), 2 = quadratic (small misses curve gently; PM default)
 export const CURVE_SHAPE_REF = 0.2;  // ...all shapes give the same error at |acc| = this (the far end of the meter)
 export let CURVE_K = 28;             // how strongly a mistimed 3rd click curves the ball
 // Missed clicks (S8, DESIGN §3 "Missed clicks")

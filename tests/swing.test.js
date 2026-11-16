@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createMeter, pressMeter, tickMeter, resolveShot, accuracyError, shotLabel } from '../src/core/swing.js';
 import { CLUBS } from '../src/core/clubs.js';
-import { SWEET, METER_MIN, G, setTunable, resetTunables } from '../src/core/config.js';
+import { SWEET, METER_MIN, G, CURVE_SHAPE, setTunable, resetTunables } from '../src/core/config.js';
 
 const base = { club: CLUBS['7i'], power: 0.8, acc: 0, aim: 0.1, lieFactor: 1, puttMax: 10, greenDecel: 1.1 };
 
@@ -13,7 +13,7 @@ test('same inputs always give the same launch', () => {
 
 test('early and late timings curve in opposite directions (hook left, slice right)', () => {
   const aim = 0; // facing −z, so +x is right
-  const hook = resolveShot({ ...base, aim, acc: 0.08 }), slice = resolveShot({ ...base, aim, acc: -0.08 });
+  const hook = resolveShot({ ...base, aim, acc: 0.15 }), slice = resolveShot({ ...base, aim, acc: -0.15 });
   assert.ok(hook.curve.x < 0, 'hook curves left');
   assert.ok(slice.curve.x > 0, 'slice curves right');
   assert.ok(Math.abs(hook.curve.x + slice.curve.x) < 1e-12, 'same size for the same error');
@@ -74,9 +74,11 @@ test('meter: reaching the top starts the grace window (S8), a click there locks 
 test('S10: the sweet spot is ±SWEET and CURVE_SHAPE sets how a miss grows', () => {
   assert.equal(SWEET, 0.05, 'starting value from the designer playtest');
   assert.equal(accuracyError(0.049), 0);
-  assert.equal(accuracyError(0.08), 0.08, 'shape 1 = linear, error = acc as before');
+  assert.equal(CURVE_SHAPE, 2, 'quadratic by default (PM decision on PR #12)');
   try {
-    setTunable('CURVE_SHAPE', 2);
+    setTunable('CURVE_SHAPE', 1);
+    assert.equal(accuracyError(0.08), 0.08, 'shape 1 = linear, error = acc as before');
+    resetTunables();
     assert.ok(Math.abs(accuracyError(0.08) - 0.2 * (0.08 / 0.2) ** 2) < 1e-12, 'quadratic');
     assert.ok(accuracyError(0.08) < 0.08, 'small misses curve gently');
     assert.ok(Math.abs(accuracyError(-0.2) + 0.2) < 1e-12, 'same error as linear at the end of the meter');

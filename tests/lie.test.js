@@ -115,6 +115,20 @@ test('sand wedge override: in a bunker it gets a higher cap and a wider window t
   assert.deepEqual(playOn('fairway', 'sw').lieOf(), { maxPower: 1, sweetScale: 1 });
 });
 
+test('the putter ignores the power cap on the fringe and the green, but keeps the timing window', () => {
+  const s = BASE_SURFACES;
+  assert.deepEqual(lieFor(CLUBS.putter, 'fringe', s), { maxPower: 1, sweetScale: s.fringe.sweetScale });
+  assert.deepEqual(lieFor(CLUBS.putter, 'green', s), { maxPower: 1, sweetScale: s.green.sweetScale });
+  assert.equal(lieFor(CLUBS['9i'], 'fringe', s).maxPower, 0.95, 'other clubs still get the fringe cap');
+  assert.equal(lieFor(CLUBS.putter, 'rough', s).maxPower, 0.85, 'off the green surfaces the cap still applies');
+  // a full-power putt from the fringe uses the whole putt range
+  const play = playOn('fringe', 'putter');
+  const meter = scriptedSwing([1 + POWER_GRACE / 2, 2], { cap: play.lieOf().maxPower });
+  assert.equal(meter.result.power, 1);
+  const a = play.hit(1, 0), b = playOn('green', 'putter').hit(1, 0);
+  assert.deepEqual(a.vel, b.vel);
+});
+
 test('lie values are tunable through ?tune= (X8)', () => {
   const r = applyTune('rough.maxPower:0.8,sand.sweetScale:0.6,SW.SAND.MAXPOWER:0.9,sand.decel:1,tee.maxPower:5');
   assert.deepEqual(r.set.map(s => [s.name, s.value]), [['rough.maxPower', 0.8], ['sand.sweetScale', 0.6], ['sw.sand.maxPower', 0.9], ['tee.maxPower', 1]]);
