@@ -1,6 +1,8 @@
 // S12: the ⚑ mark is honest on flat ground, uphill and downhill. It uses the same landing simulation
 // as the aim ring (hills and the lie cap included), so at the ⚑ power with no wind and a straight
-// shot, the ball finishes near the pin.
+// shot, the ball finishes near the pin. Since S18 the ⚑ is for the default aim point (the green
+// centre for an approach on a real hole, the pin on these test slopes), so "near the pin" here is
+// "near the default aim point": `play.target`.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { testHole } from './helpers.js';
@@ -33,7 +35,7 @@ function atPin(play) {
   const shot = play.hit(power, 0);
   assert.equal(shot.err, 0, 'straight');
   const ev = play.simulate();
-  return { power, ev, miss: dist2D(play.ball.pos, play.cup), land };
+  return { power, ev, miss: dist2D(play.ball.pos, play.target), land };
 }
 
 test('flat: at the ⚑ power the ball finishes near the pin', () => {
@@ -63,16 +65,19 @@ test('downhill: an 8% slope down to the pin', () => {
 
 test('the ⚑ uses the aim ring simulation: it lands AUTO_CLUB_REACH of the way to the pin', () => {
   for (const play of [onSlope(0), onSlope(0.08), onSlope(-0.08), fromScenario('h2-cross-bunker', '9i')]) {
-    const d = play.distToCup(), p = play.pinPower();
+    const d = play.targetDist(), p = play.pinPower();
     const carry = dist2D(play.ball.pos, play.landingPoint(play.clubIdx, play.aim, p));
     assert.ok(Math.abs(carry - d * AUTO_CLUB_REACH) < 0.01, `${carry.toFixed(3)} vs ${(d * AUTO_CLUB_REACH).toFixed(3)}`);
   }
 });
 
 test('out of reach within the cap: the ⚑ sits in the grayed-out part', () => {
-  // the sand wedge from the cross bunker can't quite get up to the green (cap 85%)
-  const sw = fromScenario('h2-cross-bunker', 'sw');
-  assert.ok(sw.pinPower() > sw.lieOf().maxPower);
+  // the P Wedge from the rough, 100 m out: it needs about 90% power, the rough caps it at 85%
+  // (S18 moved this from the hole 2 cross bunker: the sand wedge now aims at the nearer green centre)
+  const rough = createHolePlay(testHole({ surfaceAt: () => 'rough', cup: { x: 0, z: -100 } }), { seed: 1 });
+  rough.reset(); rough.setClub(rough.bag.findIndex(c => c.id === 'pw'));
+  const need = rough.pinPower();
+  assert.ok(need > rough.lieOf().maxPower && need < 1, `⚑ ${need.toFixed(3)} is above the cap ${rough.lieOf().maxPower}, below 1`);
   // and far away the search gives up at its top (the HUD hides the mark)
   assert.ok(onSlope(0, 400).pinPower() > 1);
 });

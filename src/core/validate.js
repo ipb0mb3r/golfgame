@@ -55,6 +55,16 @@ export function validateHole(hole) {
   };
   if (at(hole.tee.x, hole.tee.z) !== 'tee') bad('the tee is not on the "tee" surface');
   if (at(hole.cup.x, hole.cup.z) !== 'green') bad('the cup is not on the "green" surface');
+  // S18: the default aim. Approaches aim at the green centre (features.green), par 4/5 tee shots at aimTarget
+  const g = hole.features?.green;
+  if (!g || !isNum(g.cx) || !isNum(g.cz)) bad('features.green must be { cx, cz, ... } (the default aim for approaches, S18)');
+  if (at(g.cx, g.cz) !== 'green') bad(`the centre of features.green (${g.cx}, ${g.cz}) is not on the "green" surface`);
+  if (hole.par >= 4 && hole.aimTarget === undefined) bad('a par 4 or 5 needs aimTarget: { x, z }, the default aim for the tee shot (S18)');
+  if (hole.aimTarget !== undefined) {
+    if (!isPoint(hole.aimTarget)) bad('aimTarget must be { x, z } with finite numbers');
+    const s = at(hole.aimTarget.x, hole.aimTarget.z);
+    if (BASE_SURFACES[s].penalty) bad(`aimTarget (${hole.aimTarget.x}, ${hole.aimTarget.z}) is in ${s}`);
+  }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {
     at(m.x0 + (m.x1 - m.x0) * i / SAMPLES, m.z0 + (m.z1 - m.z0) * j / SAMPLES);
   }

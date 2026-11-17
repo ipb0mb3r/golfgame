@@ -156,12 +156,15 @@ async function replay(fps, shots) {
       await page.waitForFunction(() => window.__golf.state === 'aim');
     }
     // Hit with the club the old page used (v1 checks physics only; S13 changed the auto-pick, e.g. no
-    // Driver off the fairway). Same as tests/baseline.test.js.
+    // Driver off the fairway), aimed at the pin like the old page (S18 changed the default aim).
+    // Same as tests/baseline.test.js.
     const start = await page.evaluate(([x, z, club]) => {
       const g = window.__golf;
       g.wind.set(0, 0, 0); g.place(x, z);
       const i = g.play.bag.findIndex(c => c.name === club);
       if (i >= 0) g.clubIdx = i;
+      const b = g.ball, c = g.HOLE;
+      g.aim = Math.atan2(c.x - b.x, -(c.z - b.z)); // aimAt(ball, cup), as in core/vec.js
       return { club: g.play.club.name, aim: g.aim, strokes: g.strokes };
     }, [shot.start.x, shot.start.z, shot.start.club]);
     await page.evaluate(([p, a, off]) => { const g = window.__golf; g.aim = g.aim + off; g.testHit(p, a); }, [shot.power, shot.acc, shot.aimOff]);

@@ -35,10 +35,14 @@ export function lieFor(club, surfaceId, surfaces) {
   return { maxPower: pick('maxPower'), sweetScale: pick('sweetScale') };
 }
 
+// A putt from here (rule 1 below, also used by the default aim, S18): on the green, or on the fringe
+// closer than FRINGE_PUTT_DIST to the cup.
+export const isPuttLie = (lie, cupDist) => lie === 'green' || (lie === 'fringe' && cupDist < FRINGE_PUTT_DIST);
+
 // The auto-pick for the next shot (S13, designer rules, DESIGN §3 "Club auto-pick"). The player can
 // still change to any club in the bag. Returns an index into `bag`.
 //   lie   the surface the ball sits on
-//   dist  meters to the pin
+//   dist  meters to the default aim point (S18; the pin for a putt)
 //   reach (i) => meters a full shot with bag[i] carries from here (the lie's cap and the hills included)
 // Rules, in order:
 //   1. Green, or fringe closer than FRINGE_PUTT_DIST: the putter.
@@ -47,9 +51,11 @@ export function lieFor(club, surfaceId, surfaces) {
 //   3. Otherwise the shortest club whose reach is at least AUTO_CLUB_REACH × dist. The Driver only
 //      counts on the tee, so it is picked only from the tee and only when nothing shorter gets there.
 //      When nothing reaches, the longest club that counts.
-export function pickClub(bag, { lie, dist, reach }) {
+//   cupDist (S18) meters to the cup for rule 1 (default: dist). `dist` is the distance to the default
+//         aim (the green centre or the tee target), `cupDist` decides whether this is a putt.
+export function pickClub(bag, { lie, dist, cupDist = dist, reach }) {
   const putter = bag.length - 1;
-  if (lie === 'green' || (lie === 'fringe' && dist < FRINGE_PUTT_DIST)) return putter;
+  if (isPuttLie(lie, cupDist)) return putter;
   const need = dist * AUTO_CLUB_REACH;
   if (lie === 'sand') { const sw = bag.findIndex(c => c.id === 'sw'); if (sw >= 0 && reach(sw) >= need) return sw; }
   const allowed = [];

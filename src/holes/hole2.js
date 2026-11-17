@@ -87,6 +87,9 @@ function surfaceAt(x, z) {
 export default {
   id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12,
   tee: { x: 0, z: 0 }, cup: { x: 26, z: -448 },
+  // S18: the tee shot's default aim, the dogleg corner in the middle of the fairway (a full Driver
+  // carries the big hill and runs out to about here). Approaches aim at the centre of the green.
+  aimTarget: { x: 9, z: -270 },
   bag: ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
   windMax: 5.5,
   weather: { type: 'clear', wetness: 0 },

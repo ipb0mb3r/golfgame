@@ -7,6 +7,7 @@ import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 
 import { applyTune, resetAllTunables } from '../src/core/tune.js';
+import { aimAt } from '../src/core/vec.js';
 
 // v1 checks PHYSICS ONLY (flight, bounce, roll, slopes); v2 checks swing feel (AGENTS.md rule 8).
 // These shots were recorded from the old pages, so they replay with the old swing mapping: a neutral
@@ -26,6 +27,9 @@ export function replay(shot) {
   play.wind.x = play.wind.z = 0;
   play.ball.pos.x = shot.start.x; play.ball.pos.z = shot.start.z;
   play.prepare();
+  // The old pages aimed every shot at the pin. S18's default aim is a swing rule, so v1 aims the way
+  // the old page did (like the club below); v2 and tests/default-aim.test.js check the new aim.
+  play.setAim(aimAt(play.ball.pos, play.cup));
   const picked = play.club.name, aim = play.aim;
   play.clubIdx = play.bag.findIndex(c => c.name === shot.start.club);
   const club = play.club.name;

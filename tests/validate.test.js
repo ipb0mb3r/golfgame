@@ -51,3 +51,13 @@ test('scenarios: NaN or off-map ball, wrong lie, unknown hole and bad strokes fa
   assert.throws(() => validateScenario('x', { ...sc, strokes: 10 }, HOLES), /strokes must be/);
   assert.throws(() => validateScenario('x', { ...sc, seed: 1.5 }, HOLES), /seed must be/);
 });
+
+test('S18: the default aim data is checked (green centre, aimTarget on a par 4/5)', () => {
+  const hole2 = HOLES['pl-02'];
+  assert.throws(() => validateHole({ ...hole2, aimTarget: undefined }), /hole "pl-02": a par 4 or 5 needs aimTarget/);
+  assert.throws(() => validateHole({ ...hole2, aimTarget: { x: 0, z: NaN } }), /aimTarget must be/);
+  assert.throws(() => validateHole({ ...hole2, aimTarget: { x: -16, z: -300 } }), /aimTarget \(-16, -300\) is in water/);
+  assert.throws(() => validateHole(withChange({ features: { ...hole1.features, green: { cx: 3, cz: -100, rx: 15, rz: 12 } } })), /centre of features\.green .* is not on the "green" surface/);
+  assert.throws(() => validateHole(withChange({ features: {} })), /features\.green must be/);
+  assert.equal(validateHole(withChange({ aimTarget: undefined })).id, 'pl-01', 'a par 3 needs no aimTarget');
+});
