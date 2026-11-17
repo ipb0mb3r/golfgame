@@ -142,6 +142,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 Reviewers only read code and write reports in `reviews/`. You decide which findings get fixed.
 
 **Gate A: after Phase 0** (it's a big refactor, so catch structural problems early)
+- [ ] **X10** Debug overlay small fixes (Fix pass 1 QA, all Low): Q1 in portrait the overlay covers the TUNED badge and a long tune list makes it wider than the screen · Q2 in landscape `?debug=1` opens it over the scorecard (the backtick position is fine) · Q3 the "a file didn't load" start-up message always names `src/game/main.js` instead of the file that failed
 - [x] **QA1** Maintainability review
 - [x] **QA2** Testing review
 - [x] **QA3** Compatibility review (frame rates, browsers, mobile, `file://` vs server)

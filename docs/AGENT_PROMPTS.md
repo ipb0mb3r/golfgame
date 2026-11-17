@@ -193,7 +193,8 @@ End with your top 3 recommendations.
 ```
 Role: Security reviewer. Scope for a static browser game: loading of hole/config data and
 localStorage (validation, malformed data), any eval/new Function/innerHTML with dynamic content,
-the third-party script supply chain (unpkg import, version pinning, Subresource Integrity), URL params
+the third-party code supply chain (Three.js is vendored in vendor/ since Gate A C1: check the file matches its recorded
+hash and the import map points only at local files), URL params
 (?hole=) handling, secrets committed to the repo, and what would become risky if user-made holes
 or online scores were added later.
 ```
