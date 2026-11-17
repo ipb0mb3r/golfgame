@@ -1,11 +1,10 @@
 // The 3-click swing (DESIGN.md §3): the meter state machine and turning a swing into a launch.
 import {
-  G, METER_SPEED, METER_MIN, SWEET, CURVE_SHAPE, CURVE_SHAPE_REF, CURVE_K, CURVE_REF_SPEED, MIN_POWER, PERFECT_POWER,
-  SLIGHT_ERROR, SPIN, PUTT, POWER_GRACE, NO_ACC_ERR, MISSED_POWER_FRACTION,
+  G, METER_MIN, CURVE_SHAPE_REF, CURVE_REF_SPEED, MIN_POWER, PERFECT_POWER, SLIGHT_ERROR, SPIN, PUTT, TUNE,
 } from './config.js';
 import { dirFromAim, rightFromAim, clamp, degToRad } from './vec.js';
 
-// Meter phases (DESIGN §3 "Missed clicks"):
+// Meter phases (DESIGN §3 "Missed clicks"; the list is METER_PHASES in core/states.js):
 //   'aim'       waiting for click 1
 //   'power'     filling toward 1; a click sets the power
 // The top of the meter is the lie's power cap `m.cap` (S11, default 1): everything below that says
@@ -25,7 +24,8 @@ export function createMeter(cap = 1) { return { phase: 'aim', value: 0, power: 0
 // Back to aim. `cap` = the power cap for the next swing (keeps the current one when left out).
 export function resetMeter(m, cap = m.cap) { m.phase = 'aim'; m.value = 0; m.power = 0; m.graceT = 0; m.event = null; m.cap = cap; return m; }
 
-export const isSwinging = phase => phase === 'power' || phase === 'grace' || phase === 'nopower' || phase === 'accuracy';
+// Which phases are mid-swing is decided in one place (Gate A A3): core/states.js
+export { isSwinging } from './states.js';
 
 // A click. Returns the swing result when this click ends the swing, otherwise null.
 export function pressMeter(m) {
@@ -33,7 +33,7 @@ export function pressMeter(m) {
     case 'aim': m.phase = 'power'; m.value = 0; m.power = 0; m.graceT = 0; return null;
     case 'power': m.power = m.value; m.phase = 'accuracy'; return null;
     case 'grace': m.power = m.cap; m.phase = 'accuracy'; return null;
-    case 'nopower': m.phase = 'done'; m.power = MISSED_POWER_FRACTION; return { power: MISSED_POWER_FRACTION, acc: m.value, outcome: 'topped' };
+    case 'nopower': m.phase = 'done'; m.power = TUNE.MISSED_POWER_FRACTION; return { power: TUNE.MISSED_POWER_FRACTION, acc: m.value, outcome: 'topped' };
     case 'accuracy': m.phase = 'done'; return { power: m.power, acc: m.value, outcome: 'normal' };
     default: return null;
   }
@@ -44,18 +44,18 @@ export function pressMeter(m) {
 // 'max' (meter reached 1) or 'nopower' (grace window passed).
 export function tickMeter(m, dt) {
   m.event = null;
-  const step = dt * METER_SPEED;
+  const step = dt * TUNE.METER_SPEED;
   if (m.phase === 'power') {
     m.value += step;
     if (m.value < m.cap) return null;
     // Reached the top (the cap): the marker turns back (keeping the overshoot) and the grace window starts.
     const over = m.value - m.cap;
-    m.value = m.cap - over; m.phase = 'grace'; m.graceT = over / METER_SPEED; m.event = 'max';
-    if (m.graceT <= POWER_GRACE) return null;
+    m.value = m.cap - over; m.phase = 'grace'; m.graceT = over / TUNE.METER_SPEED; m.event = 'max';
+    if (m.graceT <= TUNE.POWER_GRACE) return null;
     m.phase = 'nopower'; m.event = 'nopower'; // a frame long enough to skip the whole window
   } else if (m.phase === 'grace') {
     m.value -= step; m.graceT += dt;
-    if (m.graceT > POWER_GRACE) { m.phase = 'nopower'; m.event = 'nopower'; }
+    if (m.graceT > TUNE.POWER_GRACE) { m.phase = 'nopower'; m.event = 'nopower'; }
   } else if (m.phase === 'nopower' || m.phase === 'accuracy') {
     m.value -= step;
   } else return null;
@@ -70,15 +70,15 @@ export function tickMeter(m, dt) {
 // Outside the sweet spot the error grows with |acc| ^ CURVE_SHAPE, scaled so every shape gives the same
 // error at |acc| = CURVE_SHAPE_REF: shape 1 = linear (error = acc), shape 2 = small misses curve gently.
 // sweetScale (S11) widens or narrows the window for the lie.
-export const sweetHalfWidth = (sweetScale = 1) => SWEET * sweetScale;
+export const sweetHalfWidth = (sweetScale = 1) => TUNE.SWEET * sweetScale;
 export function accuracyError(acc, sweetScale = 1) {
   const a = Math.abs(acc);
   if (a <= sweetHalfWidth(sweetScale)) return 0;
-  return Math.sign(acc) * CURVE_SHAPE_REF * (a / CURVE_SHAPE_REF) ** CURVE_SHAPE;
+  return Math.sign(acc) * CURVE_SHAPE_REF * (a / CURVE_SHAPE_REF) ** TUNE.CURVE_SHAPE;
 }
 
 // The curve error of a swing result: a missed 3rd click is a fixed huge slice.
-export const swingError = (acc, outcome = 'normal', sweetScale = 1) => (outcome === 'shank' ? -NO_ACC_ERR : accuracyError(acc, sweetScale));
+export const swingError = (acc, outcome = 'normal', sweetScale = 1) => (outcome === 'shank' ? -TUNE.NO_ACC_ERR : accuracyError(acc, sweetScale));
 
 export function shotLabel(power, err, outcome = 'normal') {
   if (outcome === 'shank') return 'Shanked!';
@@ -112,7 +112,7 @@ export function resolveShot({ club, power, acc, aim, puttMax, greenDecel, outcom
     return { kind: 'putt', err, label, vel: { x: dir.x * v0, y: 0, z: dir.z * v0 }, curve: { x: 0, y: 0, z: 0 }, spinFactor: 1, dir };
   }
   const { vel, speed } = launchVelocity(club, p, aim);
-  const r = rightFromAim(aim), c = -err * CURVE_K * (speed / CURVE_REF_SPEED);
+  const r = rightFromAim(aim), c = -err * TUNE.CURVE_K * (speed / CURVE_REF_SPEED);
   const spinFactor = clamp(SPIN.base - club.loft / SPIN.loftScale, SPIN.min, SPIN.max);
   return { kind: 'full', err, label, vel, curve: { x: r.x * c, y: r.y * c, z: r.z * c }, spinFactor, dir: dirFromAim(aim) };
 }

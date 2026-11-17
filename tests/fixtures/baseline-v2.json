@@ -551,6 +551,361 @@
           "z": 5.455230346321126
         }
       }
+    },
+    {
+      "name": "T2 h1 from the rough (cap 85%, narrow window)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": -28,
+        "z": -50
+      },
+      "strokes": 1,
+      "power": 0.85,
+      "acc": -0.06,
+      "aimOff": 0,
+      "end": {
+        "x": 7.790150788203382,
+        "y": 0,
+        "z": -153.8211091836372,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 greenside bunker, sand wedge",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": -15,
+        "z": -147
+      },
+      "strokes": 1,
+      "power": 0.4,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 14.65612072354507,
+        "y": 0,
+        "z": -154.8042422956706,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "sw",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 greenside bunker, 9 iron (no SW)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": -15,
+        "z": -147
+      },
+      "strokes": 1,
+      "power": 0.3,
+      "acc": 0,
+      "aimOff": 0,
+      "club": "9i",
+      "end": {
+        "x": 21.71402738075537,
+        "y": 0,
+        "z": -156.66158615283516,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h2 fairway bunker (auto-pick, cap 60%)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 16,
+        "z": -237
+      },
+      "strokes": 1,
+      "power": 0.6,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 22.45758247013953,
+        "y": 1.420938794308949,
+        "z": -370.2294850277613,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "3w",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h2 fringe chip (21 m)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 5,
+        "z": -446
+      },
+      "strokes": 2,
+      "power": 0.3,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 27.32882641643725,
+        "y": 3.8709812261421055,
+        "z": -448.0667157537727,
+        "event": "stopped",
+        "strokes": 3,
+        "club": "sw",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 hook acc +0.10",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0.1,
+      "aimOff": 0,
+      "end": {
+        "x": -7.651129436422424,
+        "y": 0,
+        "z": -150.36870113209514,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 slice acc -0.10",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": -0.1,
+      "aimOff": 0,
+      "end": {
+        "x": 15.549204887749037,
+        "y": 0,
+        "z": -149.75816601831212,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 hook acc +0.15",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0.15,
+      "aimOff": 0,
+      "end": {
+        "x": -19.324797881908932,
+        "y": 0,
+        "z": -145.57210385821898,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 slice acc -0.15",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": -0.15,
+      "aimOff": 0,
+      "end": {
+        "x": 27.033819806076444,
+        "y": 0,
+        "z": -144.4637285091644,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 shank (no 3rd click)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.5,
+      "acc": -0.2,
+      "aimOff": 0,
+      "outcome": "shank",
+      "end": {
+        "x": 49.50479860269941,
+        "y": 0,
+        "z": -75.17201009422077,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h2 topped (no power click)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.15,
+      "acc": 0.03,
+      "aimOff": 0,
+      "outcome": "topped",
+      "end": {
+        "x": 3.187859660783393,
+        "y": -0.32007402178352196,
+        "z": -55.7046027902333,
+        "event": "stopped",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 mistimed putt (late, acc -0.15)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": -6,
+        "z": -146
+      },
+      "strokes": 1,
+      "power": 0.7,
+      "acc": -0.15,
+      "aimOff": 0,
+      "end": {
+        "x": 4.389147097489272,
+        "y": 0,
+        "z": -151.8425966060785,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "T2 h1 putt lips out (seed 5)",
+      "hole": "pl-01",
+      "seed": 5,
+      "start": {
+        "x": -6,
+        "z": -146
+      },
+      "strokes": 1,
+      "power": 0.95,
+      "acc": 0,
+      "aimOff": 0,
+      "windless": true,
+      "end": {
+        "x": 5.053590190750471,
+        "y": 0,
+        "z": -153.0774428952344,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        },
+        "lippedOut": true
+      }
+    },
+    {
+      "name": "T2 h2 approach lands in the sloped cross bunker (10%)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 18,
+        "z": -330
+      },
+      "strokes": 1,
+      "power": 0.45,
+      "acc": 0,
+      "aimOff": -0.1,
+      "end": {
+        "x": 16.180661033539202,
+        "y": 0.944197183198763,
+        "z": -386.27389764870077,
+        "event": "stopped",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
     }
   ]
 }

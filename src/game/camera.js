@@ -1,5 +1,6 @@
 // Camera that follows the ball and the ground up and down the hills.
 import * as THREE from 'three';
+import { isAimView, isBallMoving } from '../core/states.js';
 
 export function createCameraRig(camera, heightAt) {
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
@@ -10,7 +11,7 @@ export function createCameraRig(camera, heightAt) {
   function goal(v) {
     const { ball, dir: d } = v;
     const gy = heightAt(ball.x, ball.z);
-    if (v.state === 'intro' || v.state === 'aim' || v.state === 'power' || v.state === 'accuracy') {
+    if (isAimView(v.state)) { // incl. the S8 phases grace / nopower (Gate A A3: this list used to miss them)
       if (v.putter) {
         wantPos.set(ball.x - d.x * 3.5, gy + 1.6, ball.z - d.z * 3.5);
         wantLook.set(ball.x + d.x * 5, 0, ball.z + d.z * 5); wantLook.y = heightAt(wantLook.x, wantLook.z);
@@ -22,7 +23,7 @@ export function createCameraRig(camera, heightAt) {
       }
       return 5;
     }
-    if (v.state === 'flight' || v.state === 'roll') {
+    if (isBallMoving(v.state)) {
       const back = v.isPutt ? 3.5 : 11, s = v.shotDir;
       wantPos.set(ball.x - s.x * back, 0, ball.z - s.z * back);
       wantPos.y = gy + Math.max((ball.y - gy) * 0.6, 0) + (v.isPutt ? 1.6 : 3.5);

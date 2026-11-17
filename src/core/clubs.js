@@ -1,7 +1,9 @@
 import { AUTO_CLUB_REACH, FRINGE_PUTT_DIST } from './config.js';
+import { lieTune, deepFreeze } from './surfaces.js';
 
 // Club table (DESIGN.md §3). carry = meters a full, straight shot carries on flat ground.
-export const CLUBS = {
+// Frozen (Gate A A5): a ?tune= link changes club lie values through the lie-tune layer, not here.
+export const CLUBS = deepFreeze({
   driver: { id: 'driver', name: 'Driver',  carry: 215, loft: 12 },
   '3w':   { id: '3w',     name: '3 Wood',  carry: 195, loft: 17 },
   '5i':   { id: '5i',     name: '5 Iron',  carry: 170, loft: 21 },
@@ -13,11 +15,12 @@ export const CLUBS = {
   putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true,
             // no power cap where you putt; the surface's sweetScale still applies (PM, PR #12)
             lieOverrides: { fringe: { maxPower: 1 }, green: { maxPower: 1 } } },
-};
+});
 export const FULL_BAG = ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'];
 
 // A hole's bag, longest club first, putter last.
 export function makeBag(ids = FULL_BAG) {
+  for (const id of ids) if (!Object.hasOwn(CLUBS, id)) throw new Error(`unknown club "${id}" in the bag`); // Gate A T7: no silent drop
   const bag = FULL_BAG.filter(id => ids.includes(id)).map(id => CLUBS[id]);
   if (!bag.length || !bag[bag.length - 1].putter) throw new Error('a bag must end with the putter');
   return bag;
@@ -25,9 +28,11 @@ export function makeBag(ids = FULL_BAG) {
 
 // The lie for hitting this club from this surface (S11): { maxPower, sweetScale }.
 // The surface's values, unless the club overrides them for that surface (the sand wedge in a bunker).
+// A ?tune= club value (e.g. sw.sand.maxPower) wins over the club's own override.
 export function lieFor(club, surfaceId, surfaces) {
   const s = surfaces[surfaceId], o = club.lieOverrides?.[surfaceId] ?? {};
-  return { maxPower: o.maxPower ?? s.maxPower ?? 1, sweetScale: o.sweetScale ?? s.sweetScale ?? 1 };
+  const pick = key => (key in o ? lieTune(`${club.id}.${surfaceId}.${key}`) ?? o[key] : undefined) ?? s[key] ?? 1;
+  return { maxPower: pick('maxPower'), sweetScale: pick('sweetScale') };
 }
 
 // The auto-pick for the next shot (S13, designer rules, DESIGN §3 "Club auto-pick"). The player can

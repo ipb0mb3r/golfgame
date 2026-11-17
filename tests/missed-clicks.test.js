@@ -7,10 +7,12 @@ import { scriptedSwing, testHole } from './helpers.js';
 import { resolveShot, swingError } from '../src/core/swing.js';
 import { createHolePlay } from '../src/core/play.js';
 import { CLUBS } from '../src/core/clubs.js';
-import { METER_MIN, POWER_GRACE, NO_ACC_ERR, MISSED_POWER_FRACTION, CURVE_K, CURVE_REF_SPEED } from '../src/core/config.js';
+import { METER_MIN, TUNE, CURVE_REF_SPEED } from '../src/core/config.js';
+
+const { POWER_GRACE, NO_ACC_ERR, MISSED_POWER_FRACTION, CURVE_K } = TUNE; // the defaults
 
 const near = (a, b, tol = 0.005) => Math.abs(a - b) <= tol;
-const shotFor = r => resolveShot({ club: CLUBS['7i'], power: r.power, acc: r.acc, aim: 0, lieFactor: 1, puttMax: 10, greenDecel: 1.1, outcome: r.outcome });
+const shotFor = r => resolveShot({ club: CLUBS['7i'], power: r.power, acc: r.acc, aim: 0, puttMax: 10, greenDecel: 1.1, outcome: r.outcome });
 
 test('row 1: all 3 clicks give a normal shot', () => {
   const { result, events } = scriptedSwing([0.7, 1.4]);

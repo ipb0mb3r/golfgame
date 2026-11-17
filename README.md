@@ -20,7 +20,7 @@ The intro and score cards link from one hole to the other. Old links to `hole2.h
 | Aim | ◀ ▶ arrow keys (or A / D) | Hold the ◀ ▶ buttons |
 | Change club | ▲ ▼ arrow keys (or W / S) | ‹ › buttons |
 | Swing | Space (three presses) | Click the course or the SWING button (three times) |
-| Debug overlay | ` (backtick) | |
+| Debug overlay | ` (backtick) | add `?debug=1` to the address (works on a phone) |
 
 **The three-click swing**
 
@@ -40,7 +40,7 @@ The game is made of JavaScript modules, and browsers only load those from a web 
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (hole 2). It needs an internet connection to load Three.js.
+Then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.160.0/`).
 
 Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind every time.
 
@@ -58,7 +58,7 @@ Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind ev
 | [`?scenario=h2-green-step`](https://ipb0mb3r.github.io/golfgame/?scenario=h2-green-step) | Hole 2, putt up the step between the green levels |
 | [`?scenario=h2-side-slope`](https://ipb0mb3r.github.io/golfgame/?scenario=h2-side-slope) | Hole 2, fairway side slope toward the pond |
 
-**Tune links** change a feel setting for that visit only, e.g. [`?tune=SWEET:0.08`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.08) (a wider perfect zone) or [`?tune=SWEET:0.06,CURVE_SHAPE:2`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.06,CURVE_SHAPE:2) (small misses curve gently). A pink **TUNED** badge above the meter shows a tuned game is running. Only these names work, numbers only, and each is clamped to a safe range (see `TUNABLES` in `src/core/config.js`): `SWEET`, `CURVE_SHAPE`, `CURVE_K`, `METER_SPEED`, `POWER_GRACE`, `NO_ACC_ERR`, `MISSED_POWER_FRACTION`, `CUP_CAPTURE_SPEED`, `WIND_K`, `FLIGHT_SPEEDUP`. The lie values work too: `<surface>.maxPower` and `<surface>.sweetScale` for `tee`, `fairway`, `fringe`, `rough`, `sand`, `green`, plus the sand wedge's bunker values `sw.sand.maxPower` and `sw.sand.sweetScale`, e.g. [`?tune=rough.maxPower:0.8,sand.sweetScale:0.6`](https://ipb0mb3r.github.io/golfgame/?scenario=h1-bunker&tune=rough.maxPower:0.8,sand.sweetScale:0.6). Scenarios and tunes combine: `?scenario=h2-green-step&tune=SWEET:0.04`.
+**Tune links** change a feel setting for that visit only, e.g. [`?tune=SWEET:0.08`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.08) (a wider perfect zone) or [`?tune=SWEET:0.06,CURVE_SHAPE:2`](https://ipb0mb3r.github.io/golfgame/?tune=SWEET:0.06,CURVE_SHAPE:2) (small misses curve gently). A pink **TUNED** badge above the meter shows a tuned game is running. Only these names work, numbers only, and each is clamped to a safe range (see `TUNABLES` in `src/core/config.js`): `SWEET`, `CURVE_SHAPE`, `CURVE_K`, `METER_SPEED`, `POWER_GRACE`, `NO_ACC_ERR`, `MISSED_POWER_FRACTION`, `CUP_CAPTURE_SPEED`, `WIND_K`, `FLIGHT_SPEEDUP`, and for slow phones `DPR_CAP` (fewer pixels, e.g. `DPR_CAP:1`) and `ANTIALIAS` (`ANTIALIAS:0` turns smoothing off). The lie values work too: `<surface>.maxPower` and `<surface>.sweetScale` for `tee`, `fairway`, `fringe`, `rough`, `sand`, `green`, plus the sand wedge's bunker values `sw.sand.maxPower` and `sw.sand.sweetScale`, e.g. [`?tune=rough.maxPower:0.8,sand.sweetScale:0.6`](https://ipb0mb3r.github.io/golfgame/?scenario=h1-bunker&tune=rough.maxPower:0.8,sand.sweetScale:0.6). Scenarios and tunes combine: `?scenario=h2-green-step&tune=SWEET:0.04`.
 
 ## Run the tests
 
@@ -70,7 +70,9 @@ node --test
 
 This runs the unit tests for the game rules in `src/core/` and replays the recorded baseline shots: `tests/fixtures/baseline.json` (recorded from the old pages, must match within 0.5 m) and `tests/fixtures/baseline-v2.json` (recorded from the current engine, must match within 0.01 m).
 
-`tools/baseline.mjs` re-records or re-checks those shots in a real (headless) browser. It is only for developers and needs [Playwright](https://playwright.dev/): `node tools/baseline.mjs check`.
+`tools/baseline.mjs` re-records or re-checks those shots in a real (headless) browser, and `tools/session-check.mjs` loads and unloads holes 10 times to check nothing is left behind. They are only for developers and need [Playwright](https://playwright.dev/): `node tools/baseline.mjs check`, `node tools/session-check.mjs`.
+
+If the game can't start (an old browser, WebGL switched off, opened from the folder instead of a server), the intro card says why in plain words.
 
 ## How the code is organised
 
@@ -84,12 +86,15 @@ src/core/             the game rules in plain JavaScript (no Three.js, no page c
   terrain.js          slope helpers and makeTerrain(hole)
   swing.js            the 3-click meter and turning a swing into a launch
   ball.js             flight, bounce, roll, cup and penalties, one fixed step at a time
-  play.js             one hole's rules: strokes, lie, club pick, the fixed-step clock
+  play.js             one hole's rules: strokes, lie, club pick, the fixed-step clock, what happens after each shot
+  states.js           which game states and meter phases are which (one list for everyone)
+  validate.js         checks hole and scenario data when it loads
   rng.js, vec.js, scoring.js
 src/holes/            one file per hole (layout, hills, surfaces, scenery) and sets.js
-src/game/             the Three.js scene, camera, HUD, input and debug overlay
+src/game/             the Three.js scene, camera, HUD, input and debug overlay; session.js = one hole, loaded and unloaded
+vendor/three-0.160.0/ Three.js itself (unmodified, MIT license)
 tests/                node --test files and the baseline shots
-tools/                baseline.mjs checks the old-pages baseline in a browser; record-baseline-v2.mjs re-records v2
+tools/                baseline.mjs checks the old-pages baseline in a browser; record-baseline-v2.mjs re-records v2; session-check.mjs checks hole unloading
 ```
 
 **Adding a hole** means adding a file in `src/holes/` (copy the shape of `hole1.js` or `hole2.js`) and one line in `src/holes/sets.js`. The engine itself is never copied. See `docs/DESIGN.md` for the full plan.

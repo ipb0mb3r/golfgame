@@ -14,6 +14,7 @@ for (const [i, shot] of base.shots.entries()) {
     assert.equal(r.club, e.club, 'auto-picked club');
     assert.equal(r.event, e.event, 'how the shot ended');
     assert.equal(r.strokes, e.strokes, 'strokes');
+    assert.equal(r.lippedOut ?? false, e.lippedOut ?? false, 'lipped out on the way');
     const d = Math.hypot(r.x - e.x, r.y - e.y, r.z - e.z);
     assert.ok(d <= base.tolerance, `rest position off by ${d.toFixed(4)} m (recorded ${e.x.toFixed(3)}, ${e.z.toFixed(3)}; now ${r.x.toFixed(3)}, ${r.z.toFixed(3)})`);
   });

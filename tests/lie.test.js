@@ -6,10 +6,11 @@ import { createHolePlay } from '../src/core/play.js';
 import { BASE_SURFACES } from '../src/core/surfaces.js';
 import { CLUBS, lieFor } from '../src/core/clubs.js';
 import { accuracyError, sweetHalfWidth, resolveShot, createMeter, pressMeter, tickMeter } from '../src/core/swing.js';
-import { SWEET, POWER_GRACE, AUTO_CLUB_REACH, METER_MIN } from '../src/core/config.js';
+import { TUNE, AUTO_CLUB_REACH, METER_MIN } from '../src/core/config.js';
 import { applyTune, resetAllTunables } from '../src/core/tune.js';
 
 afterEach(() => resetAllTunables());
+const { SWEET, POWER_GRACE } = TUNE; // the defaults
 const near = (a, b, tol) => Math.abs(a - b) <= tol;
 
 // A flat hole where the ball sits on `lie` and the cup is far away (so a shot never drops)

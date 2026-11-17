@@ -3,6 +3,9 @@
 // `ball`, `strokes`, `seed` and the optional `wind` (m/s, overrides the seeded wind).
 // `lie` is what the ball should sit on; tests/scenarios.test.js checks it, so a hole edit that
 // moves a bunker can't silently break a scenario.
+import { HOLES } from './sets.js';
+import { validateScenario } from '../core/validate.js';
+
 export const SCENARIOS = {
   'h1-bunker': {
     hole: 'pl-01', ball: { x: -15, z: -147 }, strokes: 1, seed: 101, wind: { x: 0, z: 0 }, lie: 'sand',
@@ -33,6 +36,9 @@ export const SCENARIOS = {
     name: 'Hole 2: side slope', text: 'The ground falls left toward the pond.',
   },
 };
+
+// Checked when they load (Gate A T7): a bad spot fails here, naming the scenario and the field.
+for (const [id, sc] of Object.entries(SCENARIOS)) validateScenario(id, sc, HOLES);
 
 // ?scenario= value → { scenario, unknown }. Ids are matched case-insensitively.
 export function resolveScenario(id) {
