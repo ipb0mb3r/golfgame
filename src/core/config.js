@@ -53,6 +53,8 @@ export const BOUNCE_LIFT = 0.002;    // lift the ball this much after a bounce s
 export const STATIC = 0.4;           // share of a surface's friction that holds a stopped ball on a slope
 export const CREEP = 0.5;            // below this speed (m/s) friction blends down so the ball trickles on steep slopes
 export const STOP_SPEED = 0.06;      // a ball slower than this, with nothing pulling it, is at rest
+export const CRAWL_TIME = 8;         // P10: after crawling (slower than CREEP) this long (s), full friction again: the ball settles
+export const STOP_TIME = 0.5;        // P10: a ball slower than STOP_SPEED for this long (s) is at rest, even on a slope
 export const ROLL_TIMEOUT = 40;      // safety net: a roll never lasts longer than this (s)
 
 // --- Cup ---
