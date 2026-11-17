@@ -10,7 +10,7 @@
 | 0 | Foundation and engine refactor | ✅ done | `dev/F-engine-refactor` |
 | — | Feel passes 1–2 (swing, lie, HUD) | ✅ done | `dev/feel-pass-1`, `dev/feel-pass-2` |
 | A | Review gate A | ✅ reviewed (#18–#20), decisions in `reviews/A-decisions.md` | `review/A-<role>` |
-| A1 | **Fix pass 1** (no gameplay change) | **NEXT** | `dev/QA-fixes-1` |
+| A1 | **Fix pass 1** (no gameplay change) | in review | `dev/QA-fixes-1` |
 | A2 | Fix pass 2 (physics changes) | after A1 | `dev/QA-fixes-2` |
 | 1–4 | Swing, physics, slopes, putting | mostly built, missing tests and small gaps | covered by Phase 0 + `dev/gaps-1-4` |
 | 5 | Rain | todo | `dev/W-rain` |
@@ -150,19 +150,19 @@ Reviewers only read code and write reports in `reviews/`. You decide which findi
 **Gate A fix passes** (approved findings, see `reviews/A-decisions.md`)
 
 *Fix pass 1: `dev/QA-fixes-1`, no gameplay change: baseline v1 and v2 must pass **untouched** (except for the new v2 shots from T2, recorded once)*
-- [ ] **C1** Commit Three.js 0.160.0 to `vendor/three-0.160.0/three.module.js` (license kept), point the import map at it, and remove the unpkg / `THREE_MODULE` workaround from tools, tests and docs
-- [ ] **C2** Plain-language message in `#notice` when the game can't start (no import maps, no WebGL, `file://`, module load error)
-- [ ] **C5** `?debug=1` opens the debug overlay (incl. fps and seed) on a phone
-- [ ] **C4** (partial) Quality tunables: DPR cap + antialias on/off, in `?tune=`
-- [ ] **C6** iOS Safari viewport height (`dvh` / visualViewport) · **C7** only a primary tap/click/key starts a swing
-- [ ] **A1 + A8** Hole flow in core: after each event, core decides what's next (aim, penalty return, holed, picked up) and is the only way to hit the ball. `main.js` maps it to delays and visuals. Tests in Node
-- [ ] **A2** Disposable hole session: create/dispose scene objects, textures, listeners and timers for one hole, so rounds and menus can load holes. Test: 10 load/dispose cycles with no growth in `renderer.info.memory`
-- [ ] **A3** One source of truth for state/phase predicates, used by core, HUD, camera and input, plus a test that every meter phase is covered
-- [ ] **A5** Tunables: one entry each (value + range + setter) instead of three lists
-- [ ] **T2** ~8 more v2 shots: rough, bunker with and without SW, fringe chip, hook/slice at ±0.1 and ±0.15, shank, topped, mistimed putt, lip-out at a fixed seed, sloped bunker. Move "h1 hook/slice" off the window edge
-- [ ] **T3** `record-baseline-v2.mjs` prints which shots moved and by how much before overwriting
-- [ ] **T5** Putt accuracy tests · **T6** cup rule tests (edge of `CUP_R`, rest over the cup, landing on the fly) · **T9** no test changes global settings at import
-- [ ] **T7** Validate hole and scenario data when it loads, with a clear error naming the hole and field
+- [x] **C1** Commit Three.js 0.160.0 to `vendor/three-0.160.0/three.module.js` (license kept), point the import map at it, and remove the unpkg / `THREE_MODULE` workaround from tools, tests and docs *(unmodified npm build + LICENSE + README with sha256; `tests/vendor.test.js` checks the import map, the hash and that no module imports a URL)*
+- [x] **C2** Plain-language message in `#notice` when the game can't start (no import maps, no WebGL, `file://`, module load error) *(classic script in `index.html` + try/catch around the renderer; Tee off becomes a disabled "Can't start"; checked headless for WebGL off, a blocked file and `file://`)*
+- [x] **C5** `?debug=1` opens the debug overlay (incl. fps and seed) on a phone *(also shows the render quality)*
+- [x] **C4** (partial) Quality tunables: DPR cap + antialias on/off, in `?tune=` *(`DPR_CAP` 0.5–3, default 2; `ANTIALIAS` 0/1, default 1)*
+- [x] **C6** iOS Safari viewport height (`dvh` / visualViewport) · **C7** only a primary tap/click/key starts a swing *(C7: a mouse needs the left button; every finger counts on touch so two-thumb play works; Ctrl/Cmd/Alt+Space doesn't swing)*
+- [x] **A1 + A8** Hole flow in core: after each event, core decides what's next (aim, penalty return, holed, picked up) and is the only way to hit the ball. `main.js` maps it to delays and visuals. Tests in Node *(`play.swing` / `play.next` / `play.proceed()` / `play.finished`, `setClub` / `setAim`; `tests/flow.test.js` plays both holes tee → holed and tee → picked up)*
+- [x] **A2** Disposable hole session: create/dispose scene objects, textures, listeners and timers for one hole, so rounds and menus can load holes. Test: 10 load/dispose cycles with no growth in `renderer.info.memory` *(`src/game/session.js`; `node tools/session-check.mjs` runs the 10 cycles in a real browser, plus "input bound once" and "no timer from the old hole")*
+- [x] **A3** One source of truth for state/phase predicates, used by core, HUD, camera and input, plus a test that every meter phase is covered *(`src/core/states.js`; the camera now treats `grace` / `nopower` as aiming)*
+- [x] **A5** Tunables: one entry each (value + range + setter) instead of three lists *(`TUNABLES` `{ def, min, max }`, live values in `TUNE`; lie tunes are a layer and the surface/club tables are frozen; a tune beats a hole's `surfaceOverrides`)*
+- [x] **T2** ~8 more v2 shots: rough, bunker with and without SW, fringe chip, hook/slice at ±0.1 and ±0.15, shank, topped, mistimed putt, lip-out at a fixed seed, sloped bunker. Move "h1 hook/slice" off the window edge *(14 new shots, recorded once; the old "h1 hook/slice" stay as v1 copies and the new ±0.10 / ±0.15 shots are off the edge, see the PR)*
+- [x] **T3** `record-baseline-v2.mjs` prints which shots moved and by how much before overwriting *(also `--dry`, and nothing is written when nothing changed)*
+- [x] **T5** Putt accuracy tests · **T6** cup rule tests (edge of `CUP_R`, rest over the cup, landing on the fly) · **T9** no test changes global settings at import *(`tests/putt-cup.test.js`; T9: v1 tune in `before`/`after`, `resetAllTunables` everywhere, `lieFactor` dropped)*
+- [x] **T7** Validate hole and scenario data when it loads, with a clear error naming the hole and field *(`src/core/validate.js`, called by `sets.js` / `scenarios.js`; `makeBag` throws on an unknown id)*
 
 *Fix pass 2: `dev/QA-fixes-2`, physics/feel changes (after pass 1, so the new v2 shots guard it). Follows AGENTS rule 9*
 - [ ] **P10** (Gate A T1) Rest rule: a ball that stays below `STOP_SPEED` for a short time comes to rest, so no roll on a real hole ends through the 40 s `ROLL_TIMEOUT`. `stopped` reports the reason. Sweep test over both holes: 0 timeouts

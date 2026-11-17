@@ -42,7 +42,7 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 
 - Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc, as before), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
 - If the marker reaches `METER_MIN` without a third click, the shot is a huge slice (see "Missed clicks").
-- Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S.
+- Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S. ✅ Only a primary press swings (Gate A C7): a mouse needs its left button (right and middle clicks do nothing, and a right click on the course opens no menu); every finger counts on a touch screen, so two-thumb play works (hold Aim, tap SWING); Ctrl / Cmd / Alt + Space is a browser shortcut, not a swing.
 - A **⚑ mark** on the meter shows the power needed to reach the pin, adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way to the pin, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1). The ⚑ doesn't account for the ball rolling back off a tier: reading a ridge is the player's job (PM on PR #15; aiming the ⚑ at the pin's tier is a possible later idea).
 - The club is picked automatically each shot (see "Club auto-pick") and the player can change to any club in the bag.
 
@@ -113,14 +113,16 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ## 4. Ball physics ✅ (one engine for both holes since Phase 0)
 
 ### Ball states
-`aim → power → (grace | nopower) → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. `grace` and `nopower` are the S8 missed-click phases (§3). Penalties go through `wait`. 🟡 The list of states should live in one place in code (Gate A finding A3).
+`aim → power → (grace | nopower) → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. `grace` and `nopower` are the S8 missed-click phases (§3). Penalties go through `wait`. ✅ The lists and the predicates (`isSwinging`, `isAimingState`, `isAimView`, `isBallMoving`) live in one place, `src/core/states.js` (Gate A A3); core, HUD, camera and input use them, and a test checks every meter phase is covered.
+
+**Hole flow** ✅ (Gate A A1/A8, decided in core, `play.js`): `play.swing(result)` is the only way to hit the ball (null for a cancelled swing, while the ball moves, or after the hole is over). When a shot ends, core sets `play.next`: `aim` (stopped), `returnToLast` (penalty), `holed`, or `pickedUp` (strokes incl. penalties reached `maxStrokes`; holed on the last allowed stroke still counts as holed). The game waits (`TIMING`), shows it, and calls `play.proceed()`. A finished hole sets `play.finished = { holed, pickedUp, strokes, par }` for rounds (Phase 6).
 
 ### Rules
 - **Flight:** gravity `G`, wind (`wind × WIND_K`), and a sideways curve from accuracy. There's no air drag (the carry is solved analytically from the club's carry and loft).
 - **Bounce:** when the ball touches the ground (`ball.y <= heightAt(x,z)`), the velocity is reflected around the **terrain normal**. Vertical bounce × `rest`, horizontal speed × `keep`. The first bounce is also scaled by the club's `spinFactor` (high lofts stop faster). When the bounce speed is under 1.2 m/s, the ball switches to roll.
 - **Roll:** friction `decel` (m/s²) from the surface, plus slope gravity `ROLL_G = G·5/7` along the gradient.
 - **Rest:** on a slope, a stopped ball stays put if the slope force is below `decel × STATIC`. Otherwise it creeps (below `CREEP` m/s, friction blends down so the ball trickles instead of stopping dead).
-- **Cup:** the ball drops if it's within `CUP_R` and slower than `CUP_CAPTURE_SPEED` (3.2 m/s). A faster ball **lips out** (it's deflected and slowed) and can't drop until it has left the cup (G8; before, it was captured on the next step almost every time). It can drop again once it has rolled more than `CUP_R × 1.5` away and comes back. A ball that comes to rest over the cup drops. A ball landing on the fly within `CUP_R × 1.4` goes straight in.
+- **Cup:** the ball drops if it's within `CUP_R` (strictly: a ball exactly on the edge stays out) and slower than `CUP_CAPTURE_SPEED` (3.2 m/s). A faster ball **lips out** (it's deflected and slowed) and can't drop until it has left the cup (G8; before, it was captured on the next step almost every time). It can drop again once it has rolled more than `CUP_R × 1.5` away and comes back. A ball that comes to rest over the cup drops. A ball landing on the fly within `CUP_R × 1.4` goes straight in.
 - **Penalties:** water or out of bounds gives +1 stroke and the ball goes back to the last position.
 - **Lie:** the surface the ball rests on caps the next shot's power and scales its accuracy window (S11, see §3 "Lie"). There is no hidden power multiplier any more: power % is always the same share of the club's distance.
 - **Timestep:** a fixed-step accumulator: only whole 1/240 s steps, the remainder waits for the next frame, so a shot ends in the same place at any frame rate. The flight is sped up ×1.35 for game feel (`FLIGHT_SPEEDUP`).
@@ -174,6 +176,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 
 ### Acceptance
 - [x] On a flat green, a putt with power p stops within ±5% of `p × puttMax`. *(tests)*
+- [x] A mistimed putt changes only the line, by the curve error × `PUTT.aimErrorK` (0.25 rad): early goes left, late goes right, by the same amount (acc ±0.15 ≈ 1.6°). A shanked putt (no 3rd click) is pushed ≈ 8.6° right, under the agreed 10° ("mild"). *(tests/putt-cup.test.js, Gate A T5)*
 - [x] A ball faster than the capture speed over the cup doesn't drop (tested at 3.5–5 m/s, G8). A slower one does.
 
 ---
@@ -232,46 +235,50 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 ## 9. Architecture (✅ = exists, ⏳ = planned)
 
 ```
-index.html                 ✅ the only page: canvas + HUD + cards; loads src/game/main.js
+index.html                 ✅ the only page: canvas + HUD + cards; loads src/game/main.js; a classic start-up check shows a plain message when the game can't start (Gate A C2)
 hole2.html                 ✅ redirect to index.html?hole=pl-02 (keeps query + hash)
-vendor/three-0.160.0/      ⏳ Three.js committed in the repo (Gate A C1), the import map points here
+vendor/three-0.160.0/      ✅ Three.js committed in the repo (Gate A C1, unmodified build + LICENSE), the import map points here
 src/
   core/                    ← PURE JS. No Three.js, no DOM. Tested in Node.
-    config.js              ✅ every tunable + TUNABLES ranges for ?tune=
-    tune.js                ✅ parses and applies ?tune= overrides
+    config.js              ✅ every tunable; TUNABLES = one entry per ?tune= name { def, min, max }, live values in TUNE (Gate A A5)
+    tune.js                ✅ parses and applies ?tune= overrides (lie values go to a layer, the tables stay frozen)
+    states.js              ✅ meter phases, game states and the predicates everyone uses (Gate A A3)
+    validate.js            ✅ validateHole / validateScenario, run when the data loads (Gate A T7)
     vec.js                 ✅ small vector helpers ({x,y,z} objects)
     rng.js                 ✅ seeded RNG (mulberry32) + parseSeed
     clubs.js               ✅ club table, bag, lieFor (cap + window), pickClub (auto-pick)
-    surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather)
+    surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather) + the lie-tune layer
     terrain.js             ✅ ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
     swing.js               ✅ meter state machine (incl. S8 phases) + resolveShot
     ball.js                ✅ flight, bounce, roll, cup, penalties → events
-    play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator
-                           ⏳ also the hole flow after each event (picked up, penalty return, holed) and a disposable hole session (Gate A A1/A2)
+    play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator, and the hole flow
+                              (swing is the only hit, next / proceed / finished; Gate A A1/A8)
     scoring.js             ✅ score names and result text
     round.js               ⏳ round state, scorecard, hole sequencing (Phase 6)
   holes/
     hole1.js, hole2.js     ✅ hole data
-    sets.js                ✅ HOLES registry, SETS, resolveHole
-    scenarios.js           ✅ designer test spots for ?scenario=
+    sets.js                ✅ HOLES registry (validated at load), SETS, resolveHole
+    scenarios.js           ✅ designer test spots for ?scenario= (validated at load)
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
-    main.js                ✅ boot, game loop, state wiring
-    scene.js               ✅ renderer, lights, sky, terrain mesh from heightAt
+    main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, frame loop; loads hole sessions
+    session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
+    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, disposeScene
     coursePainter.js       ✅ painted course texture + minimap image
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
     camera.js              ✅
     hud.js                 ✅ HUD panel, meter, minimap, cards, flash
-    input.js               ✅ keyboard, mouse, touch
-    debug.js               ✅ debug overlay (backtick; ⏳ also ?debug=1 for phones, Gate A C5)
+    input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
+    debug.js               ✅ debug overlay (backtick, or ?debug=1 on phones, Gate A C5)
     menus.js, weatherFx.js ⏳ Phase 7 / Phase 5
 tests/
   *.test.js                ✅ node --test
   baseline-v2.shots.js     ✅ the v2 shot list
   fixtures/baseline.json   ✅ v1: golden shots from the pre-refactor pages (physics only, frozen)
-  fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m)
+  fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m; 36 shots since Gate A T2)
 tools/
   baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
-  record-baseline-v2.mjs   ✅ re-records v2
+  record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
+  session-check.mjs        ✅ 10 hole load/dispose cycles in a headless browser, renderer memory must not grow (Gate A A2)
 ```
 
 ### Hole module contract
@@ -297,10 +304,12 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.
 - **Game loop:** physics runs on a fixed accumulator (1/240 s). Rendering interpolates or just draws the latest state. The same inputs give the same resting position at 30, 60 or 144 fps.
-- **Debug overlay** (backtick key, ⏳ and `?debug=1` on phones): state, speed, surface, slope, wetness, meter values, fps.
+- **Debug overlay** (backtick key, or `?debug=1` on phones ✅): state, speed, surface, slope, wetness, meter values, render quality, fps.
 - **Test hooks:** keep `window.__golf` (state, ball, meter, testHit, surfaceAt, …) for browser-level tests.
-- **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Tunables that a link can change are `export let` in config.js and only change through `setTunable()`.
-- **Local run:** ES modules need a local server (`python3 -m http.server`). The README must say so.
+- **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Each tunable is one `TUNABLES` entry in config.js (`{ def, min, max }`); code reads the live value from `TUNE` and only `setTunable()` changes it. Lie values (`rough.maxPower`, `sw.sand.maxPower`, …) go into a tune layer: the surface and club tables stay frozen, and a tuned value wins over a hole's `surfaceOverrides`. **Tunes are read when a hole starts** (the link is applied before the first hole is created). Quality tunables (Gate A C4): `DPR_CAP` (default 2) and `ANTIALIAS` (1 on, 0 off), e.g. `?tune=DPR_CAP:1,ANTIALIAS:0` on a slow phone.
+- **Local run:** ES modules need a local server (`python3 -m http.server`). The README must say so. No internet is needed (Three.js is in `vendor/`).
+- **Hole sessions** (Gate A A2): the app (`main.js`) lives for the whole visit and owns the renderer, the input listeners and the loop; each hole is a session (`session.js`) that is created and disposed. Rounds and menus load the next hole by disposing the current session and creating a new one, never by reloading the page or binding input again.
+- **Data is validated when it loads** (Gate A T7): `sets.js` runs `validateHole` on every hole and `scenarios.js` runs `validateScenario`; an error names the hole or scenario and the field, and the C2 start-up message shows it.
 
 ---
 
@@ -337,6 +346,6 @@ The owner plans richer graphics, sound, more beautiful courses and characters. W
 ## 12. Supported browsers (Gate A C9)
 The game needs **ES modules, import maps and WebGL**. That sets the floor:
 - Chrome / Edge **89+**, Firefox **108+**, Safari and iOS Safari **16.4+** (every browser on iOS uses Safari's engine)
-- WebGL 1 or 2 must be available. If it isn't, the page must say so in plain words (Gate A C2)
+- WebGL 1 or 2 must be available. If it isn't, the page says so in plain words ✅ (Gate A C2, also for a too-old browser, `file://` and a file that didn't load)
 - Run from a web server (GitHub Pages or `python3 -m http.server`), not from `file://`
 

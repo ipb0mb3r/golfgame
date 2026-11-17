@@ -31,10 +31,11 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (ES modules don't load from `file://`) |
 | Run tests | `node --test` (from the repo root; finds every `tests/*.test.js`) |
 | Check the old-pages baseline in a browser | `node tools/baseline.mjs check` (dev/QA only, needs Playwright, see Tools) |
-| Re-record baseline v2 | `node tools/record-baseline-v2.mjs` (only for an intentional feel change, see coding rule 8) |
+| Re-record baseline v2 | `node tools/record-baseline-v2.mjs` (only for an intentional feel change, see coding rule 8; `--dry` shows what would move) |
+| Check hole load/unload | `node tools/session-check.mjs` (dev/QA only, needs Playwright) |
 
 ## Current state (Nov 2026)
-- One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`.
+- One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`. Since Gate A Fix pass 1, `main.js` is the long-lived app and each hole is a disposable session (`src/game/session.js`); the hole flow (what happens after each shot) is decided in core (`play.swing` / `play.next` / `play.proceed`).
 - Rules in `src/core/` (pure, tested), holes as data in `src/holes/`, Three.js and the page in `src/game/`.
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
@@ -43,7 +44,8 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - **`tools/baseline.mjs`** plays scripted shots in a headless Chromium through `window.__golf.testHit` and compares where each ball stops. `record` captured `tests/fixtures/baseline.json` from the pre-refactor pages (F0); `check` replays those shots against today's `index.html` and prints a table (`--fps 30|60|144`, `--pages old|new`). The page clock is replaced by a fixed frame time, so results don't depend on machine speed.
 - **Install Playwright** (once, outside the repo or with `--no-save`): `npm install --no-save playwright && npx playwright install chromium`. Three.js is already in the repo, so nothing else is needed (the cloud containers have Playwright and Chromium pre-installed).
 - **The QA agent uses it** to check a PR build in a real browser. The game and `node --test` never need Playwright; keep it out of `package.json` dependencies and out of `src/`.
-- **`tools/record-baseline-v2.mjs`** (plain Node) writes `tests/fixtures/baseline-v2.json` from the current engine. See coding rule 8.
+- **`tools/record-baseline-v2.mjs`** (plain Node) writes `tests/fixtures/baseline-v2.json` from the current engine. See coding rule 8. It first prints a table of every shot that moved, is new or was removed (paste it in the PR); `--dry` only prints, and nothing is written when nothing changed.
+- **`tools/session-check.mjs`** (Playwright) loads and unloads holes 10 times in place and fails if `renderer.info.memory` grows, input is bound twice or a timer from the old hole fires. Run it after any change to `src/game/`.
 
 ## Branch and PR rules
 - `main` must always be playable, because GitHub Pages serves it. **Nobody pushes directly to `main`.**
