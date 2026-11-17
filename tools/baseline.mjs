@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { EXCEPTIONS } from '../tests/baseline-exceptions.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURE = join(ROOT, 'tests/fixtures/baseline.json');
@@ -156,12 +157,15 @@ async function replay(fps, shots) {
       await page.waitForFunction(() => window.__golf.state === 'aim');
     }
     // Hit with the club the old page used (v1 checks physics only; S13 changed the auto-pick, e.g. no
-    // Driver off the fairway). Same as tests/baseline.test.js.
+    // Driver off the fairway), aimed at the pin like the old page (S18 changed the default aim).
+    // Same as tests/baseline.test.js.
     const start = await page.evaluate(([x, z, club]) => {
       const g = window.__golf;
       g.wind.set(0, 0, 0); g.place(x, z);
       const i = g.play.bag.findIndex(c => c.name === club);
       if (i >= 0) g.clubIdx = i;
+      const b = g.ball, c = g.HOLE;
+      g.aim = Math.atan2(c.x - b.x, -(c.z - b.z)); // aimAt(ball, cup), as in core/vec.js
       return { club: g.play.club.name, aim: g.aim, strokes: g.strokes };
     }, [shot.start.x, shot.start.z, shot.start.club]);
     await page.evaluate(([p, a, off]) => { const g = window.__golf; g.aim = g.aim + off; g.testHit(p, a); }, [shot.power, shot.acc, shot.aimOff]);
@@ -213,7 +217,13 @@ if (mode === 'record') {
     const took = r.end.strokes - r.start.strokes, tookOld = b.end.strokes - b.start.strokes;
     let note = '';
     let close = d <= base.tolerance;
-    if (!close) {
+    const ex = EXCEPTIONS[i + 1];
+    if (ex && ex.name === b.scenario) {
+      // An intentional physics change (AGENTS.md rule 9): compare with the expected new spot
+      const dn = off(ex.end);
+      close = dn <= base.tolerance;
+      note = `${ex.task} exception: expected new spot (${ex.end.x}, ${ex.end.z}), off by ${dn.toFixed(3)} m`;
+    } else if (!close) {
       // Same exception as tests/baseline.test.js: the old page itself landed this shot in different
       // places at different frame rates (its leftover partial step). Accept a match with one of those.
       const alts = Object.entries(b.endAtFps || {}).filter(([, e]) => e);

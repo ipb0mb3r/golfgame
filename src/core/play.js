@@ -9,6 +9,7 @@
 //                    'returnToLast'  penalty: back to where the shot was hit from
 //                    'holed'         in the cup: the hole is over (p.finished)
 //                    'pickedUp'      the stroke limit is reached: the hole is over (p.finished)
+//   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
   G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
@@ -20,8 +21,8 @@ import { makeSurfaceTable } from './surfaces.js';
 import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
+import { isShotEnd } from './states.js';
 
-const TERMINAL = new Set(['holed', 'stopped', 'penalty']);
 
 export function createHolePlay(hole, { seed = 1 } = {}) {
   const terrain = makeTerrain(hole);
@@ -39,13 +40,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos,
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
+    target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'green' | 'fairway')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
     finished: null,  // when the hole is over: { holed, pickedUp, strokes, par } (Phase 6 rounds read this)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
-    reset, newWind, prepare, hit, swing, setClub, setAim, advance, step, proceed, returnToLastPos, landingPoint,
-    clubReach, puttPlaysLike, lieOf, pinPower, distToCup, slope, simulate,
+    reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
+    clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
   };
 
   function newWind() {
@@ -69,6 +71,22 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   }
 
   function distToCup() { return dist2D(ball.pos, cup); }
+  // S18: meters to the default aim point (the ⚑ and the auto-pick use this, not the pin)
+  function targetDist() { return dist2D(ball.pos, p.target); }
+
+  // The default aim (S18, designer: "the automatic aim is too strong"). It is a starting point, not
+  // the answer: the player adjusts to the flag and the wind.
+  //   on the green or the fringe (putt or chip)       the cup (PM on PR #27: a fringe chip aims at the flag)
+  //   tee shot on a par 4 or 5                       the hole's fairway target (hole.aimTarget)
+  //   everything else (approaches, par 3 tee shots)  the centre of the green (hole.features.green)
+  // A hole without that data (test holes) aims at the cup. Returns { kind, x, z }.
+  const greenCentre = hole.features?.green ? { x: hole.features.green.cx, z: hole.features.green.cz } : null;
+  function defaultTarget(lie = p.lie) {
+    if (lie === 'green' || lie === 'fringe') return { kind: 'cup', x: cup.x, z: cup.z };
+    if (lie === 'tee' && hole.par >= 4 && hole.aimTarget) return { kind: 'fairway', ...hole.aimTarget };
+    if (greenCentre) return { kind: 'green', ...greenCentre };
+    return { kind: 'cup', x: cup.x, z: cup.z };
+  }
   // The lie for club i from where the ball is (S11): { maxPower, sweetScale }
   function lieOf(i = p.clubIdx) { return lieFor(bag[i], p.lie, surfaces); }
 
@@ -96,12 +114,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
   // The ⚑ mark on the meter (S12): the power whose landing point (the same simulation as the aim
-  // ring, so uphill and downhill are included) comes down AUTO_CLUB_REACH of the way to the pin;
+  // ring, so uphill and downhill are included) comes down AUTO_CLUB_REACH of the way to the default
+  // aim point (S18: the green centre, the tee target, or the pin for a putt);
   // the ball runs out the rest. It is on the meter's 0..1 scale: above the lie's cap it sits in the
   // grayed-out part (= out of reach with this club from here). Found by bisection.
   function pinPower(i = p.clubIdx) {
     if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
-    const want = distToCup() * AUTO_CLUB_REACH;
+    const want = targetDist() * AUTO_CLUB_REACH;
     const carryAt = pw => dist2D(ball.pos, landingPoint(i, p.aim, pw));
     let lo = 0, hi = LANDING_SIM.pinMaxPower;
     if (carryAt(hi) < want) return hi; // far out of reach: the HUD hides the mark
@@ -114,17 +133,20 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // Putts: a slope adds or removes "distance" (uphill plays longer)
   function puttPlaysLike() { return distToCup() + ROLL_G * (cup.y - ball.pos.y) / surfaces.green.decel; }
 
-  // Get ready for the next shot from wherever the ball is: lie, aim at the pin, putt range, auto club.
+  // Get ready for the next shot from wherever the ball is: lie, default aim (S18), putt range, auto club.
   function prepare() {
     p.next = null;
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);
-    p.aim = aimAt(ball.pos, cup);
+    const t = defaultTarget();
+    p.targetKind = t.kind;
+    set(p.target, t.x, terrain.heightAt(t.x, t.z), t.z);
+    p.aim = aimAt(ball.pos, p.target);
     const d = distToCup();
     p.puttMax = Math.min(PUTT.rangeMax, Math.max(PUTT.rangeMin, Math.round(Math.max(d, puttPlaysLike()) * PUTT.rangeK)));
-    // The auto-pick (S13): see clubs.pickClub
-    p.clubIdx = pickClub(bag, { lie: p.lie, dist: d, reach: i => clubReach(i) });
+    // The auto-pick (S13) for the default aim's distance (S18): see clubs.pickClub
+    p.clubIdx = pickClub(bag, { lie: p.lie, dist: targetDist(), cupDist: d, reach: i => clubReach(i) });
   }
 
   // The player's choices while aiming, always through these (A8): the club index is clamped to the bag.
@@ -160,7 +182,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function step() {
     const ev = ball.step(PHYSICS_DT);
     if (ev && ev.type === 'penalty') p.strokes++;
-    if (ev && TERMINAL.has(ev.type)) decide(ev);
+    if (isShotEnd(ev)) decide(ev);
     return ev;
   }
 
@@ -201,6 +223,21 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return events;
   }
 
+  // Skip to the end of the shot (X9): run the remaining fixed PHYSICS_DT steps now, with nothing
+  // drawn. These are exactly the steps advance() would take frame by frame (no step depends on the
+  // frame time), so a skipped shot ends exactly where a watched one does: same spot, strokes, lip-outs
+  // and p.next. Returns the events, in order (the game shows them as it would have). Nothing happens
+  // when the ball isn't moving.
+  function skip(maxSteps = 1e7) {
+    const events = [];
+    for (let i = 0; i < maxSteps && ball.moving; i++) {
+      const ev = step();
+      if (ev) events.push(ev);
+    }
+    acc = 0;
+    return events;
+  }
+
   // After a penalty: back to where the shot was hit from.
   function returnToLastPos() { copy(ball.pos, lastPos); prepare(); }
 
@@ -215,7 +252,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function simulate(maxSteps = 1e6) {
     for (let i = 0; i < maxSteps && ball.moving; i++) {
       const ev = step();
-      if (ev && TERMINAL.has(ev.type)) return ev;
+      if (isShotEnd(ev)) return ev;
     }
     return null;
   }

@@ -5,10 +5,18 @@ const GAP = 8;       // px between the overlay and the HUD panels next to it
 const SHORT_SCREEN = '(max-height: 500px)'; // same as the media query in index.html
 
 // H1 (X7): on a short screen (phone landscape) the overlay sits at the top, between the scorecard
-// and the wind box / minimap, so it never covers the HUD. Elsewhere the CSS position is used.
+// and the wind box / minimap, so it never covers the HUD. Elsewhere it sits just above the bottom
+// panel (meter, hint and TUNED badge, X10 Q1), and the CSS keeps it narrower than the screen.
+// It is placed again on every refresh (X10 Q2): the panels change size when a hole loads.
 function place(el) {
   const s = el.style;
-  if (!window.matchMedia(SHORT_SCREEN).matches) { s.left = s.width = ''; return; }
+  if (!window.matchMedia(SHORT_SCREEN).matches) {
+    s.left = s.width = '';
+    const bottom = document.getElementById('bottom').getBoundingClientRect();
+    s.bottom = `${Math.max(0, window.innerHeight - bottom.top + GAP)}px`;
+    return;
+  }
+  s.bottom = '';
   const info = document.getElementById('info').getBoundingClientRect();
   const side = document.getElementById('side').getBoundingClientRect();
   s.left = `${info.right + GAP}px`;
@@ -26,7 +34,7 @@ export function createDebug(el) {
       frames++; acc += rawDt;
       if (acc < REFRESH) return;
       fps = frames / acc; frames = 0; acc = 0;
-      if (on) el.textContent = info(fps);
+      if (on) { el.textContent = info(fps); place(el); }
     },
   };
 }

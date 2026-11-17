@@ -51,7 +51,10 @@ test('a putt starts at v0 = √(2·decel·D)', () => {
   assert.ok(Math.abs(Math.hypot(s.vel.x, s.vel.z) - Math.sqrt(2 * 1.1 * 5)) < 1e-12);
 });
 
-test('meter: three clicks give power then accuracy', () => {
+// The meter tests below read times as meter values, so they run at METER_SPEED 1 (default 1.15, S17)
+const atSpeed1 = fn => () => { setTunable('METER_SPEED', 1); try { fn(); } finally { resetAllTunables(); } };
+
+test('meter: three clicks give power then accuracy', atSpeed1(() => {
   const m = createMeter();
   assert.equal(pressMeter(m), null); assert.equal(m.phase, 'power');
   tickMeter(m, 0.6);
@@ -60,9 +63,15 @@ test('meter: three clicks give power then accuracy', () => {
   const shot = pressMeter(m);
   assert.ok(Math.abs(shot.power - 0.6) < 1e-12);
   assert.ok(Math.abs(shot.acc - 0.05) < 1e-12);
+}));
+
+test('meter: the marker moves METER_SPEED units per second (S17: 1.15)', () => {
+  const m = createMeter();
+  pressMeter(m); tickMeter(m, 0.5);
+  assert.ok(Math.abs(m.value - 0.575) < 1e-12);
 });
 
-test('meter: reaching the top starts the grace window (S8), a click there locks power at 1', () => {
+test('meter: reaching the top starts the grace window (S8), a click there locks power at 1', atSpeed1(() => {
   const m = createMeter();
   pressMeter(m);
   tickMeter(m, 1.05);
@@ -72,16 +81,16 @@ test('meter: reaching the top starts the grace window (S8), a click there locks 
   let shot = null;
   for (let i = 0; i < 100 && !shot; i++) shot = tickMeter(m, 0.05);
   assert.deepEqual(shot, { power: 1, acc: METER_MIN, outcome: 'shank' });
-});
+}));
 
-test('S10: the sweet spot is ±SWEET and CURVE_SHAPE sets how a miss grows', () => {
-  assert.equal(SWEET, 0.05, 'starting value from the designer playtest');
-  assert.equal(accuracyError(0.049), 0);
-  assert.equal(CURVE_SHAPE, 2, 'quadratic by default (PM decision on PR #12)');
+test('S10/S17: the sweet spot is ±SWEET and CURVE_SHAPE sets how a miss grows', () => {
+  assert.equal(SWEET, 0.045, 'S17 designer tuning (was 0.05 after S10)');
+  assert.equal(accuracyError(0.044), 0);
+  assert.ok(accuracyError(0.046) > 0);
+  assert.equal(CURVE_SHAPE, 1, 'S17: linear by default again, near-misses hurt (was 2 after PR #12)');
   try {
-    setTunable('CURVE_SHAPE', 1);
-    assert.equal(accuracyError(0.08), 0.08, 'shape 1 = linear, error = acc as before');
-    resetAllTunables();
+    assert.equal(accuracyError(0.08), 0.08, 'shape 1 = linear, error = acc');
+    setTunable('CURVE_SHAPE', 2);
     assert.ok(Math.abs(accuracyError(0.08) - 0.2 * (0.08 / 0.2) ** 2) < 1e-12, 'quadratic');
     assert.ok(accuracyError(0.08) < 0.08, 'small misses curve gently');
     assert.ok(Math.abs(accuracyError(-0.2) + 0.2) < 1e-12, 'same error as linear at the end of the meter');

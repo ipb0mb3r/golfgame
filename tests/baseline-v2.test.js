@@ -13,6 +13,7 @@ for (const [i, shot] of base.shots.entries()) {
     const r = playShot(shot), e = shot.end;
     assert.equal(r.club, e.club, 'auto-picked club');
     assert.equal(r.event, e.event, 'how the shot ended');
+    assert.equal(r.reason, e.reason, 'why it stopped (P10)');
     assert.equal(r.strokes, e.strokes, 'strokes');
     assert.equal(r.lippedOut ?? false, e.lippedOut ?? false, 'lipped out on the way');
     const d = Math.hypot(r.x - e.x, r.y - e.y, r.z - e.z);

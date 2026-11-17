@@ -1,6 +1,6 @@
 // The 3-click swing (DESIGN.md §3): the meter state machine and turning a swing into a launch.
 import {
-  G, METER_MIN, CURVE_SHAPE_REF, CURVE_REF_SPEED, MIN_POWER, PERFECT_POWER, SLIGHT_ERROR, SPIN, PUTT, TUNE,
+  G, MAX_METER_DT, METER_MIN, CURVE_SHAPE_REF, CURVE_REF_SPEED, MIN_POWER, PERFECT_POWER, SLIGHT_ERROR, SPIN, PUTT, TUNE,
 } from './config.js';
 import { dirFromAim, rightFromAim, clamp, degToRad } from './vec.js';
 
@@ -19,13 +19,20 @@ import { dirFromAim, rightFromAim, clamp, degToRad } from './vec.js';
 //           'shank'   no 3rd click: huge slice (error −NO_ACC_ERR)
 //           'topped'  no power click, then a click on the way back: power = MISSED_POWER_FRACTION
 //           'cancel'  start click only: no shot and no stroke
-export function createMeter(cap = 1) { return { phase: 'aim', value: 0, power: 0, graceT: 0, event: null, cap }; }
+//
+// Real click time (S16, Gate A C3): `m.t` is the time (s, any clock) the marker has been moved up
+// to. The game moves it with tickMeterTo(m, frameTime) every frame and clicks with
+// pressMeterAt(m, clickTime), which first moves the marker to the moment of the click. So a click
+// reads the meter where it really was when the player clicked, not where it was at the last frame,
+// and the same click times give the same swing at 30 or 144 fps.
+export function createMeter(cap = 1) { return { phase: 'aim', value: 0, power: 0, graceT: 0, event: null, cap, t: 0 }; }
 
 // Back to aim. `cap` = the power cap for the next swing (keeps the current one when left out).
 export function resetMeter(m, cap = m.cap) { m.phase = 'aim'; m.value = 0; m.power = 0; m.graceT = 0; m.event = null; m.cap = cap; return m; }
 
 // Which phases are mid-swing is decided in one place (Gate A A3): core/states.js
-export { isSwinging } from './states.js';
+import { isSwinging } from './states.js';
+export { isSwinging };
 
 // A click. Returns the swing result when this click ends the swing, otherwise null.
 export function pressMeter(m) {
@@ -37,6 +44,25 @@ export function pressMeter(m) {
     case 'accuracy': m.phase = 'done'; return { power: m.power, acc: m.value, outcome: 'normal' };
     default: return null;
   }
+}
+
+// The meter's clock (S16): move the marker from m.t to `now` (seconds). Each move is capped at
+// MAX_METER_DT, so a long stall (a hidden tab, a slow frame) can't jump the marker past the window.
+// Time never runs backwards: an earlier `now` moves nothing. Returns what tickMeter returns.
+export function tickMeterTo(m, now) {
+  const dt = Math.min(Math.max(now - m.t, 0), MAX_METER_DT);
+  if (now > m.t) m.t = now;
+  return tickMeter(m, dt);
+}
+
+// A click at time `now` (seconds, the same clock as tickMeterTo). The first click starts the meter's
+// clock at the click; a later click first moves the marker to the moment of the click, then reads it.
+// If the swing ended on its own before the click (the marker reached METER_MIN), that result is
+// returned and the click does nothing. Returns the swing result when the swing ends, otherwise null.
+export function pressMeterAt(m, now) {
+  if (m.phase === 'aim') { m.t = now; return pressMeter(m); }
+  if (isSwinging(m.phase)) { const r = tickMeterTo(m, now); if (r) return r; }
+  return pressMeter(m);
 }
 
 // Move the marker by dt seconds of real time. Returns a swing result if the swing ends on its own

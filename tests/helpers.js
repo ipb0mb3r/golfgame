@@ -21,18 +21,30 @@ export function rollFrom(hole, x, z, vx, vz, maxSteps = 240 * 60) {
 }
 
 // Play a swing on the meter with clicks at scripted times (seconds after the first click, which is
-// at t = 0). `cap` = the lie's power cap (S11). The meter is ticked in steps of `dt`, like frames. Returns { result, events, meter }.
-import { createMeter, pressMeter, tickMeter } from '../src/core/swing.js';
-export function scriptedSwing(clickTimes, { dt = 1 / 1000, maxT = 10, cap = 1 } = {}) {
+// at t = 0). `cap` = the lie's power cap (S11). Like the game (S16): frames every `dt` move the meter
+// with tickMeterTo(frame time), and each click is pressMeterAt(its own time), between frames.
+// `start` = when the first click happens relative to the frame clock (0 = exactly on a frame).
+// `speed` = METER_SPEED for this swing (default 1, so the times read as meter values: the meter
+// reaches 1 at t = 1 s); null = the current TUNE.METER_SPEED. Returns { result, events, meter }.
+import { createMeter, pressMeterAt, tickMeterTo } from '../src/core/swing.js';
+import { TUNE } from '../src/core/config.js';
+export function scriptedSwing(clickTimes, { speed = 1, ...opts } = {}) {
+  const was = TUNE.METER_SPEED;
+  if (speed != null) TUNE.METER_SPEED = speed;
+  try { return runSwing(clickTimes, opts); } finally { TUNE.METER_SPEED = was; }
+}
+function runSwing(clickTimes, { dt = 1 / 1000, maxT = 10, cap = 1, start = 0 } = {}) {
   const meter = createMeter(cap), events = [];
-  const clicks = [0, ...clickTimes];
+  const clicks = [0, ...clickTimes].map(c => c + start);
   let i = 0, result = null;
-  for (let k = 0; k * dt <= maxT && !result; k++) {
-    const t = k * dt;
-    while (!result && i < clicks.length && clicks[i] <= t + 1e-9) { result = pressMeter(meter); i++; }
+  for (let k = 0; k * dt <= maxT + start && !result; k++) {
+    const t = k * dt; // this frame's time
+    // the clicks since the last frame, each at its own time (the browser delivers them before the frame)
+    while (!result && i < clicks.length && clicks[i] <= t + 1e-9) { result = pressMeterAt(meter, clicks[i]); i++; }
     if (result) break;
-    const r = tickMeter(meter, dt);
-    if (meter.event) events.push({ t: t + dt, event: meter.event });
+    if (i === 0) continue; // the swing hasn't started yet
+    const r = tickMeterTo(meter, t);
+    if (meter.event) events.push({ t: t - start, event: meter.event });
     result = r;
   }
   return { result, events, meter };

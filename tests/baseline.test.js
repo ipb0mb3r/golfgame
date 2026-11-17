@@ -7,6 +7,7 @@ import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 
 import { applyTune, resetAllTunables } from '../src/core/tune.js';
+import { aimAt } from '../src/core/vec.js';
 
 // v1 checks PHYSICS ONLY (flight, bounce, roll, slopes); v2 checks swing feel (AGENTS.md rule 8).
 // These shots were recorded from the old pages, so they replay with the old swing mapping: a neutral
@@ -21,11 +22,18 @@ after(() => resetAllTunables());
 
 const base = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
+// Intentional physics changes (AGENTS.md rule 9): per-shot exceptions with the task and the expected
+// new spot, in tests/baseline-exceptions.js (shared with tools/baseline.mjs check).
+import { EXCEPTIONS } from './baseline-exceptions.js';
+
 export function replay(shot) {
   const play = createHolePlay(getHole(shot.hole), { seed: 1 });
   play.wind.x = play.wind.z = 0;
   play.ball.pos.x = shot.start.x; play.ball.pos.z = shot.start.z;
   play.prepare();
+  // The old pages aimed every shot at the pin. S18's default aim is a swing rule, so v1 aims the way
+  // the old page did (like the club below); v2 and tests/default-aim.test.js check the new aim.
+  play.setAim(aimAt(play.ball.pos, play.cup));
   const picked = play.club.name, aim = play.aim;
   play.clubIdx = play.bag.findIndex(c => c.name === shot.start.club);
   const club = play.club.name;
@@ -45,7 +53,13 @@ for (const [i, shot] of base.shots.entries()) {
     assert.ok(Math.abs(r.aim - shot.start.aim) < 1e-3, 'auto aim at the pin');
     const off = e => Math.hypot(r.end.x - e.x, r.end.z - e.z);
     const d = off(shot.end);
-    if (d > base.tolerance) {
+    const ex = EXCEPTIONS[i + 1];
+    if (ex) {
+      assert.equal(ex.name, shot.scenario, 'the exception is for this shot');
+      const dn = off(ex.end);
+      assert.ok(dn <= base.tolerance, `${ex.task}: expected the new spot (${ex.end.x}, ${ex.end.z}), off by ${dn.toFixed(3)} m (now ${r.end.x.toFixed(3)}, ${r.end.z.toFixed(3)})`);
+      t.diagnostic(`${ex.task} exception: ${d.toFixed(2)} m from the old page, as expected (${ex.why})`);
+    } else if (d > base.tolerance) {
       // The old page itself landed this shot in different places at different frame rates
       // (its leftover partial step, fixed by F3). Accept a match with one of those old results.
       const alts = Object.entries(shot.endAtFps || {}).filter(([, e]) => e);

@@ -38,6 +38,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`. Since Gate A Fix pass 1, `main.js` is the long-lived app and each hole is a disposable session (`src/game/session.js`); the hole flow (what happens after each shot) is decided in core (`play.swing` / `play.next` / `play.proceed`).
 - Rules in `src/core/` (pure, tested), holes as data in `src/holes/`, Three.js and the page in `src/game/`.
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
+- Since Fix pass 2: the meter reads the real click time (`pressMeterAt`), rolls always end (`stopped.reason`), ⏩ Skip (`play.skip()`), default aim (`play.target`, hole `aimTarget`), designer tuning S17. v1 exceptions for intentional physics changes live in `tests/baseline-exceptions.js`.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
 
 ## Tools (dev and QA only, never part of the game)

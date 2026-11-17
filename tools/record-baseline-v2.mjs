@@ -38,6 +38,7 @@ for (const [i, s] of out.shots.entries()) {
   if (!sameInputs(s, o)) changes.push('inputs changed');
   if (e.club !== oe.club) changes.push(`club ${oe.club} → ${e.club}`);
   if (e.event !== oe.event) changes.push(`event ${oe.event} → ${e.event}`);
+  if (e.reason !== oe.reason && oe.reason !== undefined) changes.push(`stopped ${oe.reason} → ${e.reason}`);
   if (e.strokes !== oe.strokes) changes.push(`strokes ${oe.strokes} → ${e.strokes}`);
   if (!!e.lippedOut !== !!oe.lippedOut) changes.push(`lip-out ${!!oe.lippedOut} → ${!!e.lippedOut}`);
   if (moved > 0 || changes.length) {

@@ -14,6 +14,8 @@ const HINTS = {
   nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
 };
+// S18: where the default aim points (PM on PR #27: how a new player learns the aim rule)
+const AIM_TEXT = { cup: 'the cup', green: 'green centre', fairway: 'fairway target' };
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
@@ -103,6 +105,7 @@ export function createHud(play) {
     $('distTxt').textContent = distText(state);
     const lie = play.lieOf();
     $('lieTxt').textContent = lieText(lie);
+    $('aimTxt').textContent = AIM_TEXT[play.targetKind] ?? '-';
     drawLie(lie);
     $('slopeTxt').textContent = aiming ? slopeText() : '-';
     $('clubName').textContent = club.name;

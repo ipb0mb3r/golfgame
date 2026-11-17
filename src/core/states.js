@@ -22,3 +22,9 @@ export const isAimingState = state => state === 'aim' || isSwinging(state);
 export const isAimView = state => state === 'intro' || isAimingState(state);
 // The ball is moving and physics runs
 export const isBallMoving = state => state === 'flight' || state === 'roll';
+
+// Ball events (core/ball.js) that end a shot. After one of these core has set play.next (X9: when a
+// shot is skipped, all its events arrive at once, and only this one carries the hole flow).
+export const SHOT_END_EVENTS = Object.freeze(['holed', 'stopped', 'penalty']);
+const SHOT_END = new Set(SHOT_END_EVENTS);
+export const isShotEnd = ev => !!ev && SHOT_END.has(ev.type);

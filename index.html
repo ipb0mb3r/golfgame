@@ -74,6 +74,9 @@
   #club .name { text-align: center; }
   #club .name b { display: block; font-size: 17px; }
   #club .name small { color: var(--muted); }
+  /* X9: ⏩ Skip, above the meter on the right while the ball flies or rolls (doesn't move the layout) */
+  #skipBtn { position: absolute; right: 0; bottom: calc(100% + 8px); font-weight: 800; padding: 8px 16px; background: rgba(12, 28, 20, .85); border-color: var(--accent); color: var(--accent); }
+  #skipBtn[hidden] { display: none; }
   #swingBtn { flex: 0 0 auto; font-weight: 900; background: #2f8f46; border-color: #8ef0a5; padding: 8px 18px; }
 
   /* Overlays */
@@ -99,7 +102,8 @@
 
   /* Debug overlay (backtick key) */
   #debug { position: fixed; left: 12px; bottom: 150px; margin: 0; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
-    color: #e9ffe9; background: rgba(0,0,0,.66); border-radius: 8px; padding: 8px 10px; pointer-events: none; white-space: pre; z-index: 5; }
+    color: #e9ffe9; background: rgba(0,0,0,.66); border-radius: 8px; padding: 8px 10px; pointer-events: none; white-space: pre-wrap; z-index: 5;
+    max-width: calc(100vw - 24px); overflow-wrap: anywhere; } /* X10 Q1: long lines (a long tune list) wrap instead of running off the screen */
   #debug.hidden { display: none; }
 
   /* H1: short screens (phone landscape): a compact card, and the debug overlay moves up between the
@@ -163,11 +167,26 @@
   } else if (!window.WebGLRenderingContext) {
     fail("Your browser can't show 3D graphics (WebGL), so the game can't start. Try another browser.");
   }
+  // Which game file failed to load (X10 Q3). A module that an import can't fetch is reported on the
+  // entry <script> (src/game/main.js), whichever file it was, so name a file only when the browser
+  // says which one answered with an error (resource timing responseStatus: Chrome, Edge, Firefox).
+  function failedFile() {
+    try {
+      var list = performance.getEntriesByType('resource');
+      for (var i = 0; i < list.length; i++) {
+        if (list[i].responseStatus >= 400) return list[i].name.replace(location.origin + location.pathname.replace(/[^/]*$/, ''), '');
+      }
+    } catch (err) { /* old browser: name none */ }
+    return null;
+  }
   // A game file that didn't load (no connection, blocked) fires on its <script>; a bug fires on window
   window.addEventListener('error', function (e) {
     var t = e.target;
     if (t && t !== window) {
-      if (t.tagName === 'SCRIPT') fail('Part of the game did not load (' + (t.getAttribute('src') || 'a script') + '). Check your connection and reload the page.');
+      if (t.tagName === 'SCRIPT') {
+        var file = t.type === 'module' ? failedFile() : t.getAttribute('src');
+        fail('Part of the game did not load' + (file ? ' (' + file + ')' : '') + '. Check your connection and reload the page.');
+      }
       return;
     }
     fail('The game hit an error while starting: ' + (e.message || 'unknown error') + '. Reloading may help; if not, please report it.', e.error);
@@ -191,6 +210,7 @@
   <div>Stroke: <b id="strokeTxt">1</b></div>
   <div>To pin: <b id="distTxt">-</b></div>
   <div>Lie: <b id="lieTxt">Tee box</b></div>
+  <div>Aim: <b id="aimTxt">-</b></div>
   <div id="slopeRow">Slope: <b id="slopeTxt">Flat</b></div>
 </div>
 
@@ -205,6 +225,7 @@
 <div id="msg"></div>
 
 <div id="bottom">
+  <button id="skipBtn" hidden title="Skip to where the ball stops (Space or Enter)">⏩ Skip</button>
   <div id="tuned" hidden></div>
   <div id="hint">Click or press Space to start your swing</div>
   <div>
