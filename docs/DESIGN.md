@@ -49,7 +49,7 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 ### Club auto-pick ✅ (task S13, decided 2026-11-16 by the game designer)
 In this order (`clubs.pickClub`):
 1. **Green**, or the fringe closer than `FRINGE_PUTT_DIST` (18 m): the putter.
-2. **Bunker:** the sand wedge (if the hole's bag has one) when it reaches the pin within its own bunker cap (85%): it is the bunker club near the green. From a far bunker, rule 3 applies inside the 60% bunker cap (never the Driver), so a fairway bunker is a real recovery choice (PM on PR #15).
+2. **Bunker:** the sand wedge (if the hole's bag has one) when it reaches the pin within its own bunker cap (85%, 75% after S17): it is the bunker club near the green. From a far bunker, rule 3 applies inside the 60% bunker cap (50% after S17) (never the Driver), so a fairway bunker is a real recovery choice (PM on PR #15).
 3. **Everywhere else:** the shortest club that reaches the pin within the lie's cap (its capped reach, hills included, is at least `AUTO_CLUB_REACH` × the distance). **The Driver only counts on the tee**, so it is picked only from the tee and only when the 3 Wood doesn't get there. When nothing reaches, the longest club that counts (the 3 Wood off the fairway).
 
 The player can still pick any club with ▲ ▼ / W S, including the Driver from the fairway.
@@ -87,8 +87,8 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 | Fairway | 1.00 | 1.0 |
 | Fringe | 0.95 | 1.0 |
 | Rough | 0.85 | 0.7 |
-| Bunker | 0.60 | 0.5 |
-| Bunker + sand wedge | 0.85 | 0.7 |
+| Bunker | 0.60 → **0.50** (S17) | 0.5 → **0.4** (S17) |
+| Bunker + sand wedge | 0.85 → **0.75** (S17) | 0.7 → **0.6** (S17) |
 | Green (putter) | 1.00 | 1.5 |
 
 **Putter:** the putter ignores `maxPower` on the fringe and the green (a club override, like the sand wedge), so a full putt always uses the whole putt range. It keeps the surface's `sweetScale` (green ×1.5, fringe ×1.0). Decided by the PM on PR #12.
@@ -329,6 +329,7 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 | 2026-11-16 | **Putting stays 3 clicks for now**; whether it becomes 2 clicks (no accuracy) is an open question (S14) | Decide together with the next 3-click system pass | Next swing design pass |
 | 2026-11-16 | **Rain and lie:** a wet bunker raises the cap (+0.10, all clubs incl. sand wedge), wet rough shrinks the window (×0.85), other surfaces keep cap and window | Firm wet sand is easier, heavy wet rough is harder; readable on the meter | After the rain playtest |
 | 2026-11-16 | **Three.js is committed in the repo** (`vendor/`) instead of loaded from unpkg | Works when the CDN is blocked or down, offline play, no agent workaround, upgrade = swap one file | |
+| 2026-11-16 | **Swing tuning 1:** keep the gentle curve (`CURVE_SHAPE` 2), perfect zone a little smaller (`SWEET` 0.045), harder bunkers (S17) | Designer playtest: near-misses should stay forgiving, perfect a bit harder, sand a real hazard | Next playtest |
 
 ### Future direction (not in the prototype)
 The owner plans richer graphics, sound, more beautiful courses and characters. When those phases start, plan for: a glTF asset pipeline from Blender, `THREE.AnimationMixer` for characters, Web Audio / `THREE.PositionalAudio` for sound, and lighting and post-processing presets per course. Asset loading should be async with a loading screen.
