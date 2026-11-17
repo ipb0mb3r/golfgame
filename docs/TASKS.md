@@ -7,8 +7,11 @@
 ## Roadmap at a glance
 | # | Phase | Status | Branch |
 |---|---|---|---|
-| 0 | Foundation and engine refactor | in review | `dev/F-engine-refactor` |
-| A | Review gate A (after Phase 0) | todo | `review/A-<role>` |
+| 0 | Foundation and engine refactor | ✅ done | `dev/F-engine-refactor` |
+| — | Feel passes 1–2 (swing, lie, HUD) | ✅ done | `dev/feel-pass-1`, `dev/feel-pass-2` |
+| A | Review gate A | ✅ reviewed (#18–#20), decisions in `reviews/A-decisions.md` | `review/A-<role>` |
+| A1 | **Fix pass 1** (no gameplay change) | **NEXT** | `dev/QA-fixes-1` |
+| A2 | Fix pass 2 (physics changes) | after A1 | `dev/QA-fixes-2` |
 | 1–4 | Swing, physics, slopes, putting | mostly built, missing tests and small gaps | covered by Phase 0 + `dev/gaps-1-4` |
 | 5 | Rain | todo | `dev/W-rain` |
 | 6 | Multi-hole rounds | todo | `dev/R-rounds` |
@@ -139,10 +142,33 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 Reviewers only read code and write reports in `reviews/`. You decide which findings get fixed.
 
 **Gate A: after Phase 0** (it's a big refactor, so catch structural problems early)
-- [ ] **QA1** Maintainability review
-- [ ] **QA2** Testing review
-- [ ] **QA3** Compatibility review (frame rates, browsers, mobile, `file://` vs server)
-- [ ] **QA4** 🅿️ The owner marks findings APPROVED or SKIP → the dev fixes them on `dev/QA-fixes`
+- [x] **QA1** Maintainability review
+- [x] **QA2** Testing review
+- [x] **QA3** Compatibility review (frame rates, browsers, mobile, `file://` vs server)
+- [x] **QA4** 🅿️ The owner marks findings APPROVED or SKIP → the dev fixes them on `dev/QA-fixes`
+
+**Gate A fix passes** (approved findings, see `reviews/A-decisions.md`)
+
+*Fix pass 1: `dev/QA-fixes-1`, no gameplay change: baseline v1 and v2 must pass **untouched** (except for the new v2 shots from T2, recorded once)*
+- [ ] **C1** Commit Three.js 0.160.0 to `vendor/three-0.160.0/three.module.js` (license kept), point the import map at it, and remove the unpkg / `THREE_MODULE` workaround from tools, tests and docs
+- [ ] **C2** Plain-language message in `#notice` when the game can't start (no import maps, no WebGL, `file://`, module load error)
+- [ ] **C5** `?debug=1` opens the debug overlay (incl. fps and seed) on a phone
+- [ ] **C4** (partial) Quality tunables: DPR cap + antialias on/off, in `?tune=`
+- [ ] **C6** iOS Safari viewport height (`dvh` / visualViewport) · **C7** only a primary tap/click/key starts a swing
+- [ ] **A1 + A8** Hole flow in core: after each event, core decides what's next (aim, penalty return, holed, picked up) and is the only way to hit the ball. `main.js` maps it to delays and visuals. Tests in Node
+- [ ] **A2** Disposable hole session: create/dispose scene objects, textures, listeners and timers for one hole, so rounds and menus can load holes. Test: 10 load/dispose cycles with no growth in `renderer.info.memory`
+- [ ] **A3** One source of truth for state/phase predicates, used by core, HUD, camera and input, plus a test that every meter phase is covered
+- [ ] **A5** Tunables: one entry each (value + range + setter) instead of three lists
+- [ ] **T2** ~8 more v2 shots: rough, bunker with and without SW, fringe chip, hook/slice at ±0.1 and ±0.15, shank, topped, mistimed putt, lip-out at a fixed seed, sloped bunker. Move "h1 hook/slice" off the window edge
+- [ ] **T3** `record-baseline-v2.mjs` prints which shots moved and by how much before overwriting
+- [ ] **T5** Putt accuracy tests · **T6** cup rule tests (edge of `CUP_R`, rest over the cup, landing on the fly) · **T9** no test changes global settings at import
+- [ ] **T7** Validate hole and scenario data when it loads, with a clear error naming the hole and field
+
+*Fix pass 2: `dev/QA-fixes-2`, physics/feel changes (after pass 1, so the new v2 shots guard it). Follows AGENTS rule 9*
+- [ ] **P10** (Gate A T1) Rest rule: a ball that stays below `STOP_SPEED` for a short time comes to rest, so no roll on a real hole ends through the 40 s `ROLL_TIMEOUT`. `stopped` reports the reason. Sweep test over both holes: 0 timeouts
+- [ ] **S16** (Gate A C3) The meter reads the real click time (event time vs the frame time), not the last frame. Test: the same click times give the same result at 30 and 144 fps
+
+*Skipped or moved:* A6, A10 → Phase 7 (menus) · A9, C8, C10, T8 → skipped · A4 → DESIGN §7 rewritten (PM), code in W2 · A7, T4, C9 → done by the PM
 
 **Gate B: after Phase 7** (full set)
 - [ ] **QB1** Security · **QB2** Scalability · **QB3** Maintainability · **QB4** Compatibility · **QB5** Testing
