@@ -105,7 +105,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
       const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, heightAt(sx, z) + 0.5, z); scene.add(s);
     }
   }
-  addTrees(scene, sc.trees, heightAt);
+  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt);
   const colliderOutlines = addObstacles(scene, obstacles);
   addBackdrop(scene, sc);
   return { scene, camera, colliderOutlines };
@@ -155,8 +155,9 @@ function addObstacles(scene, obstacles) {
   return outlines;
 }
 
-// Trees (instanced so hundreds are cheap), standing on the ground
-function addTrees(scene, t, heightAt) {
+// Decoration trees (instanced so hundreds are cheap), standing on the ground. K8: only outside the
+// OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
+function addTrees(scene, t, heightAt, surfaceAt) {
   const r = createRng(42);
   const spots = [];
   let guard = 0;
@@ -165,6 +166,7 @@ function addTrees(scene, t, heightAt) {
     if (t.exclude(x, z)) continue;
     spots.push([x, z, 0.8 + r() * 0.7]);
   }
+  for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
   const trunkGeo = new THREE.CylinderGeometry(0.25, 0.35, 3, 6); trunkGeo.translate(0, 1.5, 0);
   const leafGeo = new THREE.ConeGeometry(2.4, 6, 7); leafGeo.translate(0, 5.5, 0);
   const trunks = new THREE.InstancedMesh(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x6b4a2b }), spots.length);

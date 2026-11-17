@@ -35,7 +35,7 @@ function inFairway(x, z) {
 // The trees (K2/K3). Sizes fit the game's ball flight: a full Driver peaks at about 11.5 m.
 // trunkH = trunk height (the leaves are centred on its top), canopyR = leaf radius, canopyH = leaf height.
 const tree = (x, z, s = 1) => ({ type: 'tree', x, z, trunkR: 0.35 * s, trunkH: 6.2 * s, canopyR: 3.6 * s, canopyH: 6.4 * s });
-const LONE_TREE = { type: 'tree', x: -7, z: -203, trunkR: 0.45, trunkH: 6.5, canopyR: 4.5, canopyH: 8 };
+const LONE_TREE = { type: 'tree', x: -7, z: -203, trunkR: 0.45, trunkH: 6.5, canopyR: 4.5, canopyH: 8, onFairway: true }; // K8: on the fairway by design
 const CORNER_TREES = [
   // the stand inside the corner: carried by a full drive on the cut line, 95–150 m out
   tree(30, -92, 0.95), tree(38, -100), tree(45, -96, 0.9), tree(52, -104, 1.05),

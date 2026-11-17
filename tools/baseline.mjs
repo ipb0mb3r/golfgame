@@ -38,7 +38,8 @@ const PAGES = {
   old: { 'pl-01': 'index.html', 'pl-02': 'hole2.html' },
   // v1 checks physics only: replay with the old swing mapping (neutral lie window, linear curve),
   // same as tests/baseline.test.js.
-  new: { 'pl-01': `index.html?hole=pl-01&tune=${NEUTRAL_LIE},ANTIALIAS:0`, 'pl-02': `index.html?hole=pl-02&tune=${NEUTRAL_LIE},ANTIALIAS:0` },
+  // seed=1 like tests/baseline.test.js (K8: a shot into the leaves is turned by the seeded RNG)
+  new: { 'pl-01': `index.html?hole=pl-01&seed=1&tune=${NEUTRAL_LIE},ANTIALIAS:0`, 'pl-02': `index.html?hole=pl-02&seed=1&tune=${NEUTRAL_LIE},ANTIALIAS:0` },
 };
 
 // Scripted shots. Each scenario loads the hole fresh, optionally drops the ball somewhere
