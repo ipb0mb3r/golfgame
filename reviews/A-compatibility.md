@@ -45,7 +45,7 @@ Safari, iOS Safari and Firefox were judged by reading the code (no WebKit or Gec
 **Fix.** Add `?debug=1` next to `?tune=` / `?scenario=` (and later the M4 setting).
 
 ### C6 · Low · `index.html:133`, `src/game/main.js:178-183`: iOS Safari viewport units
-**Problem.** The short-screen minimap rule uses `calc(100vh - 240px)`. On iOS Safari `100vh` is the height *without* the browser bars, so when the bars are showing the minimap can be taller than the space and run into the meter. `resize()` uses `innerWidth/innerHeight` only, which is usually fine but can be stale right after rotation on iOS. `user-scalable=no` is ignored by iOS (harmless here, because `touch-action: none` on `body` already stops pinch and double-tap zoom).
+**Problem.** The short-screen minimap rule uses `calc(100vh - 240px)`. On iOS Safari `100vh` is the screen height with the browser bars hidden, so when the bars are showing the minimap can be taller than the space and run into the meter. `resize()` uses `innerWidth/innerHeight` only, which is usually fine but can be stale right after rotation on iOS. `user-scalable=no` is ignored by iOS (harmless here, because `touch-action: none` on `body` already stops pinch and double-tap zoom).
 **Why it matters.** Phone landscape is a supported layout (H1) and was only checked in Chromium.
 **Fix.** Use `100dvh` with the `100vh` line before it as fallback; also call `resize()` on `visualViewport` `resize` if rotation glitches show up in a playtest.
 
