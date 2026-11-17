@@ -44,6 +44,9 @@ export const LANDING_SIM = {          // aim-ring / reach / ⚑ prediction (no w
   dt: 1 / 60, maxSteps: 900,
   pinMaxPower: 1.5,                  // S12: the ⚑ search looks up to this power (above 1 = out of reach)
   pinIters: 24,                      // ...and halves the range this many times (1.5 / 2^24 ≈ 0.0000001)
+  restIters: 14,                     // S15: the ⚑ search on the full roll halves [0, carry power] this many times (≈ 1 cm at 215 m)
+  restTol: 1,                        // S15: m; when no power finishes closer than this (a bank in the way), the ⚑ takes the closest finish
+  restSeed: 1,                       // S15: the roll prediction's own random numbers (lip-outs), restarted every time
 };
 
 // --- Ball (§4) ---
@@ -92,6 +95,8 @@ export const TUNABLES = Object.freeze({
   CUP_CAPTURE_SPEED:     { def: 3.2,  min: 1,     max: 6 },    // m/s: slower than this over the cup = holed; faster = lip-out
   WIND_K:                { def: 0.3,  min: 0,     max: 0.6 },  // how strongly wind pushes the ball in the air (S17: 0.2 → 0.3)
   FLIGHT_SPEEDUP:        { def: 1.35, min: 0.5,   max: 3 },    // full shots run this much faster than real time (putts run at 1×)
+  // Default aim (§3)
+  CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones

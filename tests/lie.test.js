@@ -81,8 +81,10 @@ test('the ⚑ mark matches the real distance on every lie', () => {
     const play = playOn(lie, '7i', -100);
     const p = play.pinPower();
     assert.ok(p < 1);
-    const { carry } = carryOf(play, p);
-    assert.ok(near(carry, 100 * AUTO_CLUB_REACH, 0.3), `${lie}: ⚑ at ${p.toFixed(3)} carries ${carry.toFixed(2)} m`);
+    // S15: the ⚑ is the power that FINISHES at the target (the ball lands short and runs out)
+    const rp = play.restPoint(play.clubIdx, play.aim, p), rest = Math.hypot(rp.x - play.ball.pos.x, rp.z - play.ball.pos.z);
+    assert.ok(near(rest, 100, 0.3), `${lie}: ⚑ at ${p.toFixed(3)} finishes at ${rest.toFixed(2)} m`);
+    assert.ok(carryOf(play, p).carry < 100, `${lie}: and lands short of it`);
   }
   // out of reach: the mark sits above the cap (in the grayed-out part)
   const far = playOn('sand', '7i', -120);
