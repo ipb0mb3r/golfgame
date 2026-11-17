@@ -40,16 +40,23 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 | 2 | Set the power | Locks the power. The marker reverses toward the impact zone. See "Missed clicks" for what happens when the meter reaches 1 |
 | 3 | Set the accuracy | The marker's distance from the impact zone at 0 sets the hook or slice |
 
-- Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc, as before), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
+- Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc; the default again since S17, so near-misses hurt), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
 - If the marker reaches `METER_MIN` without a third click, the shot is a huge slice (see "Missed clicks").
 - Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S. ✅ Only a primary press swings (Gate A C7): a mouse needs its left button (right and middle clicks do nothing, and a right click on the course opens no menu); every finger counts on a touch screen, so two-thumb play works (hold Aim, tap SWING); Ctrl / Cmd / Alt + Space is a browser shortcut, not a swing.
-- A **⚑ mark** on the meter shows the power needed to reach the pin, adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way to the pin, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1). The ⚑ doesn't account for the ball rolling back off a tier: reading a ridge is the player's job (PM on PR #15; aiming the ⚑ at the pin's tier is a possible later idea).
+- ✅ **The meter reads the real click time** (S16, Gate A C3): each click carries the time it happened (the input event's `timeStamp`), and core moves the marker to that moment before reading it (`pressMeterAt` / `tickMeterTo` in `swing.js`; each move is still capped at `MAX_METER_DT`). The same click times give the same swing at 30, 60 or 144 fps (tests/meter-clock.test.js); before, a click read the marker where it was at the last frame (up to 0.033 meter units off at 30 fps).
+- ✅ **Default aim** (S18, designer: "the automatic aim is too strong"). Each shot starts aimed at a sensible point, not at the pin, so the player adjusts to the flag and reads the wind:
+  - **putt** (green, or the fringe closer than `FRINGE_PUTT_DIST` to the cup): the cup
+  - **tee shot on a par 4 or 5:** the hole's fairway target `aimTarget` (hole 2: the dogleg corner, (9, −270))
+  - **everything else** (approaches, chips, bunker shots, a par 3 tee shot): the **centre of the green** (`features.green`)
+  - The ⚑ mark and the auto-pick use the distance to this point (`play.targetDist()`), also after the player turns the aim. The aim ring and the HUD "To pin" are unchanged. `play.target` / `play.targetKind` say where it aims; the debug overlay shows it.
+- A **⚑ mark** on the meter shows the power needed to reach the default aim point (S18; the pin for a putt), adjusted for elevation (S12): it is the power whose landing point, in the same simulation as the aim ring, comes down `AUTO_CLUB_REACH` (95%) of the way there, and the ball runs out the rest. With no wind and a straight shot, the ball finishes within about 2 m of the pin on flat ground, uphill and downhill. Above the lie's cap it sits in the grayed-out part (out of reach with this club). Near the right end of the meter the flag is drawn on the left of its line so it isn't cut off (H1). The ⚑ doesn't account for the ball rolling back off a tier: reading a ridge is the player's job (PM on PR #15; aiming the ⚑ at the pin's tier is a possible later idea).
 - The club is picked automatically each shot (see "Club auto-pick") and the player can change to any club in the bag.
 
 ### Club auto-pick ✅ (task S13, decided 2026-11-16 by the game designer)
 In this order (`clubs.pickClub`):
 1. **Green**, or the fringe closer than `FRINGE_PUTT_DIST` (18 m): the putter.
-2. **Bunker:** the sand wedge (if the hole's bag has one) when it reaches the pin within its own bunker cap (85%, 75% after S17): it is the bunker club near the green. From a far bunker, rule 3 applies inside the 60% bunker cap (50% after S17) (never the Driver), so a fairway bunker is a real recovery choice (PM on PR #15).
+2. **Bunker:** the sand wedge (if the hole's bag has one) when it reaches the default aim point within its own bunker cap (75% since S17, was 85%): it is the bunker club near the green. From a far bunker, rule 3 applies inside the 50% bunker cap (S17, was 60%) (never the Driver), so a fairway bunker is a real recovery choice (PM on PR #15).
+Since S18 "reaches" means the distance to the default aim point (the green centre, or the tee target), not to the pin; rule 1 still uses the distance to the cup.
 3. **Everywhere else:** the shortest club that reaches the pin within the lie's cap (its capped reach, hills included, is at least `AUTO_CLUB_REACH` × the distance). **The Driver only counts on the tee**, so it is picked only from the tee and only when the 3 Wood doesn't get there. When nothing reaches, the longest club that counts (the 3 Wood off the fairway).
 
 The player can still pick any club with ▲ ▼ / W S, including the Driver from the fairway.
@@ -87,8 +94,8 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 | Fairway | 1.00 | 1.0 |
 | Fringe | 0.95 | 1.0 |
 | Rough | 0.85 | 0.7 |
-| Bunker | 0.60 → **0.50** (S17) | 0.5 → **0.4** (S17) |
-| Bunker + sand wedge | 0.85 → **0.75** (S17) | 0.7 → **0.6** (S17) |
+| Bunker | **0.50** (S17, was 0.60) | **0.4** (S17, was 0.5) |
+| Bunker + sand wedge | **0.75** (S17, was 0.85) | **0.6** (S17, was 0.7) |
 | Green (putter) | 1.00 | 1.5 |
 
 **Putter:** the putter ignores `maxPower` on the fringe and the green (a club override, like the sand wedge), so a full putt always uses the whole putt range. It keeps the surface's `sweetScale` (green ×1.5, fringe ×1.0). Decided by the PM on PR #12.
@@ -98,8 +105,9 @@ Starting values. The designer tunes them with `?tune=` (X8), e.g. `?tune=rough.m
 How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` (a hole can override them in `surfaceOverrides`); a club can override them per surface with `lieOverrides` in `clubs.js`. `clubs.lieFor(club, surface, surfaces)` is the one function that decides the lie (`play.lieOf()` for the ball's lie and current club). The meter's top is `meter.cap`; `resolveShot` also clamps power to the cap. The aim ring and club reach show the capped full shot. `play.pinPower()` places the ⚑ mark on the full 0–1 scale (above the cap = out of reach, shown in the gray part): since S12 it searches (bisection) for the power whose `play.landingPoint()` carry is 95% of the distance, instead of scaling the full-power carry, which was ~9% short up to a raised green. `landingPoint()` integrates the arc exactly and stops where it crosses the ground, so the aim ring, reach and ⚑ agree with the real flight to a few cm. The putter's override is in `clubs.js` (`lieOverrides` for fringe and green).
 
 ### Tunables (today)
-`METER_SPEED = 1.0`, `METER_MIN = -0.2`, `SWEET = 0.05`, `CURVE_SHAPE = 2`, `CURVE_K = 28`.
-✅ **S10 (designer playtest, 2026-11-16): the accuracy window was too hard.** `SWEET` went from 0.024 to 0.05 (≈100 ms perfect window instead of ≈48 ms). `CURVE_SHAPE = 2` (quadratic) is the default (PM decision on PR #12): far-end hooks and slices are unchanged, only small misses curve more gently. Compare with linear through `?tune=CURVE_SHAPE:1`. Tap delay on phones makes tight windows feel even harder; if needed, a later task can add an input offset.
+`METER_SPEED = 1.15`, `METER_MIN = -0.2`, `SWEET = 0.045`, `CURVE_SHAPE = 1`, `CURVE_K = 28`.
+✅ **S17, designer tuning 1 (Alexis + playtesters, 2026-11-16: "harder is much better"):** `SWEET` 0.05 → 0.045, `CURVE_SHAPE` 2 → 1 (the old linear curve, near-misses hurt), `METER_SPEED` 1.0 → 1.15, `WIND_K` 0.2 → 0.3, harder bunkers (table above), faster greens (§4). At 1.15 the perfect window is ≈ 78 ms (±0.045 / 1.15 per second); on the tee (×1.2) ≈ 94 ms.
+History: S10 widened `SWEET` from 0.024 to 0.05 and made `CURVE_SHAPE = 2` the default (PM, PR #12); S17 tightened it again. Compare with `?tune=SWEET:0.05,CURVE_SHAPE:2,METER_SPEED:1`. Tap delay on phones makes tight windows feel even harder; since S16 a later task can add an input offset that behaves the same at every frame rate.
 Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/38, SW 75/46 (sand), Putter. Each hole can limit the bag (hole 1 has no driver).
 
 ### Acceptance
@@ -122,10 +130,14 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - **Bounce:** when the ball touches the ground (`ball.y <= heightAt(x,z)`), the velocity is reflected around the **terrain normal**. Vertical bounce × `rest`, horizontal speed × `keep`. The first bounce is also scaled by the club's `spinFactor` (high lofts stop faster). When the bounce speed is under 1.2 m/s, the ball switches to roll.
 - **Roll:** friction `decel` (m/s²) from the surface, plus slope gravity `ROLL_G = G·5/7` along the gradient.
 - **Rest:** on a slope, a stopped ball stays put if the slope force is below `decel × STATIC`. Otherwise it creeps (below `CREEP` m/s, friction blends down so the ball trickles instead of stopping dead).
+- ✅ **Rolls always end** (P10, Gate A T1). Two more rest rules, so no roll on a real hole reaches the 40 s `ROLL_TIMEOUT` safety net (before: about 1 roll in 6 on hole 2):
+  - a ball slower than `STOP_SPEED` (0.06 m/s) for `STOP_TIME` (0.5 s) in a row is at rest, even if the slope still pulls a little (it used to slow down forever where the pull only just beat the grass);
+  - a ball that has crawled (slower than `CREEP`) for `CRAWL_TIME` (8 s) gets full friction again: where the grass can hold it, it slows to a stop within a fraction of a second, then the rule above rests it. On a slope steeper than the grass can hold (pull > `decel`) it keeps rolling, as before.
+  - The `stopped` event says why: `reason: 'still'` (the normal rule), `'settled'` (one of the two new rules) or `'timeout'` (the safety net). tests/rest.test.js plays a grid of putts and full shots on both holes and expects 0 timeouts; the longest roll is ≈ 24 s (a long putt down hole 2's ridge).
 - **Cup:** the ball drops if it's within `CUP_R` (strictly: a ball exactly on the edge stays out) and slower than `CUP_CAPTURE_SPEED` (3.2 m/s). A faster ball **lips out** (it's deflected and slowed) and can't drop until it has left the cup (G8; before, it was captured on the next step almost every time). It can drop again once it has rolled more than `CUP_R × 1.5` away and comes back. A ball that comes to rest over the cup drops. A ball landing on the fly within `CUP_R × 1.4` goes straight in.
 - **Penalties:** water or out of bounds gives +1 stroke and the ball goes back to the last position.
 - **Lie:** the surface the ball rests on caps the next shot's power and scales its accuracy window (S11, see §3 "Lie"). There is no hidden power multiplier any more: power % is always the same share of the club's distance.
-- **Skip (X9, ⏳):** the player can skip to the end of a shot. Skipping runs the same fixed steps without rendering, so the result is identical to watching it.
+- ✅ **Skip (X9):** about 1 s after the hit (`TIMING.skipAfter`), a **⏩ Skip** button shows above the meter while the ball flies or rolls; **Space** or **Enter** do the same. `play.skip()` runs the remaining fixed steps at once with nothing drawn, so the end is identical to watching it (same spot, strokes, lip-outs, `play.next`; tests/skip.test.js compares them exactly at 30/60/144 fps and different skip moments). The events go through the usual flow, so the flash text, penalties, holed and picked-up play normally. A tap on the course or SWING never skips, so an extra swing tap can't skip a shot by accident.
 - **Timestep:** a fixed-step accumulator: only whole 1/240 s steps, the remainder waits for the next frame, so a shot ends in the same place at any frame rate. The flight is sped up ×1.35 for game feel (`FLIGHT_SPEEDUP`).
 
 ### Known problems fixed in Phase 0
@@ -142,12 +154,14 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 | Tee | .30 | .40 | 2.4 | |
 | Fairway | .30 | .42 (h1) / .45 (h2) | 2.4 / 2.2 | |
 | Fringe | .25 | .36 | 3.2 / 3.0 | |
-| Green | .22 | .32 / .34 | **1.1 / 0.8** | the green speed differs on purpose |
+| Green | .22 | .32 / .34 | **0.7 / 0.6** | faster since S17 (was 1.1 / 0.8); the green speed differs on purpose |
 | Rough | .15 | .22 | 5.5 | |
 | Bunker | .02 | .06 | 18 | |
 | Water / OB | | | | penalty |
 
 **Decision:** one shared base surface table in `surfaces.js`. A hole may override values in `surfaceOverrides` (e.g. a faster green). Hole 1 and hole 2 must keep their current feel through those overrides.
+**Tunable (S17):** `?tune=<surface>.decel|keep|rest:<value>` (e.g. `green.decel:0.5`; ranges decel 0.2–30, keep and rest 0–1). Like the lie values, a tuned value wins over a hole's `surfaceOverrides`, so `green.decel` applies to both holes. Putt power stays calibrated to the tuned green (`v0 = √(2·decel·D)`).
+**Note (S17):** on the faster greens a putt reaches the cup slower, so a full putt can only lip out from about 15 m on hole 1 (≈ 11 m before). See the PR for the open question about `CUP_CAPTURE_SPEED`.
 
 ---
 
@@ -162,7 +176,8 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 
 ### Acceptance
 - [x] From the same landing speed, an uphill roll is shorter than a downhill roll. *(tests)*
-- [x] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put. *(tests; see P10: some rolls only end through the 40 s safety net)*
+- [x] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put. *(tests)*
+- [x] No roll on a real hole ends through the 40 s safety net (P10). *(tests/rest.test.js)*
 - [x] Hole 1 (flat) stays within the baseline tolerance of its pre-refactor behaviour.
 
 ---
@@ -177,7 +192,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 
 ### Acceptance
 - [x] On a flat green, a putt with power p stops within ±5% of `p × puttMax`. *(tests)*
-- [x] A mistimed putt changes only the line, by the curve error × `PUTT.aimErrorK` (0.25 rad): early goes left, late goes right, by the same amount (acc ±0.15 ≈ 1.6°). A shanked putt (no 3rd click) is pushed ≈ 8.6° right, under the agreed 10° ("mild"). *(tests/putt-cup.test.js, Gate A T5)*
+- [x] A mistimed putt changes only the line, by the curve error × `PUTT.aimErrorK` (0.25 rad): early goes left, late goes right, by the same amount (acc ±0.15 ≈ 2.1° with the linear curve of S17; 1.6° before). A shanked putt (no 3rd click) is pushed ≈ 8.6° right, under the agreed 10° ("mild"). *(tests/putt-cup.test.js, Gate A T5)*
 - [x] A ball faster than the capture speed over the cup doesn't drop (tested at 3.5–5 m/s, G8). A slower one does.
 
 ---
@@ -185,7 +200,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 ## 7. Weather ❌ (wind ✅)
 
 ### Wind ✅
-Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball in the air. It comes from the seeded RNG, and a hole can set `windMax` or a fixed wind (`wind: { x, z }`).
+Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball in the air, as `wind × WIND_K` (0.3 since S17, was 0.2: the same wind pushes the ball 1.5× as far). It comes from the seeded RNG, and a hole can set `windMax` or a fixed wind (`wind: { x, z }`).
 
 ### Rain ❌ (Phase 5, rules decided by the game designer 2026-11-16, Gate A finding A4)
 - Each hole has `weather: { type: 'clear' | 'rain', wetness: 0..1 }`. A hole set (or a scenario) can override it: `createHolePlay(hole, { seed, weather })`, where `weather` defaults to `hole.weather`. Never mutate the shared hole object.
@@ -287,6 +302,7 @@ tools/
 export default {
   id: 'pl-02', name: 'Pocket Links #2', par: 5, maxStrokes: 12,
   tee: { x: 0, z: 0 }, cup: { x: 26, z: -448 },
+  aimTarget: { x: 9, z: -270 },                             // S18: tee-shot default aim, required on a par 4/5
   bag: ['driver','3w','5i','7i','9i','pw','sw','putter'],   // optional, defaults to all
   windMax: 5.5,                                             // or wind: { x, z } for a fixed wind
   weather: { type: 'clear', wetness: 0 },
@@ -295,7 +311,7 @@ export default {
   number: 2,                                                // shown as "Hole 2"
   scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
   intro: { subtitle, steps, ... },                          // intro card text
-  features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt
+  features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt; green { cx, cz } = approach default aim (S18)
   heightAt(x, z) { ... },                                   // may use helpers from core/terrain.js
   surfaceAt(x, z) { ... },
 };
@@ -305,9 +321,9 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.
 - **Game loop:** physics runs on a fixed accumulator (1/240 s). Rendering interpolates or just draws the latest state. The same inputs give the same resting position at 30, 60 or 144 fps.
-- **Debug overlay** (backtick key, or `?debug=1` on phones ✅): state, speed, surface, slope, wetness, meter values, render quality, fps.
+- **Debug overlay** (backtick key, or `?debug=1` on phones ✅): state, speed, surface, slope, wetness, meter values, default aim (S18), render quality, fps. ✅ X10: in portrait it sits above the bottom panel (never over the TUNED badge) and long lines wrap inside the screen; it is placed again on every refresh, so `?debug=1` in landscape lands between the scorecard and the minimap like the backtick. A file that fails to load is named in the start-up message only when the browser says which one (otherwise no name, instead of always `main.js`).
 - **Test hooks:** keep `window.__golf` (state, ball, meter, testHit, surfaceAt, …) for browser-level tests.
-- **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Each tunable is one `TUNABLES` entry in config.js (`{ def, min, max }`); code reads the live value from `TUNE` and only `setTunable()` changes it. Lie values (`rough.maxPower`, `sw.sand.maxPower`, …) go into a tune layer: the surface and club tables stay frozen, and a tuned value wins over a hole's `surfaceOverrides`. **Tunes are read when a hole starts** (the link is applied before the first hole is created). Quality tunables (Gate A C4): `DPR_CAP` (default 2) and `ANTIALIAS` (1 on, 0 off), e.g. `?tune=DPR_CAP:1,ANTIALIAS:0` on a slow phone.
+- **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Each tunable is one `TUNABLES` entry in config.js (`{ def, min, max }`); code reads the live value from `TUNE` and only `setTunable()` changes it. Lie values (`rough.maxPower`, `sw.sand.maxPower`, …) and, since S17, surface physics (`green.decel`, `green.keep`, `fairway.rest`, …) go into a tune layer: the surface and club tables stay frozen, and a tuned value wins over a hole's `surfaceOverrides`. **Tunes are read when a hole starts** (the link is applied before the first hole is created). Quality tunables (Gate A C4): `DPR_CAP` (default 2) and `ANTIALIAS` (1 on, 0 off), e.g. `?tune=DPR_CAP:1,ANTIALIAS:0` on a slow phone.
 - **Local run:** ES modules need a local server (`python3 -m http.server`). The README must say so. No internet is needed (Three.js is in `vendor/`).
 - **Hole sessions** (Gate A A2): the app (`main.js`) lives for the whole visit and owns the renderer, the input listeners and the loop; each hole is a session (`session.js`) that is created and disposed. Rounds and menus load the next hole by disposing the current session and creating a new one, never by reloading the page or binding input again.
 - **Data is validated when it loads** (Gate A T7): `sets.js` runs `validateHole` on every hole and `scenarios.js` runs `validateScenario`; an error names the hole or scenario and the field, and the C2 start-up message shows it.
