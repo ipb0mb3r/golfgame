@@ -1,10 +1,12 @@
-# Hole design guidelines: Mountain course
+# Hole design guidelines: Mountain course (prototype test run)
+
+> **Status: test run, not final content.** This first 9 is a prototype course. It tests the engine (rounds, obstacles, rivals, menus) and the course designer's workflow. Before real courses are designed, the owner will (1) teach the course designer from games in this genre (`docs/GENRE_NOTES.md`, to come) and (2) decide on an art style. Expect these holes to be reworked or replaced. Favour quick iteration over polish.
 
 > **For the course designer:** this is your brief. Every hole is co-designed with **Alexis (owner / game designer)**. He brings the idea or picks from your proposals, and you build it as data. The PM reviews each hole's PR against this document. Rules marked **MUST** are not negotiable; the rest are guidance.
 
 ## 1. The course
 - **Setting:** a **mountain** course. Pine and larch trees, rock outcrops, scree, alpine streams and lakes, elevation changes, distant peaks. More settings (seaside, desert, tropical…) come later, so keep everything mountain-specific in shared course scenery, not inside the engine.
-- **Name:** to be chosen with Alexis (working name "Mountain 9").
+- **Name:** working name "Mountain 9 (prototype)". The final name comes with the real course.
 - **9 holes, par 36:** 2 par 3s, 5 par 4s, 2 par 5s. The exact order is set in the course plan (TASKS C0).
 
 ## 2. Difficulty ramp (MUST)

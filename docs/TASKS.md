@@ -15,7 +15,8 @@ Re-planned 2026-11-17 (owner): **menus, scoring and a 9-hole round (solo or vs A
 | FP3 | **Feel pass 3** (small: S15, S19, X11) | **NEXT** | `dev/feel-pass-3` |
 | K | **Obstacles and hard surface** (rock, trunks, leaves, aim warning) + prototype hole 3 | after FP3 | `dev/K-obstacles` |
 | 6 | Rounds and scoring (9-hole round, solo) | after K | `dev/R-rounds` |
-| C | **Mountain course** (9 holes, co-designed with the owner, one hole per PR) | runs alongside 6, 7, T | `course/<hole-id>` |
+| C | **Mountain course, prototype** (9 holes, a test run for the engine and the course designer, co-designed with the owner, one hole per PR) | runs alongside 6, 7, T | `course/<hole-id>` |
+| — | Before real courses: genre study for the course designer (`docs/GENRE_NOTES.md`) + art style decision | owner, later | |
 | 7 | Menus (Solo 9, vs AI 9, Practice) | after 6 | `dev/M-menus` |
 | T | AI rivals (5 rivals, leaderboard) | after 7 | `dev/T-rivals` |
 | B | Review gate B + fix + Tech Lead | after T | `review/B-<role>` |
