@@ -20,6 +20,7 @@ export const FULL_BAG = ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter']
 
 // A hole's bag, longest club first, putter last.
 export function makeBag(ids = FULL_BAG) {
+  for (const id of ids) if (!Object.hasOwn(CLUBS, id)) throw new Error(`unknown club "${id}" in the bag`); // Gate A T7: no silent drop
   const bag = FULL_BAG.filter(id => ids.includes(id)).map(id => CLUBS[id]);
   if (!bag.length || !bag[bag.length - 1].putter) throw new Error('a bag must end with the putter');
   return bag;
