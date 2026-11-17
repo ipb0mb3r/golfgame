@@ -61,6 +61,16 @@ test('putts aim at the cup (green, and the fringe close to the cup)', () => {
   assert.equal(f.club.id, 'putter');
 });
 
+test('a chip from the fringe aims at the cup too, with a club (PM on PR #27)', () => {
+  const c = at('pl-02', 5, -446); // fringe, about 21 m from the cup: too far for the putter
+  assert.equal(c.lie, 'fringe');
+  assert.ok(c.distToCup() >= FRINGE_PUTT_DIST);
+  assert.equal(c.targetKind, 'cup');
+  assert.ok(aimsAt(c, c.cup));
+  assert.ok(!c.club.putter, `a club, not the putter (${c.club.id})`);
+  assert.ok(Math.abs(c.targetDist() - c.distToCup()) < 1e-9, 'the ⚑ and the auto-pick use the distance to the cup');
+});
+
 test('the ⚑ uses the default aim distance: at the ⚑ power the ball lands AUTO_CLUB_REACH of the way to the target', () => {
   for (const [hole, x, z] of [['pl-01', 0, 0], ['pl-02', 18, -330], ['pl-01', 0, -100]]) {
     const play = at(hole, x, z);

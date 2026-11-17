@@ -18,7 +18,7 @@ import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js
 import { createRng } from './rng.js';
 import { makeTerrain } from './terrain.js';
 import { makeSurfaceTable } from './surfaces.js';
-import { makeBag, lieFor, pickClub, isPuttLie } from './clubs.js';
+import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
 import { isShotEnd } from './states.js';
@@ -76,13 +76,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
 
   // The default aim (S18, designer: "the automatic aim is too strong"). It is a starting point, not
   // the answer: the player adjusts to the flag and the wind.
-  //   putt (green, or the fringe close to the cup)   the cup
+  //   on the green or the fringe (putt or chip)       the cup (PM on PR #27: a fringe chip aims at the flag)
   //   tee shot on a par 4 or 5                       the hole's fairway target (hole.aimTarget)
   //   everything else (approaches, par 3 tee shots)  the centre of the green (hole.features.green)
   // A hole without that data (test holes) aims at the cup. Returns { kind, x, z }.
   const greenCentre = hole.features?.green ? { x: hole.features.green.cx, z: hole.features.green.cz } : null;
   function defaultTarget(lie = p.lie) {
-    if (isPuttLie(lie, distToCup())) return { kind: 'cup', x: cup.x, z: cup.z };
+    if (lie === 'green' || lie === 'fringe') return { kind: 'cup', x: cup.x, z: cup.z };
     if (lie === 'tee' && hole.par >= 4 && hole.aimTarget) return { kind: 'fairway', ...hole.aimTarget };
     if (greenCentre) return { kind: 'green', ...greenCentre };
     return { kind: 'cup', x: cup.x, z: cup.z };

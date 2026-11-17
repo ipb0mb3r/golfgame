@@ -35,8 +35,7 @@ export function lieFor(club, surfaceId, surfaces) {
   return { maxPower: pick('maxPower'), sweetScale: pick('sweetScale') };
 }
 
-// A putt from here (rule 1 below, also used by the default aim, S18): on the green, or on the fringe
-// closer than FRINGE_PUTT_DIST to the cup.
+// A putt from here (rule 1 below): on the green, or on the fringe closer than FRINGE_PUTT_DIST to the cup.
 export const isPuttLie = (lie, cupDist) => lie === 'green' || (lie === 'fringe' && cupDist < FRINGE_PUTT_DIST);
 
 // The auto-pick for the next shot (S13, designer rules, DESIGN §3 "Club auto-pick"). The player can
