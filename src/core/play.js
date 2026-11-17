@@ -1,7 +1,17 @@
-// Playing one hole: the rules around the ball (strokes, lie, club pick, penalties, the fixed-step clock).
-// The game layer calls these and turns the returned events into text, camera moves and HUD updates.
+// Playing one hole: the rules around the ball (strokes, lie, club pick, penalties, the fixed-step clock)
+// and the hole flow (Gate A A1): after each shot ends, core decides what happens next.
+// The game layer calls these and turns the returned events into text, camera moves, delays and HUD updates.
+//
+// Hole flow, one shot:
+//   swing(result)  the ONLY way to hit the ball (A8); null for a cancelled swing or when a shot can't start
+//   advance(dt)    events; when one ends the shot (stopped, penalty, holed), p.next says what's next:
+//                    'aim'           stopped: the next shot is from here
+//                    'returnToLast'  penalty: back to where the shot was hit from
+//                    'holed'         in the cup: the hole is over (p.finished)
+//                    'pickedUp'      the stroke limit is reached: the hole is over (p.finished)
+//   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, FLIGHT_SPEEDUP, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
+  G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -29,10 +39,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos,
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
+    next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
+    finished: null,  // when the hole is over: { holed, pickedUp, strokes, par } (Phase 6 rounds read this)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
-    reset, newWind, prepare, hit, swing, advance, step, returnToLastPos, landingPoint, clubReach, puttPlaysLike,
-    lieOf, pinPower, distToCup, slope, simulate,
+    get canSwing() { return !ball.moving && !p.next && !p.finished; },
+    reset, newWind, prepare, hit, swing, setClub, setAim, advance, step, proceed, returnToLastPos, landingPoint,
+    clubReach, puttPlaysLike, lieOf, pinPower, distToCup, slope, simulate,
   };
 
   function newWind() {
@@ -47,6 +60,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function reset(start = null) {
     if (start?.seed != null) rng.reseed(start.seed);
     p.strokes = start?.strokes ?? 0;
+    p.finished = null;
     copy(ball.pos, tee);
     if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }
     newWind();
@@ -102,6 +116,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
 
   // Get ready for the next shot from wherever the ball is: lie, aim at the pin, putt range, auto club.
   function prepare() {
+    p.next = null;
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);
@@ -112,15 +127,22 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     p.clubIdx = pickClub(bag, { lie: p.lie, dist: d, reach: i => clubReach(i) });
   }
 
-  // A finished swing from the meter: hit it, or for a cancelled swing do nothing (no stroke).
-  // Returns the resolved shot, or null when cancelled.
-  function swing(result) {
-    if (!result || result.outcome === 'cancel') return null;
-    return hit(result.power, result.acc, result.outcome);
-  }
+  // The player's choices while aiming, always through these (A8): the club index is clamped to the bag.
+  function setClub(i) { p.clubIdx = Math.min(Math.max(Math.round(i), 0), PUTTER); return p.clubIdx; }
+  function setAim(a) { if (Number.isFinite(a)) p.aim = a; return p.aim; }
 
-  // Hit the ball. power 0..1, acc = meter value at the 3rd click, outcome from the meter. Returns the resolved shot.
-  function hit(power, accuracy, outcome = 'normal') {
+  // A finished swing from the meter { power, acc, outcome }: hit it. This is the only way to hit the
+  // ball (Gate A A8). A cancelled swing does nothing (no stroke), and nothing happens while the ball
+  // is moving, before proceed() or after the hole is over. Returns the resolved shot, or null.
+  function swing(result) {
+    if (!result || result.outcome === 'cancel' || !p.canSwing) return null;
+    return launch(result.power, result.acc, result.outcome ?? 'normal');
+  }
+  // Shorthand for tests and tools: swing({ power, acc, outcome }).
+  function hit(power, acc, outcome = 'normal') { return swing({ power, acc, outcome }); }
+
+  // power 0..1, acc = meter value at the 3rd click, outcome from the meter. Returns the resolved shot.
+  function launch(power, accuracy, outcome) {
     p.strokes++;
     copy(lastPos, ball.pos);
     const shot = resolveShot({
@@ -134,11 +156,33 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return shot;
   }
 
-  // One fixed physics step. A penalty costs a stroke here.
+  // One fixed physics step. A penalty costs a stroke here. The event that ends the shot sets p.next.
   function step() {
     const ev = ball.step(PHYSICS_DT);
     if (ev && ev.type === 'penalty') p.strokes++;
+    if (ev && TERMINAL.has(ev.type)) decide(ev);
     return ev;
+  }
+
+  // The hole flow (Gate A A1): what happens after a shot ends. Holed beats the stroke limit, and
+  // the stroke limit (strokes incl. penalties ≥ maxStrokes) ends the hole as "picked up".
+  function decide(ev) {
+    let next;
+    if (ev.type === 'holed') next = 'holed';
+    else if (p.pickedUp) next = 'pickedUp';
+    else next = ev.type === 'penalty' ? 'returnToLast' : 'aim';
+    if (next === 'holed' || next === 'pickedUp') p.finished = { holed: next === 'holed', pickedUp: next === 'pickedUp', strokes: p.strokes, par: hole.par };
+    p.next = next;
+    return next;
+  }
+
+  // Carry out p.next: get the next shot ready ('aim' from where the ball stopped, 'returnToLast'
+  // after a penalty). When the hole is over it changes nothing. Returns what it did (the old p.next).
+  function proceed() {
+    const n = p.next;
+    if (n === 'aim') prepare();
+    else if (n === 'returnToLast') returnToLastPos();
+    return n;
   }
 
   // Advance by `realDt` seconds of real time using the fixed-step accumulator: only whole
@@ -147,7 +191,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function advance(realDt) {
     const events = [];
     if (!ball.moving) return events;
-    acc += realDt * (p.isPutt ? 1 : FLIGHT_SPEEDUP);
+    acc += realDt * (p.isPutt ? 1 : TUNE.FLIGHT_SPEEDUP);
     while (acc >= PHYSICS_DT && ball.moving) {
       acc -= PHYSICS_DT;
       const ev = step();

@@ -1,18 +1,21 @@
 // F0 baseline: the shots recorded from the pre-refactor pages must land within the tolerance
 // (0.5 m) when replayed through the new core. See tools/baseline.mjs and tests/fixtures/baseline.json.
-import { test } from 'node:test';
+import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 
-import { applyTune } from '../src/core/tune.js';
+import { applyTune, resetAllTunables } from '../src/core/tune.js';
 
 // v1 checks PHYSICS ONLY (flight, bounce, roll, slopes); v2 checks swing feel (AGENTS.md rule 8).
 // These shots were recorded from the old pages, so they replay with the old swing mapping: a neutral
 // lie window (S11 sweetScale 1) and the linear curve (S10 CURVE_SHAPE 1). Otherwise the new, gentler
 // swing would turn the old hook/slice inputs into different shots.
-applyTune('tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1,CURVE_SHAPE:1');
+// Applied in before() and undone in after(), never at import (Gate A T9).
+export const NEUTRAL_LIE = 'tee.sweetScale:1,fairway.sweetScale:1,green.sweetScale:1,CURVE_SHAPE:1';
+before(() => applyTune(NEUTRAL_LIE));
+after(() => resetAllTunables());
 // For the same reason each shot is hit with the club the old page used: the auto-pick is a swing
 // rule, and S13 changed it (no Driver off the fairway). baseline-v2 and tests/autopick.test.js check it.
 

@@ -2,9 +2,12 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createMeter, pressMeter, tickMeter, resolveShot, accuracyError, shotLabel } from '../src/core/swing.js';
 import { CLUBS } from '../src/core/clubs.js';
-import { SWEET, METER_MIN, G, CURVE_SHAPE, setTunable, resetTunables } from '../src/core/config.js';
+import { TUNE, METER_MIN, G, setTunable } from '../src/core/config.js';
+import { resetAllTunables } from '../src/core/tune.js';
 
-const base = { club: CLUBS['7i'], power: 0.8, acc: 0, aim: 0.1, lieFactor: 1, puttMax: 10, greenDecel: 1.1 };
+const { SWEET, CURVE_SHAPE } = TUNE; // the defaults (read once, at import)
+
+const base = { club: CLUBS['7i'], power: 0.8, acc: 0, aim: 0.1, puttMax: 10, greenDecel: 1.1 };
 
 test('same inputs always give the same launch', () => {
   assert.deepEqual(resolveShot({ ...base, acc: 0.07 }), resolveShot({ ...base, acc: 0.07 }));
@@ -78,10 +81,10 @@ test('S10: the sweet spot is ±SWEET and CURVE_SHAPE sets how a miss grows', () 
   try {
     setTunable('CURVE_SHAPE', 1);
     assert.equal(accuracyError(0.08), 0.08, 'shape 1 = linear, error = acc as before');
-    resetTunables();
+    resetAllTunables();
     assert.ok(Math.abs(accuracyError(0.08) - 0.2 * (0.08 / 0.2) ** 2) < 1e-12, 'quadratic');
     assert.ok(accuracyError(0.08) < 0.08, 'small misses curve gently');
     assert.ok(Math.abs(accuracyError(-0.2) + 0.2) < 1e-12, 'same error as linear at the end of the meter');
     assert.ok(accuracyError(-0.1) < 0 && accuracyError(0.1) > 0, 'signs kept');
-  } finally { resetTunables(); }
+  } finally { resetAllTunables(); }
 });

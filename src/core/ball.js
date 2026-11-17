@@ -7,8 +7,8 @@
 //   { type: 'penalty', surface }          water or out of bounds
 // After holed / stopped / penalty the ball is at rest (phase 'rest').
 import {
-  G, ROLL_G, WIND_K, STATIC, CREEP, STOP_SPEED, ROLL_TIMEOUT, BOUNCE_TO_ROLL, BOUNCE_LIFT,
-  CUP_R, CUP_CAPTURE_SPEED, CUP_FLY_IN, LIP_OUT,
+  G, ROLL_G, TUNE, STATIC, CREEP, STOP_SPEED, ROLL_TIMEOUT, BOUNCE_TO_ROLL, BOUNCE_LIFT,
+  CUP_R, CUP_FLY_IN, LIP_OUT,
 } from './config.js';
 import { v3, copy, set, dot, dist2D } from './vec.js';
 
@@ -40,8 +40,8 @@ export function createBall({ terrain, surfaces, cup, wind, rng }) {
   function flight(dt) {
     const { pos, vel, curve } = b;
     vel.y -= G * dt;
-    vel.x += (wind.x * WIND_K + curve.x) * dt;
-    vel.z += (wind.z * WIND_K + curve.z) * dt;
+    vel.x += (wind.x * TUNE.WIND_K + curve.x) * dt;
+    vel.z += (wind.z * TUNE.WIND_K + curve.z) * dt;
     pos.x += vel.x * dt; pos.y += vel.y * dt; pos.z += vel.z * dt;
     const gh = terrain.heightAt(pos.x, pos.z);
     if (pos.y <= gh) { pos.y = gh; return land(); }
@@ -104,7 +104,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng }) {
       // After a lip-out the ball can't drop until it has left the cup (G8): it is still over the
       // cup on the next steps, slower, and used to get captured almost every time.
       if (b.lipped) return null;
-      if (ns < CUP_CAPTURE_SPEED) return rest({ type: 'holed', how: 'roll' });
+      if (ns < TUNE.CUP_CAPTURE_SPEED) return rest({ type: 'holed', how: 'roll' });
       // Too fast: lip out, lose speed and get knocked sideways
       b.lipped = true;
       const a = (rng() - 0.5) * LIP_OUT.spread, c = Math.cos(a), sn = Math.sin(a);
