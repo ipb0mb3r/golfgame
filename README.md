@@ -40,7 +40,7 @@ The game is made of JavaScript modules, and browsers only load those from a web 
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (hole 2). It needs an internet connection to load Three.js.
+Then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.160.0/`).
 
 Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind every time.
 

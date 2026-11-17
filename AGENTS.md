@@ -19,7 +19,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 
 ## Tech stack
 - **Language:** plain JavaScript (ES modules). **No build step, no bundler, no framework.**
-- **3D:** Three.js 0.160.0, loaded from unpkg through an import map in the HTML.
+- **3D:** Three.js 0.160.0, committed in the repo at `vendor/three-0.160.0/three.module.js` and loaded through the import map in `index.html` (no CDN, works offline). Never edit that file; an upgrade swaps the folder (X6).
 - **Hosting:** GitHub Pages serves the `main` branch root → https://ipb0mb3r.github.io/golfgame/
 - **Tests:** Node's built-in test runner (`node --test`, Node 20+). No npm install is needed. Test files are `tests/*.test.js`.
 - **Units:** meters and seconds internally. Yards are only for display (`M2Y = 1.09361`).
@@ -41,7 +41,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 
 ## Tools (dev and QA only, never part of the game)
 - **`tools/baseline.mjs`** plays scripted shots in a headless Chromium through `window.__golf.testHit` and compares where each ball stops. `record` captured `tests/fixtures/baseline.json` from the pre-refactor pages (F0); `check` replays those shots against today's `index.html` and prints a table (`--fps 30|60|144`, `--pages old|new`). The page clock is replaced by a fixed frame time, so results don't depend on machine speed.
-- **Install Playwright** (once, outside the repo or with `--no-save`): `npm install --no-save playwright && npx playwright install chromium`. When unpkg is unreachable, point the tool at a local copy of Three.js with `THREE_MODULE=/path/to/three.module.js` (e.g. from `npm pack three@0.160.0`).
+- **Install Playwright** (once, outside the repo or with `--no-save`): `npm install --no-save playwright && npx playwright install chromium`. Three.js is already in the repo, so nothing else is needed (the cloud containers have Playwright and Chromium pre-installed).
 - **The QA agent uses it** to check a PR build in a real browser. The game and `node --test` never need Playwright; keep it out of `package.json` dependencies and out of `src/`.
 - **`tools/record-baseline-v2.mjs`** (plain Node) writes `tests/fixtures/baseline-v2.json` from the current engine. See coding rule 8.
 

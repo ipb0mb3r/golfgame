@@ -133,8 +133,9 @@
     #minimap { width: auto; height: min(var(--mm-h, 220px), calc(100vh - 240px)); }
   }
 </style>
+<!-- Three.js is committed in the repo (Gate A C1): no CDN needed, works offline. Upgrade = swap this one folder. -->
 <script type="importmap">
-  { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js" } }
+  { "imports": { "three": "./vendor/three-0.160.0/three.module.js" } }
 </script>
 </head>
 <body>

@@ -13,9 +13,9 @@
 // fixture keeps all three so the tests can tell a real change from that old frame-rate wobble.
 //
 // Needs Playwright with a Chromium browser (not needed for `node --test`).
-// Three.js is loaded from node_modules or THREE_MODULE=/path/to/three.module.js, so it works
-// offline. The page clock is replaced with a fixed frame time (1/fps) so the result does not
-// depend on how fast the machine is, Math.random is seeded, and the wind is forced to 0.
+// Three.js comes from the repo (vendor/three-0.160.0, Gate A C1), so it works offline. The page
+// clock is replaced with a fixed frame time (1/fps) so the result does not depend on how fast the
+// machine is, Math.random is seeded, and the wind is forced to 0.
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
@@ -37,7 +37,7 @@ const PAGES = {
   old: { 'pl-01': 'index.html', 'pl-02': 'hole2.html' },
   // v1 checks physics only: replay with the old swing mapping (neutral lie window, linear curve),
   // same as tests/baseline.test.js.
-  new: { 'pl-01': `index.html?hole=pl-01&tune=${NEUTRAL_LIE}`, 'pl-02': `index.html?hole=pl-02&tune=${NEUTRAL_LIE}` },
+  new: { 'pl-01': `index.html?hole=pl-01&tune=${NEUTRAL_LIE},ANTIALIAS:0`, 'pl-02': `index.html?hole=pl-02&tune=${NEUTRAL_LIE},ANTIALIAS:0` },
 };
 
 // Scripted shots. Each scenario loads the hole fresh, optionally drops the ball somewhere
@@ -60,19 +60,15 @@ const SCENARIOS = [
   { hole: 'pl-02', name: 'h2 left toward the pond', place: { x: 4, z: -250 }, shots: [{ power: 0.5, aimOff: -0.5 }] },
 ];
 
-function threeSource() {
-  const cands = [process.env.THREE_MODULE, join(ROOT, 'node_modules/three/build/three.module.js')].filter(Boolean);
-  for (const c of cands) if (existsSync(c)) return readFileSync(c, 'utf8');
-  try { return readFileSync(require.resolve('three/build/three.module.js'), 'utf8'); } catch { /* fall through */ }
-  throw new Error('Three.js not found: set THREE_MODULE=/path/to/three.module.js (e.g. from `npm pack three@0.160.0`)');
-}
+// The vendored Three.js (the old pages loaded it from unpkg; they get this same file)
+const THREE_FILE = join(ROOT, 'vendor/three-0.160.0/three.module.js');
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 
 async function openBrowser(fps) {
   const { chromium } = require('playwright');
   // Fixed frame time: every rendered frame advances the game by exactly 1/fps seconds.
-  const three = threeSource() + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\n`;
+  const three = readFileSync(THREE_FILE, 'utf8') + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\n`;
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 480, height: 320 } });
   await ctx.addInitScript(() => {
@@ -90,7 +86,8 @@ async function openBrowser(fps) {
     const file = join(ROOT, decodeURIComponent(url.pathname));
     if (!existsSync(file)) return route.fulfill({ status: 404, body: 'not found' });
     let body = readFileSync(file, 'utf8');
-    // MSAA makes the software renderer very slow; it has no effect on the game
+    // MSAA makes the software renderer very slow; it has no effect on the game (the old pages
+    // hard-code it; the new page gets ?tune=ANTIALIAS:0, see PAGES)
     body = body.replace('antialias: true', 'antialias: false');
     // Skip drawing entirely: only the game logic matters here, and it runs the same either way
     body = body.replace('renderer.render(scene, camera);', 'if (!window.__noRender) renderer.render(scene, camera);');
