@@ -59,6 +59,10 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **S14** 🅿️ *(design question, decide before touching putting)* Should putting be **2 clicks** (start + power, no accuracy)? Until decided, putts keep 3 clicks, and a missed 3rd click on a putt stays mild (designer, 2026-11-16)
 - [x] **H1** Mobile HUD pass (designer plays on a phone): intro card fits or scrolls in portrait and landscape (M5/B7), debug overlay doesn't cover the HUD (X7), the centre flash text wraps instead of running under the minimap, the ⚑ icon isn't clipped at the top of the meter (QA F2), meter labels readable over sand (QA F4) *(Dev, Nov 16, `dev/feel-pass-2`: checked at 390x844 and 844x390, plus 568x320 and 320x568 for the card scroll. Screenshots in reviews/dev-screenshots/feel-pass-2/)*
 
+**Backlog from Feel pass 2 QA (2026-11-16)**
+- [ ] **S15** ⚑ for long clubs aims at the predicted **resting** point, not "land at 95% and run out". Today a 3 Wood at the ⚑ finishes 7–11 m past the pin on fairway (QA G2). Wedges are already fine. Test: ⚑ finishes within ~2 m for every club at 100–180 m, flat and ±8%
+- [ ] **P9** *(low, rare)* `landingPoint` ignores the ground while the ball is rising, so the aim ring and ⚑ can promise a carry when the ball actually hits a bank right in front (QA G1, 2 of 6 430 spots on hole 2). Check the ground on the way up too
+
 ## Phase 2: Ball physics
 - [x] **P1** Ball states
 - [x] **P2** Flight: gravity, wind, curve
