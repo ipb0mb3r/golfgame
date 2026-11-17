@@ -49,10 +49,11 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 
 ## Branch and PR rules
 - `main` must always be playable, because GitHub Pages serves it. **Nobody pushes directly to `main`.**
+- **Branches are short-lived.** One branch per task group, deleted automatically when its PR is merged. There are no long-lived branches except `main` (no permanent `dev` or `docs` branch). The PM keeps **at most one** open docs PR at a time, so docs PRs never conflict with each other.
 - Branch names:
   - `dev/<task-ids>-<slug>` for the dev agent (e.g. `dev/F-engine-refactor`, `dev/W1-W4-rain`)
   - `docs/<slug>` for the PM
-  - `review/<gate>-<role>` for reviewers (reports only)
+  - `review/<gate>-<role>` for reviewers, `review/qa-<branch>` for QA (reports only)
 - One PR per task group. In the same PR: tick the boxes in `docs/TASKS.md` and update `docs/DESIGN.md` if any behaviour changed.
 - The PR description lists the task IDs, what changed, how to test it, and any open questions for the PM or owner.
 
