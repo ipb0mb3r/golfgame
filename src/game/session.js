@@ -32,11 +32,11 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   setupHolePage(hole, tee, cup);
   $intro().classList.remove('hidden'); // a new hole starts behind its intro card
   const courseCanvas = paintCourse(hole, terrain.surfaceAt);
-  const { scene, camera } = buildScene(renderer, hole, terrain, courseCanvas);
+  const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
   const props = createProps(scene, hole, terrain, cup);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
-  const drawMinimap = createMinimap(hole, courseCanvas, cup);
+  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles);
 
   // Game state (core/states.js GAME_STATES): intro | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
@@ -46,6 +46,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const shown = { x: 0, y: 0, z: 0 }; // where the ball is drawn (differs from the ball only while it drops in the cup)
   let holedT = 0, t = 0, lastAimKey = '';
   let shotT = 0, skipShown = false; // X9: game time since the hit, and whether ⏩ Skip is showing
+  let warn = null;     // K4: where the aimed shot would hit an obstacle (play.aimWarning), or null
+  let treeFlash = false; // one obstacle flash per shot is enough (a ball can rattle through branches)
   const target = { x: 0, y: 0, z: 0 };
 
   const updateHud = () => hud.update(state, meter.power);
@@ -92,7 +94,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     }
     hud.flash(shot.label);
     state = shot.kind === 'putt' ? 'roll' : 'flight';
-    shotT = 0;
+    shotT = 0; treeFlash = false;
     updateHud();
     return shot;
   }
@@ -100,6 +102,12 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // Core events → what the player sees. When a shot ends, core has decided what's next (play.next).
   function onEvent(ev) {
     if (ev.type === 'lippedOut') { hud.flash('Lipped out!'); return; }
+    // K2/K3: the trees and rocks
+    if (ev.type === 'hitLeaves' || ev.type === 'hitObstacle') {
+      if (!treeFlash) hud.flash(ev.type === 'hitLeaves' ? 'Into the trees!' : ev.kind === 'boulder' ? 'Off the rock!' : 'Off the tree!');
+      treeFlash = true;
+      return;
+    }
     if (!isShotEnd(ev)) return;
     const next = play.next;
     if (next === 'holed') {
@@ -188,17 +196,21 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       let len;
       if (play.club.putter) { len = Math.min(play.distToCup(), play.puttMax); Object.assign(target, { x: ball.pos.x + d.x * len, y: 0, z: ball.pos.z + d.z * len }); }
       else { Object.assign(target, play.landingPoint(play.clubIdx)); len = dist2D(ball.pos, target); }
-      props.setAimGuide(true, ball.pos, d, len, target, play.club.putter);
+      warn = play.aimWarning(); // K4 (memoized in core: only works it out again when the aim or club changes)
+      props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn);
       // Keep the slope readout and club distance in step with the aim
       const key = play.aim.toFixed(3) + play.clubIdx;
       if (key !== lastAimKey) { lastAimKey = key; updateHud(); }
-    } else props.setAimGuide(false);
+    } else { warn = null; props.setAimGuide(false); }
 
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
-    drawMinimap(ball.pos, isAim ? target : null);
+    drawMinimap(ball.pos, isAim ? target : null, warn);
   }
+
+  // K5: wireframe outlines of the colliders (the debug overlay turns them on)
+  function showColliders(on) { colliderOutlines.visible = !!on; }
 
   function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
 
@@ -215,6 +227,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       `slope  ${f(Math.hypot(g.x, g.z) * 100, 1)}%  along ${f(s.along, 1)}%  side ${f(s.side, 1)}%`,
       `wind   ${f(wind.x)} ${f(wind.z)} m/s (${f(Math.hypot(wind.x, wind.z) * MPS_TO_MPH, 0)} mph)`,
       `wet    ${hole.weather?.wetness ?? 0} (${hole.weather?.type ?? 'clear'})`,
+      ...(play.obstacles.length ? [`obst   ${play.obstacles.length}  warn ${warn ? `${warn.kind} #${warn.index} at ${f(warn.dist, 0)} m` : 'none'}${colliderOutlines.visible ? '  (outlines on)' : ''}`] : []),
       `meter  ${meter.phase}  value ${f(meter.value, 3)}  power ${f(meter.power, 3)}`,
       `render dpr ${f(renderer.getPixelRatio(), 2)} (cap ${TUNE.DPR_CAP})  aa ${TUNE.ANTIALIAS >= 0.5 ? 'on' : 'off'}`,
       ...info(),
@@ -249,6 +262,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     // Hit straight away as if the meter gave this result (skips the meter, same path as a real swing)
     testHit(power, acc = 0, outcome = 'normal') { if (state !== 'aim') return null; return endSwing({ power, acc, outcome }); },
     skip, get canSkip() { return canSkip(); },
+    get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
   };
 
   return {
@@ -256,7 +270,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     get state() { return state; },
     get disposed() { return disposed; },
     canAim: () => state === 'aim',
-    onSwingInput, changeClub, skip, frame, resize, debugText, dispose,
+    onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders,
     start: () => { $intro().classList.add('hidden'); resetGame(); },
     again: resetGame,
   };

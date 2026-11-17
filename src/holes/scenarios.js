@@ -35,6 +35,19 @@ export const SCENARIOS = {
     hole: 'pl-02', ball: { x: 14, z: -300 }, strokes: 2, seed: 204, lie: 'fairway',
     name: 'Hole 2: side slope', text: 'The ground falls left toward the pond.',
   },
+  // Phase K (K6): hole 3, the trees and the rock
+  'h3-behind-tree': {
+    hole: 'pl-03', ball: { x: -26, z: -203 }, strokes: 1, seed: 301, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 3: behind the lone tree', text: 'Left of the lone tree, which is right in the line to the green. Go around it.',
+  },
+  'h3-cut-corner': {
+    hole: 'pl-03', ball: { x: 0, z: 0 }, strokes: 0, seed: 302, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Hole 3: cut the corner', text: 'Aim right, over the trees in the corner (about 20° right of the default aim). A full Driver clears them; a weak or mishit one is caught by the leaves.',
+  },
+  'h3-rock': {
+    hole: 'pl-03', ball: { x: -4, z: -254 }, strokes: 1, seed: 303, wind: { x: 0, z: 0 }, lie: 'rock',
+    name: 'Hole 3: on the rock', text: 'Through the corner onto the rock outcrop, next to the boulders: a thin lie (max 90%, harder timing).',
+  },
 };
 
 // Checked when they load (Gate A T7): a bad spot fails here, naming the scenario and the field.

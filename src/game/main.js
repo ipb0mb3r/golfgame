@@ -53,7 +53,7 @@ try { renderer = createRenderer(canvas); } catch (e) {
   throw e;
 }
 const debug = createDebug($('debug'));
-if (params.get('debug') === '1') debug.toggle();
+if (params.get('debug') === '1') debug.toggle(); // the collider outlines (K5) follow it, see loadHole
 
 // The current hole. Input and frames always go to whichever session is current.
 let session = null;
@@ -61,6 +61,7 @@ const extraInfo = () => (tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : [])
 function loadHole(h, opts = {}) {
   session?.dispose();
   session = createHoleSession(h, { renderer, input, seed: opts.seed ?? seed, start: opts.start ?? null, info: extraInfo });
+  session.showColliders(debug.visible); // K5: collider outlines show while the debug overlay is open
   resize();
   return session;
 }
@@ -72,7 +73,7 @@ const input = bindInput(canvas, {
   canAim: () => session.canAim(),
   start: () => session.start(),
   again: () => session.again(),
-  toggleDebug: () => debug.toggle(),
+  toggleDebug: () => { debug.toggle(); session.showColliders(debug.visible); },
 });
 
 // Gate A C6: on iOS Safari the visible area changes with the browser bars and after a rotation
@@ -119,6 +120,7 @@ window.__golf = {
   place: (x, z) => api().place(x, z),
   testHit: (pw, acc = 0, outcome = 'normal') => api().testHit(pw, acc, outcome),
   skip: () => api().skip(), get canSkip() { return api().canSkip; },
+  get warn() { return api().warn; }, get collidersShown() { return api().collidersShown; },
   // A2: unload the current hole and load another one in place (tools/session-check.mjs); renderer
   // memory as Three.js counts it (geometries, textures, shader programs)
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride }); return session.hole.id; },

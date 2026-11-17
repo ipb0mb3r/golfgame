@@ -16,6 +16,9 @@ const HINTS = {
 };
 // S18: where the default aim points (PM on PR #27: how a new player learns the aim rule).
 // S19: 'chip' = the cup because the ball is within CHIP_AIM_RANGE of it (any surface), and the line says so.
+// K4: the hint while aiming when the shot would hit an obstacle (play.aimWarning)
+const WARN_TEXT = { trunk: 'a tree', leaves: 'the trees', boulder: 'a rock' };
+export const warnHint = w => `⚠ This shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around, or pick a higher club`;
 const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target' };
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
@@ -116,7 +119,9 @@ export function createHud(play) {
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
-    $('hint').textContent = HINTS[state] || '';
+    const warn = state === 'aim' ? play.aimWarning() : null;
+    $('hint').textContent = warn ? warnHint(warn) : HINTS[state] || '';
+    $('hint').classList.toggle('warn', !!warn);
     const pm = $('powerMark');
     if (state === 'accuracy' || state === 'flight' || state === 'roll') { pm.style.display = 'block'; pm.style.left = `${meterPct(power)}%`; }
     else pm.style.display = 'none';
@@ -153,14 +158,23 @@ export function createHud(play) {
 }
 
 // Minimap: the painted course, shrunk once, plus the flag, the ball and the aim line.
-export function createMinimap(hole, courseCanvas, cup) {
+// K5: the trees in play (leaf circles) and boulders are drawn on it, K4: the warning point as a red ×.
+export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
   const mm = $('minimap'), ctx = mm.getContext('2d'), map = hole.map;
   const flagCss = `#${hole.scenery.flagColor.toString(16).padStart(6, '0')}`;
   const xy = (x, z) => [(x - map.x0) / (map.x1 - map.x0) * mm.width, (z - map.z0) / (map.z1 - map.z0) * mm.height];
   const base = document.createElement('canvas');
   base.width = mm.width * 2; base.height = mm.height * 2;
-  base.getContext('2d').drawImage(courseCanvas, 0, 0, base.width, base.height);
-  return function draw(ball, target) {
+  const bctx = base.getContext('2d');
+  bctx.drawImage(courseCanvas, 0, 0, base.width, base.height);
+  const sx = base.width / (map.x1 - map.x0), sz = base.height / (map.z1 - map.z0);
+  for (const o of obstacles) {
+    const px = (o.x - map.x0) * sx, pz = (o.z - map.z0) * sz;
+    const r = Math.max(1.5, (o.type === 'tree' ? o.canopy.rx : o.r) * sx);
+    bctx.fillStyle = o.type === 'tree' ? 'rgba(28, 74, 32, 0.9)' : 'rgba(120, 118, 112, 0.95)';
+    bctx.beginPath(); bctx.arc(px, pz, r, 0, 7); bctx.fill();
+  }
+  return function draw(ball, target, warn = null) {
     ctx.drawImage(base, 0, 0, mm.width, mm.height);
     const [hx, hz] = xy(cup.x, cup.z);
     ctx.fillStyle = flagCss; ctx.fillRect(hx - 1, hz - 7, 2, 7); ctx.fillRect(hx, hz - 7, 5, 3);
@@ -170,6 +184,11 @@ export function createMinimap(hole, courseCanvas, cup) {
       ctx.strokeStyle = '#ffd447'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
       ctx.beginPath(); ctx.moveTo(bx, bz); ctx.lineTo(tx, tz); ctx.stroke(); ctx.setLineDash([]);
       ctx.beginPath(); ctx.arc(tx, tz, 3, 0, 7); ctx.stroke();
+    }
+    if (warn) {
+      const [wx, wz] = xy(warn.x, warn.z);
+      ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(wx - 3, wz - 3); ctx.lineTo(wx + 3, wz + 3); ctx.moveTo(wx + 3, wz - 3); ctx.lineTo(wx - 3, wz + 3); ctx.stroke();
     }
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.arc(bx, bz, 2.5, 0, 7); ctx.fill(); ctx.stroke();

@@ -60,6 +60,12 @@ export const CRAWL_TIME = 8;         // P10: after crawling (slower than CREEP) 
 export const STOP_TIME = 0.5;        // P10: a ball slower than STOP_SPEED for this long (s) is at rest, even on a slope
 export const ROLL_TIMEOUT = 40;      // safety net: a roll never lasts longer than this (s)
 
+// --- Obstacles (Phase K, DESIGN §4 "Obstacles") ---
+// OBSTACLE_REST, OBSTACLE_KEEP, CANOPY_SLOW, CANOPY_DEFLECT: tunables, see TUNABLES
+export const BOULDER_SINK = 0.35;    // share of a boulder's radius below the ground (a hole may set `sink` per boulder)
+export const OBSTACLE_SLIDE = 0.5;   // m/s: a ball settling on top of a boulder is nudged off at least this fast (it can't balance there)
+export const OBSTACLE_EVENT_SPEED = 0.5; // m/s into the obstacle: slower contacts (a ball resting against a trunk) bounce but send no hitObstacle event
+
 // --- Cup ---
 export const CUP_R = 0.22;           // generous arcade-size cup
 // CUP_CAPTURE_SPEED (tunable): slower than this over the cup = holed; faster = lip-out
@@ -95,6 +101,11 @@ export const TUNABLES = Object.freeze({
   CUP_CAPTURE_SPEED:     { def: 3.2,  min: 1,     max: 6 },    // m/s: slower than this over the cup = holed; faster = lip-out
   WIND_K:                { def: 0.3,  min: 0,     max: 0.6 },  // how strongly wind pushes the ball in the air (S17: 0.2 → 0.3)
   FLIGHT_SPEEDUP:        { def: 1.35, min: 0.5,   max: 3 },    // full shots run this much faster than real time (putts run at 1×)
+  // Obstacles (Phase K, DESIGN §4 "Obstacles")
+  OBSTACLE_REST:         { def: 0.4,  min: 0,     max: 1 },    // share of the speed INTO a trunk or boulder that bounces back
+  OBSTACLE_KEEP:         { def: 0.7,  min: 0,     max: 1 },    // share of the speed ALONG it that is kept
+  CANOPY_SLOW:           { def: 0.3,  min: 0,     max: 1 },    // share of its speed a ball keeps when it flies into a tree's leaves (K3)
+  CANOPY_DEFLECT:        { def: 15,   min: 0,     max: 45 },   // degrees: the leaves turn the ball left or right by up to this (seeded RNG)
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)

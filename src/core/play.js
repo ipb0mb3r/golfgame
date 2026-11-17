@@ -21,6 +21,7 @@ import { makeSurfaceTable } from './surfaces.js';
 import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
+import { makeColliders, firstHit } from './obstacles.js';
 import { isShotEnd } from './states.js';
 
 
@@ -33,12 +34,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const cup = v3(hole.cup.x, terrain.heightAt(hole.cup.x, hole.cup.z), hole.cup.z);
   const rng = createRng(seed);
   const wind = v3();
-  const ball = createBall({ terrain, surfaces, cup, wind, rng });
+  const obstacles = makeColliders(hole, terrain.heightAt); // K2/K3: trunks, leaves, boulders (none on holes 1–2)
+  const ball = createBall({ terrain, surfaces, cup, wind, rng, obstacles });
   const lastPos = v3();
   let acc = 0; // fixed-step accumulator (seconds of simulation time not yet stepped)
 
   const p = {
-    hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos,
+    hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles,
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
     target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'green' | 'fairway')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
@@ -47,7 +49,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
+    restPoint, aimWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
   };
 
   function newWind() {
@@ -96,14 +98,18 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // Where a dead-straight shot at `power` comes down, allowing for the hills (no wind).
   // Default power = the lie's cap, i.e. the strongest shot possible from here.
   // The aim ring, the club reach, the auto-pick and the ⚑ mark all use this one simulation.
-  function landingPoint(i, a = p.aim, power = lieOf(i).maxPower) {
+  // `onStep(from, to)` (optional, K4) sees every step of the flight; when it returns something the
+  // flight stops there and landingPoint returns that instead.
+  function landingPoint(i, a = p.aim, power = lieOf(i).maxPower, onStep = null) {
     const { vel } = launchVelocity(bag[i], power, a);
-    const q = { ...ball.pos };
+    const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 };
     const h = LANDING_SIM.dt;
     for (let k = 0; k < LANDING_SIM.maxSteps; k++) {
       const x0 = q.x, z0 = q.z, above0 = q.y - terrain.heightAt(q.x, q.z);
+      if (onStep) copy(q0, q);
       q.x += vel.x * h; q.y += (vel.y - G * h / 2) * h; q.z += vel.z * h; // exact for a parabola
       vel.y -= G * h;
+      if (onStep) { const r = onStep(q0, q); if (r) return r; }
       const above = q.y - terrain.heightAt(q.x, q.z);
       if (vel.y < 0 && above <= 0) {
         // The ball went under the ground during this step: go back to where it crossed it
@@ -115,6 +121,26 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     }
     return q;
   }
+  // K4 "no blind shots": does a straight shot with club i at this aim and power (default: the lie's
+  // cap, the shot the yellow ring shows) hit a tree trunk, a tree's leaves or a boulder before it
+  // comes down? The same flight as the ring (no wind, no curve), checked against the same obstacles
+  // as the ball. Returns null (clear) or { kind: 'trunk' | 'leaves' | 'boulder', index, x, y, z, dist }
+  // where dist = meters from the ball (flat) to where it would hit. Putts: null (they roll).
+  // The ⚑ and the auto-pick ignore obstacles on purpose: the warning is the information.
+  let warnMemo = null;
+  function aimWarning(i = p.clubIdx, a = p.aim, power = lieOf(i).maxPower) {
+    if (i === PUTTER || !obstacles.length) return null;
+    const key = `${i}|${a}|${power}|${ball.pos.x}|${ball.pos.z}`;
+    if (warnMemo?.key === key) return warnMemo.value;
+    let value = null;
+    const r = landingPoint(i, a, power, (q0, q1) => {
+      const hit = firstHit(obstacles, q0, q1);
+      return hit && { warn: true, kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z };
+    });
+    if (r.warn) { const { warn, ...w } = r; value = { ...w, dist: dist2D(ball.pos, w) }; }
+    warnMemo = { key, value };
+    return value;
+  }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
 
   // Where a dead-straight shot at `power` comes to REST (S15): the real ball physics (flight, bounces,
@@ -123,7 +149,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // `power` may be above the lie's cap (the ⚑ search looks past it). Water or out of bounds: where the
   // ball went in. Holed: the cup. Returns { x, y, z, end } (end = the event that ended the shot).
   const simWind = v3(), simRng = createRng(LANDING_SIM.restSeed);
-  const simBall = createBall({ terrain, surfaces, cup, wind: simWind, rng: simRng });
+  const simBall = createBall({ terrain, surfaces, cup, wind: simWind, rng: simRng }); // no obstacles: the ⚑ ignores them (K4)
   const NO_CAP = { maxPower: Infinity, sweetScale: 1 };
   function restPoint(i, a = p.aim, power = lieOf(i).maxPower) {
     simRng.reseed(LANDING_SIM.restSeed);
@@ -192,7 +218,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // Get ready for the next shot from wherever the ball is: lie, default aim (S18), putt range, auto club.
   function prepare() {
     p.next = null;
-    pinMemo = null; // a new shot (or new tunables): work the ⚑ out again
+    pinMemo = null; warnMemo = null; // a new shot (or new tunables): work the ⚑ and the K4 warning out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);

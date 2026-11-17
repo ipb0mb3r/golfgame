@@ -1043,6 +1043,218 @@
           "z": 0
         }
       }
+    },
+    {
+      "name": "K h3 default drive in seeded wind",
+      "hole": "pl-03",
+      "seed": 31,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 2.7563426582098547,
+        "y": -0.009761394044846428,
+        "z": -241.7040635464222,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": -3.321810459137181,
+          "z": 1.7653306398450601
+        }
+      }
+    },
+    {
+      "name": "K h3 cut the corner, full Driver clears the trees",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0.2637,
+      "end": {
+        "x": 69.66579899441189,
+        "y": 0.517608906734919,
+        "z": -222.20476461943198,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 cut the corner too weak: into the leaves",
+      "hole": "pl-03",
+      "seed": 3,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.85,
+      "acc": 0,
+      "aimOff": 0.2637,
+      "windless": true,
+      "end": {
+        "x": 48.20046120587337,
+        "y": -0.006773054765238602,
+        "z": -155.26499840257335,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 cut the corner sliced: into the leaves",
+      "hole": "pl-03",
+      "seed": 4,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": -0.15,
+      "aimOff": 0.2637,
+      "windless": true,
+      "end": {
+        "x": 87.35897127854088,
+        "y": 0.02663204886360119,
+        "z": -181.28466217466539,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 behind the lone tree: into its leaves",
+      "hole": "pl-03",
+      "seed": 5,
+      "start": {
+        "x": -26,
+        "z": -203
+      },
+      "strokes": 1,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "windless": true,
+      "end": {
+        "x": 14.399018064094097,
+        "y": -0.22814621746611696,
+        "z": -214.96416819660698,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "5i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 drive through the corner onto the rock",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": -0.0572,
+      "end": {
+        "x": -3.661292463894904,
+        "y": 2.23114764245748,
+        "z": -259.38933018397194,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 from the rock (cap 90%)",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": -4,
+        "z": -254
+      },
+      "strokes": 1,
+      "power": 0.9,
+      "acc": 0.03,
+      "aimOff": 0,
+      "end": {
+        "x": 161.1087434118905,
+        "y": 0.9733279529336355,
+        "z": -236.2283787665214,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "5i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "K h3 putt off the rock into a boulder",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": -2,
+        "z": -260
+      },
+      "strokes": 1,
+      "power": 0.6,
+      "acc": 0,
+      "aimOff": -1.1779,
+      "club": "putter",
+      "end": {
+        "x": 0.5484362995769468,
+        "y": 1.0926919504205044,
+        "z": -263.92679877178676,
+        "event": "stopped",
+        "reason": "settled",
+        "strokes": 2,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
     }
   ]
 }

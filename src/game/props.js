@@ -42,10 +42,21 @@ export function createProps(scene, hole, terrain, cup) {
 
   // Aim guide: dots along the line + a ring where a full-power shot lands
   const DOTS = 40;
-  const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.22, 10), new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.85 }), DOTS);
+  // K4: the dots past an obstacle the shot would hit, and the ring, turn WARN_COLOR, and a marker
+  // shows where it hits (in the air, with a ring on the ground under it)
+  const AIM_COLOR = new THREE.Color(0xffd447), WARN_COLOR = new THREE.Color(0xff4a3a);
+  const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.22, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 }), DOTS);
   dots.frustumCulled = false; scene.add(dots);
+  for (let i = 0; i < DOTS; i++) dots.setColorAt(i, AIM_COLOR);
   const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; scene.add(ring);
+  const warnMark = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 10), new THREE.MeshBasicMaterial({ color: WARN_COLOR, depthTest: false, transparent: true, opacity: 0.95 }));
+  warnMark.renderOrder = 11; scene.add(warnMark);
+  const warnFoot = new THREE.Mesh(new THREE.RingGeometry(0.9, 1.3, 28), new THREE.MeshBasicMaterial({ color: WARN_COLOR, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+  warnFoot.rotation.x = -Math.PI / 2; scene.add(warnFoot);
+  const warnPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshBasicMaterial({ color: WARN_COLOR, transparent: true, opacity: 0.7 }));
+  scene.add(warnPole);
+  warnMark.visible = warnFoot.visible = warnPole.visible = false;
   const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
   return {
@@ -65,9 +76,11 @@ export function createProps(scene, hole, terrain, cup) {
       trailPos.set([pos.x, pos.y + BALL_R, pos.z], trailCount * 3);
       trailCount++; trailGeo.setDrawRange(0, trailCount); trailGeo.attributes.position.needsUpdate = true;
     },
-    // from = ball, dir = aim direction, len = guide length, target = ring position, putter = small guide
-    setAimGuide(visible, from, dir, len, target, putter) {
+    // from = ball, dir = aim direction, len = guide length, target = ring position, putter = small guide,
+    // warn = play.aimWarning() (K4): null, or where the shot would hit a tree or a rock
+    setAimGuide(visible, from, dir, len, target, putter, warn = null) {
       dots.visible = ring.visible = visible;
+      warnMark.visible = warnFoot.visible = warnPole.visible = visible && !!warn;
       if (!visible) return;
       const s = putter ? 0.25 : 1;
       for (let i = 0; i < DOTS; i++) {
@@ -76,10 +89,20 @@ export function createProps(scene, hole, terrain, cup) {
         tmpM.makeRotationX(-Math.PI / 2).setPosition(tmpV);
         tmpM.scale(tmpS.set(s, s, s));
         dots.setMatrixAt(i, tmpM);
+        dots.setColorAt(i, warn && len * f >= warn.dist ? WARN_COLOR : AIM_COLOR);
       }
       dots.instanceMatrix.needsUpdate = true;
+      dots.instanceColor.needsUpdate = true;
       ring.position.set(target.x, heightAt(target.x, target.z) + 0.08, target.z);
       ring.scale.setScalar(putter ? 0.15 : 1 + len / 80);
+      ring.material.color.copy(warn ? WARN_COLOR : AIM_COLOR);
+      if (warn) {
+        const gy = heightAt(warn.x, warn.z), y = warn.y + BALL_R;
+        warnMark.position.set(warn.x, y, warn.z);
+        warnMark.scale.setScalar(1 + warn.dist / 120); // stays visible from far away
+        warnFoot.position.set(warn.x, gy + 0.1, warn.z);
+        warnPole.position.set(warn.x, (gy + y) / 2, warn.z); warnPole.scale.set(1, Math.max(0.01, y - gy), 1);
+      }
     },
     // Waving flag, pointing downwind
     animateFlag(t, wind) {

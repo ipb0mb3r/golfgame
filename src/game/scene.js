@@ -35,7 +35,8 @@ function axis(parts) {
   return out;
 }
 
-export function buildScene(renderer, hole, terrain, courseCanvas) {
+// obstacles = play.obstacles (core/obstacles.js colliders): drawn from exactly the shapes the ball hits (K5)
+export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []) {
   const sc = hole.scenery, map = hole.map;
   const { heightAt } = terrain;
   const scene = new THREE.Scene();
@@ -100,13 +101,58 @@ export function buildScene(renderer, hole, terrain, courseCanvas) {
     const stakeGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 6);
     const stakeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
     const st = sc.stakes;
-    for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of [-st.x, st.x]) {
+    for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of st.xs ?? [-st.x, st.x]) {
       const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, heightAt(sx, z) + 0.5, z); scene.add(s);
     }
   }
   addTrees(scene, sc.trees, heightAt);
+  const colliderOutlines = addObstacles(scene, obstacles);
   addBackdrop(scene, sc);
-  return { scene, camera };
+  return { scene, camera, colliderOutlines };
+}
+
+// K5: the trees and boulders in play, from the same colliders the physics uses. A trunk mesh is the
+// trunk cylinder (plus a bit below the ground), the leaves are the canopy ellipsoid, a boulder is its
+// sphere. Returns a group of wireframe outlines of the colliders themselves (grown by nothing: the
+// shapes as the data gives them), hidden until the debug overlay shows them.
+function addObstacles(scene, obstacles) {
+  const outlines = new THREE.Group();
+  outlines.visible = false;
+  if (!obstacles.length) { scene.add(outlines); return outlines; }
+  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b4a2b });
+  const leafMat = new THREE.MeshLambertMaterial({ color: 0x2f6b34, flatShading: true });
+  const rockMat = new THREE.MeshLambertMaterial({ color: 0x8d8a82, flatShading: true });
+  const trunkGeo = new THREE.CylinderGeometry(1, 1, 1, 10); trunkGeo.translate(0, 0.5, 0);
+  const leafGeo = new THREE.IcosahedronGeometry(1, 2);
+  const rockGeo = new THREE.IcosahedronGeometry(1, 2);
+  const line = c => new THREE.LineBasicMaterial({ color: c, depthTest: false, transparent: true, opacity: 0.9 });
+  const wireCyl = new THREE.WireframeGeometry(trunkGeo), wireBall = new THREE.WireframeGeometry(new THREE.SphereGeometry(1, 16, 10));
+  const trunkLine = line(0xff4040), leafLine = line(0xffe040), rockLine = line(0x40e0ff);
+  const col = new THREE.Color(), r = createRng(77);
+  const SINK = 0.5; // m of trunk drawn below the ground, so it never floats on a slope
+  for (const o of obstacles) {
+    if (o.type === 'tree') {
+      const h = o.top - o.y0 + SINK;
+      const t = new THREE.Mesh(trunkGeo, trunkMat); t.scale.set(o.r, h, o.r); t.position.set(o.x, o.y0 - SINK, o.z);
+      const c = o.canopy;
+      const leafM = leafMat.clone(); leafM.color.copy(col.setHSL(0.3 + r() * 0.06, 0.45, 0.24 + r() * 0.08));
+      const l = new THREE.Mesh(leafGeo, leafM); l.scale.set(c.rx, c.ry, c.rx); l.position.set(c.x, c.y, c.z);
+      l.rotation.y = r() * 6.28;
+      scene.add(t, l);
+      const tw = new THREE.LineSegments(wireCyl, trunkLine); tw.scale.set(o.r, o.top - o.y0, o.r); tw.position.set(o.x, o.y0, o.z);
+      const lw = new THREE.LineSegments(wireBall, leafLine); lw.scale.set(c.rx, c.ry, c.rx); lw.position.set(c.x, c.y, c.z);
+      outlines.add(tw, lw);
+    } else {
+      const b = new THREE.Mesh(rockGeo, rockMat); b.scale.setScalar(o.r); b.position.set(o.x, o.y, o.z);
+      b.rotation.set(r() * 6.28, r() * 6.28, 0);
+      scene.add(b);
+      const bw = new THREE.LineSegments(wireBall, rockLine); bw.scale.setScalar(o.r); bw.position.set(o.x, o.y, o.z);
+      outlines.add(bw);
+    }
+  }
+  for (const o of outlines.children) o.renderOrder = 10;
+  scene.add(outlines);
+  return outlines;
 }
 
 // Trees (instanced so hundreds are cheap), standing on the ground
