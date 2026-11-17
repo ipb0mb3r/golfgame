@@ -10,7 +10,7 @@
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
 import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
 import { createHolePlay } from '../core/play.js';
-import { createMeter, resetMeter, pressMeter, tickMeter } from '../core/swing.js';
+import { createMeter, resetMeter, pressMeterAt, tickMeterTo } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
@@ -68,12 +68,12 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     if (snapCamera) rig.snap(camView());
   }
 
-  // The three-click swing
-  function onSwingInput() {
+  // The three-click swing. `at` = when the click happened (s, performance.now() clock, S16)
+  function onSwingInput(at = performance.now() / 1000) {
     if (!isAimingState(state)) return;
     // The top of the meter is the lie's power cap for this club (S11)
     if (state === 'aim') { input.releaseAim(); meter.cap = play.lieOf().maxPower; }
-    const result = pressMeter(meter);
+    const result = pressMeterAt(meter, at);
     if (result) endSwing(result);
     else state = meter.phase;
     updateHud();
@@ -131,8 +131,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     updateHud();
   }
 
-  // One drawn frame. dt = game time (capped), meterDt = real time for the meter (capped)
-  function frame(dt, meterDt) {
+  // One drawn frame. dt = game time (capped), now = this frame's real time in seconds (the meter's clock, S16)
+  function frame(dt, now) {
     t += dt;
     // Aiming
     if (state === 'aim') {
@@ -141,7 +141,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     }
     // Swing meter
     if (isSwinging(state)) {
-      const result = tickMeter(meter, meterDt);
+      const result = tickMeterTo(meter, now);
       if (meter.event === 'max') hud.flash('MAX!', 'Click now for full power');
       if (meter.event) { state = meter.phase; updateHud(); }
       if (result) endSwing(result);

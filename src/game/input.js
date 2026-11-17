@@ -1,6 +1,6 @@
 // Keyboard, mouse and touch input. Calls the handlers; owns no game rules. Bound once for the whole
 // visit (main.js); the handlers forward to the current hole session.
-//   on = { swing(), club(step), start(), again(), toggleDebug(), canAim() }
+//   on = { swing(t), club(step), start(), again(), toggleDebug(), canAim() }
 const $ = id => document.getElementById(id);
 
 // Gate A C7: only a primary press swings. A mouse needs its main (left) button: a right or middle
@@ -9,11 +9,15 @@ const $ = id => document.getElementById(id);
 const isSwingPress = e => e.button === 0;
 // Space swings; with Ctrl / Cmd / Alt held it's a browser shortcut, not a swing
 const isSwingKey = e => e.code === 'Space' && !e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey;
+// S16: when the click really happened, in seconds, on the same clock as performance.now() (which
+// main.js gives each frame). event.timeStamp is that clock in every browser the game supports (§12).
+export const nowSeconds = () => performance.now() / 1000;
+const eventSeconds = e => (Number.isFinite(e.timeStamp) && e.timeStamp > 0 ? e.timeStamp / 1000 : nowSeconds());
 
 export function bindInput(canvas, on) {
   let aimHold = 0;
   const keysDown = new Set();
-  const swingPress = e => { e.preventDefault(); if (isSwingPress(e)) on.swing(); };
+  const swingPress = e => { e.preventDefault(); if (isSwingPress(e)) on.swing(eventSeconds(e)); };
   canvas.addEventListener('pointerdown', swingPress);
   canvas.addEventListener('contextmenu', e => e.preventDefault()); // a right click on the course opens no menu
   $('swingBtn').addEventListener('pointerdown', swingPress);
@@ -25,7 +29,7 @@ export function bindInput(canvas, on) {
     for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { aimHold = 0; });
   }
   window.addEventListener('keydown', e => {
-    if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e)) on.swing(); }
+    if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e)) on.swing(eventSeconds(e)); }
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keysDown.add('L'); e.preventDefault(); }
     if (e.code === 'ArrowRight' || e.code === 'KeyD') { keysDown.add('R'); e.preventDefault(); }
     if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); on.club(-1); }

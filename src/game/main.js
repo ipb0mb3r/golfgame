@@ -5,12 +5,12 @@
 // ?debug=1 opens the debug overlay (Gate A C5, for phones).
 import * as THREE from 'three';
 import { applyTune, tuneSummary } from '../core/tune.js';
-import { MAX_FRAME_DT, MAX_METER_DT } from '../core/config.js';
+import { MAX_FRAME_DT } from '../core/config.js';
 import { resolveHole, getHole } from '../holes/sets.js';
 import { resolveScenario } from '../holes/scenarios.js';
 import { parseSeed } from '../core/rng.js';
 import { createRenderer } from './scene.js';
-import { bindInput } from './input.js';
+import { bindInput, nowSeconds } from './input.js';
 import { createDebug } from './debug.js';
 import { createHoleSession } from './session.js';
 
@@ -66,7 +66,7 @@ function loadHole(h, opts = {}) {
 }
 
 const input = bindInput(canvas, {
-  swing: () => session.onSwingInput(),
+  swing: t => session.onSwingInput(t),
   club: step => session.changeClub(step),
   canAim: () => session.canAim(),
   start: () => session.start(),
@@ -93,8 +93,8 @@ const clock = new THREE.Clock();
 function frame() {
   const rawDt = clock.getDelta();
   const dt = Math.min(rawDt, MAX_FRAME_DT);        // game time (capped so a hiccup can't teleport the ball)
-  const meterDt = Math.min(rawDt, MAX_METER_DT);   // the meter follows real time so slow devices don't make it easier
-  session.frame(dt, meterDt);
+  // The meter runs on real time (S16): this frame's time, on the same clock as the input events' timeStamp
+  session.frame(dt, nowSeconds());
   debug.frame(rawDt, session.debugText);
   renderSession();
   requestAnimationFrame(frame);
