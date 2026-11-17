@@ -9,6 +9,7 @@
 //                    'returnToLast'  penalty: back to where the shot was hit from
 //                    'holed'         in the cup: the hole is over (p.finished)
 //                    'pickedUp'      the stroke limit is reached: the hole is over (p.finished)
+//   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
   G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
@@ -20,8 +21,8 @@ import { makeSurfaceTable } from './surfaces.js';
 import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
+import { isShotEnd } from './states.js';
 
-const TERMINAL = new Set(['holed', 'stopped', 'penalty']);
 
 export function createHolePlay(hole, { seed = 1 } = {}) {
   const terrain = makeTerrain(hole);
@@ -44,7 +45,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
-    reset, newWind, prepare, hit, swing, setClub, setAim, advance, step, proceed, returnToLastPos, landingPoint,
+    reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
     clubReach, puttPlaysLike, lieOf, pinPower, distToCup, slope, simulate,
   };
 
@@ -160,7 +161,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function step() {
     const ev = ball.step(PHYSICS_DT);
     if (ev && ev.type === 'penalty') p.strokes++;
-    if (ev && TERMINAL.has(ev.type)) decide(ev);
+    if (isShotEnd(ev)) decide(ev);
     return ev;
   }
 
@@ -201,6 +202,21 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return events;
   }
 
+  // Skip to the end of the shot (X9): run the remaining fixed PHYSICS_DT steps now, with nothing
+  // drawn. These are exactly the steps advance() would take frame by frame (no step depends on the
+  // frame time), so a skipped shot ends exactly where a watched one does: same spot, strokes, lip-outs
+  // and p.next. Returns the events, in order (the game shows them as it would have). Nothing happens
+  // when the ball isn't moving.
+  function skip(maxSteps = 1e7) {
+    const events = [];
+    for (let i = 0; i < maxSteps && ball.moving; i++) {
+      const ev = step();
+      if (ev) events.push(ev);
+    }
+    acc = 0;
+    return events;
+  }
+
   // After a penalty: back to where the shot was hit from.
   function returnToLastPos() { copy(ball.pos, lastPos); prepare(); }
 
@@ -215,7 +231,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function simulate(maxSteps = 1e6) {
     for (let i = 0; i < maxSteps && ball.moving; i++) {
       const ev = step();
-      if (ev && TERMINAL.has(ev.type)) return ev;
+      if (isShotEnd(ev)) return ev;
     }
     return null;
   }

@@ -1,6 +1,6 @@
 // Keyboard, mouse and touch input. Calls the handlers; owns no game rules. Bound once for the whole
 // visit (main.js); the handlers forward to the current hole session.
-//   on = { swing(t), club(step), start(), again(), toggleDebug(), canAim() }
+//   on = { swing(t), skip() → true if it skipped, club(step), start(), again(), toggleDebug(), canAim() }
 const $ = id => document.getElementById(id);
 
 // Gate A C7: only a primary press swings. A mouse needs its main (left) button: a right or middle
@@ -28,8 +28,12 @@ export function bindInput(canvas, on) {
     b.addEventListener('pointerdown', e => { e.preventDefault(); if (isSwingPress(e) && on.canAim()) aimHold = dir; });
     for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, () => { aimHold = 0; });
   }
+  // X9: only the ⏩ Skip button, Space and Enter skip. A tap on the course or SWING never does, so an
+  // extra swing tap can't skip a shot by accident.
+  $('skipBtn').addEventListener('pointerdown', e => { e.preventDefault(); if (isSwingPress(e)) on.skip(); });
   window.addEventListener('keydown', e => {
-    if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e)) on.swing(eventSeconds(e)); }
+    if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e) && !on.skip()) on.swing(eventSeconds(e)); }
+    if ((e.code === 'Enter' || e.code === 'NumpadEnter') && !e.repeat && !document.activeElement?.closest?.('button, a')) on.skip();
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keysDown.add('L'); e.preventDefault(); }
     if (e.code === 'ArrowRight' || e.code === 'KeyD') { keysDown.add('R'); e.preventDefault(); }
     if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); on.club(-1); }

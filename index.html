@@ -74,6 +74,9 @@
   #club .name { text-align: center; }
   #club .name b { display: block; font-size: 17px; }
   #club .name small { color: var(--muted); }
+  /* X9: ⏩ Skip, above the meter on the right while the ball flies or rolls (doesn't move the layout) */
+  #skipBtn { position: absolute; right: 0; bottom: calc(100% + 8px); font-weight: 800; padding: 8px 16px; background: rgba(12, 28, 20, .85); border-color: var(--accent); color: var(--accent); }
+  #skipBtn[hidden] { display: none; }
   #swingBtn { flex: 0 0 auto; font-weight: 900; background: #2f8f46; border-color: #8ef0a5; padding: 8px 18px; }
 
   /* Overlays */
@@ -205,6 +208,7 @@
 <div id="msg"></div>
 
 <div id="bottom">
+  <button id="skipBtn" hidden title="Skip to where the ball stops (Space or Enter)">⏩ Skip</button>
   <div id="tuned" hidden></div>
   <div id="hint">Click or press Space to start your swing</div>
   <div>

@@ -68,7 +68,7 @@ export const LIP_OUT = { spread: 0.8, keep: 0.6, rearm: 1.5 }; // random deflect
 export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole doesn't set one
 
 // --- Game-layer timing (ms) ---
-export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500 };
+export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000 }; // skipAfter: X9 ⏩ Skip shows this long after the hit
 
 // --- HUD display thresholds ---
 export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1)

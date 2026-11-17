@@ -67,6 +67,7 @@ function loadHole(h, opts = {}) {
 
 const input = bindInput(canvas, {
   swing: t => session.onSwingInput(t),
+  skip: () => session.skip(),
   club: step => session.changeClub(step),
   canAim: () => session.canAim(),
   start: () => session.start(),
@@ -117,6 +118,7 @@ window.__golf = {
   get HOLE() { return api().HOLE; }, get WATER_Y() { return api().WATER_Y; }, slopeText: () => api().slopeText(),
   place: (x, z) => api().place(x, z),
   testHit: (pw, acc = 0, outcome = 'normal') => api().testHit(pw, acc, outcome),
+  skip: () => api().skip(), get canSkip() { return api().canSkip; },
   // A2: unload the current hole and load another one in place (tools/session-check.mjs); renderer
   // memory as Three.js counts it (geometries, textures, shader programs)
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride }); return session.hole.id; },

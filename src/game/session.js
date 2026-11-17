@@ -11,7 +11,7 @@
 import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
 import { createHolePlay } from '../core/play.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo } from '../core/swing.js';
-import { isSwinging, isAimingState, isBallMoving } from '../core/states.js';
+import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
 import { paintCourse } from './coursePainter.js';
@@ -45,6 +45,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const later = (fn, ms) => timers.push(setTimeout(fn, ms));
   const shown = { x: 0, y: 0, z: 0 }; // where the ball is drawn (differs from the ball only while it drops in the cup)
   let holedT = 0, t = 0, lastAimKey = '';
+  let shotT = 0, skipShown = false; // X9: game time since the hit, and whether ⏩ Skip is showing
   const target = { x: 0, y: 0, z: 0 };
 
   const updateHud = () => hud.update(state, meter.power);
@@ -91,6 +92,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     }
     hud.flash(shot.label);
     state = shot.kind === 'putt' ? 'roll' : 'flight';
+    shotT = 0;
     updateHud();
     return shot;
   }
@@ -98,7 +100,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // Core events → what the player sees. When a shot ends, core has decided what's next (play.next).
   function onEvent(ev) {
     if (ev.type === 'lippedOut') { hud.flash('Lipped out!'); return; }
-    if (!play.next) return;
+    if (!isShotEnd(ev)) return;
     const next = play.next;
     if (next === 'holed') {
       state = 'holed'; holedT = 0;
@@ -125,6 +127,21 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       f.pickedUp ? `You reached the ${hole.maxStrokes}-stroke limit. Shake it off and try again!` : resultText(f.strokes, hole.par));
   }
 
+  // X9: ⏩ Skip (the button, Space or Enter) about a second after the hit, while the ball flies or
+  // rolls. Core runs the rest of the shot at once (play.skip: the same fixed steps, nothing drawn), and
+  // its events go through onEvent exactly as if they had happened frame by frame, so holed, penalty
+  // and picked-up flows play normally. Returns true when it skipped.
+  const canSkip = () => isBallMoving(state) && shotT * 1000 >= TIMING.skipAfter;
+  function skip() {
+    if (!canSkip()) return false;
+    for (const ev of play.skip()) onEvent(ev);
+    props.setBall(ball.pos, false);
+    hud.setDistance(state);
+    showSkip(false);
+    return true;
+  }
+  function showSkip(on) { if (on !== skipShown) { skipShown = on; $skip().hidden = !on; } }
+
   function changeClub(step) {
     if (state !== 'aim') return;
     play.setClub(play.clubIdx + step);
@@ -147,6 +164,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       if (result) endSwing(result);
     }
     // Ball physics
+    if (isBallMoving(state)) shotT += dt;
+    showSkip(canSkip());
     if (isBallMoving(state)) {
       for (const ev of play.advance(dt)) onEvent(ev);
       if (state === 'flight' && ball.phase === 'roll') state = 'roll';
@@ -208,6 +227,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     if (disposed) return;
     disposed = true;
     clearTimers();
+    showSkip(false);
     hud.dispose();
     disposeScene(scene);
   }
@@ -228,6 +248,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     place(x, z) { clearTimers(); ball.pos.x = x; ball.pos.z = z; play.prepare(); readyForShot(true); },
     // Hit straight away as if the meter gave this result (skips the meter, same path as a real swing)
     testHit(power, acc = 0, outcome = 'normal') { if (state !== 'aim') return null; return endSwing({ power, acc, outcome }); },
+    skip, get canSkip() { return canSkip(); },
   };
 
   return {
@@ -235,10 +256,11 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     get state() { return state; },
     get disposed() { return disposed; },
     canAim: () => state === 'aim',
-    onSwingInput, changeClub, frame, resize, debugText, dispose,
+    onSwingInput, changeClub, skip, frame, resize, debugText, dispose,
     start: () => { $intro().classList.add('hidden'); resetGame(); },
     again: resetGame,
   };
 }
 
 const $intro = () => document.getElementById('intro');
+const $skip = () => document.getElementById('skipBtn');
