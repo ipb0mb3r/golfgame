@@ -12,5 +12,7 @@ export const EXCEPTIONS = {
   5:  { name: 'h1 three-quarter tee shot', task: 'S17', end: { x: 3.94, z: -149.65 }, why: 'the chip runs 1.3 m further on the faster green' },
   6:  { name: 'h1 hook', task: 'S17', end: { x: -10.42, z: -151.76 }, why: 'the hook lands on the green and runs 1.4 m further (the old page spread 2.4 m on this shot across frame rates)' },
   14: { name: 'h2 approach from the lay-up zone', task: 'S17 + P10', end: { x: 24.51, z: -437.16 }, why: 'the approach runs 1.7 m further up the faster two-tier green (P10: 0.3 m, it settles instead of creeping)' },
+  // K8 (PM on PR #33): every tree inside OB on holes 1–2 is a real tree. Only this shot reaches one.
+  9:  { name: 'h1 forced max slice', task: 'K8', end: { x: 38.50, z: -125.23 }, why: 'the big slice flies into the leaves of the tree at (31, -115.8) and drops about 11 m short' },
   18: { name: 'h2 side-hill putt (breaks)', task: 'S17', end: { x: 26.89, z: -445.68 }, why: 'the same putt breaks 1 m more on the faster green, then settles (P10)' },
 };

@@ -1,5 +1,6 @@
 // Pocket Links #1: a flat par 3 over a pond, with three bunkers around the green.
 import { ell } from '../core/terrain.js';
+import { treesFrom } from './trees.js';
 
 const GREEN = { cx: 3, cz: -150, rx: 15, rz: 12 };
 const BUNKERS = [
@@ -16,6 +17,35 @@ function inFairway(x, z) {
   return Math.abs(x - fairwayCenter(z)) < 13 * Math.sqrt(taper);
 }
 
+// K8: the trees inside the OB line, as [x, z, size] (fixed; generated once, see trees.js)
+const TREES_IN_PLAY = [
+  [28.3, -82.4, 1.40],
+  [47.5, 10.6, 1.17],
+  [-55.0, -181.1, 1.40],
+  [44.8, -161.5, 1.29],
+  [-45.7, -132.7, 1.03],
+  [-52.3, -197.2, 1.43],
+  [-24.4, 14.4, 1.26],
+  [-45.9, -0.4, 1.24],
+  [31.0, -115.8, 1.21],
+  [-50.2, -157.6, 0.95],
+  [-17.0, 17.6, 1.41],
+  [27.8, -49.4, 1.11],
+  [46.6, -106.1, 1.11],
+  [41.3, -78.6, 0.89],
+  [-53.6, -144.7, 1.27],
+  [-44.9, -111.2, 1.39],
+  [36.6, -192.2, 1.32],
+  [49.1, -73.2, 1.11],
+  [32.4, -173.9, 1.16],
+  [-34.8, 0.5, 1.35],
+  [39.9, -102.6, 0.93],
+  [-43.0, 0.3, 1.16],
+  [-36.7, -176.8, 1.45],
+  [-8.9, -186.3, 0.88],
+  [-51.8, -88.0, 1.17],
+];
+
 export default {
   id: 'pl-01', number: 1, name: 'Pocket Links #1', par: 3, maxStrokes: 10,
   tee: { x: 0, z: 0 }, cup: { x: 4, z: -152 },
@@ -25,6 +55,7 @@ export default {
   surfaceOverrides: {},           // hole 1 uses the base surface table as it is
   map: { x0: -60, x1: 60, z0: -180, z1: 20 },
   features: { green: GREEN, bunkers: BUNKERS, pond: POND },
+  obstacles: treesFrom(TREES_IN_PLAY), // K8
 
   heightAt() { return 0; },       // flat
   surfaceAt(x, z) {

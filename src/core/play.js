@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
+  G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -49,7 +49,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
+    restPoint, aimWarning, shotWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
   };
 
   function newWind() {
@@ -59,7 +59,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   }
 
   // Back to the start of the hole. `start` (optional, from a designer scenario, X8) puts the ball
-  // somewhere else: { ball: { x, z }, strokes, wind: { x, z }, seed }. With a `seed`, the random
+  // somewhere else: { ball: { x, z }, strokes, wind: { x, z }, seed, aimAt: { x, z } }. With a `seed`, the random
   // numbers (wind, lip-outs) restart from it, so every retry of a scenario is identical (F1).
   function reset(start = null) {
     if (start?.seed != null) rng.reseed(start.seed);
@@ -69,7 +69,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }
     newWind();
     if (start?.wind) set(wind, start.wind.x, 0, start.wind.z);
-    prepare();
+    prepare(start?.aimAt ?? null);
   }
 
   function distToCup() { return dist2D(ball.pos, cup); }
@@ -127,19 +127,34 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // as the ball. Returns null (clear) or { kind: 'trunk' | 'leaves' | 'boulder', index, x, y, z, dist }
   // where dist = meters from the ball (flat) to where it would hit. Putts: null (they roll).
   // The ⚑ and the auto-pick ignore obstacles on purpose: the warning is the information.
-  let warnMemo = null;
+  const warnMemo = new Map(); // key → result, emptied by prepare()
   function aimWarning(i = p.clubIdx, a = p.aim, power = lieOf(i).maxPower) {
     if (i === PUTTER || !obstacles.length) return null;
     const key = `${i}|${a}|${power}|${ball.pos.x}|${ball.pos.z}`;
-    if (warnMemo?.key === key) return warnMemo.value;
+    if (warnMemo.has(key)) return warnMemo.get(key);
     let value = null;
     const r = landingPoint(i, a, power, (q0, q1) => {
       const hit = firstHit(obstacles, q0, q1);
       return hit && { warn: true, kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z };
     });
     if (r.warn) { const { warn, ...w } = r; value = { ...w, dist: dist2D(ball.pos, w) }; }
-    warnMemo = { key, value };
+    if (warnMemo.size > 64) warnMemo.clear();
+    warnMemo.set(key, value);
     return value;
+  }
+  // The warning the player sees (PM on PR #33): the full-power arc (the ring) AND the ⚑ arc (the
+  // shot we suggest, when the ⚑ is on the meter, at most the lie's cap). The ⚑ must never lead into
+  // the leaves without a warning. Returns null, or the nearer hit with `at`: 'pin' (only the ⚑
+  // shot hits), 'full' (only the full-power shot) or 'both'.
+  function shotWarning(i = p.clubIdx, a = p.aim) {
+    if (i === PUTTER || !obstacles.length) return null;
+    const cap = lieOf(i).maxPower;
+    const full = aimWarning(i, a, cap);
+    const pp = a === p.aim ? pinPower(i) : Infinity; // the ⚑ is only known for the current aim
+    const pin = pp <= HUD.pinTickMax ? aimWarning(i, a, Math.min(pp, cap)) : null;
+    if (!full && !pin) return null;
+    const near = !full ? pin : !pin ? full : pin.dist <= full.dist ? pin : full;
+    return { ...near, at: full && pin ? 'both' : pin ? 'pin' : 'full' };
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
 
@@ -216,13 +231,15 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function puttPlaysLike() { return distToCup() + ROLL_G * (cup.y - ball.pos.y) / surfaces.green.decel; }
 
   // Get ready for the next shot from wherever the ball is: lie, default aim (S18), putt range, auto club.
-  function prepare() {
+  // `spot` (optional, K9: a designer scenario's `aimAt`) replaces the default aim point for this one
+  // shot: the aim, the ⚑ and the auto-pick all use it (kind 'spot').
+  function prepare(spot = null) {
     p.next = null;
-    pinMemo = null; warnMemo = null; // a new shot (or new tunables): work the ⚑ and the K4 warning out again
+    pinMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);
-    const t = defaultTarget();
+    const t = spot ? { kind: 'spot', x: spot.x, z: spot.z } : defaultTarget();
     p.targetKind = t.kind;
     set(p.target, t.x, terrain.heightAt(t.x, t.z), t.z);
     p.aim = aimAt(ball.pos, p.target);

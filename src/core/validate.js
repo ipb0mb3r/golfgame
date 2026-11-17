@@ -3,6 +3,7 @@
 // or a crash deep inside the physics. src/holes/sets.js and scenarios.js call these at load time.
 import { BASE_SURFACES } from './surfaces.js';
 import { CLUBS } from './clubs.js';
+import { createHolePlay } from './play.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
 const SURFACE_FIELDS = new Set(['name', 'rest', 'keep', 'decel', 'maxPower', 'sweetScale', 'penalty']);
@@ -65,8 +66,10 @@ export function validateHole(hole) {
     const s = at(hole.aimTarget.x, hole.aimTarget.z);
     if (BASE_SURFACES[s].penalty) bad(`aimTarget (${hole.aimTarget.x}, ${hole.aimTarget.z}) is in ${s}`);
   }
-  // K2/K3: obstacles (DESIGN §4 "Obstacles"): known types, positive sizes, on the map, never on the
-  // tee or the green (a ball must always be playable from there)
+  // K2/K3: obstacles (DESIGN §4 "Obstacles"): known types, positive sizes, inside the OB line.
+  // K8 fairness guards: never on the tee, the fringe or the green, never on the fairway unless the
+  // hole says it is meant to be there (`onFairway: true`, like hole 3's lone tree), and the default
+  // tee shot (default aim and club, at full and at ⚑ power) must not hit any of them.
   if (hole.obstacles !== undefined) {
     if (!Array.isArray(hole.obstacles)) bad('obstacles must be a list');
     const FIELDS = { tree: ['trunkR', 'trunkH', 'canopyR', 'canopyH'], boulder: ['r'] };
@@ -74,15 +77,24 @@ export function validateHole(hole) {
       const where = `obstacles[${i}]`;
       if (!o || !Object.hasOwn(FIELDS, o.type)) bad(`${where}.type must be one of ${Object.keys(FIELDS).join(', ')} (got ${o?.type})`);
       if (!isPoint(o)) bad(`${where} must have x and z (finite numbers)`);
-      if (o.x < m.x0 || o.x > m.x1 || o.z < m.z0 || o.z > m.z1) bad(`${where} (${o.x}, ${o.z}) is off the map`);
       for (const k of FIELDS[o.type]) if (!(isNum(o[k]) && o[k] > 0)) bad(`${where}.${k} must be a number > 0 (got ${o[k]})`);
       if (o.sink !== undefined && !(isNum(o.sink) && o.sink >= 0 && o.sink < 1)) bad(`${where}.sink must be 0..1 (got ${o.sink})`);
       const s = at(o.x, o.z);
-      if (s === 'tee' || s === 'green') bad(`${where} (${o.x}, ${o.z}) stands on the ${s}`);
+      if (s === 'ob') bad(`${where} (${o.x}, ${o.z}) is out of bounds (trees outside OB are scenery, not obstacles)`);
+      if (s === 'tee' || s === 'green' || s === 'fringe') bad(`${where} (${o.x}, ${o.z}) stands on the ${s}`);
+      if (s === 'fairway' && o.onFairway !== true) bad(`${where} (${o.x}, ${o.z}) stands on the fairway (set onFairway: true if that is the design)`);
+      if (o.onFairway !== undefined && typeof o.onFairway !== 'boolean') bad(`${where}.onFairway must be true or false`);
     });
   }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {
     at(m.x0 + (m.x1 - m.x0) * i / SAMPLES, m.z0 + (m.z1 - m.z0) * j / SAMPLES);
+  }
+  // K8: the default tee shot is never blocked (no blind shots, HOLE_GUIDELINES §4)
+  if (hole.obstacles?.length) {
+    const play = createHolePlay(hole, { seed: 1 });
+    play.reset({ wind: { x: 0, z: 0 } });
+    const w = play.shotWarning();
+    if (w) bad(`the default tee shot (${play.club.name}, ${w.at} power) hits obstacles[${w.index}] (${w.kind}) ${w.dist.toFixed(0)} m out`);
   }
   return hole;
 }
@@ -99,6 +111,7 @@ export function validateScenario(id, sc, holes) {
   if (!Number.isInteger(sc.strokes) || sc.strokes < 0 || sc.strokes >= hole.maxStrokes) bad(`strokes must be a whole number from 0 to ${hole.maxStrokes - 1} (got ${sc.strokes})`);
   if (!Number.isInteger(sc.seed)) bad(`seed must be a whole number (got ${sc.seed})`);
   if (sc.wind !== undefined && !isPoint(sc.wind)) bad('wind must be { x, z } with finite numbers');
+  if (sc.aimAt !== undefined && !isPoint(sc.aimAt)) bad('aimAt must be { x, z } with finite numbers'); // K9
   if (!Object.hasOwn(BASE_SURFACES, sc.lie)) bad(`lie must be a surface id (got ${sc.lie})`);
   const s = hole.surfaceAt(sc.ball.x, sc.ball.z);
   if (s !== sc.lie) bad(`the ball sits on "${s}", not on the promised lie "${sc.lie}"`);

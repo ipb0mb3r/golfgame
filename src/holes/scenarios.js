@@ -1,5 +1,5 @@
 // Designer test spots (X8): ?scenario=<id> starts the ball at a named spot with a fixed seed, so a
-// situation can be replayed on a phone without a keyboard. Data only; the engine reads `hole`,
+// situation can be replayed on a phone without a keyboard. Data only; the engine reads `hole`, `aimAt` (optional, K9: where the aim starts),
 // `ball`, `strokes`, `seed` and the optional `wind` (m/s, overrides the seeded wind).
 // `lie` is what the ball should sit on; tests/scenarios.test.js checks it, so a hole edit that
 // moves a bunker can't silently break a scenario.
@@ -47,6 +47,13 @@ export const SCENARIOS = {
   'h3-rock': {
     hole: 'pl-03', ball: { x: -4, z: -254 }, strokes: 1, seed: 303, wind: { x: 0, z: 0 }, lie: 'rock',
     name: 'Hole 3: on the rock', text: 'Through the corner onto the rock outcrop, next to the boulders: a thin lie (max 90%, harder timing).',
+  },
+  // K9 (owner, PR #33): a rock bounce you can try on purpose. The aim starts at the middle of the
+  // outcrop (`aimAt`), so the suggested 9 Iron at the ⚑ lands on the rock (not a boulder), bounces
+  // high three times and runs off the far side. Compare ?tune=rock.rest:0.4,rock.keep:0.7.
+  'h3-rock-bounce': {
+    hole: 'pl-03', ball: { x: -5, z: -150 }, aimAt: { x: -4, z: -262 }, strokes: 1, seed: 304, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 3: rock bounce', text: 'Aimed at the rock outcrop: hit the ⚑ and watch the ball bounce high and run on the hard rock.',
   },
 };
 

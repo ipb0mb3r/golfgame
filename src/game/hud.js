@@ -18,8 +18,9 @@ const HINTS = {
 // S19: 'chip' = the cup because the ball is within CHIP_AIM_RANGE of it (any surface), and the line says so.
 // K4: the hint while aiming when the shot would hit an obstacle (play.aimWarning)
 const WARN_TEXT = { trunk: 'a tree', leaves: 'the trees', boulder: 'a rock' };
-export const warnHint = w => `⚠ This shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around, or pick a higher club`;
-const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target' };
+const WARN_AT = { pin: 'at ⚑ power', full: 'at full power', both: 'at ⚑ and full power' }; // PM on PR #33: say which
+export const warnHint = w => `⚠ ${WARN_AT[w.at] ?? ''} this shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around, or pick a higher club`.replace('⚠ a', '⚠ A');
+const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target', spot: () => 'test spot target' }; // spot: a scenario's aimAt (K9)
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
@@ -119,7 +120,7 @@ export function createHud(play) {
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
-    const warn = state === 'aim' ? play.aimWarning() : null;
+    const warn = state === 'aim' ? play.shotWarning() : null;
     $('hint').textContent = warn ? warnHint(warn) : HINTS[state] || '';
     $('hint').classList.toggle('warn', !!warn);
     const pm = $('powerMark');

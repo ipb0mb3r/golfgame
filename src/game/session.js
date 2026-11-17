@@ -196,7 +196,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       let len;
       if (play.club.putter) { len = Math.min(play.distToCup(), play.puttMax); Object.assign(target, { x: ball.pos.x + d.x * len, y: 0, z: ball.pos.z + d.z * len }); }
       else { Object.assign(target, play.landingPoint(play.clubIdx)); len = dist2D(ball.pos, target); }
-      warn = play.aimWarning(); // K4 (memoized in core: only works it out again when the aim or club changes)
+      warn = play.shotWarning(); // K4 (memoized in core: only works it out again when the aim or club changes)
       props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn);
       // Keep the slope readout and club distance in step with the aim
       const key = play.aim.toFixed(3) + play.clubIdx;

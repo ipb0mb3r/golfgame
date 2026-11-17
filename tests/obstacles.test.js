@@ -41,8 +41,9 @@ test('K2: colliders come from the hole data (trunk, canopy on top of the trunk, 
   assert.deepEqual(t.canopy, { x: 0, y: 7, z: -20, rx: 3, ry: 3 });
   assert.equal(b.type, 'boulder');
   assert.ok(Math.abs(b.y - (1 + 2 * (1 - BOULDER_SINK))) < 1e-12);
-  assert.deepEqual(createHolePlay(getHole('pl-01')).obstacles, [], 'hole 1 has none');
-  assert.deepEqual(createHolePlay(getHole('pl-02')).obstacles, [], 'hole 2 has none');
+  // K8: holes 1 and 2 now have their in-bounds trees as obstacles (none of them boulders)
+  assert.equal(createHolePlay(getHole('pl-01')).obstacles.length, 25);
+  assert.equal(createHolePlay(getHole('pl-02')).obstacles.length, 79);
 });
 
 test('K2: a ball flying into a trunk bounces back off it (OBSTACLE_REST, OBSTACLE_KEEP)', () => {
@@ -156,7 +157,7 @@ test('K4: the aim warning shows where a shot hits a tree, and goes away when the
   assert.equal(play.aimWarning(), null, 'the wedge flies over it');
   play.setClub(play.PUTTER);
   assert.equal(play.aimWarning(), null, 'putts never warn');
-  assert.equal(createHolePlay(getHole('pl-01')).aimWarning(), null, 'no obstacles, no warning');
+  assert.equal(createHolePlay(testHole()).aimWarning(), null, 'no obstacles, no warning');
 });
 
 test('K4: the warning matches what the ball really does (same flight, same colliders)', () => {
@@ -239,17 +240,23 @@ test('K7: skip = watch with obstacles (leaves, trunk, boulder, at 30/60/144 fps)
 
 test('K2: hole data checks name the obstacle and the field', () => {
   const ok = treeHole();
-  const base = { ...ok, number: 1, tee: { x: 0, z: 0 }, cup: { x: 0, z: -40 }, surfaceAt: (x, z) => (Math.hypot(x, z) < 3 ? 'tee' : z < -30 ? 'green' : 'fairway'), features: { green: { cx: 0, cz: -40 } }, aimTarget: { x: 0, z: -20 } };
+  const surf = (x, z) => (Math.abs(x) > 40 ? 'ob' : Math.hypot(x, z) < 3 ? 'tee' : z < -30 && Math.abs(x) < 8 ? 'green' : z < -30 && Math.abs(x) < 10 ? 'fringe' : Math.abs(x) > 10 ? 'rough' : 'fairway');
+  const base = { ...ok, number: 1, obstacles: [{ ...TREE, x: 20 }], tee: { x: 0, z: 0 }, cup: { x: 0, z: -40 }, surfaceAt: surf, features: { green: { cx: 0, cz: -40 } }, aimTarget: { x: 0, z: -20 } };
   assert.doesNotThrow(() => validateHole(base));
   const bad = (obstacles, re) => assert.throws(() => validateHole({ ...base, obstacles }), re);
   bad({}, /obstacles must be a list/);
-  bad([{ type: 'bush', x: 0, z: -20 }], /obstacles\[0\]\.type/);
-  bad([{ ...TREE, canopyR: 0 }], /obstacles\[0\]\.canopyR/);
-  bad([{ type: 'boulder', x: 0, z: -20 }], /obstacles\[0\]\.r/);
-  bad([{ type: 'boulder', x: 0, z: -20, r: 1, sink: 1 }], /sink/);
-  bad([{ ...TREE, x: 500 }], /off the map/);
+  bad([{ type: 'bush', x: 20, z: -20 }], /obstacles\[0\]\.type/);
+  bad([{ ...TREE, x: 20, canopyR: 0 }], /obstacles\[0\]\.canopyR/);
+  bad([{ type: 'boulder', x: 20, z: -20 }], /obstacles\[0\]\.r/);
+  bad([{ type: 'boulder', x: 20, z: -20, r: 1, sink: 1 }], /sink/);
+  bad([{ ...TREE, x: 45 }], /out of bounds/);
   bad([{ ...TREE, z: 0 }], /stands on the tee/);
   bad([{ ...TREE, z: -40 }], /stands on the green/);
+  // K8 fairness guards
+  bad([{ ...TREE, x: 9, z: -40 }], /stands on the fringe/);
+  bad([{ ...TREE, x: 5 }], /stands on the fairway \(set onFairway/);
+  bad([{ ...TREE, x: 0, z: -10, onFairway: true }], /default tee shot .* hits obstacles\[0\]/);
+  assert.doesNotThrow(() => validateHole({ ...base, obstacles: [{ ...TREE, x: 7, z: -10, trunkH: 1, canopyH: 1, canopyR: 0.5, onFairway: true }] }), 'a fairway tree out of the line is fine when meant');
 });
 
 test('K2: firstHit is the earliest contact along the step', () => {
@@ -323,4 +330,58 @@ test('K6: the safe route: second shots from the landing area left of the corner 
     assert.equal(p.lie, 'fairway', `(${x}, ${z})`);
     assert.equal(p.aimWarning(), null, `(${x}, ${z}) → green: clear`);
   }
+});
+
+// ---- PM on PR #33: warning at ⚑ power too, K8 trees in play on holes 1–2, K9 rock bounce ----
+test('PR #33 item 1: the warning also checks the ⚑ shot and says which (pin / full / both)', () => {
+  // a tight cut line: a full Driver just clears the corner trees, the ⚑ Driver (96% power) doesn't
+  const p = h3(); p.setAim(aimAt(p.ball.pos, { x: 55, z: -207 })); p.setClub(0);
+  assert.equal(p.aimWarning(), null, 'full power: clear');
+  const w = p.shotWarning();
+  assert.equal(w?.at, 'pin', 'the ⚑ shot hits the leaves');
+  assert.equal(w.kind, 'leaves');
+  // behind the lone tree every power hits it
+  const b = createHolePlay(getHole('pl-03'), { seed: 1 }); b.reset(SCENARIOS['h3-behind-tree']);
+  assert.equal(b.shotWarning()?.at, 'both');
+  // and the ⚑ warning is what the ball does at ⚑ power
+  const q = h3(); q.setAim(aimAt(q.ball.pos, { x: 55, z: -207 })); q.setClub(0);
+  q.hit(Math.min(q.pinPower(), q.lieOf().maxPower), 0);
+  assert.ok(q.skip().some(e => e.type === 'hitLeaves'));
+  // a clear line: no warning at all
+  assert.equal(h3().shotWarning(), null);
+});
+
+test('K8: every tree inside OB on holes 1–2 is an obstacle; none on the tee, fairway, fringe or green', () => {
+  for (const id of ['pl-01', 'pl-02']) {
+    const hole = getHole(id);
+    assert.ok(hole.obstacles.length > 20, id);
+    for (const o of hole.obstacles) {
+      assert.equal(o.type, 'tree');
+      const s = hole.surfaceAt(o.x, o.z);
+      assert.ok(!['ob', 'tee', 'fairway', 'fringe', 'green'].includes(s), `${id} tree (${o.x}, ${o.z}) on ${s}`);
+    }
+  }
+});
+
+test('K8: the default tee shot is never blocked, on every hole', () => {
+  for (const hole of Object.values(HOLES)) {
+    const p = createHolePlay(hole, { seed: 1 }); p.reset({ wind: { x: 0, z: 0 } });
+    assert.equal(p.shotWarning(), null, hole.id);
+  }
+});
+
+test('K9: h3-rock-bounce aims at the outcrop and the ⚑ shot lands on the rock (not a boulder)', () => {
+  const p = createHolePlay(getHole('pl-03'), { seed: 1 });
+  p.reset(SCENARIOS['h3-rock-bounce']);
+  assert.equal(p.targetKind, 'spot');
+  p.hit(Math.min(p.pinPower(), p.lieOf().maxPower), 0);
+  const ev = p.skip();
+  const landed = ev.filter(e => e.type === 'landed');
+  assert.equal(landed[0].surface, 'rock', 'first bounce on rock');
+  assert.ok(landed.filter(e => e.surface === 'rock').length >= 2, 'bounces on the rock more than once');
+  assert.ok(!ev.some(e => e.type === 'hitObstacle'), 'no boulder');
+});
+
+test('PR #33 item 4: hole 2 result card links on to hole 3', () => {
+  assert.equal(getHole('pl-02').intro.resultLink.hole, 'pl-03');
 });
