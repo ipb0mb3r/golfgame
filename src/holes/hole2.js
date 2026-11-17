@@ -193,7 +193,7 @@ export default {
     sky: 0x9fd3ff, fog: [260, 760], cameraFar: 2000,
     // A lower sun and softer fill light than hole 1 so the hills cast visible shading
     hemi: 1.15, sun: { intensity: 2.1, pos: [-90, 70, 30] },
-    ground: { size: 2400, y: -0.6 },
+    ground: { size: 2400, y: -3.9 }, // K13: below the lowest terrain (the pond bowl, -3.72 m); it was -0.6 and poked through the hollows
     // Terrain grid: fine near the course (finest on the green), coarse far away
     mesh: {
       xs: [[-260, -70, 10], [-70, -2, 1], [-2, 48, 0.5], [48, 70, 1], [70, 260, 10]],

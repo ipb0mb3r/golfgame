@@ -4,6 +4,8 @@
 import { BASE_SURFACES } from './surfaces.js';
 import { CLUBS } from './clubs.js';
 import { createHolePlay } from './play.js';
+import { meshAxis } from './terrain.js';
+import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
 const SURFACE_FIELDS = new Set(['name', 'rest', 'keep', 'decel', 'maxPower', 'sweetScale', 'penalty']);
@@ -66,6 +68,12 @@ export function validateHole(hole) {
     const s = at(hole.aimTarget.x, hole.aimTarget.z);
     if (BASE_SURFACES[s].penalty) bad(`aimTarget (${hole.aimTarget.x}, ${hole.aimTarget.z}) is in ${s}`);
   }
+  // K12: an optional play line (a dogleg's yardage): tee first, cup last
+  if (hole.playLine !== undefined) {
+    const pl = hole.playLine, same = (a, b) => a.x === b.x && a.z === b.z;
+    if (!Array.isArray(pl) || pl.length < 2 || !pl.every(isPoint)) bad('playLine must be a list of at least 2 { x, z } points');
+    if (!same(pl[0], hole.tee) || !same(pl.at(-1), hole.cup)) bad('playLine must start at the tee and end at the cup');
+  }
   // K2/K3: obstacles (DESIGN §4 "Obstacles"): known types, positive sizes, inside the OB line.
   // K8 fairness guards: never on the tee, the fringe or the green, never on the fairway unless the
   // hole says it is meant to be there (`onFairway: true`, like hole 3's lone tree), and the default
@@ -88,6 +96,24 @@ export function validateHole(hole) {
   }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {
     at(m.x0 + (m.x1 - m.x0) * i / SAMPLES, m.z0 + (m.z1 - m.z0) * j / SAMPLES);
+  }
+  // K13: the flat background ground plane (scenery.ground.y) must stay under the drawn terrain, or it
+  // pokes through every hollow and hides the course and the ball. The terrain mesh is flat between
+  // its grid points, so heightAt on those points (scenery.mesh) finds its lowest spot. To keep the
+  // load quick the check thins the grid to GROUND_CHECK_STEP; the hollows are wide and smooth, so
+  // that misses the true low point by millimetres, well inside the margin.
+  const sc = hole.scenery;
+  if (sc?.ground !== undefined) {
+    if (!isNum(sc.ground.y)) bad(`scenery.ground.y must be a number (got ${sc.ground.y})`);
+    if (sc.mesh) {
+      let low = { y: Infinity };
+      const thin = parts => meshAxis(parts.map(([a, b, step]) => [a, b, Math.max(step, GROUND_CHECK_STEP)]));
+      for (const x of thin(sc.mesh.xs)) for (const z of thin(sc.mesh.zs)) {
+        const y = hole.heightAt(x, z);
+        if (y < low.y) low = { x, z, y };
+      }
+      if (sc.ground.y > low.y - GROUND_PLANE_MARGIN) bad(`scenery.ground.y (${sc.ground.y}) must be at least ${GROUND_PLANE_MARGIN} m below the lowest terrain, ${low.y.toFixed(2)} m at (${low.x}, ${low.z}): use ${(Math.floor((low.y - GROUND_PLANE_MARGIN) * 10) / 10).toFixed(1)} or lower`);
+    }
   }
   // K8: the default tee shot is never blocked (no blind shots, HOLE_GUIDELINES §4)
   if (hole.obstacles?.length) {

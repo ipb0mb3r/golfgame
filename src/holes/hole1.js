@@ -73,7 +73,7 @@ export default {
   scenery: {
     sky: 0x9fd3ff, fog: [160, 480], cameraFar: 1500,
     hemi: 1.6, sun: { intensity: 1.6, pos: [-60, 120, 40] },
-    ground: { size: 1600, y: -0.02 },
+    ground: { size: 1600, y: -0.1 }, // K13: below the lowest terrain (0 m) by GROUND_PLANE_MARGIN
     // The terrain mesh only covers the painted map: a flat hole is one quad, like the old course plane
     mesh: { xs: [[-60, 60, 120]], zs: [[-180, 20, 200]] },
     paint: { res: 7.5, stripe: 5, green: 'stripes', border: false },

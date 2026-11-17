@@ -35,6 +35,15 @@ export const SCENARIOS = {
     hole: 'pl-02', ball: { x: 14, z: -300 }, strokes: 2, seed: 204, lie: 'fairway',
     name: 'Hole 2: side slope', text: 'The ground falls left toward the pond.',
   },
+  // K13 (owner bug): the two hollows where the old background ground plane poked through the course
+  'h2-hollow-tee': {
+    hole: 'pl-02', ball: { x: 0, z: -95 }, strokes: 1, seed: 205, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 2: hollow past the tee', text: 'The lowest spot of the first fairway (1.8 m down). The ball and the course around it are visible.',
+  },
+  'h2-hollow-bunker': {
+    hole: 'pl-02', ball: { x: 4, z: -259 }, strokes: 1, seed: 206, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 2: hollow left of the bunker', text: 'The dip left of the fairway bunker (1.5 m down). The ball and the course around it are visible.',
+  },
   // Phase K (K6): hole 3, the trees and the rock
   'h3-behind-tree': {
     hole: 'pl-03', ball: { x: -26, z: -203 }, strokes: 1, seed: 301, wind: { x: 0, z: 0 }, lie: 'fairway',

@@ -29,7 +29,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
 
-  setupHolePage(hole, tee, cup);
+  setupHolePage(hole);
   $intro().classList.remove('hidden'); // a new hole starts behind its intro card
   const courseCanvas = paintCourse(hole, terrain.surfaceAt);
   const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);

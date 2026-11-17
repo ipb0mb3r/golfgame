@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -98,18 +98,15 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // Where a dead-straight shot at `power` comes down, allowing for the hills (no wind).
   // Default power = the lie's cap, i.e. the strongest shot possible from here.
   // The aim ring, the club reach, the auto-pick and the ⚑ mark all use this one simulation.
-  // `onStep(from, to)` (optional, K4) sees every step of the flight; when it returns something the
-  // flight stops there and landingPoint returns that instead.
-  function landingPoint(i, a = p.aim, power = lieOf(i).maxPower, onStep = null) {
+  // (The K4 aim warning flies its own, finer steps: aimWarning below, K11.)
+  function landingPoint(i, a = p.aim, power = lieOf(i).maxPower) {
     const { vel } = launchVelocity(bag[i], power, a);
-    const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 };
+    const q = { ...ball.pos };
     const h = LANDING_SIM.dt;
     for (let k = 0; k < LANDING_SIM.maxSteps; k++) {
       const x0 = q.x, z0 = q.z, above0 = q.y - terrain.heightAt(q.x, q.z);
-      if (onStep) copy(q0, q);
       q.x += vel.x * h; q.y += (vel.y - G * h / 2) * h; q.z += vel.z * h; // exact for a parabola
       vel.y -= G * h;
-      if (onStep) { const r = onStep(q0, q); if (r) return r; }
       const above = q.y - terrain.heightAt(q.x, q.z);
       if (vel.y < 0 && above <= 0) {
         // The ball went under the ground during this step: go back to where it crossed it
@@ -123,8 +120,8 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   }
   // K4 "no blind shots": does a straight shot with club i at this aim and power (default: the lie's
   // cap, the shot the yellow ring shows) hit a tree trunk, a tree's leaves or a boulder before it
-  // comes down? The same flight as the ring (no wind, no curve), checked against the same obstacles
-  // as the ball. Returns null (clear) or { kind: 'trunk' | 'leaves' | 'boulder', index, x, y, z, dist }
+  // comes down? The same flight as the ring (no wind, no curve) in the real ball's steps (K11),
+  // checked against the same obstacles as the ball. Returns null (clear) or { kind: 'trunk' | 'leaves' | 'boulder', index, x, y, z, dist }
   // where dist = meters from the ball (flat) to where it would hit. Putts: null (they roll).
   // The ⚑ and the auto-pick ignore obstacles on purpose: the warning is the information.
   const warnMemo = new Map(); // key → result, emptied by prepare()
@@ -133,11 +130,19 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     const key = `${i}|${a}|${power}|${ball.pos.x}|${ball.pos.z}`;
     if (warnMemo.has(key)) return warnMemo.get(key);
     let value = null;
-    const r = landingPoint(i, a, power, (q0, q1) => {
-      const hit = firstHit(obstacles, q0, q1);
-      return hit && { warn: true, kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z };
-    });
-    if (r.warn) { const { warn, ...w } = r; value = { ...w, dist: dist2D(ball.pos, w) }; }
+    // K11: the warning flies the ball exactly like the real one (ball.js flight: the same PHYSICS_DT
+    // steps and the same update), not the ring's bigger steps, so a step can't jump over the thin
+    // edge of the leaves. Until the first obstacle or the ground. About 1 ms; memoised below.
+    const { vel } = launchVelocity(bag[i], Math.max(power, MIN_POWER), a); // as resolveShot
+    const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 }, h = PHYSICS_DT;
+    for (let k = 0, n = LANDING_SIM.maxSteps * LANDING_SIM.dt / h; k < n; k++) {
+      copy(q0, q);
+      vel.y -= G * h;
+      q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
+      const hit = firstHit(obstacles, q0, q);
+      if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
+      if (q.y <= terrain.heightAt(q.x, q.z)) break;
+    }
     if (warnMemo.size > 64) warnMemo.clear();
     warnMemo.set(key, value);
     return value;
