@@ -157,6 +157,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 | Green | .22 | .32 / .34 | **0.7 / 0.6** | faster since S17 (was 1.1 / 0.8); the green speed differs on purpose |
 | Rough | .15 | .22 | 5.5 | |
 | Bunker | .02 | .06 | 18 | |
+| Rock / path ⏳ (K1) | ~.55 | ~.75 | ~1.8 | hard surface: big bounce, long roll. Lie: cap ~0.90, window ×0.8 |
 | Water / OB | | | | penalty |
 
 **Decision:** one shared base surface table in `surfaces.js`. A hole may override values in `surfaceOverrides` (e.g. a faster green). Hole 1 and hole 2 must keep their current feel through those overrides.
@@ -164,6 +165,14 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 **Note (S17):** on the faster greens a putt reaches the cup slower, so a full putt can only lip out from about 15 m on hole 1 (≈ 11 m before). See the PR for the open question about `CUP_CAPTURE_SPEED`.
 
 ---
+
+### Obstacles ⏳ (Phase K, decided 2026-11-17 by the game designer)
+**Principle:** trees and rocks are real hazards, but never a surprise.
+- **Trunks** (vertical cylinders) and **boulders** (spheres) are solid. The ball bounces off them (`OBSTACLE_REST`, `OBSTACLE_KEEP`), in the air and when rolling.
+- **Leaves** (a canopy ellipsoid on each tree): a ball flying through **massively slows down** (keeps ~25–40% of its speed, `CANOPY_SLOW`) and is **deflected a little** (~10–20°, `CANOPY_DEFLECT`, seeded so replays match), then drops. One canopy hit per tree per shot.
+- **Flying over is allowed:** a high enough shot clears the canopy. That's what makes "cutting the corner" a real risk/reward choice.
+- **No blind shots:** the aim preview is height-aware and turns a warning colour where the predicted flight would hit a trunk or the leaves.
+- Obstacles come from hole data (`obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r }]`). The renderer draws exactly what the physics uses.
 
 ## 5. Terrain and slopes ✅ (hole 2)
 
@@ -227,24 +236,35 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 8. Rounds, scoring and menus ❌
+## 8. Rounds, scoring, menus and rivals ❌ (re-planned 2026-11-17 by the owner)
+
+### Modes
+- **Solo, 9 holes:** a full round with a scorecard, total vs par, and a personal best per course.
+- **vs AI, 9 holes:** the same round against **5 AI rivals**, with a leaderboard after each hole and final standings.
+- **Practice:** one hole or a `?scenario=` spot, no scorecard.
 
 ### Rules
-- A **hole set** is an ordered list of hole ids plus a name (e.g. "Pocket Links 1–2", "Slope Test", "Rainy Day").
-- A round plays its holes in order and keeps a scorecard: strokes, par, and the result per hole (eagle, birdie, par, bogey and so on).
-- The stroke cap per hole (`maxStrokes`: 10 on hole 1, 12 on hole 2) means "picked up" and the round continues.
-- Between holes: a summary card with a Next Hole button. At the end: a full scorecard and the total relative to par, with Play Again and Menu buttons.
-- **Menus:**
-  - Main menu (Play, How to Play, Settings)
-  - Hole set select, built from `src/holes/sets.js`
-  - Pause menu (Resume, Restart Hole, Quit to Menu)
-  - Settings (debug overlay, putt grid, invert aim)
-- Settings are saved to localStorage (wrapped in try/catch).
+- A **hole set** is an ordered list of hole ids plus a name ("Mountain 9", "Prototype holes", "Rainy Day"…).
+- A round has **one seed**. Each hole's wind (and rivals' scores) derive from it, so a round can be replayed.
+- A round plays its holes in order and keeps a scorecard: strokes, par, result per hole (eagle, birdie, par, bogey…).
+- The stroke cap per hole (`maxStrokes`) means "picked up" and the round continues.
+- Between holes: a summary card (and the leaderboard in vs AI) with a Next Hole button. At the end: the full scorecard, total vs par, (vs AI) final place, with Play Again and Menu buttons.
+- Saving a round in progress: **later** (owner: not a priority).
+
+### Rivals (vs AI)
+- 5 invented golfers (no real names), each with a **skill**. They don't play shots. Their score on each hole is **generated** from skill, par and the hole's `difficulty` (1–5), seeded by the round seed.
+- **Difficulty Easy / Normal / Hard** shifts every rival's skill.
+- Leaderboard: position, name, holes played, to par. Ties share a position and are sorted consistently.
+
+### Menus
+- Main menu (Play, How to Play, Settings) → Play: Solo 9 / vs AI 9 (difficulty) / Practice.
+- Pause menu (Resume, Restart Hole, Quit to Menu). Settings (debug overlay, putt grid), saved to localStorage (try/catch).
 - Restarting or quitting must clear **all** round state, timers and the trail.
 
 ### Acceptance
-- [ ] A simulated 2-hole round gives the correct total.
-- [ ] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball).
+- [ ] A simulated 9-hole round gives the correct total, including a picked-up hole.
+- [ ] The same round seed gives the same winds and the same rival scores.
+- [ ] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball, rivals).
 
 ---
 
@@ -356,6 +376,10 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 | 2026-11-16 | **Three.js is committed in the repo** (`vendor/`) instead of loaded from unpkg | Works when the CDN is blocked or down, offline play, no agent workaround, upgrade = swap one file | |
 | 2026-11-16 | **Swing tuning 1 ("harder is much better"):** `SWEET` 0.045, old linear curve (`CURVE_SHAPE` 1), meter speed 1.15, wind ×1.5 (`WIND_K` 0.3), harder bunkers, faster greens (S17) | Designer + outside playtesters: the game was too easy, near-misses must hurt, approaches should run out on the green | Next playtest |
 | 2026-11-16 | **Default aim is a starting point, not the answer** (S18): approaches aim at the green centre, par 4/5 tee shots at a fairway target, putts at the cup. The landing ring and ⚑ stay but ignore wind | Gives the player a decision on every shot. Wind becomes a real read | After playtest |
+| 2026-11-17 | **Menus, scoring and a 9-hole round (solo or vs 5 AI rivals) come before rain** | Makes the prototype a complete game you can play start to finish | |
+| 2026-11-17 | **First course: mountain**, co-designed hole by hole with the owner (`docs/HOLE_GUIDELINES.md`). More settings later | Rocks and trees fit the new obstacle mechanics | When the first course is done |
+| 2026-11-17 | **Trees are real obstacles:** solid trunks, leaves that slow and deflect the ball, a rock/hard surface, and a warning on the aim preview (no blind shots) | Trees "sometimes in the way" create choices (cut the corner or play safe) | After hole 3 playtest |
+| 2026-11-17 | **Chip-range aim:** within ~30 m, the default aim is the cup on any surface (S19) | From close to the green the player always wants the flag | |
 
 ### Future direction (not in the prototype)
 The owner plans richer graphics, sound, more beautiful courses and characters. When those phases start, plan for: a glTF asset pipeline from Blender, `THREE.AnimationMixer` for characters, Web Audio / `THREE.PositionalAudio` for sound, and lighting and post-processing presets per course. Asset loading should be async with a loading screen.

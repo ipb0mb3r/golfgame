@@ -13,6 +13,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Owner / Game designer | Alexis | No. Owns the game vision and feel, playtests before each merge, approves every merge to `main` |
 | Project manager | Claude (PM thread) | No. Maintains `docs/`, plans tasks, writes prompts, reviews PRs against the plan |
 | Engine developer | Dev agent | Yes. Works on `dev/*` branches |
+| Course designer | Agent, one hole at a time, co-designs with the owner | Hole data only (`src/holes/`, scenarios, sets), never engine code. Works on `course/<hole-id>` branches |
 | QA / playtester | Independent agent, after each dev PR | No. Plays the PR build in a headless browser and writes a report in `reviews/` |
 | Reviewers (Security, Scalability, Maintainability, Compatibility, Testing) | Independent agents | No. They write reports in `reviews/` |
 | Tech lead | Independent agent, runs last | No. Writes a report in `reviews/` |
@@ -54,6 +55,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - Branch names:
   - `dev/<task-ids>-<slug>` for the dev agent (e.g. `dev/F-engine-refactor`, `dev/W1-W4-rain`)
   - `docs/<slug>` for the PM
+  - `course/<hole-id>` for the course designer (one hole per PR)
   - `review/<gate>-<role>` for reviewers, `review/qa-<branch>` for QA (reports only)
 - One PR per task group. In the same PR: tick the boxes in `docs/TASKS.md` and update `docs/DESIGN.md` if any behaviour changed.
 - The PR description lists the task IDs, what changed, how to test it, and any open questions for the PM or owner.

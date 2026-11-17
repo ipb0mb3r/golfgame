@@ -5,8 +5,24 @@
 > `[ ]` todo · `[~]` in progress · `[x]` done · 🅿️ = owner/PM task
 
 ## Roadmap at a glance
+Re-planned 2026-11-17 (owner): **menus, scoring and a 9-hole round (solo or vs AI) before rain**, and a mountain course co-designed with the owner.
+
 | # | Phase | Status | Branch |
 |---|---|---|---|
+| 0 | Foundation and engine refactor | ✅ done | `dev/F-engine-refactor` |
+| — | Feel passes 1–2 (swing, lie, HUD) | ✅ done | `dev/feel-pass-1`, `dev/feel-pass-2` |
+| A | Review gate A + Fix passes 1–2 | ✅ done (#18–#28) | |
+| FP3 | **Feel pass 3** (small: S15, S19, X11) | **NEXT** | `dev/feel-pass-3` |
+| K | **Obstacles and hard surface** (rock, trunks, leaves, aim warning) + prototype hole 3 | after FP3 | `dev/K-obstacles` |
+| 6 | Rounds and scoring (9-hole round, solo) | after K | `dev/R-rounds` |
+| C | **Mountain course** (9 holes, co-designed with the owner, one hole per PR) | runs alongside 6, 7, T | `course/<hole-id>` |
+| 7 | Menus (Solo 9, vs AI 9, Practice) | after 6 | `dev/M-menus` |
+| T | AI rivals (5 rivals, leaderboard) | after 7 | `dev/T-rivals` |
+| B | Review gate B + fix + Tech Lead | after T | `review/B-<role>` |
+| 5 | Rain | after B | `dev/W-rain` |
+| — | Save a round in progress | later (owner: not a priority) | |
+
+---|---|---|---|
 | 0 | Foundation and engine refactor | ✅ done | `dev/F-engine-refactor` |
 | — | Feel passes 1–2 (swing, lie, HUD) | ✅ done | `dev/feel-pass-1`, `dev/feel-pass-2` |
 | A | Review gate A | ✅ reviewed (#18–#20), decisions in `reviews/A-decisions.md` | `review/A-<role>` |
@@ -94,27 +110,60 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [ ] **G7** *(nice)* Putt preview: show the first ~30% of the predicted line, with no break shown (keeps the skill)
 - [x] **G8** Fix lip-outs (QA B6): after a lip-out the ball is still inside `CUP_R` on the next step and gets captured, so 498 of 499 lip-outs drop in. Push the ball outside the capture radius (or ignore capture for a short time after `lippedOut`). Changes gameplay → re-record baseline-v2 and explain why. Test: a ball faster than the capture speed over the cup stays out at realistic speeds (3.5–5 m/s), not just 8 m/s *(Dev, Nov 16: capture is ignored until the ball leaves the cup; 300 lip-outs at 3.5–5 m/s all stay out)*
 
-## Phase 5: Rain
+## Feel pass 3 (small, next)
+- [ ] **S15** ⚑ for long clubs aims at the predicted **resting** point (moved up: tee targets depend on it since S18)
+- [ ] **S19** (owner, 2026-11-17) **Chip-range aim:** within ~30 m of the cup (`CHIP_AIM_RANGE`, tunable), the default aim is the cup on **any** surface (bunker, rough, fringe…), not the green centre. Test per surface
+- [ ] **X11** Debug overlay (Fix pass 2 QA, Low): R1 don't cover the ⏩ Skip button · R2 on small landscape phones (667x375, 568x320) don't cover the TUNED badge, hint or meter (shrink, or move to the top-left corner)
+- [ ] **S20** 🅿️ *(owner playtest, no code)* Pick `CUP_CAPTURE_SPEED` (today 3.2) by comparing `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`. The value goes into the next tuning
+
+## Phase K: Obstacles and hard surface (owner, 2026-11-17)
+Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" surface.
+- [ ] **K1** **Rock / hard surface** (`rock`; also usable as a cart path): high bounce and long roll, a "thin" lie (cap ~0.90, window ×0.8). Shown on the course texture and minimap, named on the lie line
+- [ ] **K2** **Solid obstacles** in hole data (`obstacles`): tree **trunks** (vertical cylinders) and **boulders** (spheres). The ball bounces off them (`OBSTACLE_REST`, `OBSTACLE_KEEP`). Works in flight and in roll. Event `hitObstacle`
+- [ ] **K3** **Leaves (canopy)** per tree (ellipsoid around the top): a ball flying through **loses most of its speed** (`CANOPY_SLOW` ≈ 0.25–0.4 kept) and is **deflected a little** (`CANOPY_DEFLECT` ≈ 10–20°, from the seeded RNG so replays match), then drops. Once per canopy per shot. Event `hitLeaves` + flash text ("Into the trees!")
+- [ ] **K4** **No blind shots:** the aim preview (landing ring / line) is height-aware and turns a warning colour when the predicted flight hits a trunk or canopy, showing where. The ⚑ and auto-pick ignore obstacles (the warning is the information)
+- [ ] **K5** Trees and rocks rendered from the same hole data (trunk + canopy meshes, rocks), so what you see is exactly what the physics uses. Debug overlay can outline colliders
+- [ ] **K6** **Prototype hole 3** (`pl-03`, owner design): a **par 4 dogleg**. A **wide** landing area off the tee with a **single tree in the middle of the fairway**. The corner is lined with trees, and a brave player can **cut over the trees** at the corner to shorten the hole: possible with a well-struck, high enough shot, caught by the leaves if too low or mishit. Add `?scenario=` spots (behind the lone tree, the cut-over shot, a ball on rock) and add the hole to the practice set
+- [ ] **K7** Tests: trunk bounce, boulder bounce, canopy slow + seeded deflection (same seed = same result), ball rolling into a trunk, aim warning on/off, rock lie, skip = watch with obstacles. Baseline: holes 1–2 unchanged (no obstacles there), new v2 shots for hole 3
+
+## Phase 5: Rain *(moved after Gate B, owner 2026-11-17)*
 - [ ] **W1** `weather` field on holes. A hole set can also override it (same holes, rainy day)
 - [ ] **W2** `getEffectiveSurface()` applies the wetness rules from DESIGN §7. It's the only place weather touches physics
 - [ ] **W3** Rain visuals: particles, darker sky and light, wet ground tint, HUD weather icon
 - [ ] **W4** Tests: wetness 0 matches today, wetness 1 rolls 30–50% less, wet greens are slower
 - [ ] **W5** "Rainy Day" hole set (holes 1 and 2 with wetness 1)
 
-## Phase 6: Multi-hole rounds and scoring
+## Phase 6: Multi-hole rounds and scoring (9-hole round, solo)
 - [ ] **R1** `round.js`: start a round from a hole set, current hole, advance, finish
 - [ ] **R2** Scorecard model (strokes, par, result per hole, total vs par, picked-up flag)
 - [ ] **R3** Hole loading/unloading in the game layer (scene, terrain, texture, flag) with no leftovers
 - [ ] **R4** Between-hole summary card + final scorecard screen
 - [ ] **R5** Tests: a 2-hole simulated round gives correct totals, a picked-up hole is counted correctly, restart resets everything
 
+- [ ] **R6** A 9-hole round works with the 3 prototype holes repeated or any hole set (the mountain course arrives hole by hole in Phase C). Personal best per mode and per course in localStorage (try/catch)
+- [ ] **R7** Round seed: one seed per round, each hole's wind derived from it, shown in debug (as planned in Phase 0)
+
+## Phase C: Mountain course (co-designed with the owner, one hole per PR)
+See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
+- [ ] **C0** 🅿️ Owner + course designer: the 9-hole plan (par per hole, length, signature hazard, difficulty 1–5), checked against the guidelines by the PM
+- [ ] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`)
+- [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
+
 ## Phase 7: Menus
 - [ ] **M1** Main menu (Play, How to Play, Settings)
+- [ ] **M0** Play menu modes: **Solo 9 holes**, **vs AI 9 holes** (difficulty choice), **Practice** (one hole or a scenario)
 - [ ] **M2** Hole set select built from `sets.js` (no hardcoded list). Replaces the F8 `?hole=` switcher, but keep `?hole=` as a dev shortcut
 - [ ] **M3** Pause menu (Esc / button): Resume, Restart Hole, Quit to Menu
 - [ ] **M4** Settings: debug overlay, putt grid, saved in localStorage (try/catch)
 - [ ] **M5** Works on mobile (touch-sized buttons, portrait and landscape). Known (QA B7): in phone landscape (844x390) the intro card is taller than the screen and cuts off the title and Tee off button. Cards must fit or scroll; also X7 (debug overlay vs HUD)
 - [ ] **M6** Tests: the menu → play → quit → play cycle leaves no leftover state
+
+## Phase T: AI rivals (owner, 2026-11-17)
+See DESIGN §8 "Rivals".
+- [ ] **T1** `rivals.js` (core, pure): 5 invented rivals, each with a skill; per-hole score generated from skill, hole par and hole `difficulty` (1–5), seeded by the round seed (same seed = same scores)
+- [ ] **T2** Difficulty Easy / Normal / Hard shifts the rivals' skill
+- [ ] **T3** Leaderboard after each hole (position, name, thru, to par) + final standings with the player's place
+- [ ] **T4** Tests: same seed = same rival scores, Hard rivals average lower than Easy over many rounds, ties sorted consistently
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view
