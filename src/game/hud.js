@@ -1,5 +1,5 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
-import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD } from '../core/config.js';
+import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE } from '../core/config.js';
 import { sweetHalfWidth } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
 import { dist2D, dirFromAim, rightFromAim } from '../core/vec.js';
@@ -14,8 +14,9 @@ const HINTS = {
   nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
 };
-// S18: where the default aim points (PM on PR #27: how a new player learns the aim rule)
-const AIM_TEXT = { cup: 'the cup', green: 'green centre', fairway: 'fairway target' };
+// S18: where the default aim points (PM on PR #27: how a new player learns the aim rule).
+// S19: 'chip' = the cup because the ball is within CHIP_AIM_RANGE of it (any surface), and the line says so.
+const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target' };
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
@@ -105,7 +106,7 @@ export function createHud(play) {
     $('distTxt').textContent = distText(state);
     const lie = play.lieOf();
     $('lieTxt').textContent = lieText(lie);
-    $('aimTxt').textContent = AIM_TEXT[play.targetKind] ?? '-';
+    $('aimTxt').textContent = AIM_TEXT[play.targetKind]?.() ?? '-';
     drawLie(lie);
     $('slopeTxt').textContent = aiming ? slopeText() : '-';
     $('clubName').textContent = club.name;

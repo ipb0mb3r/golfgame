@@ -40,14 +40,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos,
     strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
-    target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'green' | 'fairway')
+    target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'green' | 'fairway')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
     finished: null,  // when the hole is over: { holed, pickedUp, strokes, par } (Phase 6 rounds read this)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
+    restPoint, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
   };
 
   function newWind() {
@@ -77,12 +77,15 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // The default aim (S18, designer: "the automatic aim is too strong"). It is a starting point, not
   // the answer: the player adjusts to the flag and the wind.
   //   on the green or the fringe (putt or chip)       the cup (PM on PR #27: a fringe chip aims at the flag)
+  //   within CHIP_AIM_RANGE of the cup, any surface  the cup, kind 'chip' (S19, owner: from close to the
+  //                                                  green the player always wants the flag)
   //   tee shot on a par 4 or 5                       the hole's fairway target (hole.aimTarget)
   //   everything else (approaches, par 3 tee shots)  the centre of the green (hole.features.green)
   // A hole without that data (test holes) aims at the cup. Returns { kind, x, z }.
   const greenCentre = hole.features?.green ? { x: hole.features.green.cx, z: hole.features.green.cz } : null;
   function defaultTarget(lie = p.lie) {
     if (lie === 'green' || lie === 'fringe') return { kind: 'cup', x: cup.x, z: cup.z };
+    if (distToCup() <= TUNE.CHIP_AIM_RANGE) return { kind: 'chip', x: cup.x, z: cup.z };
     if (lie === 'tee' && hole.par >= 4 && hole.aimTarget) return { kind: 'fairway', ...hole.aimTarget };
     if (greenCentre) return { kind: 'green', ...greenCentre };
     return { kind: 'cup', x: cup.x, z: cup.z };
@@ -113,22 +116,75 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return q;
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
-  // The ⚑ mark on the meter (S12): the power whose landing point (the same simulation as the aim
-  // ring, so uphill and downhill are included) comes down AUTO_CLUB_REACH of the way to the default
-  // aim point (S18: the green centre, the tee target, or the pin for a putt);
-  // the ball runs out the rest. It is on the meter's 0..1 scale: above the lie's cap it sits in the
-  // grayed-out part (= out of reach with this club from here). Found by bisection.
+
+  // Where a dead-straight shot at `power` comes to REST (S15): the real ball physics (flight, bounces,
+  // roll, slopes, cup, the same PHYSICS_DT steps) on a second ball, with no wind and its own random
+  // numbers restarted each time, so the real ball, the wind and the game's RNG are untouched.
+  // `power` may be above the lie's cap (the ⚑ search looks past it). Water or out of bounds: where the
+  // ball went in. Holed: the cup. Returns { x, y, z, end } (end = the event that ended the shot).
+  const simWind = v3(), simRng = createRng(LANDING_SIM.restSeed);
+  const simBall = createBall({ terrain, surfaces, cup, wind: simWind, rng: simRng });
+  const NO_CAP = { maxPower: Infinity, sweetScale: 1 };
+  function restPoint(i, a = p.aim, power = lieOf(i).maxPower) {
+    simRng.reseed(LANDING_SIM.restSeed);
+    copy(simBall.pos, ball.pos);
+    simBall.launch(resolveShot({ club: bag[i], power, acc: 0, aim: a, lie: NO_CAP, puttMax: p.puttMax, greenDecel: surfaces.green.decel }));
+    let end = null;
+    while (simBall.moving) { const ev = simBall.step(PHYSICS_DT); if (isShotEnd(ev)) end = ev; }
+    return { x: simBall.pos.x, y: simBall.pos.y, z: simBall.pos.z, end: end?.type ?? null };
+  }
+
+  // The ⚑ mark on the meter: the power at which a straight shot with no wind finishes at the default
+  // aim point (S18: the green centre, the tee target, the cup for a chip or a putt).
+  // S15: it simulates the whole shot to where the ball comes to rest (restPoint), so a long club's run
+  // out is included (before, it aimed the landing 95% of the way and a 3 Wood ran 7–11 m past).
+  // It is on the meter's 0..1 scale: above the lie's cap it sits in the grayed-out part (= out of reach
+  // with this club from here). Found by bisection. The HUD asks for it on every aim change, so the
+  // answer is kept for the same club, aim, ball and target, until the next prepare().
+  let pinMemo = null;
+  // PM on PR #31 ("harder is much better", no free chip-ins): a chip or pitch at the cup from within
+  // CHIP_AIM_RANGE has its ⚑ CHIP_FLAG_SHORT meters short of the cup, so a perfect ⚑ chip leaves a
+  // short putt and holing it means adding power on purpose. Putts and everything else: 0.
+  function chipShort() {
+    const atCup = p.targetKind === 'chip' || p.targetKind === 'cup';
+    return atCup && distToCup() <= TUNE.CHIP_AIM_RANGE ? TUNE.CHIP_FLAG_SHORT : 0;
+  }
   function pinPower(i = p.clubIdx) {
     if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
-    const want = targetDist() * AUTO_CLUB_REACH;
+    const key = `${i}|${p.aim}|${ball.pos.x}|${ball.pos.z}|${p.target.x}|${p.target.z}|${chipShort()}`;
+    if (pinMemo?.key === key) return pinMemo.value;
+    const want = Math.max(0, targetDist() - chipShort());
+    const restAt = pw => dist2D(ball.pos, restPoint(i, p.aim, pw));
+    // Bracket first with the cheap landing simulation: the power that only CARRIES all the way is
+    // (almost always) enough to finish there, because the ball runs on after it lands. Only when it
+    // isn't (it rolls back off a slope) does the search look up to pinMaxPower.
     const carryAt = pw => dist2D(ball.pos, landingPoint(i, p.aim, pw));
-    let lo = 0, hi = LANDING_SIM.pinMaxPower;
-    if (carryAt(hi) < want) return hi; // far out of reach: the HUD hides the mark
-    for (let k = 0; k < LANDING_SIM.pinIters; k++) {
-      const mid = (lo + hi) / 2;
-      if (carryAt(mid) < want) lo = mid; else hi = mid;
+    let lo = 0, hi = LANDING_SIM.pinMaxPower, value;
+    if (carryAt(hi) >= want) {
+      for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (lo + hi) / 2; if (carryAt(mid) < want) lo = mid; else hi = mid; }
+      lo = 0;
+      if (restAt(hi) < want) hi = LANDING_SIM.pinMaxPower;
     }
-    return (lo + hi) / 2;
+    if (restAt(hi) < want) value = hi; // far out of reach: the HUD hides the mark
+    else {
+      for (let k = 0; k < LANDING_SIM.restIters; k++) {
+        const mid = (lo + hi) / 2;
+        if (restAt(mid) < want) lo = mid; else hi = mid;
+      }
+      value = hi;
+      // Where the finish jumps over the target (a ball that lands on a bank rolls back, a little more
+      // power carries onto the top and runs on), no power finishes there. Then take the closest of:
+      // just short of the jump, just past it, and the landing rule from before S15 (land
+      // AUTO_CLUB_REACH of the way).
+      const miss = pw => Math.abs(restAt(pw) - want);
+      if (miss(value) > LANDING_SIM.restTol) {
+        let a = 0, b = LANDING_SIM.pinMaxPower;
+        for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (a + b) / 2; if (carryAt(mid) < want * AUTO_CLUB_REACH) a = mid; else b = mid; }
+        for (const pw of [lo, b]) if (miss(pw) < miss(value)) value = pw;
+      }
+    }
+    pinMemo = { key, value };
+    return value;
   }
   // Putts: a slope adds or removes "distance" (uphill plays longer)
   function puttPlaysLike() { return distToCup() + ROLL_G * (cup.y - ball.pos.y) / surfaces.green.decel; }
@@ -136,6 +192,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // Get ready for the next shot from wherever the ball is: lie, default aim (S18), putt range, auto club.
   function prepare() {
     p.next = null;
+    pinMemo = null; // a new shot (or new tunables): work the ⚑ out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);

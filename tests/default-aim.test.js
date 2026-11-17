@@ -7,7 +7,7 @@ import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 import { SCENARIOS } from '../src/holes/scenarios.js';
 import { aimAt, dist2D } from '../src/core/vec.js';
-import { AUTO_CLUB_REACH, FRINGE_PUTT_DIST } from '../src/core/config.js';
+import { FRINGE_PUTT_DIST, TUNE, setTunable, resetTunables } from '../src/core/config.js';
 import { testHole } from './helpers.js';
 
 function at(holeId, x, z) {
@@ -35,9 +35,11 @@ test('par 3 tee shot (hole 1): aims at the centre of the green', () => {
 });
 
 test('approaches aim at the centre of the green, from the fairway, the rough and a bunker', () => {
-  for (const [hole, x, z, lie] of [['pl-02', 18, -330, 'fairway'], ['pl-02', 40, -380, 'rough'], ['pl-01', -15, -147, 'sand'], ['pl-01', 0, -100, 'fairway']]) {
+  // all further than CHIP_AIM_RANGE from the cup (S19 moved the hole 1 greenside bunker to the chip test)
+  for (const [hole, x, z, lie] of [['pl-02', 18, -330, 'fairway'], ['pl-02', 40, -380, 'rough'], ['pl-02', 16, -237, 'sand'], ['pl-01', 0, -100, 'fairway']]) {
     const play = at(hole, x, z);
     assert.equal(play.lie, lie);
+    assert.ok(play.distToCup() > TUNE.CHIP_AIM_RANGE);
     assert.equal(play.targetKind, 'green', `${hole} ${lie}`);
     assert.ok(aimsAt(play, greenOf(hole)), `${hole} ${lie}`);
   }
@@ -71,18 +73,58 @@ test('a chip from the fringe aims at the cup too, with a club (PM on PR #27)', (
   assert.ok(Math.abs(c.targetDist() - c.distToCup()) < 1e-9, 'the ⚑ and the auto-pick use the distance to the cup');
 });
 
-test('the ⚑ uses the default aim distance: at the ⚑ power the ball lands AUTO_CLUB_REACH of the way to the target', () => {
+test('the ⚑ uses the default aim distance: at the ⚑ power the ball finishes that far away (S15)', () => {
   for (const [hole, x, z] of [['pl-01', 0, 0], ['pl-02', 18, -330], ['pl-01', 0, -100]]) {
     const play = at(hole, x, z);
     const p = play.pinPower();
-    const carry = dist2D(play.ball.pos, play.landingPoint(play.clubIdx, play.aim, p));
-    assert.ok(Math.abs(carry - play.targetDist() * AUTO_CLUB_REACH) < 0.01, `${hole}: ${carry.toFixed(3)} vs ${(play.targetDist() * AUTO_CLUB_REACH).toFixed(3)}`);
+    const rest = dist2D(play.ball.pos, play.restPoint(play.clubIdx, play.aim, p));
+    // within 2 m: below hole 2's raised green a ball that lands on the bank rolls back (see pin-mark)
+    assert.ok(Math.abs(rest - play.targetDist()) < 2, `${hole}: finishes at ${rest.toFixed(2)} of ${play.targetDist().toFixed(2)} m`);
     // turning the aim keeps the ⚑ on the default aim's distance
-    const before = play.pinPower();
     play.setAim(play.aim + 0.05);
-    assert.ok(Math.abs(play.targetDist() * AUTO_CLUB_REACH - dist2D(play.ball.pos, play.landingPoint(play.clubIdx, play.aim, play.pinPower()))) < 0.01);
-    assert.ok(Number.isFinite(before));
+    const turned = dist2D(play.ball.pos, play.restPoint(play.clubIdx, play.aim, play.pinPower()));
+    assert.ok(Math.abs(turned - play.targetDist()) < 2, `${hole} turned: ${turned.toFixed(2)} of ${play.targetDist().toFixed(2)} m`);
   }
+});
+
+// S19 (owner, 2026-11-17): from close to the green the player always wants the flag. Within
+// CHIP_AIM_RANGE of the cup the default aim is the cup on any surface (kind 'chip' off the
+// green and fringe, so the scorecard can say why).
+test('S19: within chip range the default aim is the cup, per surface', () => {
+  for (const [hole, x, z, lie] of [
+    ['pl-01', 18, -138, 'sand'], ['pl-02', 1, -441, 'sand'],
+    ['pl-01', -16, -152, 'rough'], ['pl-02', 22, -463, 'rough'],
+    ['pl-01', -2, -131, 'fairway'], ['pl-02', 26, -422, 'fairway'],
+    ['pl-01', -15, -147, 'sand'], // the hole 1 greenside bunker (aimed at the green centre before S19)
+  ]) {
+    const play = at(hole, x, z);
+    const where = `${hole} ${lie} (${x}, ${z}), ${play.distToCup().toFixed(1)} m`;
+    assert.equal(play.lie, lie, where);
+    assert.ok(play.distToCup() <= TUNE.CHIP_AIM_RANGE, where);
+    assert.equal(play.targetKind, 'chip', where);
+    assert.ok(aimsAt(play, play.cup), where);
+    assert.ok(Math.abs(play.targetDist() - play.distToCup()) < 1e-9, `${where}: the ⚑ and the auto-pick use the distance to the cup`);
+  }
+  // the fringe keeps aiming at the cup at any distance (PM on PR #27), as kind 'cup'
+  const f = at('pl-02', 26, -426);
+  assert.equal(f.lie, 'fringe');
+  assert.equal(f.targetKind, 'cup');
+  assert.ok(aimsAt(f, f.cup));
+});
+
+test('S19: just outside chip range it is the green centre again, and the range is tunable', () => {
+  const out = at('pl-01', 4, -112); // fairway, 40 m from the cup
+  assert.ok(out.distToCup() > TUNE.CHIP_AIM_RANGE);
+  assert.equal(out.targetKind, 'green');
+  try {
+    setTunable('CHIP_AIM_RANGE', 45);
+    assert.equal(at('pl-01', 4, -112).targetKind, 'chip');
+    setTunable('CHIP_AIM_RANGE', 15);
+    assert.equal(at('pl-01', -2, -131).targetKind, 'green', '22 m is outside a 15 m range');
+    setTunable('CHIP_AIM_RANGE', 0);
+    assert.equal(at('pl-01', 18, -138).targetKind, 'green', '0 turns chip aim off');
+  } finally { resetTunables(); }
+  assert.equal(TUNE.CHIP_AIM_RANGE, 30);
 });
 
 test('the auto-pick uses the default aim distance (a target nearer than the pin picks a shorter club)', () => {

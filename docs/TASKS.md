@@ -80,7 +80,7 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **H1** Mobile HUD pass (designer plays on a phone): intro card fits or scrolls in portrait and landscape (M5/B7), debug overlay doesn't cover the HUD (X7), the centre flash text wraps instead of running under the minimap, the ⚑ icon isn't clipped at the top of the meter (QA F2), meter labels readable over sand (QA F4) *(Dev, Nov 16, `dev/feel-pass-2`: checked at 390x844 and 844x390, plus 568x320 and 320x568 for the card scroll. Screenshots in reviews/dev-screenshots/feel-pass-2/)*
 
 **Backlog from Feel pass 2 QA (2026-11-16)**
-- [ ] **S15** ⚑ for long clubs aims at the predicted **resting** point, not "land at 95% and run out". Today a 3 Wood at the ⚑ finishes 7–11 m past the pin on fairway (QA G2). Wedges are already fine. Test: ⚑ finishes within ~2 m for every club at 100–180 m, flat and ±8%
+- [x] **S15** ⚑ for long clubs aims at the predicted **resting** point, not "land at 95% and run out". Today a 3 Wood at the ⚑ finishes 7–11 m past the pin on fairway (QA G2). Wedges are already fine. Test: ⚑ finishes within ~2 m for every club at 100–180 m, flat and ±8% *(Dev, Nov 17: done in Feel pass 3, see below)*
 - [ ] **P9** *(low, rare)* `landingPoint` ignores the ground while the ball is rising, so the aim ring and ⚑ can promise a carry when the ball actually hits a bank right in front (QA G1, 2 of 6 430 spots on hole 2). Check the ground on the way up too
 
 ## Phase 2: Ball physics
@@ -112,9 +112,9 @@ Goal: **one shared engine, holes as data, pure logic with tests, and both holes 
 - [x] **G8** Fix lip-outs (QA B6): after a lip-out the ball is still inside `CUP_R` on the next step and gets captured, so 498 of 499 lip-outs drop in. Push the ball outside the capture radius (or ignore capture for a short time after `lippedOut`). Changes gameplay → re-record baseline-v2 and explain why. Test: a ball faster than the capture speed over the cup stays out at realistic speeds (3.5–5 m/s), not just 8 m/s *(Dev, Nov 16: capture is ignored until the ball leaves the cup; 300 lip-outs at 3.5–5 m/s all stay out)*
 
 ## Feel pass 3 (small, next)
-- [ ] **S15** ⚑ for long clubs aims at the predicted **resting** point (moved up: tee targets depend on it since S18)
-- [ ] **S19** (owner, 2026-11-17) **Chip-range aim:** within ~30 m of the cup (`CHIP_AIM_RANGE`, tunable), the default aim is the cup on **any** surface (bunker, rough, fringe…), not the green centre. Test per surface
-- [ ] **X11** Debug overlay (Fix pass 2 QA, Low): R1 don't cover the ⏩ Skip button · R2 on small landscape phones (667x375, 568x320) don't cover the TUNED badge, hint or meter (shrink, or move to the top-left corner)
+- [x] **S15** ⚑ for long clubs aims at the predicted **resting** point (moved up: tee targets depend on it since S18) *(Dev, Nov 17: `play.restPoint()` plays the whole shot on a hidden ball, no wind; the ⚑ bisects on it, for every club. 60 club/distance/slope cases all finish within 2 m (most drop). Below hole 2's raised green no power finishes at the centre (bank roll-back), so the ⚑ takes the closest finish)*
+- [x] **S19** (owner, 2026-11-17) **Chip-range aim:** within ~30 m of the cup (`CHIP_AIM_RANGE`, tunable), the default aim is the cup on **any** surface (bunker, rough, fringe…), not the green centre. Test per surface *(Dev, Nov 17: `targetKind` 'chip', "Aim: the cup (within 33 yd)"; tested on bunker, rough, fairway on both holes, fringe stays 'cup'; the range is a `?tune=`. PM on PR #31: within chip range the ⚑ finishes `CHIP_FLAG_SHORT` = 1.5 m short of the cup, tunable; the owner compares 0 / 1.5 / 3)*
+- [x] **X11** Debug overlay (Fix pass 2 QA, Low): R1 don't cover the ⏩ Skip button · R2 on small landscape phones (667x375, 568x320) don't cover the TUNED badge, hint or meter (shrink, or move to the top-left corner) *(Dev, Nov 17: keeps Skip's place free; on short screens it ends above the bottom panel and shrinks its font to fit, cutting the last lines only at 568x320 with a long tune list. Checked at 6 sizes during a shot: no overlap)*
 - [ ] **S20** 🅿️ *(owner playtest, no code)* Pick `CUP_CAPTURE_SPEED` (today 3.2) by comparing `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`. The value goes into the next tuning
 
 ## Phase K: Obstacles and hard surface (owner, 2026-11-17)
