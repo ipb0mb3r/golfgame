@@ -123,6 +123,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - **Cup:** the ball drops if it's within `CUP_R` and slower than `CUP_CAPTURE_SPEED` (3.2 m/s). A faster ball **lips out** (it's deflected and slowed) and can't drop until it has left the cup (G8; before, it was captured on the next step almost every time). It can drop again once it has rolled more than `CUP_R × 1.5` away and comes back. A ball that comes to rest over the cup drops. A ball landing on the fly within `CUP_R × 1.4` goes straight in.
 - **Penalties:** water or out of bounds gives +1 stroke and the ball goes back to the last position.
 - **Lie:** the surface the ball rests on caps the next shot's power and scales its accuracy window (S11, see §3 "Lie"). There is no hidden power multiplier any more: power % is always the same share of the club's distance.
+- **Skip (X9, ⏳):** the player can skip to the end of a shot. Skipping runs the same fixed steps without rendering, so the result is identical to watching it.
 - **Timestep:** a fixed-step accumulator: only whole 1/240 s steps, the remainder waits for the next frame, so a shot ends in the same place at any frame rate. The flight is sped up ×1.35 for game feel (`FLIGHT_SPEEDUP`).
 
 ### Known problems fixed in Phase 0

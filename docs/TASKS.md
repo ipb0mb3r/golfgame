@@ -167,6 +167,7 @@ Reviewers only read code and write reports in `reviews/`. You decide which findi
 *Fix pass 2: `dev/QA-fixes-2`, physics/feel changes (after pass 1, so the new v2 shots guard it). Follows AGENTS rule 9*
 - [ ] **P10** (Gate A T1) Rest rule: a ball that stays below `STOP_SPEED` for a short time comes to rest, so no roll on a real hole ends through the 40 s `ROLL_TIMEOUT`. `stopped` reports the reason. Sweep test over both holes: 0 timeouts
 - [ ] **S16** (Gate A C3) The meter reads the real click time (event time vs the frame time), not the last frame. Test: the same click times give the same result at 30 and 144 fps
+- [ ] **X9** (designer idea) **Skip to the end of the shot:** a "⏩ Skip" button (and Space/Enter) appears ~1 s after the hit, during flight and roll. It runs the remaining physics instantly, with no rendering, and shows the ball at rest with the usual flash text. Holed, penalty and picked-up flows still play normally. The result must be **identical** to watching the shot (test: skipped vs watched end position and strokes, same seed). Tapping the course does NOT skip, so an extra swing tap can't skip by accident. Builds on A1 (hole flow in core)
 
 *Skipped or moved:* A6, A10 → Phase 7 (menus) · A9, C8, C10, T8 → skipped · A4 → DESIGN §7 rewritten (PM), code in W2 · A7, T4, C9 → done by the PM
 
