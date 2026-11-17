@@ -1,13 +1,13 @@
 // Playing one hole: the rules around the ball (strokes, lie, club pick, penalties, the fixed-step clock).
 // The game layer calls these and turns the returned events into text, camera moves and HUD updates.
 import {
-  G, ROLL_G, PHYSICS_DT, FLIGHT_SPEEDUP, AUTO_CLUB_REACH, FRINGE_PUTT_DIST, PUTT, LANDING_SIM, WIND_MAX,
+  G, ROLL_G, PHYSICS_DT, FLIGHT_SPEEDUP, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
 import { makeTerrain } from './terrain.js';
 import { makeSurfaceTable } from './surfaces.js';
-import { makeBag, lieFor } from './clubs.js';
+import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { createBall } from './ball.js';
 
@@ -60,24 +60,42 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
 
   // Where a dead-straight shot at `power` comes down, allowing for the hills (no wind).
   // Default power = the lie's cap, i.e. the strongest shot possible from here.
+  // The aim ring, the club reach, the auto-pick and the ⚑ mark all use this one simulation.
   function landingPoint(i, a = p.aim, power = lieOf(i).maxPower) {
     const { vel } = launchVelocity(bag[i], power, a);
     const q = { ...ball.pos };
     const h = LANDING_SIM.dt;
     for (let k = 0; k < LANDING_SIM.maxSteps; k++) {
+      const x0 = q.x, z0 = q.z, above0 = q.y - terrain.heightAt(q.x, q.z);
+      q.x += vel.x * h; q.y += (vel.y - G * h / 2) * h; q.z += vel.z * h; // exact for a parabola
       vel.y -= G * h;
-      q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
-      if (vel.y < 0 && q.y <= terrain.heightAt(q.x, q.z)) break;
+      const above = q.y - terrain.heightAt(q.x, q.z);
+      if (vel.y < 0 && above <= 0) {
+        // The ball went under the ground during this step: go back to where it crossed it
+        // (S12: a whole step overshoots most when the ground rises toward the ball).
+        const t = above0 > 0 ? above0 / (above0 - above) : 1;
+        q.x = x0 + (q.x - x0) * t; q.z = z0 + (q.z - z0) * t; q.y = terrain.heightAt(q.x, q.z);
+        break;
+      }
     }
     return q;
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
-  // The ⚑ mark on the meter: the power that reaches the pin with this club, on the meter's 0..1 scale
-  // (power % maps straight to the club's distance on every lie, so the mark is honest; above the cap
-  // it sits in the grayed-out part = out of reach).
+  // The ⚑ mark on the meter (S12): the power whose landing point (the same simulation as the aim
+  // ring, so uphill and downhill are included) comes down AUTO_CLUB_REACH of the way to the pin;
+  // the ball runs out the rest. It is on the meter's 0..1 scale: above the lie's cap it sits in the
+  // grayed-out part (= out of reach with this club from here). Found by bisection.
   function pinPower(i = p.clubIdx) {
     if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
-    return distToCup() * AUTO_CLUB_REACH / dist2D(ball.pos, landingPoint(i, p.aim, 1));
+    const want = distToCup() * AUTO_CLUB_REACH;
+    const carryAt = pw => dist2D(ball.pos, landingPoint(i, p.aim, pw));
+    let lo = 0, hi = LANDING_SIM.pinMaxPower;
+    if (carryAt(hi) < want) return hi; // far out of reach: the HUD hides the mark
+    for (let k = 0; k < LANDING_SIM.pinIters; k++) {
+      const mid = (lo + hi) / 2;
+      if (carryAt(mid) < want) lo = mid; else hi = mid;
+    }
+    return (lo + hi) / 2;
   }
   // Putts: a slope adds or removes "distance" (uphill plays longer)
   function puttPlaysLike() { return distToCup() + ROLL_G * (cup.y - ball.pos.y) / surfaces.green.decel; }
@@ -90,12 +108,8 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     p.aim = aimAt(ball.pos, cup);
     const d = distToCup();
     p.puttMax = Math.min(PUTT.rangeMax, Math.max(PUTT.rangeMin, Math.round(Math.max(d, puttPlaysLike()) * PUTT.rangeK)));
-    // Putter on/near the green, else the shortest club that gets there (hills included)
-    if (p.lie === 'green' || (p.lie === 'fringe' && d < FRINGE_PUTT_DIST)) p.clubIdx = PUTTER;
-    else {
-      p.clubIdx = 0;
-      for (let i = 0; i < PUTTER; i++) if (clubReach(i) >= d * AUTO_CLUB_REACH) p.clubIdx = i;
-    }
+    // The auto-pick (S13): see clubs.pickClub
+    p.clubIdx = pickClub(bag, { lie: p.lie, dist: d, reach: i => clubReach(i) });
   }
 
   // A finished swing from the meter: hit it, or for a cancelled swing do nothing (no stroke).
