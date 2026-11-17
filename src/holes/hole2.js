@@ -97,7 +97,7 @@ export default {
   surfaceOverrides: {
     fairway: { keep: .45, decel: 2.2 },
     fringe:  { decel: 3.0 },
-    green:   { keep: .34, decel: 0.8 },
+    green:   { keep: .34, decel: 0.6 }, // S17: faster green, 0.8 → 0.6
   },
   map: { x0: -70, x1: 70, z0: -500, z1: 25 },
   features: { green: GREEN, bunkers: BUNKERS, pond: POND, hills: HILLS, waterY: WATER_Y },

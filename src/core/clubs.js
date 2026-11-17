@@ -11,7 +11,7 @@ export const CLUBS = deepFreeze({
   '9i':   { id: '9i',     name: '9 Iron',  carry: 125, loft: 32 },
   pw:     { id: 'pw',     name: 'P Wedge', carry: 105, loft: 38 },
   sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46,
-            lieOverrides: { sand: { maxPower: 0.85, sweetScale: 0.7 } } }, // the sand wedge is made for bunkers
+            lieOverrides: { sand: { maxPower: 0.75, sweetScale: 0.6 } } }, // the sand wedge is made for bunkers (S17: .85/.7 → .75/.6)
   putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true,
             // no power cap where you putt; the surface's sweetScale still applies (PM, PR #12)
             lieOverrides: { fringe: { maxPower: 1 }, green: { maxPower: 1 } } },

@@ -18,7 +18,7 @@ test('S16: the same click times give the same swing at 30, 60 and 144 fps (defau
   const swings = [[0.9, 1.84], [0.55, 1.07], [0.3, 0.61], [0.75, 1.5]];
   for (const clicks of swings) {
     for (const start of [0, 0.0123, 0.031]) {
-      const results = FPS.map(f => scriptedSwing(clicks, { dt: 1 / f, start }).result);
+      const results = FPS.map(f => scriptedSwing(clicks, { dt: 1 / f, start, speed: null }).result);
       for (const r of results) {
         assert.equal(r.outcome, results[0].outcome);
         assert.ok(near(r.power, results[0].power), `power ${r.power} vs ${results[0].power} (clicks ${clicks}, start ${start})`);
@@ -36,15 +36,12 @@ test('S16: the meter is read at the moment of the click (METER_SPEED 1: C3 examp
     assert.ok(near(r.acc, -0.04), `${f} fps: acc ${r.acc}`); // before S16: −0.067 at 30 fps, −0.035 at 144 fps
   }
   // at the default speed the marker moves METER_SPEED units per second
-  const r = scriptedSwing([0.5, 1.0], { dt: 1 / 30 }).result;
   resetAllTunables();
-  const r2 = scriptedSwing([0.5, 1.0], { dt: 1 / 144 }).result;
+  const r2 = scriptedSwing([0.5, 1.0], { dt: 1 / 144, speed: null }).result;
   assert.ok(near(r2.power, 0.5 * TUNE.METER_SPEED), `power ${r2.power}`);
-  assert.ok(near(r.power, 0.5), 'METER_SPEED:1 run');
 });
 
 test('S16: grace and no-power windows are timed from the click too, at any frame rate', () => {
-  applyTune('METER_SPEED:1');
   for (const f of FPS) {
     assert.equal(scriptedSwing([1 + TUNE.POWER_GRACE - 0.002, 2], { dt: 1 / f, start: 0.01 }).result.power, 1, `${f} fps: inside the grace window`);
     assert.equal(scriptedSwing([1 + TUNE.POWER_GRACE + 0.002], { dt: 1 / f, start: 0.01 }).result.outcome, 'topped', `${f} fps: just after it`);

@@ -8,6 +8,7 @@ import { CLUBS, lieFor } from '../src/core/clubs.js';
 import { accuracyError, sweetHalfWidth, resolveShot, createMeter, pressMeter, tickMeter } from '../src/core/swing.js';
 import { TUNE, AUTO_CLUB_REACH, METER_MIN } from '../src/core/config.js';
 import { applyTune, resetAllTunables } from '../src/core/tune.js';
+import { getHole } from '../src/holes/sets.js';
 
 afterEach(() => resetAllTunables());
 const { SWEET, POWER_GRACE } = TUNE; // the defaults
@@ -29,7 +30,7 @@ function carryOf(play, power, acc = 0) {
 }
 
 test('the starting values from the design table', () => {
-  const t = { tee: [1, 1.2], fairway: [1, 1], fringe: [0.95, 1], rough: [0.85, 0.7], sand: [0.6, 0.5], green: [1, 1.5] };
+  const t = { tee: [1, 1.2], fairway: [1, 1], fringe: [0.95, 1], rough: [0.85, 0.7], sand: [0.5, 0.4], green: [1, 1.5] }; // sand: S17 (was 0.6 / 0.5)
   for (const [id, [maxPower, sweetScale]] of Object.entries(t)) assert.deepEqual(lieFor(CLUBS['7i'], id, BASE_SURFACES), { maxPower, sweetScale }, id);
   assert.deepEqual(lieFor(CLUBS.putter, 'green', BASE_SURFACES), { maxPower: 1, sweetScale: 1.5 });
 });
@@ -90,7 +91,7 @@ test('the ⚑ mark matches the real distance on every lie', () => {
 });
 
 test('accuracy window width per surface (SWEET × sweetScale)', () => {
-  const w = { tee: 1.2, fairway: 1, fringe: 1, rough: 0.7, sand: 0.5 };
+  const w = { tee: 1.2, fairway: 1, fringe: 1, rough: 0.7, sand: 0.4 };
   for (const [lie, scale] of Object.entries(w)) {
     const play = playOn(lie);
     const h = sweetHalfWidth(play.lieOf().sweetScale);
@@ -98,7 +99,7 @@ test('accuracy window width per surface (SWEET × sweetScale)', () => {
     assert.equal(play.hit(0.5, h * 0.98).err, 0, `${lie}: just inside is straight`);
     assert.notEqual(playOn(lie).hit(0.5, -h * 1.02).err, 0, `${lie}: just outside curves`);
   }
-  assert.equal(accuracyError(0.055, 1.2), 0, 'tee: wider');
+  assert.equal(accuracyError(0.05, 1.2), 0, 'tee: wider');
   assert.notEqual(accuracyError(0.04, 0.7), 0, 'rough: narrower');
   // putting on the green is the easiest
   const putt = createHolePlay(testHole(), { seed: 1 }); putt.reset();
@@ -108,10 +109,10 @@ test('accuracy window width per surface (SWEET × sweetScale)', () => {
 
 test('sand wedge override: in a bunker it gets a higher cap and a wider window than other clubs', () => {
   const sw = playOn('sand', 'sw'), iron = playOn('sand', 'pw');
-  assert.deepEqual(sw.lieOf(), { maxPower: 0.85, sweetScale: 0.7 });
-  assert.deepEqual(iron.lieOf(), { maxPower: 0.6, sweetScale: 0.5 });
+  assert.deepEqual(sw.lieOf(), { maxPower: 0.75, sweetScale: 0.6 }); // S17 (was 0.85 / 0.7)
+  assert.deepEqual(iron.lieOf(), { maxPower: 0.5, sweetScale: 0.4 });  // S17 (was 0.6 / 0.5)
   const a = carryOf(sw, 1).carry;
-  assert.ok(near(a, 0.85 * CLUBS.sw.carry, 0.6), `sand wedge carries ${a.toFixed(1)}`);
+  assert.ok(near(a, 0.75 * CLUBS.sw.carry, 0.6), `sand wedge carries ${a.toFixed(1)}`);
   // and on the fairway the sand wedge has no special values
   assert.deepEqual(playOn('fairway', 'sw').lieOf(), { maxPower: 1, sweetScale: 1 });
 });
@@ -131,12 +132,30 @@ test('the putter ignores the power cap on the fringe and the green, but keeps th
 });
 
 test('lie values are tunable through ?tune= (X8)', () => {
-  const r = applyTune('rough.maxPower:0.8,sand.sweetScale:0.6,SW.SAND.MAXPOWER:0.9,sand.decel:1,tee.maxPower:5');
+  const r = applyTune('rough.maxPower:0.8,sand.sweetScale:0.6,SW.SAND.MAXPOWER:0.9,sand.name:1,sw.sand.decel:1,tee.maxPower:5');
   assert.deepEqual(r.set.map(s => [s.name, s.value]), [['rough.maxPower', 0.8], ['sand.sweetScale', 0.6], ['sw.sand.maxPower', 0.9], ['tee.maxPower', 1]]);
-  assert.deepEqual(r.rejected.map(x => x.text), ['sand.decel:1'], 'only maxPower and sweetScale');
+  assert.deepEqual(r.rejected.map(x => x.text), ['sand.name:1', 'sw.sand.decel:1'], 'surfaces: lie and physics numbers only; clubs: lie values only');
   assert.equal(playOn('rough').lieOf().maxPower, 0.8);
   assert.equal(playOn('sand', 'pw').lieOf().sweetScale, 0.6);
   assert.equal(playOn('sand', 'sw').lieOf().maxPower, 0.9);
   resetAllTunables();
   assert.equal(playOn('rough').lieOf().maxPower, 0.85, 'reset');
+});
+
+test('S17: the sand wedge bunker override and surface physics are tunable through ?tune=', () => {
+  const r = applyTune('sw.sand.maxPower:0.8,sw.sand.sweetScale:0.5,green.decel:0.5,green.keep:0.3,fairway.rest:0.2,green.decel:99');
+  assert.deepEqual(r.rejected, []);
+  assert.deepEqual(r.set.map(s => [s.name, s.value]), [['sw.sand.maxPower', 0.8], ['sw.sand.sweetScale', 0.5], ['green.keep', 0.3], ['fairway.rest', 0.2], ['green.decel', 30]], 'clamped to 0.2–30');
+  applyTune('green.decel:0.5');
+  assert.deepEqual(playOn('sand', 'sw').lieOf(), { maxPower: 0.8, sweetScale: 0.5 });
+  // a tuned physics value wins over a hole's surfaceOverrides (hole 2's green is 0.6), and the putt uses it
+  const h2 = createHolePlay(getHole('pl-02'), { seed: 1 });
+  assert.equal(h2.surfaces.green.decel, 0.5);
+  assert.equal(h2.surfaces.green.keep, 0.3);
+  assert.equal(h2.surfaces.fairway.rest, 0.2);
+  const putt = createHolePlay(testHole(), { seed: 1 }); putt.reset();
+  const s = putt.hit(0.5, 0);
+  assert.ok(near(Math.hypot(s.vel.x, s.vel.z), Math.sqrt(2 * 0.5 * 0.5 * putt.puttMax), 1e-9), 'putt power stays calibrated to the tuned green');
+  resetAllTunables();
+  assert.equal(createHolePlay(getHole('pl-02'), { seed: 1 }).surfaces.green.decel, 0.6, 'reset');
 });

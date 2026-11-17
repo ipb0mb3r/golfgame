@@ -81,7 +81,7 @@ test('A5: lie tunes never change the shared surface and club tables', async () =
   const { CLUBS } = await import('../src/core/clubs.js');
   applyTune('rough.maxPower:0.5,sw.sand.maxPower:0.95');
   assert.equal(BASE_SURFACES.rough.maxPower, 0.85);
-  assert.equal(CLUBS.sw.lieOverrides.sand.maxPower, 0.85);
+  assert.equal(CLUBS.sw.lieOverrides.sand.maxPower, 0.75);
   assert.ok(Object.isFrozen(BASE_SURFACES.rough) && Object.isFrozen(CLUBS.sw.lieOverrides.sand));
 });
 

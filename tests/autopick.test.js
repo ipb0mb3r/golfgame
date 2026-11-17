@@ -46,17 +46,18 @@ test('rough: the club that reaches within the rough cap (85%)', () => {
   assert.equal(picked('rough', 240), '3w', 'never the Driver');
 });
 
-test('bunker near the green: the sand wedge, when it reaches within its 85% cap', () => {
+test('bunker near the green: the sand wedge, when it reaches within its 75% cap (S17, was 85%)', () => {
   assert.equal(picked('sand', 20), 'sw');
-  assert.equal(picked('sand', 60), 'sw', 'sand wedge reach from sand: 0.85 × 75 = 63.75 m ≥ 57 m');
-  // no sand wedge in the bag: the normal rule, inside the bunker cap (60%)
-  assert.equal(picked('sand', 70, ['3w', '5i', '7i', '9i', 'pw', 'putter']), '9i');
+  assert.equal(picked('sand', 55), 'sw', 'sand wedge reach from sand: 0.75 × 75 = 56.25 m ≥ 52.25 m');
+  assert.notEqual(picked('sand', 60), 'sw', '57 m needed: out of the sand wedge\'s reach since S17');
+  // no sand wedge in the bag: the normal rule, inside the bunker cap (50%)
+  assert.equal(picked('sand', 70, ['3w', '5i', '7i', '9i', 'pw', 'putter']), '7i');
 });
 
-test('far bunker: the club that gets there within the 60% bunker cap, never the sand wedge or the Driver', () => {
-  // 9 Iron from sand: 0.6 × 125 = 75 m ≥ 71.25 m
-  assert.equal(picked('sand', 75), '9i');
-  assert.equal(picked('sand', 100), '5i', '0.6 × 170 = 102 m');
+test('far bunker: the club that gets there within the 50% bunker cap (S17, was 60%), never the sand wedge or the Driver', () => {
+  // 7 Iron from sand: 0.5 × 150 = 75 m ≥ 71.25 m (the 9 Iron's 62.5 m isn't enough)
+  assert.equal(picked('sand', 75), '7i');
+  assert.equal(picked('sand', 100), '3w', '0.5 × 195 = 97.5 m (the 5 Iron gets 85 m)');
   assert.equal(picked('sand', 250), '3w', 'nothing reaches: the longest club that counts, not the Driver');
 });
 

@@ -3,8 +3,9 @@
 // Two kinds of names:
 //   config.js TUNABLES, e.g. SWEET:0.06
 //   lie values (S11), e.g. rough.maxPower:0.8, sand.sweetScale:0.6, sw.sand.maxPower:0.9
+//   surface physics (S17), e.g. green.decel:0.6, green.keep:0.3, fairway.rest:0.25
 import { TUNABLES, setTunable, resetTunables } from './config.js';
-import { BASE_SURFACES, LIE_RANGES, setLieTune, clearLieTunes } from './surfaces.js';
+import { BASE_SURFACES, LIE_RANGES, SURFACE_RANGES, setLieTune, clearLieTunes } from './surfaces.js';
 import { CLUBS } from './clubs.js';
 
 // Every tunable name (upper case for matching) → { name, min, max, set(v) }.
@@ -12,8 +13,8 @@ import { CLUBS } from './clubs.js';
 // lie value goes into the lie-tune layer in surfaces.js instead of changing those tables (Gate A A5).
 const TARGETS = new Map();
 for (const [name, r] of Object.entries(TUNABLES)) TARGETS.set(name, { name, min: r.min, max: r.max, set: v => setTunable(name, v) });
-const addLie = (name, key) => TARGETS.set(name.toUpperCase(), { name, ...LIE_RANGES[key], set: v => setLieTune(name, v) });
-for (const [id, s] of Object.entries(BASE_SURFACES)) for (const key of Object.keys(LIE_RANGES)) if (key in s) addLie(`${id}.${key}`, key);
+const addLie = (name, key) => TARGETS.set(name.toUpperCase(), { name, ...SURFACE_RANGES[key], set: v => setLieTune(name, v) });
+for (const [id, s] of Object.entries(BASE_SURFACES)) for (const key of Object.keys(SURFACE_RANGES)) if (key in s) addLie(`${id}.${key}`, key);
 for (const c of Object.values(CLUBS)) for (const [sid, o] of Object.entries(c.lieOverrides ?? {})) for (const key of Object.keys(LIE_RANGES)) if (key in o) addLie(`${c.id}.${sid}.${key}`, key);
 
 export const tunableNames = () => [...TARGETS.values()].map(t => t.name);

@@ -56,10 +56,10 @@ test('X9: skipping at different moments (in flight, in the roll, at 60 or 30 fps
 });
 
 test('X9: a putt that lips out (random deflection) ends the same when skipped', () => {
-  // T2's lip-out putt on hole 1: seed 5, no wind
+  // a firm 15 m putt on hole 1 (the same one as baseline v2's lip-out shot): seed 5, no wind
   const r = both(
     () => createHolePlay(getHole('pl-01'), { seed: 5 }),
-    play => { play.reset(); play.wind.x = play.wind.z = 0; play.ball.pos.x = -6; play.ball.pos.z = -146; play.prepare(); play.strokes = 1; play.hit(0.95, 0); },
+    play => { play.reset(); play.wind.x = play.wind.z = 0; play.ball.pos.x = -11; play.ball.pos.z = -153; play.prepare(); play.strokes = 1; play.hit(1, 0); },
     { skipAfter: 0.2 });
   assert.ok(r.watched.events.includes('lippedOut'), 'the putt lips out');
   sameEnd(r);

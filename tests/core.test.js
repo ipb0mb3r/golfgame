@@ -14,15 +14,15 @@ import hole2 from '../src/holes/hole2.js';
 test('surface overrides change only what the hole says', () => {
   assert.deepEqual(makeSurfaceTable(hole1).green, { id: 'green', ...BASE_SURFACES.green });
   const g2 = getEffectiveSurface('green', hole2);
-  assert.equal(g2.decel, 0.8); assert.equal(g2.keep, 0.34); assert.equal(g2.rest, BASE_SURFACES.green.rest);
-  assert.equal(BASE_SURFACES.green.decel, 1.1, 'base table untouched');
+  assert.equal(g2.decel, 0.6); assert.equal(g2.keep, 0.34); assert.equal(g2.rest, BASE_SURFACES.green.rest);
+  assert.equal(BASE_SURFACES.green.decel, 0.7, 'base table untouched');
   assert.throws(() => getEffectiveSurface('lava', hole1));
 });
 
 test("each hole keeps today's surface values (DESIGN §4 table)", () => {
   const want = {
-    'pl-01': { fairway: [.42, 2.4], fringe: [.36, 3.2], green: [.32, 1.1] },
-    'pl-02': { fairway: [.45, 2.2], fringe: [.36, 3.0], green: [.34, 0.8] },
+    'pl-01': { fairway: [.42, 2.4], fringe: [.36, 3.2], green: [.32, 0.7] }, // S17: faster greens (1.1 → 0.7, 0.8 → 0.6)
+    'pl-02': { fairway: [.45, 2.2], fringe: [.36, 3.0], green: [.34, 0.6] },
   };
   for (const [id, rows] of Object.entries(want)) {
     const t = makeSurfaceTable(getHole(id));
@@ -65,8 +65,8 @@ test('bags: hole 1 has no driver, the putter is always last; sand wedge lie', ()
   assert.equal(makeBag().length, 8);
   assert.throws(() => makeBag(['7i']));
   const s = makeSurfaceTable(hole1);
-  assert.deepEqual(lieFor(CLUBS.sw, 'sand', s), { maxPower: 0.85, sweetScale: 0.7 });
-  assert.deepEqual(lieFor(CLUBS['7i'], 'sand', s), { maxPower: 0.6, sweetScale: 0.5 });
+  assert.deepEqual(lieFor(CLUBS.sw, 'sand', s), { maxPower: 0.75, sweetScale: 0.6 }); // S17
+  assert.deepEqual(lieFor(CLUBS['7i'], 'sand', s), { maxPower: 0.5, sweetScale: 0.4 });
   assert.deepEqual(lieFor(CLUBS.sw, 'rough', s), { maxPower: 0.85, sweetScale: 0.7 }, 'the override is for sand only');
 });
 

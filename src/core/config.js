@@ -80,9 +80,9 @@ export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagF
 // link first); a hole session reads them when it is created.
 export const TUNABLES = Object.freeze({
   // Swing meter (§3)
-  METER_SPEED:           { def: 1.0,  min: 0.4,   max: 2 },    // meter units per second
-  SWEET:                 { def: 0.05, min: 0.005, max: 0.2 },  // half-width of the "perfect" zone around 0 (S10: was 0.024, ≈48 ms → ≈100 ms)
-  CURVE_SHAPE:           { def: 2,    min: 0.5,   max: 3 },    // S10: how a miss grows: 1 = linear (error = acc), 2 = quadratic (small misses curve gently; PM default)
+  METER_SPEED:           { def: 1.15, min: 0.4,   max: 2 },    // meter units per second (S17: 1.0 → 1.15)
+  SWEET:                 { def: 0.045, min: 0.005, max: 0.2 }, // half-width of the "perfect" zone around 0 (S10: 0.024 → 0.05; S17: 0.045, ≈78 ms at METER_SPEED 1.15)
+  CURVE_SHAPE:           { def: 1,    min: 0.5,   max: 3 },    // how a miss grows: 1 = linear (error = acc; S17: near-misses hurt), 2 = quadratic (small misses curve gently, S10)
   CURVE_K:               { def: 28,   min: 0,     max: 80 },   // how strongly a mistimed 3rd click curves the ball
   // Missed clicks (S8, DESIGN §3 "Missed clicks")
   POWER_GRACE:           { def: 0.15, min: 0,     max: 0.5 },  // s after the meter reaches the top in which the power click still counts as full power
@@ -90,7 +90,7 @@ export const TUNABLES = Object.freeze({
   MISSED_POWER_FRACTION: { def: 0.15, min: 0.02,  max: 0.5 },  // no power click: the click on the way back hits a mini shot with this power
   // Ball, cup, wind, clock (§4, §7)
   CUP_CAPTURE_SPEED:     { def: 3.2,  min: 1,     max: 6 },    // m/s: slower than this over the cup = holed; faster = lip-out
-  WIND_K:                { def: 0.2,  min: 0,     max: 0.6 },  // how strongly wind pushes the ball in the air
+  WIND_K:                { def: 0.3,  min: 0,     max: 0.6 },  // how strongly wind pushes the ball in the air (S17: 0.2 → 0.3)
   FLIGHT_SPEEDUP:        { def: 1.35, min: 0.5,   max: 3 },    // full shots run this much faster than real time (putts run at 1×)
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel

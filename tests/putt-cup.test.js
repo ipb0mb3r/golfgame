@@ -20,13 +20,15 @@ test('T5: an early putt goes left, a late putt goes right, by the same amount', 
     assert.ok(late > 0, `acc −${a}: right (${late.toFixed(2)}°)`);
     assert.ok(Math.abs(early + late) < 1e-9, 'same size');
   }
-  assert.equal(angle(putt(0.07)), 0, 'inside the green window (0.05 × 1.5) the putt is straight');
+  assert.equal(angle(putt(0.065)), 0, 'inside the green window (0.045 × 1.5 = 0.0675, S17) the putt is straight');
+  assert.notEqual(angle(putt(0.07)), 0, 'just outside it is pushed');
 });
 
 test('T5: how far a mistimed putt is pushed (pins PUTT.aimErrorK and the curve shape)', () => {
-  // acc 0.15 → error 0.2 × (0.15 / 0.2)² = 0.1125 → × aimErrorK 0.25 = 0.0281 rad ≈ 1.61°
+  // S17 linear curve (CURVE_SHAPE 1): acc 0.15 → error 0.15 → × aimErrorK 0.25 = 0.0375 rad ≈ 2.15°
+  // (1.61° with the quadratic curve before S17)
   assert.equal(PUTT.aimErrorK, 0.25);
-  assert.ok(Math.abs(angle(putt(-0.15)) - 1.611) < 0.005, `${angle(putt(-0.15)).toFixed(3)}°`);
+  assert.ok(Math.abs(angle(putt(-0.15)) - 2.148) < 0.005, `${angle(putt(-0.15)).toFixed(3)}°`);
   // at the far end of the meter (0.2) it is 0.05 rad ≈ 2.86°
   assert.ok(Math.abs(angle(putt(METER_MIN)) - 2.865) < 0.005);
   // the speed is unchanged by a mistimed putt: only the line
@@ -117,5 +119,5 @@ test('T6: a lipped ball that rolls back down a slope into the cup drops', () => 
     if (evs[0] === 'lippedOut' && evs.at(-1) === 'holed') found = { seed, evs };
   }
   assert.ok(found, 'some seed lips out first and then drops on the way back');
-  assert.equal(found.seed, 1, 'deterministic: the same seed every run');
+  assert.equal(found.seed, 6, 'deterministic: the same seed every run (6 since S17 made the green faster; was 1)');
 });
