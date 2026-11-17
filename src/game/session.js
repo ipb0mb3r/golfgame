@@ -208,7 +208,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     return [
       `hole   ${hole.id}  seed ${seed}${start?.id ? `  scenario ${start.id}` : ''}`,
       `state  ${state}  (ball ${ball.phase}${play.next ? `, next ${play.next}` : ''})`,
-      `stroke ${play.strokes}  club ${play.club.name}`,
+      `stroke ${play.strokes}  club ${play.club.name}  aim ${play.targetKind} ${f(play.targetDist(), 0)} m`,
       `pos    ${f(p.x)} ${f(p.y)} ${f(p.z)}`,
       `speed  ${f(Math.hypot(v.x, v.y, v.z))} m/s`,
       `surf   ${terrain.surfaceAt(p.x, p.z)}  (lie ${play.lie})`,
