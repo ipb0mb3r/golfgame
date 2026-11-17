@@ -142,11 +142,18 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // with this club from here). Found by bisection. The HUD asks for it on every aim change, so the
   // answer is kept for the same club, aim, ball and target, until the next prepare().
   let pinMemo = null;
+  // PM on PR #31 ("harder is much better", no free chip-ins): a chip or pitch at the cup from within
+  // CHIP_AIM_RANGE has its ⚑ CHIP_FLAG_SHORT meters short of the cup, so a perfect ⚑ chip leaves a
+  // short putt and holing it means adding power on purpose. Putts and everything else: 0.
+  function chipShort() {
+    const atCup = p.targetKind === 'chip' || p.targetKind === 'cup';
+    return atCup && distToCup() <= TUNE.CHIP_AIM_RANGE ? TUNE.CHIP_FLAG_SHORT : 0;
+  }
   function pinPower(i = p.clubIdx) {
     if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
-    const key = `${i}|${p.aim}|${ball.pos.x}|${ball.pos.z}|${p.target.x}|${p.target.z}`;
+    const key = `${i}|${p.aim}|${ball.pos.x}|${ball.pos.z}|${p.target.x}|${p.target.z}|${chipShort()}`;
     if (pinMemo?.key === key) return pinMemo.value;
-    const want = targetDist();
+    const want = Math.max(0, targetDist() - chipShort());
     const restAt = pw => dist2D(ball.pos, restPoint(i, p.aim, pw));
     // Bracket first with the cheap landing simulation: the power that only CARRIES all the way is
     // (almost always) enough to finish there, because the ball runs on after it lands. Only when it

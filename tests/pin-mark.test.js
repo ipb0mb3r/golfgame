@@ -12,6 +12,7 @@ import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 import { SCENARIOS } from '../src/holes/scenarios.js';
 import { dist2D } from '../src/core/vec.js';
+import { TUNE, setTunable, resetTunables } from '../src/core/config.js';
 
 const NEAR_PIN = 2; // m
 
@@ -131,3 +132,40 @@ function fromScenarioless(holeId) {
   play.reset({ wind: { x: 0, z: 0 } });
   return play;
 }
+
+// PM on PR #31 ("harder is much better"): within CHIP_AIM_RANGE the ⚑ marks a finish CHIP_FLAG_SHORT
+// (1.5 m) short of the cup, so a perfect ⚑ chip leaves a short putt instead of a chip-in.
+// CHIP_FLAG_SHORT 0 gives the S15 rule (finish at the cup).
+test('chips: a ⚑ chip finishes CHIP_FLAG_SHORT short of the cup, per surface; 0 turns it off', () => {
+  const chip = (x, z, holeId = 'pl-01') => {
+    const play = createHolePlay(getHole(holeId), { seed: 1 });
+    play.reset({ wind: { x: 0, z: 0 } });
+    play.ball.pos.x = x; play.ball.pos.z = z; play.prepare();
+    return play;
+  };
+  const spots = [[18, -138, 'pl-01'], [-16, -152, 'pl-01'], [-2, -131, 'pl-01'], [1, -441, 'pl-02'], [26, -422, 'pl-02']];
+  try {
+    for (const [x, z, h] of spots) {
+      const play = chip(x, z, h);
+      assert.ok(play.targetKind === 'chip' && !play.club.putter, `${h} (${x}, ${z}) is a chip`);
+      const from = { ...play.ball.pos }, d = play.distToCup();
+      const r = atPin(play);
+      const left = dist2D(play.ball.pos, play.cup);
+      assert.notEqual(r.ev.type, 'holed', `${h} (${x}, ${z}): no chip-in at the ⚑`);
+      assert.ok(Math.abs(left - TUNE.CHIP_FLAG_SHORT) <= 0.5, `${h} (${x}, ${z}) ${play.lie}: ${left.toFixed(2)} m from the cup (want ${TUNE.CHIP_FLAG_SHORT} ±0.5)`);
+      assert.ok(dist2D(from, play.ball.pos) < d, `${h} (${x}, ${z}): short of the cup, not past it`);
+    }
+    // off: the ⚑ finishes at the cup again (S15)
+    setTunable('CHIP_FLAG_SHORT', 0);
+    for (const [x, z, h] of spots) {
+      const play = chip(x, z, h);
+      const rest = dist2D(play.ball.pos, play.restPoint(play.clubIdx, play.aim, play.pinPower()));
+      assert.ok(Math.abs(rest - play.distToCup()) < 0.5, `${h} (${x}, ${z}) off: finishes ${rest.toFixed(2)} of ${play.distToCup().toFixed(2)} m`);
+    }
+  } finally { resetTunables(); }
+  // approaches and putts are not affected
+  assert.equal(TUNE.CHIP_FLAG_SHORT, 1.5);
+  const far = onSlope(0, 120);
+  assert.ok(far.distToCup() > TUNE.CHIP_AIM_RANGE);
+  assert.ok(atPin(far).miss <= NEAR_PIN);
+});

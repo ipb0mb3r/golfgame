@@ -97,6 +97,7 @@ export const TUNABLES = Object.freeze({
   FLIGHT_SPEEDUP:        { def: 1.35, min: 0.5,   max: 3 },    // full shots run this much faster than real time (putts run at 1×)
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
+  CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones
