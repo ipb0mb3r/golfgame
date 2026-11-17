@@ -6,10 +6,15 @@ import { getHole } from '../src/holes/sets.js';
 
 const v1 = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
+// v1 shots whose v2 name says more than the old scenario name. Fix pass 2 (PM on PR #24): the two
+// "h1 hook/slice" tee shots at acc ±0.06 sat exactly on the tee window edge (0.05 × 1.2) and flew
+// straight; with S17's SWEET 0.045 the window is ±0.054, so they are slight curves again.
+const RENAME = { 'h1 hook': 'h1 slight hook, tee', 'h1 slice': 'h1 slight slice, tee' };
+
 // Every v1 shot (same start, same inputs, no wind) plus a few with a fixed seed so wind is covered.
 export const SHOTS = [
   ...v1.shots.map(s => ({
-    name: `${s.scenario} #${s.start.strokes + 1}`, hole: s.hole, seed: null,
+    name: `${RENAME[s.scenario] ?? s.scenario} #${s.start.strokes + 1}`, hole: s.hole, seed: null,
     start: { x: s.start.x, z: s.start.z }, strokes: s.start.strokes, power: s.power, acc: s.acc, aimOff: s.aimOff,
   })),
   { name: 'h1 tee shot in seeded wind', hole: 'pl-01', seed: 11, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0 },
@@ -18,8 +23,6 @@ export const SHOTS = [
   // Gate A T2 (Fix pass 1): the swing feel itself. Lies with a cap below 1, curves off the window
   // edge, every meter outcome, a lip-out and a sloped bunker. Optional fields: `club` (club id,
   // instead of the auto-pick) and `outcome` (from the meter: 'shank', 'topped'; default 'normal').
-  // Note: "h1 hook" / "h1 slice" above (acc ±0.06 off the tee) sit exactly on the tee's window edge
-  // (0.05 × 1.2) and fly straight: they stay as they are (v1 shots, frozen), and the curves are below.
   { name: 'T2 h1 from the rough (cap 85%, narrow window)', hole: 'pl-01', seed: null, start: { x: -28, z: -50 }, strokes: 1, power: 0.85, acc: -0.06, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, sand wedge', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.4, acc: 0, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, 9 iron (no SW)', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.3, acc: 0, aimOff: 0, club: '9i' },
@@ -32,7 +35,14 @@ export const SHOTS = [
   { name: 'T2 h1 shank (no 3rd click)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.5, acc: -0.2, aimOff: 0, outcome: 'shank' },
   { name: 'T2 h2 topped (no power click)', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.15, acc: 0.03, aimOff: 0, outcome: 'topped' },
   { name: 'T2 h1 mistimed putt (late, acc -0.15)', hole: 'pl-01', seed: null, start: { x: -6, z: -146 }, strokes: 1, power: 0.7, acc: -0.15, aimOff: 0 },
-  { name: 'T2 h1 putt lips out (seed 5)', hole: 'pl-01', seed: 5, start: { x: -6, z: -146 }, strokes: 1, power: 0.95, acc: 0, aimOff: 0, windless: true },
+  // Fix pass 2: the 12 m putt that lipped out no longer can on the faster green (S17: a full putt
+  // reaches the cup below CUP_CAPTURE_SPEED), so the lip-out shot is now a firm 15 m putt.
+  { name: 'T2 h1 putt lips out (seed 5)', hole: 'pl-01', seed: 5, start: { x: -11, z: -153 }, strokes: 1, power: 1, acc: 0, aimOff: 0, windless: true },
+  // Fix pass 2: the faster greens (S17), a roll that used to creep for 40 s (P10) and the default aim (S18)
+  { name: 'FP2 h2 long putt across the faster green (two tiers)', hole: 'pl-02', seed: null, start: { x: 8, z: -440 }, strokes: 2, power: 0.6, acc: 0, aimOff: 0 },
+  { name: 'FP2 h1 approach runs out on the faster green', hole: 'pl-01', seed: null, start: { x: 2, z: -60 }, strokes: 1, power: 0.9, acc: 0, aimOff: 0 },
+  { name: 'FP2 h2 3 wood into the hollow (used to creep 40 s)', hole: 'pl-02', seed: null, start: { x: -58, z: -256 }, strokes: 1, power: 1, acc: 0, aimOff: 0, club: '3w' },
+  { name: 'FP2 h2 approach from the right rough (aims at the green centre)', hole: 'pl-02', seed: null, start: { x: 40, z: -380 }, strokes: 2, power: 0.7, acc: 0, aimOff: 0 },
   { name: 'T2 h2 approach lands in the sloped cross bunker (10%)', hole: 'pl-02', seed: null, start: { x: 18, z: -330 }, strokes: 1, power: 0.45, acc: 0, aimOff: -0.1 },
 ];
 
@@ -57,5 +67,5 @@ export function playShot(s) {
   }
   if (ev.type === 'penalty') play.returnToLastPos();
   const { x, y, z } = play.ball.pos;
-  return { x, y, z, event: ev.type, strokes: play.strokes, club, wind: { x: play.wind.x, z: play.wind.z }, ...(lippedOut ? { lippedOut } : {}) };
+  return { x, y, z, event: ev.type, ...(ev.reason ? { reason: ev.reason } : {}), strokes: play.strokes, club, wind: { x: play.wind.x, z: play.wind.z }, ...(lippedOut ? { lippedOut } : {}) };
 }

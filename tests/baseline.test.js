@@ -22,6 +22,10 @@ after(() => resetAllTunables());
 
 const base = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
+// Intentional physics changes (AGENTS.md rule 9): per-shot exceptions with the task and the expected
+// new spot, in tests/baseline-exceptions.js (shared with tools/baseline.mjs check).
+import { EXCEPTIONS } from './baseline-exceptions.js';
+
 export function replay(shot) {
   const play = createHolePlay(getHole(shot.hole), { seed: 1 });
   play.wind.x = play.wind.z = 0;
@@ -49,7 +53,13 @@ for (const [i, shot] of base.shots.entries()) {
     assert.ok(Math.abs(r.aim - shot.start.aim) < 1e-3, 'auto aim at the pin');
     const off = e => Math.hypot(r.end.x - e.x, r.end.z - e.z);
     const d = off(shot.end);
-    if (d > base.tolerance) {
+    const ex = EXCEPTIONS[i + 1];
+    if (ex) {
+      assert.equal(ex.name, shot.scenario, 'the exception is for this shot');
+      const dn = off(ex.end);
+      assert.ok(dn <= base.tolerance, `${ex.task}: expected the new spot (${ex.end.x}, ${ex.end.z}), off by ${dn.toFixed(3)} m (now ${r.end.x.toFixed(3)}, ${r.end.z.toFixed(3)})`);
+      t.diagnostic(`${ex.task} exception: ${d.toFixed(2)} m from the old page, as expected (${ex.why})`);
+    } else if (d > base.tolerance) {
       // The old page itself landed this shot in different places at different frame rates
       // (its leftover partial step, fixed by F3). Accept a match with one of those old results.
       const alts = Object.entries(shot.endAtFps || {}).filter(([, e]) => e);

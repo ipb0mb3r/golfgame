@@ -21,6 +21,7 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { EXCEPTIONS } from '../tests/baseline-exceptions.js';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const FIXTURE = join(ROOT, 'tests/fixtures/baseline.json');
@@ -216,7 +217,13 @@ if (mode === 'record') {
     const took = r.end.strokes - r.start.strokes, tookOld = b.end.strokes - b.start.strokes;
     let note = '';
     let close = d <= base.tolerance;
-    if (!close) {
+    const ex = EXCEPTIONS[i + 1];
+    if (ex && ex.name === b.scenario) {
+      // An intentional physics change (AGENTS.md rule 9): compare with the expected new spot
+      const dn = off(ex.end);
+      close = dn <= base.tolerance;
+      note = `${ex.task} exception: expected new spot (${ex.end.x}, ${ex.end.z}), off by ${dn.toFixed(3)} m`;
+    } else if (!close) {
       // Same exception as tests/baseline.test.js: the old page itself landed this shot in different
       // places at different frame rates (its leftover partial step). Accept a match with one of those.
       const alts = Object.entries(b.endAtFps || {}).filter(([, e]) => e);
