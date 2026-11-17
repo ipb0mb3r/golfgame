@@ -13,6 +13,8 @@ export const BASE_SURFACES = deepFreeze({
   green:   { name: 'Green',   rest: .22, keep: .32, decel: 0.7, maxPower: 1,    sweetScale: 1.5 }, // S17: faster green, decel 1.1 → 0.7
   rough:   { name: 'Rough',   rest: .15, keep: .22, decel: 5.5, maxPower: .85,  sweetScale: .7 },
   sand:    { name: 'Bunker',  rest: .02, keep: .06, decel: 18,  maxPower: .5,   sweetScale: .4 },  // S17: harder, .6/.5 → .5/.4
+  // K1: hard ground (a rock outcrop, scree or a cart path): big bounce and a long roll, and a "thin" lie
+  rock:    { name: 'Rock',    rest: .55, keep: .75, decel: 1.8, maxPower: .9,  sweetScale: .8 },
   water:   { name: 'Water', penalty: true },
   ob:      { name: 'Out of bounds', penalty: true },
 });

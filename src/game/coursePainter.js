@@ -3,7 +3,7 @@ import { createRng } from '../core/rng.js';
 
 const COLORS = {
   tee: [118, 192, 82], fringe: [96, 172, 66], sand: [232, 214, 160], water: [58, 128, 196],
-  ob: [62, 120, 46], rough: [74, 140, 52],
+  ob: [62, 120, 46], rough: [74, 140, 52], rock: [146, 142, 132], // K1
   fairwayA: [112, 182, 70], fairwayB: [101, 169, 62],
 };
 const GREEN_STYLES = {

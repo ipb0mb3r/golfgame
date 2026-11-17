@@ -9,7 +9,7 @@ export function sweep(holeId, { step = 4, puttPowers = [0.5], fullPowers = [0.6,
   const { x0, x1, z0, z1 } = hole.map;
   for (let x = x0; x <= x1; x += step) for (let z = z0; z <= z1; z += step) {
     const s = hole.surfaceAt(x, z);
-    const putt = s === 'green', full = s === 'fairway' || s === 'rough';
+    const putt = s === 'green', full = s === 'fairway' || s === 'rough' || s === 'rock';
     if (!putt && !full) continue;
     for (const pw of putt ? puttPowers : fullPowers) {
       play.reset();

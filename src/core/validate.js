@@ -65,6 +65,22 @@ export function validateHole(hole) {
     const s = at(hole.aimTarget.x, hole.aimTarget.z);
     if (BASE_SURFACES[s].penalty) bad(`aimTarget (${hole.aimTarget.x}, ${hole.aimTarget.z}) is in ${s}`);
   }
+  // K2/K3: obstacles (DESIGN §4 "Obstacles"): known types, positive sizes, on the map, never on the
+  // tee or the green (a ball must always be playable from there)
+  if (hole.obstacles !== undefined) {
+    if (!Array.isArray(hole.obstacles)) bad('obstacles must be a list');
+    const FIELDS = { tree: ['trunkR', 'trunkH', 'canopyR', 'canopyH'], boulder: ['r'] };
+    hole.obstacles.forEach((o, i) => {
+      const where = `obstacles[${i}]`;
+      if (!o || !Object.hasOwn(FIELDS, o.type)) bad(`${where}.type must be one of ${Object.keys(FIELDS).join(', ')} (got ${o?.type})`);
+      if (!isPoint(o)) bad(`${where} must have x and z (finite numbers)`);
+      if (o.x < m.x0 || o.x > m.x1 || o.z < m.z0 || o.z > m.z1) bad(`${where} (${o.x}, ${o.z}) is off the map`);
+      for (const k of FIELDS[o.type]) if (!(isNum(o[k]) && o[k] > 0)) bad(`${where}.${k} must be a number > 0 (got ${o[k]})`);
+      if (o.sink !== undefined && !(isNum(o.sink) && o.sink >= 0 && o.sink < 1)) bad(`${where}.sink must be 0..1 (got ${o.sink})`);
+      const s = at(o.x, o.z);
+      if (s === 'tee' || s === 'green') bad(`${where} (${o.x}, ${o.z}) stands on the ${s}`);
+    });
+  }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {
     at(m.x0 + (m.x1 - m.x0) * i / SAMPLES, m.z0 + (m.z1 - m.z0) * j / SAMPLES);
   }

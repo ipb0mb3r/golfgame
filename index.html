@@ -41,6 +41,7 @@
   #bottom { position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%); width: min(640px, calc(100% - 24px));
     display: flex; flex-direction: column; gap: 8px; }
   #hint { text-align: center; font-size: 14px; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7); min-height: 18px; }
+  #hint.warn { color: #ffb3a8; font-weight: 600; } /* K4: the shot would hit a tree or a rock */
   #meterBar { position: relative; height: 30px; border-radius: 15px; overflow: hidden;
     background: linear-gradient(90deg, #2a3b55 0%, #2a3b55 16.67%, #1d2a1f 16.67%); border: 2px solid rgba(255,255,255,.75); }
   #meterFill { position: absolute; top: 0; bottom: 0; left: 16.67%; width: 0; background: linear-gradient(90deg, #ffb13b, #ff5a36); }

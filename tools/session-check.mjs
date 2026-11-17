@@ -16,7 +16,8 @@ import { createRequire } from 'node:module';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'application/json' };
-const CYCLES = 10;
+const CYCLES = 12;
+const ORDER = ['pl-02', 'pl-01', 'pl-03']; // K: hole 3 adds tree, leaf and boulder meshes and collider outlines
 
 const { chromium } = require('playwright');
 const browser = await chromium.launch();
@@ -44,7 +45,7 @@ await frames(3);
 
 const rows = [];
 for (let i = 1; i <= CYCLES; i++) {
-  const id = i % 2 ? 'pl-02' : 'pl-01';
+  const id = ORDER[(i - 1) % ORDER.length];
   // Leave a shot in flight on the old hole: its "next shot" timer must die with the session
   await page.evaluate(() => window.__golf.testHit(0.3, 0));
   await page.evaluate(h => window.__golf.loadHole(h), id);
@@ -57,7 +58,7 @@ let bad = 0;
 const fail = msg => { bad++; console.log(`BAD  ${msg}`); };
 console.log('cycle | hole  | geometries | textures | programs');
 for (const r of rows) console.log(`${String(r.cycle).padStart(5)} | ${r.hole} | ${String(r.geometries).padStart(10)} | ${String(r.textures).padStart(8)} | ${r.programs}`);
-for (const id of ['pl-01', 'pl-02']) {
+for (const id of ORDER) {
   const mine = rows.filter(r => r.hole === id), first = mine[0], last = mine.at(-1);
   for (const k of ['geometries', 'textures', 'programs']) {
     if (last[k] > first[k]) fail(`${id}: ${k} grew from ${first[k]} to ${last[k]} over ${mine.length} loads`);

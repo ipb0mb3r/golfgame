@@ -44,6 +44,16 @@ export const SHOTS = [
   { name: 'FP2 h2 3 wood into the hollow (used to creep 40 s)', hole: 'pl-02', seed: null, start: { x: -58, z: -256 }, strokes: 1, power: 1, acc: 0, aimOff: 0, club: '3w' },
   { name: 'FP2 h2 approach from the right rough (aims at the green centre)', hole: 'pl-02', seed: null, start: { x: 40, z: -380 }, strokes: 2, power: 0.7, acc: 0, aimOff: 0 },
   { name: 'T2 h2 approach lands in the sloped cross bunker (10%)', hole: 'pl-02', seed: null, start: { x: 18, z: -330 }, strokes: 1, power: 0.45, acc: 0, aimOff: -0.1 },
+  // Phase K (K7): hole 3, trees, boulders and rock. aimOff 0.2637 = the cut line over the corner trees
+  // (toward (65, −207)), −0.0572 = straight through the corner onto the rock (toward (−4, −240)).
+  { name: 'K h3 default drive in seeded wind', hole: 'pl-03', seed: 31, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
+  { name: 'K h3 cut the corner, full Driver clears the trees', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0.2637 },
+  { name: 'K h3 cut the corner too weak: into the leaves', hole: 'pl-03', seed: 3, start: { x: 0, z: 0 }, strokes: 0, power: 0.85, acc: 0, aimOff: 0.2637, windless: true },
+  { name: 'K h3 cut the corner sliced: into the leaves', hole: 'pl-03', seed: 4, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: -0.15, aimOff: 0.2637, windless: true },
+  { name: 'K h3 behind the lone tree: into its leaves', hole: 'pl-03', seed: 5, start: { x: -26, z: -203 }, strokes: 1, power: 1, acc: 0, aimOff: 0, windless: true },
+  { name: 'K h3 drive through the corner onto the rock', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: -0.0572 },
+  { name: 'K h3 from the rock (cap 90%)', hole: 'pl-03', seed: null, start: { x: -4, z: -254 }, strokes: 1, power: 0.9, acc: 0.03, aimOff: 0 },
+  { name: 'K h3 putt off the rock into a boulder', hole: 'pl-03', seed: null, start: { x: -2, z: -260 }, strokes: 1, power: 0.6, acc: 0, aimOff: -1.1779, club: 'putter' },
 ];
 
 // Play one shot to the end. seed null = wind forced to 0 (and the seed is 1, for lip-outs);

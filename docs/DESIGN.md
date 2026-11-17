@@ -98,6 +98,7 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 | Bunker | **0.50** (S17, was 0.60) | **0.4** (S17, was 0.5) |
 | Bunker + sand wedge | **0.75** (S17, was 0.85) | **0.6** (S17, was 0.7) |
 | Green (putter) | 1.00 | 1.5 |
+| Rock (K1) | 0.90 | 0.8 |
 
 **Putter:** the putter ignores `maxPower` on the fringe and the green (a club override, like the sand wedge), so a full putt always uses the whole putt range. It keeps the surface's `sweetScale` (green ×1.5, fringe ×1.0). Decided by the PM on PR #12.
 
@@ -158,7 +159,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 | Green | .22 | .32 / .34 | **0.7 / 0.6** | faster since S17 (was 1.1 / 0.8); the green speed differs on purpose |
 | Rough | .15 | .22 | 5.5 | |
 | Bunker | .02 | .06 | 18 | |
-| Rock / path ⏳ (K1) | ~.55 | ~.75 | ~1.8 | hard surface: big bounce, long roll. Lie: cap ~0.90, window ×0.8 |
+| Rock / path ✅ (K1) | .55 | .75 | 1.8 | hard surface: big bounce, long roll. Lie: cap 0.90, window ×0.8. Grey on the course texture and minimap, "Rock" on the lie line. Tunable like the others (`rock.rest`, `rock.keep`, `rock.decel`, `rock.maxPower`, `rock.sweetScale`) |
 | Water / OB | | | | penalty |
 
 **Decision:** one shared base surface table in `surfaces.js`. A hole may override values in `surfaceOverrides` (e.g. a faster green). Hole 1 and hole 2 must keep their current feel through those overrides.
@@ -167,13 +168,23 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 
 ---
 
-### Obstacles ⏳ (Phase K, decided 2026-11-17 by the game designer)
+### Obstacles ✅ (Phase K, decided 2026-11-17 by the game designer)
 **Principle:** trees and rocks are real hazards, but never a surprise.
 - **Trunks** (vertical cylinders) and **boulders** (spheres) are solid. The ball bounces off them (`OBSTACLE_REST`, `OBSTACLE_KEEP`), in the air and when rolling.
 - **Leaves** (a canopy ellipsoid on each tree): a ball flying through **massively slows down** (keeps ~25–40% of its speed, `CANOPY_SLOW`) and is **deflected a little** (~10–20°, `CANOPY_DEFLECT`, seeded so replays match), then drops. One canopy hit per tree per shot.
 - **Flying over is allowed:** a high enough shot clears the canopy. That's what makes "cutting the corner" a real risk/reward choice.
 - **No blind shots:** the aim preview is height-aware and turns a warning colour where the predicted flight would hit a trunk or the leaves.
 - Obstacles come from hole data (`obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r }]`). The renderer draws exactly what the physics uses.
+
+**How it's built (K1–K7, Nov 17):**
+- `core/obstacles.js` `makeColliders(hole, heightAt)` turns the data into the shapes used by the ball, the aim warning, the 3D scene and the minimap. A **trunk** is a vertical cylinder of radius `trunkR` from the ground up to `trunkH`. The **leaves** are an ellipsoid **centred on the top of the trunk**, `canopyR` across and `canopyH` tall (so they start `canopyH / 2` below the top of the trunk). A **boulder** is a sphere of radius `r`, sunk into the ground by `sink × r` (default `BOULDER_SINK` 0.35, optional `sink` per boulder). `validateHole` checks the fields, that each obstacle is on the map, and that none stands on the tee or the green.
+- The ball is a sphere of `BALL_R` (its lowest point is `ball.pos`): solid shapes are grown by `BALL_R`, the leaves count when the ball's centre is inside. Contacts are found **along the whole step** (swept), so a 70 m/s drive can't pass through a 0.35 m trunk between two steps.
+- **Bounce (K2):** like a bounce on the ground, off the obstacle's surface: the speed into it comes back × `OBSTACLE_REST` (0.4), the speed along it is kept × `OBSTACLE_KEEP` (0.7). A rolling ball bounces off trunks and boulders flat (it never climbs a boulder) and never touches the leaves. A ball that stops bouncing on top of a boulder is nudged off (`OBSTACLE_SLIDE`); it can't balance there. Event `hitObstacle` { kind: 'trunk' | 'boulder', index } (only when it hits faster than `OBSTACLE_EVENT_SPEED`, so a ball resting against a trunk doesn't spam events).
+- **Leaves (K3):** the ball keeps `CANOPY_SLOW` (0.3) of its speed and turns left or right by up to `CANOPY_DEFLECT` (15°), from the hole's seeded RNG (same seed = same deflection), then drops. Once per tree per shot. Event `hitLeaves` { index }, flash **"Into the trees!"** (a trunk says "Off the tree!", a boulder "Off the rock!"; one flash per shot).
+- All four (`OBSTACLE_REST`, `OBSTACLE_KEEP`, `CANOPY_SLOW`, `CANOPY_DEFLECT`) are `?tune=` names.
+- **Aim warning (K4):** `play.aimWarning(club, aim, power)` flies the same arc as the yellow ring (the lie's full power, no wind, no curve) and checks it against the same colliders. When it hits a trunk, the leaves or a boulder: the aim dots past that point and the ring turn red, a red marker hangs where it hits (with a red ring on the ground under it), the minimap shows a red ×, and the hint line says "⚠ This shot hits the trees (N yd): aim around, or pick a higher club". It is worked out again only when the club, aim or ball changes. Putts never warn. The **⚑ and the auto-pick ignore obstacles** (the warning is the information). Because it checks the full-power arc, a weaker swing on a "clear" line can still be caught: that is the cut-the-corner risk.
+- **Drawing (K5):** `scene.js` draws each trunk, leaf ellipsoid and boulder from the colliders. With the debug overlay open (backtick or `?debug=1`), wireframe outlines of the colliders show on top (trunks red, leaves yellow, boulders cyan). The minimap draws the leaves and boulders.
+- Holes 1 and 2 have no `obstacles`: their trees stay decoration (the owner decides later whether some become obstacles).
 
 ## 5. Terrain and slopes ✅ (hole 2)
 
@@ -287,19 +298,21 @@ src/
     surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather) + the lie-tune layer
     terrain.js             ✅ ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
     swing.js               ✅ meter state machine (incl. S8 phases) + resolveShot
-    ball.js                ✅ flight, bounce, roll, cup, penalties → events
+    ball.js                ✅ flight, bounce, roll, cup, penalties, trunks / leaves / boulders → events
+    obstacles.js           ✅ colliders from hole `obstacles` (trunk cylinder, leaf ellipsoid, boulder sphere) + swept hit test (Phase K)
     play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator, and the hole flow
                               (swing is the only hit, next / proceed / finished; Gate A A1/A8)
     scoring.js             ✅ score names and result text
     round.js               ⏳ round state, scorecard, hole sequencing (Phase 6)
   holes/
     hole1.js, hole2.js     ✅ hole data
+    hole3.js               ✅ pl-03, par 4 dogleg with trees, boulders and rock (Phase K prototype)
     sets.js                ✅ HOLES registry (validated at load), SETS, resolveHole
     scenarios.js           ✅ designer test spots for ?scenario= (validated at load)
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
     main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, frame loop; loads hole sessions
     session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
-    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, disposeScene
+    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene
     coursePainter.js       ✅ painted course texture + minimap image
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
     camera.js              ✅
@@ -311,11 +324,11 @@ tests/
   *.test.js                ✅ node --test
   baseline-v2.shots.js     ✅ the v2 shot list
   fixtures/baseline.json   ✅ v1: golden shots from the pre-refactor pages (physics only, frozen)
-  fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m; 36 shots since Gate A T2)
+  fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m; 48 shots since Phase K)
 tools/
   baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
   record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
-  session-check.mjs        ✅ 10 hole load/dispose cycles in a headless browser, renderer memory must not grow (Gate A A2)
+  session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2)
 ```
 
 ### Hole module contract
@@ -333,6 +346,8 @@ export default {
   scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
   intro: { subtitle, steps, ... },                          // intro card text
   features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt; green { cx, cz } = approach default aim (S18)
+  obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r, sink }], // optional (Phase K, §4 "Obstacles")
+  difficulty: 2,                                            // optional for now, 1–5 (HOLE_GUIDELINES §2, rivals)
   heightAt(x, z) { ... },                                   // may use helpers from core/terrain.js
   surfaceAt(x, z) { ... },
 };

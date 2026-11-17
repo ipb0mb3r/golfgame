@@ -12,7 +12,7 @@ const LONGEST = 30;
 const timeouts = shots => shots.filter(s => s.ev?.reason === 'timeout' || !s.ev);
 const where = s => `${s.kind} from (${s.x}, ${s.z}) power ${s.power}`;
 
-for (const hole of ['pl-01', 'pl-02']) {
+for (const hole of ['pl-01', 'pl-02', 'pl-03']) { // K7: hole 3 has trees, boulders and rock
   test(`P10 sweep ${hole}: putts on the green (2 m grid, 3 powers) never end by the timeout`, () => {
     const shots = sweep(hole, { step: 2, puttPowers: [0.2, 0.5, 0.9], fullPowers: [] }).filter(s => s.kind === 'putt');
     assert.ok(shots.length > 50, `${shots.length} putts`);
