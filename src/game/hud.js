@@ -2,7 +2,7 @@
 import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE } from '../core/config.js';
 import { sweetHalfWidth } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
-import { dist2D, dirFromAim, rightFromAim } from '../core/vec.js';
+import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
 export const yd = m => Math.round(m * M2Y);
@@ -19,15 +19,15 @@ const HINTS = {
 // K4: the hint while aiming when the shot would hit an obstacle (play.aimWarning)
 const WARN_TEXT = { trunk: 'a tree', leaves: 'the trees', boulder: 'a rock' };
 const WARN_AT = { pin: 'at ⚑ power', full: 'at full power', both: 'at ⚑ and full power' }; // PM on PR #33: say which
-export const warnHint = w => `⚠ ${WARN_AT[w.at] ?? ''} this shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around, or pick a higher club`.replace('⚠ a', '⚠ A');
+export const warnHint = w => `⚠ ${WARN_AT[w.at] ?? ''} this shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around it or change your power`.replace('⚠ a', '⚠ A');
 const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target', spot: () => 'test spot target' }; // spot: a scenario's aimAt (K9)
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 
 // Fill in the page for this hole: titles, intro card, links, minimap size.
-export function setupHolePage(hole, tee, cup) {
-  const yards = yd(dist2D(tee, cup));
+export function setupHolePage(hole) {
+  const yards = yd(holeLength(hole)); // K12: along the play line on a dogleg
   document.title = `Pocket Links: Hole ${hole.number}`;
   $('holeTitle').textContent = `HOLE ${hole.number} · PAR ${hole.par}`;
   const it = hole.intro;

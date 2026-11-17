@@ -38,3 +38,13 @@ export function makeTerrain(hole) {
   }
   return { heightAt, gradAt, normalAt, surfaceAt };
 }
+
+// The x (or z) coordinates of a terrain grid from [start, end, step] parts (hole.scenery.mesh.xs / zs).
+// The 3D scene draws its terrain mesh on exactly these points, and validateHole checks the
+// background ground plane against the same points (K13), so both see the same drawn surface.
+export function meshAxis(parts) {
+  const out = [];
+  for (const [a, b, step] of parts) for (let v = a; v < b - 1e-6; v += step) out.push(+v.toFixed(3));
+  out.push(parts[parts.length - 1][1]);
+  return out;
+}

@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
 import { TUNE } from '../core/config.js';
+import { meshAxis as axis } from '../core/terrain.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -27,14 +28,6 @@ export function disposeScene(scene) {
   scene.clear();
 }
 
-// Grid coordinates from [start, end, step] parts
-function axis(parts) {
-  const out = [];
-  for (const [a, b, step] of parts) for (let v = a; v < b - 1e-6; v += step) out.push(+v.toFixed(3));
-  out.push(parts[parts.length - 1][1]);
-  return out;
-}
-
 // obstacles = play.obstacles (core/obstacles.js colliders): drawn from exactly the shapes the ball hits (K5)
 export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []) {
   const sc = hole.scenery, map = hole.map;
@@ -49,7 +42,8 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
   sun.position.set(...sc.sun.pos);
   scene.add(sun);
 
-  // Far-away flat ground under everything
+  // Far-away flat ground under everything. K13: it sits below the lowest point of the terrain mesh
+  // (validateHole checks it), so it never pokes through a hollow and hides the course or the ball.
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(sc.ground.size, sc.ground.size), new THREE.MeshLambertMaterial({ color: 0x3d7a30 }));
   ground.rotation.x = -Math.PI / 2; ground.position.y = sc.ground.y;
   scene.add(ground);

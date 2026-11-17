@@ -62,6 +62,8 @@ export const ROLL_TIMEOUT = 40;      // safety net: a roll never lasts longer th
 
 // --- Obstacles (Phase K, DESIGN §4 "Obstacles") ---
 // OBSTACLE_REST, OBSTACLE_KEEP, CANOPY_SLOW, CANOPY_DEFLECT: tunables, see TUNABLES
+export const GROUND_PLANE_MARGIN = 0.1; // K13: m; the background ground plane must sit at least this far below the lowest terrain
+export const GROUND_CHECK_STEP = 2;      // K13: m; validateHole samples the terrain mesh at least this coarsely for that check
 export const BOULDER_SINK = 0.35;    // share of a boulder's radius below the ground (a hole may set `sink` per boulder)
 export const OBSTACLE_SLIDE = 0.5;   // m/s: a ball settling on top of a boulder is nudged off at least this fast (it can't balance there)
 export const OBSTACLE_EVENT_SPEED = 0.5; // m/s into the obstacle: slower contacts (a ball resting against a trunk) bounce but send no hitObstacle event

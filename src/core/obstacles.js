@@ -4,7 +4,8 @@
 //   { type: 'boulder', x, z, r, sink? }
 // makeColliders() turns that list into the shapes the physics, the aim warning and the renderer all
 // use, so what you see is exactly what the ball hits (K5):
-//   trunk    a vertical cylinder of radius trunkR from the ground (at x, z) up to trunkH
+//   trunk    a vertical cylinder of radius trunkR from the ground (at x, z) up to trunkH, with a
+//            flat top (K10) that a falling ball lands on
 //   canopy   an ellipsoid centred on the top of the trunk: canopyR across, canopyH tall
 //            (so the leaves start canopyH / 2 below the top of the trunk)
 //   boulder  a sphere of radius r, sunk into the ground by sink × r (default BOULDER_SINK)
@@ -56,17 +57,25 @@ function segSphere(ax, ay, az, dx, dy, dz, cx, cy, cz, R) {
 
 // The first obstacle the ball meets moving from a to b (ball positions, i.e. its lowest point) in
 // one step. Leaves count only in the air (`leaves` true) and only for trees not in `used` (one canopy
-// hit per tree per shot, K3). Returns null or { t, kind: 'trunk' | 'boulder' | 'leaves', o, x, y, z }
-// with the ball's position (lowest point) at the moment of contact.
+// hit per tree per shot, K3). Returns null or { t, kind: 'trunk' | 'boulder' | 'leaves', o, cap, x, y, z }
+// with the ball's position (lowest point) at the moment of contact. cap: true = the top of a trunk (K10).
 export function firstHit(colliders, a, b, { leaves = true, used = null } = {}) {
   const ay = a.y + BALL_R, dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
   let best = null;
-  const keep = (t, kind, o) => { if (t !== null && (!best || t < best.t)) best = { t, kind, o }; };
+  const keep = (t, kind, o, cap = false) => { if (t !== null && (!best || t < best.t)) best = { t, kind, o, cap }; };
   for (const o of colliders) {
     if (o.type === 'tree') {
       const t = segCircle(a.x, a.z, dx, dz, o.x, o.z, o.r + BALL_R);
-      // the ball's centre must be below the top of the trunk where it meets it
-      if (t !== null && ay + dy * t <= o.top) keep(t, 'trunk', o);
+      // the side: the ball's lowest point must be below the top of the trunk where it meets it
+      // (K10: it used to be the centre, which let a ball skimming just over the top slip in)
+      if (t !== null && a.y + dy * t <= o.top) keep(t, 'trunk', o);
+      // K10: the top cap. A ball coming down onto the top of the trunk (its lowest point crossing
+      // the top while over the trunk, grown by BALL_R like the side) lands on it instead of
+      // dropping through. With the side test above, no way into the trunk is left open.
+      if (dy < 0 && a.y >= o.top && b.y < o.top) {
+        const tc = (o.top - a.y) / dy;
+        if (Math.hypot(a.x + dx * tc - o.x, a.z + dz * tc - o.z) <= o.r + BALL_R) keep(tc, 'trunk', o, true);
+      }
       if (leaves && !used?.has(o.i)) {
         // an ellipsoid is a sphere once y is scaled by rx / ry
         const c = o.canopy, k = c.rx / c.ry;
@@ -79,8 +88,11 @@ export function firstHit(colliders, a, b, { leaves = true, used = null } = {}) {
 }
 
 // Unit normal of a solid obstacle at the ball whose lowest point is p (away from the obstacle).
-// A trunk's normal is horizontal. `flat` (rolling ball): a boulder's normal is made horizontal too.
+// A trunk's normal is horizontal, except on its top (K10: the ball at or above the top), where it
+// points straight up. `flat` (rolling ball): a boulder's normal is made horizontal too.
+const onTop = (o, p) => o.type === 'tree' && p.y >= o.top - 1e-6;
 export function solidNormal(o, p, flat = false) {
+  if (!flat && onTop(o, p)) return { x: 0, y: 1, z: 0 };
   let nx = p.x - o.x, nz = p.z - o.z, ny = o.type === 'boulder' && !flat ? p.y + BALL_R - o.y : 0;
   let len = Math.hypot(nx, ny, nz);
   if (len < 1e-9) { nx = 1; ny = 0; nz = 0; len = 1; } // dead centre: any way out will do
@@ -89,6 +101,7 @@ export function solidNormal(o, p, flat = false) {
 
 // The ball's distance outside a solid obstacle (negative = overlapping), for pushing it out.
 export function solidGap(o, p) {
+  if (onTop(o, p)) return Math.max(p.y - o.top, Math.hypot(p.x - o.x, p.z - o.z) - (o.r + BALL_R)); // on the top: nothing to push out
   if (o.type === 'tree') return Math.hypot(p.x - o.x, p.z - o.z) - (o.r + BALL_R);
   return Math.hypot(p.x - o.x, p.y + BALL_R - o.y, p.z - o.z) - (o.r + BALL_R);
 }

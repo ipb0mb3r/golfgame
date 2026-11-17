@@ -94,6 +94,8 @@ export default {
   // S18: the tee shot's default aim, right of the lone tree in the landing area (the corner). The
   // default Driver flies past the tree, so the aim warning is off for it (tests/obstacles.test.js).
   aimTarget: { x: 9, z: -222 },
+  // K12: how the hole plays (tee → the corner → the cup), for the yardage on the intro card
+  playLine: [TEE, CORNER, CUP],
   bag: ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
   windMax: 4.5,
   weather: { type: 'clear', wetness: 0 },
@@ -108,7 +110,7 @@ export default {
   scenery: {
     sky: 0x9fd3ff, fog: [240, 700], cameraFar: 1800,
     hemi: 1.3, sun: { intensity: 1.9, pos: [-80, 90, 40] },
-    ground: { size: 2400, y: -0.3 },
+    ground: { size: 2400, y: -0.75 }, // K13: below the lowest terrain (-0.60 m, the swale at the corner)
     mesh: {
       xs: [[-300, -70, 10], [-70, 116, 1], [116, 176, 0.5], [176, 190, 1], [190, 420, 10]],
       zs: [[-620, -290, 10], [-290, -258, 1], [-258, -218, 0.5], [-218, 25, 1], [25, 200, 10]],

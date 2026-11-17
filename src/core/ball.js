@@ -101,10 +101,10 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
     vel.y = (vel.y - n.y * vn) * keep + n.y * back;
     vel.z = (vel.z - n.z * vn) * keep + n.z * back;
     if (rolling) vel.y = 0;
-    // A ball that has stopped bouncing on top of a boulder can't stay balanced there: nudge it off
-    // (straight out from the boulder's centre, or +x when it is dead centre). Never on a real shot
-    // except a ball that drops exactly onto the top.
-    if (!rolling && o.type === 'boulder' && back < BOUNCE_TO_ROLL) {
+    // A ball that has stopped bouncing on top of a boulder (or a trunk, K10) can't stay balanced
+    // there: nudge it off (straight out from the centre, or +x when it is dead centre). Never on a
+    // real shot except a ball that drops (almost) exactly onto the top.
+    if (!rolling && (o.type === 'boulder' || hit.cap) && back < BOUNCE_TO_ROLL) {
       const hs = Math.hypot(vel.x, vel.z);
       if (hs < OBSTACLE_SLIDE) {
         const hx = pos.x - o.x, hz = pos.z - o.z, hl = Math.hypot(hx, hz);
