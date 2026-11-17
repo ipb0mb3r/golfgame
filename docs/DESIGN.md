@@ -262,6 +262,7 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - ✅ A round has **one seed**. Each hole's seed comes from the round seed and the hole's place in the round (`holeSeed`), so its wind (and later the rivals' scores) can be replayed, and the same hole played twice gets two winds. `?seed=` fixes it; the debug overlay shows the round seed and each hole's seed.
 - ✅ A round plays its holes in order and keeps a scorecard: strokes (penalties included), par, result per hole (eagle, birdie, par, bogey…), total vs par.
 - ✅ The stroke cap per hole (`maxStrokes`) means "picked up": the hole counts the strokes taken (the cap), is flagged on the card, and the round continues.
+- ✅ Hole 1 of a round opens with the full intro card (how to play). **Holes 2+ open with a compact hole card** (PM on PR #38): "Hole 4 of 9", par, distance ("· plays N yd" when the play line is longer) and the hole's one-line `intro.tagline`; it closes by itself after `TIMING.holeCard` (2.5 s) or on a tap. Single-hole play (`?hole=`) keeps the full intro.
 - ✅ Between holes: a summary card (result, penalty strokes, running total vs par) with a **Next hole** button (and later the leaderboard in vs AI). The next hole loads in the same page as a new hole session (no reload).
 - ✅ At the end: the full scorecard with **Play again** (a new round, everything cleared) and **Menu** (reloads the page until Phase 7). **The scorecard shows the holes in groups of 9** (`SCORECARD_GROUP`): "Front 9", "Back 9", then by number ("Holes 19–27"), the last group may be shorter; a round of 9 or fewer is one group named by its holes ("Holes 1–3"). Each group has Par, Score and ± rows and a subtotal column, then the round total. It fits a phone in portrait (320 px) for any length; a long round scrolls. (vs AI adds the final place.)
 - ✅ Personal best per course (lowest to par) in localStorage, read and written in try/catch (the game works without storage).
@@ -350,7 +351,7 @@ export default {
   map: { x0: -70, x1: 70, z0: -500, z1: 25 },               // texture/minimap bounds
   number: 2,                                                // shown as "Hole 2"
   scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
-  intro: { subtitle, steps, ... },                          // intro card text; {yards} in the subtitle = holeLength (K12)
+  intro: { subtitle, tagline, steps, ... },                 // intro card text; {yards} in the subtitle = holeLength (K12); tagline = one line for the compact hole card (Phase 6)
   playLine: [tee, { x, z }, ..., cup],                      // optional (K12): how a dogleg plays, for its yardage; default tee → cup
   features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt; green { cx, cz } = approach default aim (S18)
   obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r, sink }], // optional (Phase K, §4 "Obstacles")

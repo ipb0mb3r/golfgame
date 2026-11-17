@@ -82,7 +82,7 @@ export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole
 // Rounds (Phase 6, DESIGN §8): a course is a playlist of hole ids of any length. The final scorecard
 // shows the holes in groups of this many (Front 9 / Back 9 / …), each with a subtotal.
 export const SCORECARD_GROUP = 9;
-export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000 }; // skipAfter: X9 ⏩ Skip shows this long after the hit
+export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000, holeCard: 2500 }; // skipAfter: X9 ⏩ Skip shows this long after the hit; holeCard: the compact hole card (holes 2+ of a round) closes by itself after this
 
 // --- HUD display thresholds ---
 export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee

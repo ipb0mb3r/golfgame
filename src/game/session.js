@@ -32,7 +32,11 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const meter = createMeter();
 
   setupHolePage(hole, round);
-  $intro().classList.remove('hidden'); // a new hole starts behind its intro card
+  // A new hole starts behind its intro card. In a round, holes 2+ get the compact hole card instead
+  // (PM on PR #38): it closes by itself after TIMING.holeCard ms, or on a tap, so the round keeps its rhythm.
+  const compact = !!round && round.number > 1;
+  $intro().classList.toggle('hidden', compact);
+  $holeCard().classList.toggle('hidden', !compact);
   const courseCanvas = paintCourse(hole, terrain.surfaceAt);
   const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
   const props = createProps(scene, hole, terrain, cup);
@@ -238,11 +242,19 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     ].join('\n');
   }
 
+  // Tee off: leave the intro (or compact hole card). Only once: a tap and the card's own timer can both ask.
+  function teeOff() {
+    if (state !== 'intro' || disposed) return;
+    $intro().classList.add('hidden'); $holeCard().classList.add('hidden');
+    resetGame();
+  }
+
   // Free everything this hole made. The session can't be used afterwards.
   function dispose() {
     if (disposed) return;
     disposed = true;
     clearTimers();
+    $holeCard().classList.add('hidden');
     showSkip(false);
     hud.dispose();
     disposeScene(scene);
@@ -250,6 +262,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   // Start behind the tee looking down the hole, with the intro card on top
   play.reset(start); readyForShot(true); state = 'intro'; updateHud();
+  if (compact) later(teeOff, TIMING.holeCard);
 
   // Handy for testing in the browser console and for tools/ (window.__golf forwards to this)
   const windHandle = {
@@ -274,10 +287,11 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     get disposed() { return disposed; },
     canAim: () => state === 'aim',
     onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders,
-    start: () => { $intro().classList.add('hidden'); resetGame(); },
+    start: teeOff,
     again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
 }
 
 const $intro = () => document.getElementById('intro');
+const $holeCard = () => document.getElementById('holeCard');
 const $skip = () => document.getElementById('skipBtn');

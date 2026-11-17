@@ -41,6 +41,13 @@ export function setupHolePage(hole, round = null) {
     const a = $(id);
     if (link && !round) { a.href = holeHref(link.hole); a.textContent = link.text; a.parentElement.style.display = ''; } else a.parentElement.style.display = 'none';
   }
+  // Phase 6 (PM on PR #38): holes 2+ of a round open with a compact card instead of the full intro
+  if (round) {
+    const straight = yd(dist2D(hole.tee, hole.cup));
+    $('holeCardTitle').textContent = `Hole ${num} of ${round.of}`;
+    $('holeCardSub').textContent = `Par ${hole.par} · ${straight} yd` + (yards > straight ? ` · plays ${yards} yd` : '');
+    $('holeCardLine').textContent = it.tagline ?? it.blurb.split(/(?<=\.)\s/)[0];
+  }
   const mm = hole.scenery.minimap, root = document.documentElement.style;
   $('minimap').width = mm.w; $('minimap').height = mm.h;
   root.setProperty('--mm-mobile-w', `${mm.mobileW}px`);

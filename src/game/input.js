@@ -46,6 +46,7 @@ export function bindInput(canvas, on) {
   });
   window.addEventListener('blur', () => { keysDown.clear(); aimHold = 0; });
   $('startBtn').addEventListener('click', on.start);
+  $('holeCard').addEventListener('pointerdown', e => { e.preventDefault(); on.start(); }); // Phase 6: tap the compact hole card to start
   $('againBtn').addEventListener('click', on.again);
   return {
     // −1 / 0 / +1 from the arrow keys and the hold-to-aim buttons

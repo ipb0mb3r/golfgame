@@ -94,6 +94,7 @@ export default {
   },
   intro: {
     subtitle: 'Par 3 · {yards} yards',
+    tagline: 'A short par 3 over the water.', // Phase 6: the compact hole card (holes 2+ of a round)
     steps: [
       '<b>Aim</b> with <kbd>◀</kbd> <kbd>▶</kbd> (arrow keys or the buttons). The yellow ring shows where a full-power shot lands.',
       '<b>Pick a club</b> with <kbd>▲</kbd> <kbd>▼</kbd> or the ‹ › buttons. The best club is chosen for you.',

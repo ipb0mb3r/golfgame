@@ -192,3 +192,10 @@ test('holes need a difficulty 1–5 (the AI rivals use it in Phase T)', () => {
   assert.deepEqual(Object.values(HOLES).map(h => h.difficulty), [1, 3, 2]);
   for (const d of [0, 6, 2.5, undefined, '3']) assert.throws(() => validateHole({ ...HOLES['pl-01'], difficulty: d }), /difficulty must be a whole number 1–5/);
 });
+
+test('PM on PR #38: every hole has a one-line tagline for the compact hole card (holes 2+ of a round)', () => {
+  for (const h of Object.values(HOLES)) {
+    assert.equal(typeof h.intro.tagline, 'string', h.id);
+    assert.ok(h.intro.tagline.length > 0 && h.intro.tagline.length <= 90 && !h.intro.tagline.includes('\n'), `${h.id}: ${h.intro.tagline}`);
+  }
+});

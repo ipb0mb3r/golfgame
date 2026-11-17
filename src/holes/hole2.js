@@ -218,6 +218,7 @@ export default {
   },
   intro: {
     subtitle: 'Par 5 · {yards} yards · <i>prototype</i>',
+    tagline: 'A long, rolling par 5 with a pond on the left and a two-level green.',
     steps: [
       '<b>Same swing as Hole 1:</b> aim with <kbd>◀</kbd> <kbd>▶</kbd>, change club with <kbd>▲</kbd> <kbd>▼</kbd>, and swing in three clicks (start, <b>power</b>, <b>accuracy</b>).',
       '<b>Hills matter here.</b> The ball runs on downhill slopes, stalls going uphill, kicks off the side of mounds, and putts curl toward the low side.',

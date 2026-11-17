@@ -103,6 +103,11 @@
 
   /* Phase 6 (R4): the round's summary card and final scorecard. The scorecard is one small table per
      group of 9 holes (fixed layout, so 11 columns fit a 320 px phone in portrait); a long round scrolls. */
+  #holeCard { cursor: pointer; }
+  #holeCard .card { text-align: center; max-width: 360px; }
+  #holeCard h2 { margin-bottom: 8px; }
+  #holeCard p { margin: 6px 0; color: var(--text); }
+  #holeCard .tapHint { color: var(--muted); font-size: 12px; }
   #summaryText { text-align: center; font-size: 16px; color: var(--text); margin-bottom: 4px; }
   #summaryPen, #summaryRound { text-align: center; margin: 4px 0; }
   #summaryRound b, #scoreTotal b { color: #fff; }
@@ -309,6 +314,14 @@
 </div>
 
 <!-- Phase 6 (R4): a round's summary card between holes and the final scorecard (src/game/roundUi.js) -->
+<div id="holeCard" class="overlay hidden">
+  <div class="card">
+    <h1 id="holeCardTitle">Hole 2</h1>
+    <h2 id="holeCardSub"></h2>
+    <p id="holeCardLine"></p>
+    <p class="tapHint">Tap to tee off</p>
+  </div>
+</div>
 <div id="summary" class="overlay hidden">
   <div class="card">
     <h1 id="summaryTitle" style="text-align:center">Par</h1>
