@@ -1,6 +1,7 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
 import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD } from '../core/config.js';
 import { sweetHalfWidth } from '../core/swing.js';
+import { isAimingState } from '../core/states.js';
 import { dist2D, dirFromAim, rightFromAim } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
@@ -14,7 +15,6 @@ const HINTS = {
   accuracy: 'Click on the green line for a straight shot!',
 };
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
-const isAiming = s => s === 'aim' || s === 'power' || s === 'grace' || s === 'nopower' || s === 'accuracy';
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 
@@ -97,7 +97,7 @@ export function createHud(play) {
 
   // state = game state, power = locked power (for the white mark)
   function update(state, power) {
-    const aiming = isAiming(state);
+    const aiming = isAimingState(state);
     const club = bag[play.clubIdx];
     $('strokeTxt').textContent = Math.min(play.strokes + (aiming ? 1 : 0), play.hole.maxStrokes);
     $('distTxt').textContent = distText(state);
@@ -137,7 +137,15 @@ export function createHud(play) {
   }
   const hideResult = () => $('result').classList.add('hidden');
 
-  return { flash, update, updateMeter, slopeText, distText, showResult, hideResult };
+  const setDistance = state => { $('distTxt').textContent = distText(state); };
+  // The hole is being unloaded (Gate A A2): stop the flash timer and hide what this hole showed
+  function dispose() {
+    clearTimeout(msgTimer);
+    $('msg').classList.remove('show');
+    hideResult();
+  }
+
+  return { flash, update, updateMeter, slopeText, distText, setDistance, showResult, hideResult, dispose };
 }
 
 // Minimap: the painted course, shrunk once, plus the flag, the ball and the aim line.

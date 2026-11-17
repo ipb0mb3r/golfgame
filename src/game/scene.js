@@ -1,11 +1,30 @@
 // Renderer, lights, sky, the terrain mesh (built from the hole's heightAt) and the scenery.
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
+import { TUNE } from '../core/config.js';
 
+// Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
+// Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
 export function createRenderer(canvas) {
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: TUNE.ANTIALIAS >= 0.5 });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, TUNE.DPR_CAP));
   return renderer;
+}
+
+// Free everything a hole's scene holds on the GPU (Gate A A2): geometries, materials, their
+// textures, instanced meshes. Shared objects are freed once. The scene is empty afterwards.
+export function disposeScene(scene) {
+  const done = new Set();
+  const free = o => { if (o && !done.has(o)) { done.add(o); o.dispose(); } };
+  scene.traverse(obj => {
+    free(obj.geometry);
+    for (const m of [].concat(obj.material ?? [])) {
+      for (const v of Object.values(m)) if (v && v.isTexture) free(v);
+      free(m);
+    }
+    if (obj.isInstancedMesh) obj.dispose();
+  });
+  scene.clear();
 }
 
 // Grid coordinates from [start, end, step] parts

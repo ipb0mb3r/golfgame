@@ -90,7 +90,8 @@ async function openBrowser(fps) {
     // hard-code it; the new page gets ?tune=ANTIALIAS:0, see PAGES)
     body = body.replace('antialias: true', 'antialias: false');
     // Skip drawing entirely: only the game logic matters here, and it runs the same either way
-    body = body.replace('renderer.render(scene, camera);', 'if (!window.__noRender) renderer.render(scene, camera);');
+    // (old pages: `renderer.render(scene, camera);`, new main.js: `renderer.render(session.scene, session.camera);`)
+    body = body.replace(/renderer\.render\(((?:session\.)?scene), ((?:session\.)?camera)\);/, 'if (!window.__noRender) renderer.render($1, $2);');
     return route.fulfill({ body, contentType: TYPES[extname(file)] || 'text/plain' });
   });
   return { browser, ctx };

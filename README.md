@@ -20,7 +20,7 @@ The intro and score cards link from one hole to the other. Old links to `hole2.h
 | Aim | ◀ ▶ arrow keys (or A / D) | Hold the ◀ ▶ buttons |
 | Change club | ▲ ▼ arrow keys (or W / S) | ‹ › buttons |
 | Swing | Space (three presses) | Click the course or the SWING button (three times) |
-| Debug overlay | ` (backtick) | |
+| Debug overlay | ` (backtick) | add `?debug=1` to the address (works on a phone) |
 
 **The three-click swing**
 

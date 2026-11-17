@@ -93,6 +93,8 @@
   #resultText { text-align: center; font-size: 16px; color: var(--text); }
   .card a { color: var(--accent); }
   .card .notice { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,212,71,.15); color: var(--accent); font-size: 14px; }
+  .card .notice.error { background: rgba(255,90,90,.18); color: #ffd6d6; border: 1px solid #ff6b6b; }
+  .card .big:disabled { background: #444; border-color: #777; cursor: default; }
   kbd { background: #2c4a37; border-radius: 4px; padding: 1px 6px; font-size: 13px; }
 
   /* Debug overlay (backtick key) */
@@ -131,8 +133,51 @@
      meter and controls (H1, PR #15). After the narrow-screen rules so it wins on small phones too. */
   @media (max-height: 500px) {
     #minimap { width: auto; height: min(var(--mm-h, 220px), calc(100vh - 240px)); }
+    /* Gate A C6: iOS Safari's 100vh ignores the browser bars; dvh is the visible height (16.4+ has it) */
+    #minimap { height: min(var(--mm-h, 220px), calc(100dvh - 240px)); }
   }
 </style>
+<!-- Gate A C2: if the game can't start, say why in plain words on the intro card instead of leaving a
+     dead Tee off button. Classic script (not a module) so it also runs in browsers too old for the game. -->
+<script>
+(function () {
+  var failed = false;
+  function show(msg) {
+    var n = document.getElementById('notice'), b = document.getElementById('startBtn');
+    if (!n) return document.addEventListener('DOMContentLoaded', function () { show(msg); });
+    n.textContent = msg; n.hidden = false; n.className = 'notice error';
+    if (b) { b.disabled = true; b.textContent = "Can't start"; }
+  }
+  // Once the game has started (main.js sets __golfStarted), later errors are not start-up problems
+  function fail(msg, err) {
+    if (failed || window.__golfStarted) return;
+    failed = true;
+    if (err) console.error('Pocket Links could not start:', err);
+    show(msg);
+  }
+  window.__golfFail = fail;
+  if (location.protocol === 'file:') {
+    fail('The game has to be opened from a web server, not straight from the folder. Run "python3 -m http.server 8000" in the game folder and open http://localhost:8000');
+  } else if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) {
+    fail('This browser is too old for the game. It needs Safari or iOS 16.4+, Chrome or Edge 89+, or Firefox 108+.');
+  } else if (!window.WebGLRenderingContext) {
+    fail("Your browser can't show 3D graphics (WebGL), so the game can't start. Try another browser.");
+  }
+  // A game file that didn't load (no connection, blocked) fires on its <script>; a bug fires on window
+  window.addEventListener('error', function (e) {
+    var t = e.target;
+    if (t && t !== window) {
+      if (t.tagName === 'SCRIPT') fail('Part of the game did not load (' + (t.getAttribute('src') || 'a script') + '). Check your connection and reload the page.');
+      return;
+    }
+    fail('The game hit an error while starting: ' + (e.message || 'unknown error') + '. Reloading may help; if not, please report it.', e.error);
+  }, true);
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    fail('The game hit an error while starting: ' + ((r && r.message) || r) + '. Reloading may help; if not, please report it.', r);
+  });
+})();
+</script>
 <!-- Three.js is committed in the repo (Gate A C1): no CDN needed, works offline. Upgrade = swap this one folder. -->
 <script type="importmap">
   { "imports": { "three": "./vendor/three-0.160.0/three.module.js" } }

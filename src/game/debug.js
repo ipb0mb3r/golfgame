@@ -1,4 +1,5 @@
-// Debug overlay (backtick key): state, speed, surface, slope, wind, wetness, meter values, fps.
+// Debug overlay (backtick key, or ?debug=1 on a phone, Gate A C5): state, speed, surface, slope,
+// wind, wetness, meter values, render quality, fps.
 const REFRESH = 0.1; // seconds between redraws of the text
 const GAP = 8;       // px between the overlay and the HUD panels next to it
 const SHORT_SCREEN = '(max-height: 500px)'; // same as the media query in index.html
