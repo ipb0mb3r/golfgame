@@ -103,9 +103,9 @@ How it's built: `maxPower` / `sweetScale` live on each surface in `surfaces.js` 
 Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/38, SW 75/46 (sand), Putter. Each hole can limit the bag (hole 1 has no driver).
 
 ### Acceptance
-- [ ] The same (power, acc, club, lie) always gives the same launch parameters (unit test).
-- [ ] Early and late timings give opposite curve signs (unit test).
-- [ ] Power 0 and power 1 are both handled without errors.
+- [x] The same (power, acc, club, lie) always gives the same launch parameters (unit test). *(tests)*
+- [x] Early and late timings give opposite curve signs (unit test). *(tests)*
+- [x] Power 0 and power 1 are both handled without errors. *(tests)*
 - [x] S8: each row of the "Missed clicks" table gives its result (unit tests on the meter state machine with scripted click times), and a cancelled swing doesn't change the stroke count. *(tests/missed-clicks.test.js)*
 
 ---
@@ -113,7 +113,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ## 4. Ball physics ✅ (one engine for both holes since Phase 0)
 
 ### Ball states
-`aim → power → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. Penalties go through `wait`.
+`aim → power → (grace | nopower) → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. `grace` and `nopower` are the S8 missed-click phases (§3). Penalties go through `wait`. 🟡 The list of states should live in one place in code (Gate A finding A3).
 
 ### Rules
 - **Flight:** gravity `G`, wind (`wind × WIND_K`), and a sideways curve from accuracy. There's no air drag (the carry is solved analytically from the club's carry and loft).
@@ -131,16 +131,18 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - ✅ The physics constants and surface values were duplicated in two files → `src/core/config.js` and `surfaces.js` + `surfaceOverrides` (F6/F7).
 - Since hole 1 now uses the slope-aware roll (stop speed 0.06 m/s and the `CREEP` friction blend instead of its old 0.03 m/s stop) and the hill-aware reach estimate, its rolls end a few centimetres differently. All baseline shots are within 0.5 m.
 
-### Surface table (today's values: `rest` / `keep` / `decel` / `lie`)
-| Surface | rest | keep | decel | lie | Notes |
-|---|---|---|---|---|---|
-| Tee | .30 | .40 | 2.4 | 1 | |
-| Fairway | .30 | .42 (h1) / .45 (h2) | 2.4 / 2.2 | 1 | |
-| Fringe | .25 | .36 | 3.2 / 3.0 | .97 | |
-| Green | .22 | .32 / .34 | **1.1 / 0.8** | 1 | the green speed differs on purpose |
-| Rough | .15 | .22 | 5.5 | .85 | |
-| Bunker | .02 | .06 | 18 | .6 | |
-| Water / OB | | | | | penalty |
+### Surface table (today's values: `rest` / `keep` / `decel`)
+The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in §3 "Lie". There is no `lie` power multiplier any more (removed in S11).
+
+| Surface | rest | keep | decel | Notes |
+|---|---|---|---|---|
+| Tee | .30 | .40 | 2.4 | |
+| Fairway | .30 | .42 (h1) / .45 (h2) | 2.4 / 2.2 | |
+| Fringe | .25 | .36 | 3.2 / 3.0 | |
+| Green | .22 | .32 / .34 | **1.1 / 0.8** | the green speed differs on purpose |
+| Rough | .15 | .22 | 5.5 | |
+| Bunker | .02 | .06 | 18 | |
+| Water / OB | | | | penalty |
 
 **Decision:** one shared base surface table in `surfaces.js`. A hole may override values in `surfaceOverrides` (e.g. a faster green). Hole 1 and hole 2 must keep their current feel through those overrides.
 
@@ -156,8 +158,8 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - Shared terrain helpers go in `core/terrain.js`: `ss` (smoothstep), `ell` (ellipse distance), `bump(x,z,{x,z,r,h})` (Gaussian hill or dip).
 
 ### Acceptance
-- [ ] From the same landing speed, an uphill roll is shorter than a downhill roll.
-- [ ] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put.
+- [x] From the same landing speed, an uphill roll is shorter than a downhill roll. *(tests)*
+- [x] A ball at rest on the step between hole 2's green levels trickles down. A ball on the flat upper level stays put. *(tests; see P10: some rolls only end through the 40 s safety net)*
 - [x] Hole 1 (flat) stays within the baseline tolerance of its pre-refactor behaviour.
 
 ---
@@ -171,7 +173,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - 🟡 A slope grid is **painted** on hole 2's green → it should become a **toggle** (G4).
 
 ### Acceptance
-- [ ] On a flat green, a putt with power p stops within ±5% of `p × puttMax`.
+- [x] On a flat green, a putt with power p stops within ±5% of `p × puttMax`. *(tests)*
 - [x] A ball faster than the capture speed over the cup doesn't drop (tested at 3.5–5 m/s, G8). A slower one does.
 
 ---
@@ -181,21 +183,28 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ### Wind ✅
 Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball in the air. It comes from the seeded RNG, and a hole can set `windMax` or a fixed wind (`wind: { x, z }`).
 
-### Rain ❌ (Phase 5)
-- Each hole has `weather: { type: 'clear' | 'rain', wetness: 0..1 }`.
-- **All** weather effects go through one function, `getEffectiveSurface(surfaceId, hole, weather)`, so there are no weather `if`s scattered through the physics:
+### Rain ❌ (Phase 5, rules decided by the game designer 2026-11-16, Gate A finding A4)
+- Each hole has `weather: { type: 'clear' | 'rain', wetness: 0..1 }`. A hole set (or a scenario) can override it: `createHolePlay(hole, { seed, weather })`, where `weather` defaults to `hole.weather`. Never mutate the shared hole object.
+- **All** weather effects go through **one place**: `getEffectiveSurface(surfaceId, hole, weather)` for the physics values, and the lie lookup (`lieFor`) receives the same weather so the cap and window use the weathered values. No weather `if`s anywhere else.
+- **Physics** (all surfaces):
   - restitution `rest × (1 − WET_BOUNCE × wetness)`
   - bounce speed kept `keep × (1 − WET_KEEP × wetness)`
   - roll friction `decel × (1 + WET_DECEL × wetness)`
   - green: `decel × (1 + WET_GREEN × wetness)` (slower greens)
-  - bunker: wet sand is firmer, so a slightly better lie (`lie` +0.1 × wetness)
   - optional: carry × (1 − `RAIN_CARRY` × wetness)
+- **Lie** (§3), applied **after** club overrides, so the sand wedge gets it too:
+  - **wet bunker:** firmer sand → `maxPower + WET_SAND_CAP × wetness` (all clubs, incl. the sand wedge), capped at 1
+  - **wet rough:** heavier grass → `sweetScale × (1 − WET_ROUGH_WINDOW × wetness)`
+  - **wet fairway, tee, fringe, green:** cap and window unchanged
+  - the meter shows the weathered cap and window, as always ("what you see is what you get")
 - Visuals: rain particles, a darker and greyer sky and light, a darker ground tint, and a weather icon in the HUD.
-- Starting tunables: `WET_BOUNCE 0.5, WET_KEEP 0.3, WET_DECEL 0.6, WET_GREEN 0.35, RAIN_CARRY 0.05`.
+- Starting tunables (all in `?tune=`): `WET_BOUNCE 0.5, WET_KEEP 0.3, WET_DECEL 0.6, WET_GREEN 0.35, RAIN_CARRY 0.05, WET_SAND_CAP 0.10, WET_ROUGH_WINDOW 0.15`.
 
 ### Acceptance
 - [ ] The same shot on the fairway rolls 30–50% less with wetness = 1 than with 0.
-- [ ] Wetness = 0 gives exactly today's behaviour.
+- [ ] Wetness = 0 gives exactly today's behaviour (baseline v1 and v2 pass untouched).
+- [ ] Wet bunker: the cap is +0.10 for a 9 Iron **and** for the sand wedge. Wet rough: the window is ×0.85. Wet fairway: cap and window unchanged.
+- [ ] A hole set can make a hole rainy without changing the hole file.
 
 ---
 
@@ -220,38 +229,49 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 9. Target architecture (Phase 0)
+## 9. Architecture (✅ = exists, ⏳ = planned)
 
 ```
-index.html                 ← the only page: canvas + HUD + menus; loads src/game/main.js
+index.html                 ✅ the only page: canvas + HUD + cards; loads src/game/main.js
+hole2.html                 ✅ redirect to index.html?hole=pl-02 (keeps query + hash)
+vendor/three-0.160.0/      ⏳ Three.js committed in the repo (Gate A C1), the import map points here
 src/
   core/                    ← PURE JS. No Three.js, no DOM. Tested in Node.
-    config.js              G, ROLL_G, STATIC, CREEP, CUP_R, BALL_R, WIND_K, CURVE_K, SWEET, METER_*, timestep, M2Y
-    vec.js                 small vector helpers ({x,y,z} objects)
-    rng.js                 seeded RNG (mulberry32, as already in the code)
-    clubs.js               club table + helpers (auto-pick, reach)
-    surfaces.js            base surface table + getEffectiveSurface(id, hole, weather)
-    terrain.js             ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
-    swing.js               meter state machine + resolveShot(...) → launch velocity / curve / spin
-    ball.js                ball simulation: step(dt) for flight, bounce, roll, cup, penalties → emits events
-    play.js                one hole's rules: strokes, lie, auto club, penalties, fixed-step accumulator (added in Phase 0)
-    scoring.js             score names and result text (added in Phase 0)
-    round.js               round state, scorecard, hole sequencing (Phase 6)
+    config.js              ✅ every tunable + TUNABLES ranges for ?tune=
+    tune.js                ✅ parses and applies ?tune= overrides
+    vec.js                 ✅ small vector helpers ({x,y,z} objects)
+    rng.js                 ✅ seeded RNG (mulberry32) + parseSeed
+    clubs.js               ✅ club table, bag, lieFor (cap + window), pickClub (auto-pick)
+    surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather)
+    terrain.js             ✅ ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
+    swing.js               ✅ meter state machine (incl. S8 phases) + resolveShot
+    ball.js                ✅ flight, bounce, roll, cup, penalties → events
+    play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator
+                           ⏳ also the hole flow after each event (picked up, penalty return, holed) and a disposable hole session (Gate A A1/A2)
+    scoring.js             ✅ score names and result text
+    round.js               ⏳ round state, scorecard, hole sequencing (Phase 6)
   holes/
-    hole1.js               Pocket Links #1: flat par 3
-    hole2.js               Pocket Links #2: hilly par 5
-    sets.js                hole sets
+    hole1.js, hole2.js     ✅ hole data
+    sets.js                ✅ HOLES registry, SETS, resolveHole
+    scenarios.js           ✅ designer test spots for ?scenario=
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
-    main.js                boot, game loop (fixed-timestep accumulator), state wiring
-    scene.js               renderer, lights, sky, terrain mesh from heightAt
-    coursePainter.js       the painted course texture + minimap image
-    props.js               flag, cup, trees, ball mesh, trail, aim dots
-    camera.js, hud.js, meter.js, minimap.js, input.js, menus.js, debug.js, weatherFx.js
+    main.js                ✅ boot, game loop, state wiring
+    scene.js               ✅ renderer, lights, sky, terrain mesh from heightAt
+    coursePainter.js       ✅ painted course texture + minimap image
+    props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
+    camera.js              ✅
+    hud.js                 ✅ HUD panel, meter, minimap, cards, flash
+    input.js               ✅ keyboard, mouse, touch
+    debug.js               ✅ debug overlay (backtick; ⏳ also ?debug=1 for phones, Gate A C5)
+    menus.js, weatherFx.js ⏳ Phase 7 / Phase 5
 tests/
-  *.test.js                node --test
-  fixtures/baseline.json   golden shots recorded from the pre-refactor code
+  *.test.js                ✅ node --test
+  baseline-v2.shots.js     ✅ the v2 shot list
+  fixtures/baseline.json   ✅ v1: golden shots from the pre-refactor pages (physics only, frozen)
+  fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m)
 tools/
-  baseline.mjs             records / checks the baseline shots in a headless browser (dev only, needs Playwright)
+  baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
+  record-baseline-v2.mjs   ✅ re-records v2
 ```
 
 ### Hole module contract
@@ -264,6 +284,9 @@ export default {
   weather: { type: 'clear', wetness: 0 },
   surfaceOverrides: { green: { decel: 0.8 } },
   map: { x0: -70, x1: 70, z0: -500, z1: 25 },               // texture/minimap bounds
+  number: 2,                                                // shown as "Hole 2"
+  scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
+  intro: { subtitle, steps, ... },                          // intro card text
   features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt
   heightAt(x, z) { ... },                                   // may use helpers from core/terrain.js
   surfaceAt(x, z) { ... },
@@ -274,7 +297,7 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.
 - **Game loop:** physics runs on a fixed accumulator (1/240 s). Rendering interpolates or just draws the latest state. The same inputs give the same resting position at 30, 60 or 144 fps.
-- **Debug overlay** (backtick key): state, speed, surface, slope, wetness, meter values, fps.
+- **Debug overlay** (backtick key, ⏳ and `?debug=1` on phones): state, speed, surface, slope, wetness, meter values, fps.
 - **Test hooks:** keep `window.__golf` (state, ball, meter, testHit, surfaceAt, …) for browser-level tests.
 - **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Tunables that a link can change are `export let` in config.js and only change through `setTunable()`.
 - **Local run:** ES modules need a local server (`python3 -m http.server`). The README must say so.
@@ -283,7 +306,8 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 
 ## 10. Glossary
 - **Impact zone / SWEET:** the "perfect" window around 0 on the meter.
-- **rest / keep / decel / lie:** bounce height kept, speed kept on a bounce, rolling friction, power multiplier when hitting from that surface.
+- **rest / keep / decel:** bounce height kept, speed kept on a bounce, rolling friction.
+- **maxPower / sweetScale:** a surface's power cap and accuracy-window multiplier (the "lie", §3).
 - **ROLL_G:** gravity felt by a rolling ball along a slope (5/7 G).
 - **STATIC / CREEP:** how strongly a stopped ball holds on a slope / the speed below which a ball trickles.
 - **Break:** how much a putt curves because of the green's slope.
@@ -302,6 +326,17 @@ The physics never reads presentation fields (`scenery`, `intro`). Every hole sho
 | 2026-11-16 | **Ramming a putt too hard should fail** (lip-outs stay out) | Rewards speed control over aiming at the back of the cup | After playtesting rain (wet greens are slower) |
 | 2026-11-16 | **Driver is auto-picked only on the tee; sand wedge from bunkers** (S13) | Matches player expectations; manual choice is still free | |
 | 2026-11-16 | **Putting stays 3 clicks for now**; whether it becomes 2 clicks (no accuracy) is an open question (S14) | Decide together with the next 3-click system pass | Next swing design pass |
+| 2026-11-16 | **Rain and lie:** a wet bunker raises the cap (+0.10, all clubs incl. sand wedge), wet rough shrinks the window (×0.85), other surfaces keep cap and window | Firm wet sand is easier, heavy wet rough is harder; readable on the meter | After the rain playtest |
+| 2026-11-16 | **Three.js is committed in the repo** (`vendor/`) instead of loaded from unpkg | Works when the CDN is blocked or down, offline play, no agent workaround, upgrade = swap one file | |
 
 ### Future direction (not in the prototype)
 The owner plans richer graphics, sound, more beautiful courses and characters. When those phases start, plan for: a glTF asset pipeline from Blender, `THREE.AnimationMixer` for characters, Web Audio / `THREE.PositionalAudio` for sound, and lighting and post-processing presets per course. Asset loading should be async with a loading screen.
+
+---
+
+## 12. Supported browsers (Gate A C9)
+The game needs **ES modules, import maps and WebGL**. That sets the floor:
+- Chrome / Edge **89+**, Firefox **108+**, Safari and iOS Safari **16.4+** (every browser on iOS uses Safari's engine)
+- WebGL 1 or 2 must be available. If it isn't, the page must say so in plain words (Gate A C2)
+- Run from a web server (GitHub Pages or `python3 -m http.server`), not from `file://`
+
