@@ -29,7 +29,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 ## Commands
 | What | Command |
 |---|---|
-| Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (ES modules don't load from `file://`) |
+| Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (hole 1), http://localhost:8000/?hole=pl-02 (one hole) or http://localhost:8000/?set=test9 (a round, Phase 6) (ES modules don't load from `file://`) |
 | Run tests | `node --test` (from the repo root; finds every `tests/*.test.js`) |
 | Check the old-pages baseline in a browser | `node tools/baseline.mjs check` (dev/QA only, needs Playwright, see Tools) |
 | Re-record baseline v2 | `node tools/record-baseline-v2.mjs` (only for an intentional feel change, see coding rule 8; `--dry` shows what would move) |
@@ -40,6 +40,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - Rules in `src/core/` (pure, tested), holes as data in `src/holes/`, Three.js and the page in `src/game/`.
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
 - Since Fix pass 2: the meter reads the real click time (`pressMeterAt`), rolls always end (`stopped.reason`), ⏩ Skip (`play.skip()`), default aim (`play.target`, hole `aimTarget`), designer tuning S17. v1 exceptions for intentional physics changes live in `tests/baseline-exceptions.js`.
+- Since Phase 6: `?set=<id>` plays a round (`src/core/round.js` + `src/game/roundUi.js`): a course is a playlist of hole ids of **any length**, never assume 9. Test sets `prototype3`, `test9`.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
 
 ## Tools (dev and QA only, never part of the game)

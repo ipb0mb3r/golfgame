@@ -79,10 +79,13 @@ export const LIP_OUT = { spread: 0.8, keep: 0.6, rearm: 1.5 }; // random deflect
 export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole doesn't set one
 
 // --- Game-layer timing (ms) ---
+// Rounds (Phase 6, DESIGN §8): a course is a playlist of hole ids of any length. The final scorecard
+// shows the holes in groups of this many (Front 9 / Back 9 / …), each with a subtotal.
+export const SCORECARD_GROUP = 9;
 export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000 }; // skipAfter: X9 ⏩ Skip shows this long after the hit
 
 // --- HUD display thresholds ---
-export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1)
+export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee
 
 // --- Tunables: ?tune= overrides (X8), one entry each (Gate A A5) ---
 // The only names a tune link may change. Each entry is the whole definition: the default (`def`)

@@ -41,10 +41,10 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
 
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles,
-    strokes: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
+    strokes: 0, penalties: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
     target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'green' | 'fairway')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
-    finished: null,  // when the hole is over: { holed, pickedUp, strokes, par } (Phase 6 rounds read this)
+    finished: null,  // when the hole is over: { holed, pickedUp, strokes, penalties, par } (round.js records it)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
@@ -64,6 +64,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   function reset(start = null) {
     if (start?.seed != null) rng.reseed(start.seed);
     p.strokes = start?.strokes ?? 0;
+    p.penalties = 0;
     p.finished = null;
     copy(ball.pos, tee);
     if (start?.ball) { ball.pos.x = start.ball.x; ball.pos.z = start.ball.z; }
@@ -286,7 +287,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // One fixed physics step. A penalty costs a stroke here. The event that ends the shot sets p.next.
   function step() {
     const ev = ball.step(PHYSICS_DT);
-    if (ev && ev.type === 'penalty') p.strokes++;
+    if (ev && ev.type === 'penalty') { p.strokes++; p.penalties++; }
     if (isShotEnd(ev)) decide(ev);
     return ev;
   }
@@ -298,7 +299,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     if (ev.type === 'holed') next = 'holed';
     else if (p.pickedUp) next = 'pickedUp';
     else next = ev.type === 'penalty' ? 'returnToLast' : 'aim';
-    if (next === 'holed' || next === 'pickedUp') p.finished = { holed: next === 'holed', pickedUp: next === 'pickedUp', strokes: p.strokes, par: hole.par };
+    if (next === 'holed' || next === 'pickedUp') p.finished = { holed: next === 'holed', pickedUp: next === 'pickedUp', strokes: p.strokes, penalties: p.penalties, par: hole.par };
     p.next = next;
     return next;
   }

@@ -1,7 +1,7 @@
 // Small synthetic holes for unit tests.
 export function testHole({ heightAt = () => 0, surfaceAt = () => 'green', cup = { x: 0, z: -1000 }, ...rest } = {}) {
   return {
-    id: 'test', number: 0, name: 'Test', par: 4, maxStrokes: 10,
+    id: 'test', number: 0, name: 'Test', par: 4, maxStrokes: 10, difficulty: 1,
     tee: { x: 0, z: 0 }, cup, wind: { x: 0, z: 0 },
     weather: { type: 'clear', wetness: 0 }, surfaceOverrides: {},
     map: { x0: -50, x1: 50, z0: -50, z1: 50 }, features: {},

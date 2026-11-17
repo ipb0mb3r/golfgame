@@ -101,6 +101,41 @@
   .card .big:disabled { background: #444; border-color: #777; cursor: default; }
   kbd { background: #2c4a37; border-radius: 4px; padding: 1px 6px; font-size: 13px; }
 
+  /* Phase 6 (R4): the round's summary card and final scorecard. The scorecard is one small table per
+     group of 9 holes (fixed layout, so 11 columns fit a 320 px phone in portrait); a long round scrolls. */
+  #summaryText { text-align: center; font-size: 16px; color: var(--text); margin-bottom: 4px; }
+  #summaryPen, #summaryRound { text-align: center; margin: 4px 0; }
+  #summaryRound b, #scoreTotal b { color: #fff; }
+  #scorecard .card { max-width: 520px; }
+  #scorecard h1 { text-align: center; }
+  #scoreSet { text-align: center; }
+  table.sc { width: 100%; table-layout: fixed; border-collapse: collapse; margin: 0 0 12px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.sc caption { text-align: left; font-weight: 800; color: var(--accent); font-size: 13px; padding-bottom: 3px; }
+  table.sc th, table.sc td { padding: 3px 0; text-align: center; border-bottom: 1px solid rgba(255,255,255,.12); overflow: hidden; white-space: nowrap; }
+  table.sc th:first-child { width: 3.6em; text-align: left; color: var(--muted); font-weight: 600; }
+  table.sc th:last-child, table.sc td.sum { width: 2.6em; font-weight: 800; background: rgba(255,255,255,.07); }
+  table.sc tr.num td, table.sc tr.num th:last-child { color: var(--muted); font-size: 11px; }
+  table.sc tr.toParRow td { font-size: 10px; color: var(--muted); }
+  table.sc td.blank { border-bottom-color: transparent; }
+  table.sc span { display: inline-block; min-width: 1.6em; line-height: 1.5em; }
+  table.sc .eagle { background: #e6b422; color: #13291d; border-radius: 50%; font-weight: 800; }
+  table.sc .birdie { border: 1.5px solid #ffd447; border-radius: 50%; }
+  table.sc .bogey { border: 1.5px solid #9fb6a0; }
+  table.sc .worse { border: 3px double #9fb6a0; }
+  table.sc .pu, #scoreNotes .pu { color: #ff9e8f; font-style: italic; text-decoration: underline dotted; }
+  #scoreTotal { text-align: center; font-size: 18px; color: var(--text); margin: 4px 0; }
+  #scoreBest { text-align: center; margin: 4px 0; }
+  #scoreBest.new { color: var(--accent); font-weight: 800; }
+  #scoreNotes { text-align: center; font-size: 12px; margin: 0; }
+  .card .row2 { display: flex; gap: 8px; position: sticky; bottom: 0; background: #13291d; box-shadow: 0 -6px 14px #13291d; padding-top: 4px; }
+  .card .row2 .big { position: static; box-shadow: none; flex: 1; }
+  .card .row2 .big.alt { background: var(--panel); border-color: rgba(255,255,255,.35); }
+  @media (max-width: 420px) {
+    #scorecard .card { padding: 16px 10px; }
+    table.sc { font-size: 12px; }
+    table.sc th:first-child { width: 3.1em; }
+    table.sc th:last-child, table.sc td.sum { width: 2.3em; }
+  }
   /* Debug overlay (backtick key) */
   #debug { position: fixed; left: 12px; bottom: 150px; margin: 0; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
     color: #e9ffe9; background: rgba(0,0,0,.66); border-radius: 8px; padding: 8px 10px; pointer-events: none; white-space: pre-wrap; z-index: 5;
@@ -273,9 +308,33 @@
   </div>
 </div>
 
+<!-- Phase 6 (R4): a round's summary card between holes and the final scorecard (src/game/roundUi.js) -->
+<div id="summary" class="overlay hidden">
+  <div class="card">
+    <h1 id="summaryTitle" style="text-align:center">Par</h1>
+    <p id="summaryText"></p>
+    <p id="summaryPen" hidden></p>
+    <p id="summaryRound"></p>
+    <button class="big" id="summaryBtn">Next hole</button>
+  </div>
+</div>
+<div id="scorecard" class="overlay hidden">
+  <div class="card">
+    <h1>Round complete</h1>
+    <h2 id="scoreSet"></h2>
+    <div id="scoreGroups"></div>
+    <p id="scoreTotal"></p>
+    <p id="scoreNotes" hidden></p>
+    <p id="scoreBest"></p>
+    <div class="row2">
+      <button class="big" id="cardAgainBtn">Play again</button>
+      <button class="big alt" id="cardMenuBtn">Menu</button>
+    </div>
+  </div>
+</div>
 <pre id="debug" class="hidden"></pre>
 
-<!-- The game: src/game/main.js picks the hole from ?hole=pl-01 / ?hole=pl-02 (default pl-01) -->
+<!-- The game: src/game/main.js plays a round from ?set=<id>, or one hole from ?hole=<id> (default pl-01) -->
 <script type="module" src="src/game/main.js"></script>
 </body>
 </html>

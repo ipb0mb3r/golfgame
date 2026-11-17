@@ -169,7 +169,7 @@ const TREES_IN_PLAY = [
 ];
 
 export default {
-  id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12,
+  id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12, difficulty: 3,
   tee: { x: 0, z: 0 }, cup: { x: 26, z: -448 },
   // S18: the tee shot's default aim, the dogleg corner in the middle of the fairway (a full Driver
   // carries the big hill and runs out to about here). Approaches aim at the centre of the green.

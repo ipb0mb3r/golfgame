@@ -26,17 +26,20 @@ const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below t
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 
 // Fill in the page for this hole: titles, intro card, links, minimap size.
-export function setupHolePage(hole) {
+// In a round (Phase 6) `round` = { number, of }: the hole is numbered by its place in the round
+// ("Hole 4 of 9"), and the links to other holes are hidden (the round moves on by itself, A6).
+export function setupHolePage(hole, round = null) {
   const yards = yd(holeLength(hole)); // K12: along the play line on a dogleg
-  document.title = `Pocket Links: Hole ${hole.number}`;
-  $('holeTitle').textContent = `HOLE ${hole.number} · PAR ${hole.par}`;
+  const num = round ? round.number : hole.number;
+  document.title = round ? `Pocket Links: Hole ${num} of ${round.of}` : `Pocket Links: Hole ${num}`;
+  $('holeTitle').textContent = round ? `HOLE ${num}/${round.of} · PAR ${hole.par}` : `HOLE ${num} · PAR ${hole.par}`;
   const it = hole.intro;
-  $('introSub').innerHTML = `Hole ${hole.number} · ` + it.subtitle.replace('{yards}', yards);
+  $('introSub').innerHTML = (round ? `Hole ${num} of ${round.of} · ` : `Hole ${num} · `) + it.subtitle.replace('{yards}', yards);
   $('introSteps').innerHTML = it.steps.map(s => `<li>${s}</li>`).join('');
   $('introBlurb').textContent = it.blurb;
   for (const [id, link] of [['introLink', it.link], ['resultLink', it.resultLink]]) {
     const a = $(id);
-    if (link) { a.href = holeHref(link.hole); a.textContent = link.text; } else a.parentElement.style.display = 'none';
+    if (link && !round) { a.href = holeHref(link.hole); a.textContent = link.text; a.parentElement.style.display = ''; } else a.parentElement.style.display = 'none';
   }
   const mm = hole.scenery.minimap, root = document.documentElement.style;
   $('minimap').width = mm.w; $('minimap').height = mm.h;
@@ -97,9 +100,13 @@ export function createHud(play) {
   }
   // The ↑/↓ elevation hint compares the ground under the ball with the cup, so it is hidden while
   // the ball is in the air (its height then is not the ground's).
+  // At the tee of a dogleg (K12 play line longer than the straight line): "· plays 408 yd" (QA feel note)
+  const playsYd = yd(holeLength(play.hole)), straightYd = yd(dist2D(play.tee, cup));
   function distText(state) {
     const ball = play.ball.pos, dh = cup.y - ball.y;
-    return `${yd(dist2D(ball, cup))} yd` + (state !== 'flight' && Math.abs(dh) >= HUD.elevMinM ? ` (${dh > 0 ? '↑' : '↓'}${Math.round(Math.abs(dh) * M2Y)})` : '');
+    const atTee = state !== 'flight' && state !== 'roll' && dist2D(ball, play.tee) < HUD.atTeeM;
+    return `${yd(dist2D(ball, cup))} yd` + (state !== 'flight' && Math.abs(dh) >= HUD.elevMinM ? ` (${dh > 0 ? '↑' : '↓'}${Math.round(Math.abs(dh) * M2Y)})` : '') +
+      (atTee && playsYd > straightYd ? ` · plays ${playsYd} yd` : '');
   }
 
   // state = game state, power = locked power (for the white mark)

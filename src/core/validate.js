@@ -23,6 +23,8 @@ export function validateHole(hole) {
   if (typeof hole.id !== 'string' || !hole.id) bad('id must be a non-empty string');
   if (typeof hole.name !== 'string') bad('name must be a string');
   for (const k of ['number', 'par', 'maxStrokes']) if (!Number.isInteger(hole[k]) || hole[k] < 1) bad(`${k} must be a whole number ≥ 1 (got ${hole[k]})`);
+  // Phase 6: 1 (easy) … 5 (hard). The AI rivals (Phase T) use it; HOLE_GUIDELINES §2
+  if (!Number.isInteger(hole.difficulty) || hole.difficulty < 1 || hole.difficulty > 5) bad(`difficulty must be a whole number 1–5 (got ${hole.difficulty})`);
   if (hole.maxStrokes < hole.par) bad(`maxStrokes (${hole.maxStrokes}) is below par (${hole.par})`);
   for (const k of ['tee', 'cup']) if (!isPoint(hole[k])) bad(`${k} must be { x, z } with finite numbers`);
   const m = hole.map;

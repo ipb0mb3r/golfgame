@@ -23,13 +23,15 @@ import { createHud, createMinimap, setupHolePage, yd } from './hud.js';
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
 
-// opts = { renderer, input (from bindInput), seed, start (scenario start or null), info (extra debug lines) }
-export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [] }) {
+// opts = { renderer, input (from bindInput), seed, start (scenario start or null), info (extra debug lines),
+//          round (Phase 6, or null): { number, of, onDone(finished) } — the hole's place in the round, and
+//          what to call when the hole is over instead of showing the single-hole result card }
+export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null }) {
   const play = createHolePlay(hole, { seed });
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
 
-  setupHolePage(hole);
+  setupHolePage(hole, round);
   $intro().classList.remove('hidden'); // a new hole starts behind its intro card
   const courseCanvas = paintCourse(hole, terrain.surfaceAt);
   const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
@@ -130,6 +132,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function showResult() {
     const f = play.finished;
     state = 'result';
+    if (round) { round.onDone(f); return; } // the round shows its summary card (main.js, roundUi.js)
     hud.showResult(
       f.pickedUp ? 'Picked up' : resultName(f.strokes, hole.par),
       f.pickedUp ? `You reached the ${hole.maxStrokes}-stroke limit. Shake it off and try again!` : resultText(f.strokes, hole.par));
@@ -218,7 +221,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
     const f = (n, k = 2) => n.toFixed(k);
     return [
-      `hole   ${hole.id}  seed ${seed}${start?.id ? `  scenario ${start.id}` : ''}`,
+      `hole   ${hole.id}${round ? ` (${round.number}/${round.of})` : ''}  seed ${seed}${start?.id ? `  scenario ${start.id}` : ''}`,
       `state  ${state}  (ball ${ball.phase}${play.next ? `, next ${play.next}` : ''})`,
       `stroke ${play.strokes}  club ${play.club.name}  aim ${play.targetKind} ${f(play.targetDist(), 0)} m`,
       `pos    ${f(p.x)} ${f(p.y)} ${f(p.z)}`,
@@ -272,7 +275,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     canAim: () => state === 'aim',
     onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders,
     start: () => { $intro().classList.add('hidden'); resetGame(); },
-    again: resetGame,
+    again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
 }
 

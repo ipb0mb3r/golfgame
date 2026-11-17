@@ -62,7 +62,7 @@ test('A1: the stroke limit ends the hole as "picked up", after a stop and after 
     runShot(play);
     assert.equal(play.strokes, 6, kind);
     assert.equal(play.next, 'pickedUp', kind);
-    assert.deepEqual(play.finished, { holed: false, pickedUp: true, strokes: 6, par: 4 }, kind);
+    assert.deepEqual(play.finished, { holed: false, pickedUp: true, strokes: 6, penalties: kind === 'water' ? 1 : 0, par: 4 }, kind);
     assert.equal(play.proceed(), 'pickedUp');
     assert.equal(play.canSwing, false, 'the hole is over');
     assert.equal(play.swing({ power: 1, acc: 0 }), null);
@@ -76,7 +76,7 @@ test('A1: holed on the last allowed stroke counts as holed, not picked up', () =
   play.swing({ power: 0.6, acc: 0, outcome: 'normal' }); // 3.6 m putt range: rolls over the cup slowly
   assert.equal(runShot(play).at(-1).type, 'holed');
   assert.equal(play.next, 'holed');
-  assert.deepEqual(play.finished, { holed: true, pickedUp: false, strokes: 3, par: 4 });
+  assert.deepEqual(play.finished, { holed: true, pickedUp: false, strokes: 3, penalties: 0, par: 4 });
   play.reset();
   assert.equal(play.finished, null, 'reset starts the hole again');
   assert.ok(play.canSwing);
@@ -136,7 +136,7 @@ test('A1: tee → holed on both real holes, and a simulated 2-hole round adds up
 test('A1: tee → picked up when every shot is a tiny topped dribble', () => {
   const hole = getHole('pl-01');
   const play = playHole(hole, () => ({ power: 0.02, acc: 0, outcome: 'topped' }));
-  assert.deepEqual(play.finished, { holed: false, pickedUp: true, strokes: hole.maxStrokes, par: hole.par });
+  assert.deepEqual(play.finished, { holed: false, pickedUp: true, strokes: hole.maxStrokes, penalties: 0, par: hole.par });
 });
 
 // A3
