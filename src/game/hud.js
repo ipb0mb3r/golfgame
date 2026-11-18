@@ -216,13 +216,14 @@ export function createHud(play) {
   const hideResult = () => $('result').classList.add('hidden');
 
   // S22: the label at the aim marker. text null = hidden; fx, fy = where on the screen (0..1)
-  function setAimLabel(text, fx = 0, fy = 0, capped = false, warn = false) {
+  // S23: hazard = the marker lands in water or out of bounds (blue; an obstacle warning wins)
+  function setAimLabel(text, fx = 0, fy = 0, capped = false, warn = false, hazard = false) {
     const el = $('aimLabel');
     if (!text) { el.hidden = true; return; }
     el.hidden = false;
     if (el.textContent !== text) el.textContent = text;
     el.style.left = `${(fx * 100).toFixed(2)}%`; el.style.top = `${(fy * 100).toFixed(2)}%`;
-    el.classList.toggle('capped', capped); el.classList.toggle('warn', warn);
+    el.classList.toggle('capped', capped); el.classList.toggle('warn', warn); el.classList.toggle('hazard', hazard && !warn);
   }
 
   const setDistance = state => { $('distTxt').textContent = distText(state); };
@@ -262,7 +263,7 @@ export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
     const [bx, bz] = xy(ball.x, ball.z);
     if (target) {
       const [tx, tz] = xy(target.x, target.z);
-      const color = marks?.capped ? '#c8c8c8' : '#ffd447';
+      const color = marks?.hazard && !warn ? '#46b4ff' : marks?.capped ? '#c8c8c8' : '#ffd447'; // S23: blue = lands in water / OB
       ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
       ctx.beginPath(); ctx.moveTo(bx, bz); ctx.lineTo(tx, tz); ctx.stroke(); ctx.setLineDash([]);
       if (!marks) { ctx.beginPath(); ctx.arc(tx, tz, 3, 0, 7); ctx.stroke(); }

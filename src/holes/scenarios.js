@@ -175,12 +175,15 @@ export const SCENARIOS = {
   },
 };
 
-// Checked when they load (Gate A T7): a bad spot fails here, naming the scenario and the field.
-for (const [id, sc] of Object.entries(SCENARIOS)) validateScenario(id, sc, HOLES);
+// Checked (Gate A T7) when one is first played: a bad spot fails there, naming the scenario and the
+// field. X12: not all at load, since checking a spot builds its hole; tests/validate.test.js checks them all.
+const checked = new Set();
 
 // ?scenario= value → { scenario, unknown }. Ids are matched case-insensitively.
 export function resolveScenario(id) {
   const key = (id ?? '').trim().toLowerCase();
   if (!key) return { scenario: null, unknown: false };
-  return Object.hasOwn(SCENARIOS, key) ? { scenario: { id: key, ...SCENARIOS[key] }, unknown: false } : { scenario: null, unknown: true };
+  if (!Object.hasOwn(SCENARIOS, key)) return { scenario: null, unknown: true };
+  if (!checked.has(key)) { validateScenario(key, SCENARIOS[key], HOLES); checked.add(key); }
+  return { scenario: { id: key, ...SCENARIOS[key] }, unknown: false };
 }

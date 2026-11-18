@@ -241,7 +241,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     camera.updateMatrixWorld();
     const v = markPt.set(marks.x, terrain.heightAt(marks.x, marks.z) + 0.1, marks.z).project(camera);
     const onScreen = v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
-    hud.setAimLabel(onScreen ? aimMarkLabel(marks) : null, (v.x + 1) / 2, (1 - v.y) / 2, marks.capped, !!warn);
+    hud.setAimLabel(onScreen ? aimMarkLabel(marks) : null, (v.x + 1) / 2, (1 - v.y) / 2, marks.capped, !!warn, !!marks.hazard);
   }
 
   // K5: wireframe outlines of the colliders (the debug overlay turns them on)

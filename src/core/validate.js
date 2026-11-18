@@ -1,6 +1,7 @@
 // Checks hole and scenario data when it loads (Gate A T7), so a typo in a data file fails at once
 // with a message that names the hole and the field, instead of a hole that quietly plays differently
-// or a crash deep inside the physics. src/holes/sets.js and scenarios.js call these at load time.
+// or a crash deep inside the physics. Since X12 the page checks a hole (and a scenario) when it is
+// first played (src/holes/sets.js readyHole, scenarios.js resolveScenario); tests check them all.
 import { BASE_SURFACES } from './surfaces.js';
 import { CLUBS } from './clubs.js';
 import { createHolePlay } from './play.js';
@@ -16,7 +17,10 @@ const isNum = v => typeof v === 'number' && Number.isFinite(v);
 const isPoint = p => p && isNum(p.x) && isNum(p.z);
 
 // Throws an Error naming the hole and the field. Returns the hole.
-export function validateHole(hole) {
+// X12: `shots: false` skips the shot simulations (the S21 default tee shot below). The page checks
+// only the hole it loads, without them (src/holes/sets.js readyHole); node --test runs the full
+// check on every hole (tests/validate.test.js).
+export function validateHole(hole, { shots = true } = {}) {
   const name = `hole "${hole?.id ?? '?'}"`;
   const bad = msg => { throw new Error(`${name}: ${msg}`); };
   if (!hole || typeof hole !== 'object') bad('is not an object');
@@ -128,7 +132,7 @@ export function validateHole(hole) {
   // that finishes at the default aim point, the ⚑ power) may finish in the rough, a bunker or under
   // trees, but never in a penalty (water, out of bounds). It replaces the K8 "clean default tee shot"
   // rule. A full swing may run past the aim point into trouble (a par 3 where long is wet, mtn-06).
-  {
+  if (shots) {
     const play = createHolePlay(hole, { seed: 1 });
     play.reset({ wind: { x: 0, z: 0 } });
     const r = play.restPoint(play.clubIdx, play.aim, Math.min(play.pinPower(), play.lieOf().maxPower));

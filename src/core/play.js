@@ -28,8 +28,12 @@ import { isShotEnd } from './states.js';
 // S22: the label at the aim marker: the full-power (or capped) carry in yards and the ground there,
 // e.g. "164 yd · Flat", "152 yd · ▲ 5 yd", "98 yd · ▼ 3 yd". A capped lie only greys the marker (owner on
 // PR #53: no "max N%" here, the bar and the lie line already show it). Pure, so tests read it too.
+// S23: when the marker lands in a penalty (water, out of bounds) the label names it instead of the
+// ground: "171 yd · Water", "203 yd · OB".
+const HAZARD_LABEL = { ob: 'OB' };
 export function aimMarkLabel(m) {
   if (!m) return '';
+  if (m.hazard) return `${Math.round(m.dist * M2Y)} yd · ${HAZARD_LABEL[m.hazard.id] ?? m.hazard.name}`;
   const ground = m.ground === 'flat' ? 'Flat' : `${m.ground === 'up' ? '▲' : '▼'} ${Math.max(1, Math.round(Math.abs(m.rise) * M2Y))} yd`;
   return `${Math.round(m.dist * M2Y)} yd · ${ground}`;
 }
@@ -201,7 +205,10 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // sections, only those below the cap. Carry is linear in power (swing.js), so on flat ground a tick
   // sits at that fraction of the full carry. Returns null for a putt, else
   // { x, y, z, power, capped, dist (m, flat), rise (m, landing minus ball), ground: 'flat' | 'up' | 'down',
-  //   ticks: [{ frac, x, y, z, dist }] }. Memoised per club, aim and ball spot (the HUD asks every frame).
+  //   hazard, ticks: [{ frac, x, y, z, dist }] }.
+  // S23: `hazard` = { id, name } when the marker lands on a penalty surface (water, out of bounds; the
+  // hole's own surface table, so an override counts), else null. Where it LANDS, like the marker: a
+  // ball that lands short and runs in is not flagged (the player reads the roll). Memoised per club, aim and ball spot (the HUD asks every frame).
   let marksMemo = null;
   function aimMarks(i = p.clubIdx, a = p.aim) {
     if (i === PUTTER) return null;
@@ -219,10 +226,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     const flat = TUNE.AIM_FLAT_RISE;
     const value = {
       x: end.x, y: end.y, z: end.z, power, capped: power < 1, dist: dist2D(ball.pos, end), rise,
-      ground: rise >= flat ? 'up' : rise <= -flat ? 'down' : 'flat', ticks,
+      ground: rise >= flat ? 'up' : rise <= -flat ? 'down' : 'flat', hazard: penaltyAt(end), ticks,
     };
     marksMemo = { key, value };
     return value;
+  }
+  function penaltyAt(q) {
+    const sf = surfaces[terrain.surfaceAt(q.x, q.z)];
+    return sf?.penalty ? { id: sf.id, name: sf.name } : null;
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
 

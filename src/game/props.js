@@ -59,8 +59,9 @@ export function createProps(scene, hole, terrain, cup) {
   warnMark.visible = warnFoot.visible = warnPole.visible = false;
   // S22: full shots end the line in a marker (a flat triangle pointing along the aim) where a 100%
   // (or the lie's capped) straight shot lands, with short bars across the line at the 25/50/75% landings.
-  // Grey when the lie caps the power, red when the shot would hit an obstacle (K4).
-  const CAP_COLOR = new THREE.Color(0xb8b8b8);
+  // Grey when the lie caps the power, red when the shot would hit an obstacle (K4), blue when it lands
+  // in water or out of bounds (S23; the obstacle wins: the ball would never get there).
+  const CAP_COLOR = new THREE.Color(0xb8b8b8), HAZARD_COLOR = new THREE.Color(0x46b4ff);
   const triGeo = new THREE.BufferGeometry();
   triGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -1.6, -1.1, 0, 0.9, 1.1, 0, 0.9], 3)); // tip along −z (the aim at 0)
   const markTri = new THREE.Mesh(triGeo, new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
@@ -104,7 +105,7 @@ export function createProps(scene, hole, terrain, cup) {
         markTri.quaternion.copy(tmpQ);
         markTri.position.set(marks.x, heightAt(marks.x, marks.z) + 0.1, marks.z);
         markTri.scale.setScalar(grow);
-        markTri.material.color.copy(warn ? WARN_COLOR : marks.capped ? CAP_COLOR : AIM_COLOR);
+        markTri.material.color.copy(warn ? WARN_COLOR : marks.hazard ? HAZARD_COLOR : marks.capped ? CAP_COLOR : AIM_COLOR);
         ticks.count = Math.min(marks.ticks.length, TICKS);
         for (let k = 0; k < ticks.count; k++) {
           const q = marks.ticks[k];
