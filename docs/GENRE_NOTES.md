@@ -74,9 +74,12 @@ Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are
 | 1 | Par 4 dogleg, medium difficulty. Ponds inside the turn, bunkers on the outside around the landing zone. "It allows a brave shot on the left above the ponds. It shows the slopes in the bunker and ponds too." | **Two kinds of risk on one corner:** water on the inside is the brave shortcut (a miss costs a stroke); bunkers on the outside are the cost of the safe line (a harder next shot, no penalty). Hazards sit in visible hollows with sloped edges and a rough lip; trees stand in the rough, not the fairway. |
 | 2 | Short par 4 (333 y) as an example of an **easy, medium-hilly** course. | **Easy and hilly can go together.** A very wide fairway that rolls in waves, a big hollow to play over, bunkers set into the slopes at the edges and at the bend, a tree line framing both sides out of play, no water. Difficulty comes from width and hazard placement, not flat ground. |
 | 3 | A 96 y approach to a slightly raised green. "Sometimes greens with a bit of elevation are really interesting for approaches." | **A small rise makes a short approach a real decision:** come up short and the ball rolls back down the bank; miss on the bunker side (a big bunker cut into the slope) and the chip is hard. A **backdrop behind the green** (tree line, stone wall) frames the target and helps judge depth. Elevation shown as a number (we have the ↑/↓ readout). |
+| 4 | Par 5 tee shot from high up (↓ 21.7 y to the pin), the sea and a rocky bay on the right, the course wrapping around it. "Starting with a drop like this is interesting for the drive and is fun to aim on the fairway." | **A raised tee** shows the whole hole (never blind) and makes the drive exciting. **The sea shapes the routing:** the hole wraps around a bay with a rocky shore (the rocky-coast theme), so you play around the water, with a chance to cut across it later as a brave line. |
+| 5 | Par 3 (176 yd) through a gap between rocky cliffs, to a green by a beach and the sea; a big boulder near the tee. "Sometimes walls could be fun." | **Natural walls:** rock cliffs on both sides frame a narrow, clear target, and the ball bounces off them. In our engine a cliff can be **terrain** (a steep `heightAt` slope with the rock surface): no engine work, as long as it's not vertical and never traps the ball. |
 
 - **Raised greens, sometimes** (owner, screenshot 3): a green a little above the approach, with a bank in front and one bad side.
 - **Backdrops behind greens** (owner, screenshot 3): a tree line, a stone wall or a slope behind the green so the target reads clearly. A wall or tree line is scenery (art pass) unless it sits in bounds; trees in play follow the usual rules.
+- **Walls, sometimes** (owner, screenshots 3 and 5): natural rock walls and cliffs are terrain (steep slope + rock surface), buildable today. Built walls (a stone wall, a thin vertical wall) as in-play obstacles need engine work (D7, below).
 - **Cart paths, sometimes** (owner, from screenshot 1): "while not necessary, it could sometimes be interesting." A path beside the fairway, built with the existing **rock** surface (hard bounce). Gameplay detail and scenery at once; use it on a few holes, never in the main landing zone.
 
 ## 6b. Ideas for later courses (not the prototype)
@@ -96,6 +99,7 @@ Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist
 | D4 | Shaping a draw or fade on purpose | The ball curves only on a mistimed 3rd click |
 | D5 | More surfaces: deep rough, waste areas, gorse / heather | fairway, fringe, green, rough, sand, rock, water, OB |
 | D6 | Wind visible in the landing zones (flags, trees moving) | HUD arrow + mph, and the flag at the cup |
+| D7 (proposed) | Built walls (stone wall, low wall) as in-play obstacles the ball bounces off | Only trees and boulders; a natural cliff can be steep terrain today |
 | Phase 5 | Rain as a difficulty lever | Planned (DESIGN §7), not built |
 | — | Hero carries checked against character stats | No characters (out of scope, DESIGN §1) |
 
