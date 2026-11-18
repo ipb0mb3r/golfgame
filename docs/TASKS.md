@@ -209,6 +209,10 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [ ] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round.
 - [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
 
+## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
+A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.
+- [ ] U0 🅿️ Owner + PM: scope and priorities of the UI pass (what screens, what devices, reference screenshots)
+
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view
 - [x] **X2** Shot trail
