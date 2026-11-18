@@ -2,6 +2,7 @@
 import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE, POWER_SECTIONS } from '../core/config.js';
 import { sweetHalfWidth } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
+import { minimapTicks } from '../core/play.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
@@ -52,11 +53,45 @@ export function setupHolePage(hole, round = null, { links = true, green = hole.s
     $('holeCardSub').textContent = `Par ${hole.par} · ${straight} yd` + (yards > straight ? ` · plays ${yards} yd` : '');
     $('holeCardLine').textContent = it.tagline ?? it.blurb.split(/(?<=\.)\s/)[0];
   }
-  const mm = hole.scenery.minimap, root = document.documentElement.style;
-  $('minimap').width = mm.w; $('minimap').height = mm.h;
-  root.setProperty('--mm-mobile-w', `${mm.mobileW}px`);
-  root.setProperty('--mm-mobile-h', `${mm.mobileH}px`);
-  root.setProperty('--mm-h', `${mm.h}px`);
+  // S22 (owner on PR #53): the minimap is MINIMAP_SCALE × the hole's size (canvas pixels too, so it stays sharp)
+  const mm = hole.scenery.minimap, root = document.documentElement.style, k = TUNE.MINIMAP_SCALE;
+  const px = v => Math.round(v * k);
+  $('minimap').width = px(mm.w); $('minimap').height = px(mm.h);
+  root.setProperty('--mm-w', `${px(mm.w)}px`);
+  root.setProperty('--mm-mobile-w', `${px(mm.mobileW)}px`);
+  root.setProperty('--mm-mobile-h', `${px(mm.mobileH)}px`);
+  root.setProperty('--mm-h', `${px(mm.h)}px`);
+  fitMinimap();
+}
+
+// S22 (owner on PR #53): the bigger minimap keeps its shape and shrinks only as far as it must to end
+// above the bottom panel (meter, controls) and the ⏩ Skip button's place, where it is above them; a
+// minimap right of the panel (a wide landscape screen) may run down to the bottom edge. Called when a
+// hole loads and on every resize (session.resize). Before S22 a CSS rule capped it at 100vh − 240 px.
+export function fitMinimap() {
+  const mm = $('minimap'), bottom = $('bottom'), skip = $('skipBtn');
+  if (!mm || !bottom) return;
+  mm.style.width = mm.style.height = '';
+  const r = mm.getBoundingClientRect(), b = bottom.getBoundingClientRect();
+  if (!r.height) return;
+  const { gap, skipW, skipH, minH } = HUD.minimapFit;
+  const skipLeft = b.right - Math.max(skipW, skip && !skip.hidden ? skip.getBoundingClientRect().width : 0);
+  const aspect = r.width / r.height, screenFloor = (window.visualViewport?.height ?? window.innerHeight) - gap;
+  // The tallest it can be at a given height h: its width w = h × aspect, right edge fixed
+  const fits = h => {
+    const left = r.right - h * aspect;
+    let floor = screenFloor;
+    if (left < b.right) floor = Math.min(floor, b.top - gap);                       // over the panel
+    if (left < b.right && r.right > skipLeft) floor = Math.min(floor, b.top - skipH - gap); // over Skip's place
+    return r.top + h <= floor;
+  };
+  if (fits(r.height)) return;
+  // Two ways to fit: stay above the panel, or get narrow enough to sit right of it (wide landscape)
+  let lo = 0, hi = r.height;
+  for (let k = 0; k < 20; k++) { const mid = (lo + hi) / 2; if (fits(mid)) lo = mid; else hi = mid; }
+  const narrow = Math.min(r.height, (r.right - b.right - gap) / aspect, screenFloor - r.top);
+  const h = Math.max(lo, narrow > 0 ? narrow : 0, minH);
+  mm.style.height = `${Math.floor(h)}px`; mm.style.width = `${Math.floor(h * aspect)}px`;
 }
 
 export function createHud(play) {
@@ -74,6 +109,10 @@ export function createHud(play) {
   function drawLie({ maxPower, sweetScale }) {
     const h = sweetHalfWidth(sweetScale), sw = $('sweet').style;
     sw.left = `${meterPct(-h)}%`; sw.width = `${meterPct(h) - meterPct(-h)}%`;
+    // S22 (owner on PR #53): the same window, drawn as a frame that sticks out above and below the bar.
+    // It sits outside the bar (which clips), so it is placed inside the bar's 2 px border by hand.
+    const fr = $('sweetFrame').style, a = meterPct(-h) / 100, b = meterPct(h) / 100;
+    fr.left = `calc(2px + (100% - 4px) * ${a})`; fr.width = `calc((100% - 4px) * ${b - a})`;
     const cap = $('capShade').style;
     cap.left = `${meterPct(maxPower)}%`; cap.display = maxPower < 1 ? 'block' : 'none';
   }
@@ -230,7 +269,7 @@ export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
         ctx.fillStyle = color;
         ctx.beginPath(); ctx.moveTo(tx + ux * 4, tz + uz * 4); ctx.lineTo(tx - ux * 2 - uz * 3, tz - uz * 2 + ux * 3); ctx.lineTo(tx - ux * 2 + uz * 3, tz - uz * 2 - ux * 3); ctx.closePath(); ctx.fill();
         ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
-        for (const q of marks.ticks) {
+        for (const q of minimapTicks(marks)) {
           const [qx, qz] = xy(q.x, q.z);
           ctx.beginPath(); ctx.moveTo(qx - uz * 2.5, qz + ux * 2.5); ctx.lineTo(qx + uz * 2.5, qz - ux * 2.5); ctx.stroke();
         }

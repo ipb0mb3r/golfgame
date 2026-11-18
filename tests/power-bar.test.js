@@ -3,10 +3,10 @@
 // and a label "N yd · Flat / ▲ n yd / ▼ n yd" (+ "max 85%" when the lie caps the power, PM on PR #53).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createHolePlay, aimMarkLabel } from '../src/core/play.js';
+import { createHolePlay, aimMarkLabel, minimapTicks } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
 import { dist2D } from '../src/core/vec.js';
-import { POWER_SECTIONS, M2Y, setTunable, resetTunables } from '../src/core/config.js';
+import { POWER_SECTIONS, MINIMAP_TICKS, M2Y, TUNE, TUNABLES, setTunable, resetTunables } from '../src/core/config.js';
 import { testHole } from './helpers.js';
 
 // A test hole with a constant slope; the ball sits on `lie`
@@ -90,4 +90,19 @@ test('S22: a putt has no marker; the marker follows the club and the aim; the re
     assert.ok(m && m.ticks.length === 3 && m.dist > 100, id);
     assert.ok(Math.abs(m.dist - h.clubReach()) < 1e-9, `${id}: the marker is the club reach the HUD shows ("max N yd")`);
   }
+});
+
+test('S22 (owner on PR #53): the minimap shows only the 50% tick; the 3D line keeps all three', () => {
+  assert.deepEqual(MINIMAP_TICKS, [0.5]);
+  const m = on('fairway').aimMarks();
+  assert.equal(m.ticks.length, 3);
+  assert.deepEqual(minimapTicks(m).map(t => t.frac), [0.5]);
+  assert.deepEqual(minimapTicks(on('sand').aimMarks()), [], 'in a bunker (cap 50%) there is no 50% tick to show');
+  assert.deepEqual(minimapTicks(null), []);
+});
+
+test('S22 (owner on PR #53): the minimap is 1.2 × the hole size (+44% area), tunable', () => {
+  assert.equal(TUNE.MINIMAP_SCALE, 1.2);
+  assert.ok(TUNE.MINIMAP_SCALE ** 2 >= 1.4, 'at least +40% area');
+  assert.ok(TUNABLES.MINIMAP_SCALE.min < 1 && TUNABLES.MINIMAP_SCALE.max > 1.2);
 });

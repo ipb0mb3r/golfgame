@@ -88,7 +88,9 @@ export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, a
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line
 // has a tick where a straight, no-wind shot at each of those powers lands (25/50/75% for 4)
 export const POWER_SECTIONS = 4;
-export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee
+// S22 (owner on PR #53): the minimap's aim line shows only these ticks (less busy than the 3D line)
+export const MINIMAP_TICKS = Object.freeze([0.5]);
+export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, skipW: 110, skipH: 46, minH: 40 } }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel and the Skip button's place
 
 // --- Tunables: ?tune= overrides (X8), one entry each (Gate A A5) ---
 // The only names a tune link may change. Each entry is the whole definition: the default (`def`)
@@ -117,6 +119,7 @@ export const TUNABLES = Object.freeze({
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)
+  MINIMAP_SCALE:         { def: 1.2,  min: 0.6,   max: 1.6 },  // S22 (owner on PR #53): the minimap's size × this (1.2 = +44% area); short screens still cap its height
   AIM_FLAT_RISE:         { def: 0.5,  min: 0,     max: 5 },    // m: the aim marker's ground reads "Flat" when the landing spot is less than this above or below the ball (S22)
   TEE_AIM_CARRY:         { def: 1,    min: 0.5,   max: 1.2 },  // S21: a tee shot's default aim point is this share of the club's carry straight ahead along the tee's facing
   // AI rivals (Phase T, DESIGN §8 "Rivals", core/rivals.js). A rival's expected score on a hole, in strokes

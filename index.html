@@ -27,7 +27,7 @@
   #side { position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
   #windBox { display: flex; align-items: center; gap: 10px; font-size: 14px; }
   #windArrow { width: 34px; height: 34px; transition: transform .2s; }
-  #minimap { display: block; border-radius: 8px; border: 2px solid rgba(255,255,255,.5); }
+  #minimap { display: block; border-radius: 8px; border: 2px solid rgba(255,255,255,.5); width: var(--mm-w, auto); height: var(--mm-h, auto); }
 
   /* Center message */
   /* H1: the text wraps (hud.js keeps it clear of the minimap and the scorecard with max-width) */
@@ -62,6 +62,10 @@
   #aimLabel.capped { background: rgba(200, 200, 200, .92); }
   #aimLabel.warn { background: rgba(255, 120, 105, .95); }
   #aimLabel[hidden] { display: none; }
+  /* S22 (owner on PR #53): the accuracy window as a high-contrast frame that sticks out above and below the bar */
+  #meterWrap { position: relative; }
+  #sweetFrame { position: absolute; top: -7px; height: 48px; box-sizing: border-box; pointer-events: none;
+    border: 3px solid #fff; border-radius: 4px; box-shadow: 0 0 0 1.5px #0b1a10, inset 0 0 0 1.5px #0b1a10, 0 0 8px rgba(87,224,122,.9); }
   #powerMark { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; display: none; }
   #marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #fff; border-radius: 3px; box-shadow: 0 0 6px #000; }
   /* S8: the power click was missed, so the next click is a mini shot */
@@ -285,12 +289,11 @@
     #club .name small { font-size: 11px; }
     #swingBtn { padding: 8px 8px; font-size: 14px; }
   }
-  /* Short screens (phone landscape): the minimap shrinks, keeping its shape, so it ends above the
-     meter and controls (H1, PR #15). After the narrow-screen rules so it wins on small phones too. */
+  /* Short screens (phone landscape): the minimap keeps the hole's full size here and hud.js fitMinimap()
+     shrinks it, keeping its shape, only as far as it must to end above the meter, controls and the Skip
+     button's place (S22; before: a fixed cap of 100vh − 240 px, H1 PR #15). */
   @media (max-height: 500px) {
-    #minimap { width: auto; height: min(var(--mm-h, 220px), calc(100vh - 240px)); }
-    /* Gate A C6: iOS Safari's 100vh ignores the browser bars; dvh is the visible height (16.4+ has it) */
-    #minimap { height: min(var(--mm-h, 220px), calc(100dvh - 240px)); }
+    #minimap { width: var(--mm-w, auto); height: var(--mm-h, 220px); }
   }
 </style>
 <!-- Gate A C2: if the game can't start, say why in plain words on the intro card instead of leaving a
@@ -382,7 +385,7 @@
   <button id="skipBtn" hidden title="Skip to where the ball stops (Space or Enter)">⏩ Skip</button>
   <div id="tuned" hidden></div>
   <div id="hint">Click or press Space to start your swing</div>
-  <div>
+  <div id="meterWrap">
     <div id="meterBar">
       <div id="meterFill"></div>
       <div id="sweet"></div>
@@ -392,6 +395,7 @@
       <div id="powerMark"></div>
       <div id="marker"></div>
     </div>
+    <div id="sweetFrame"></div>
     <div id="meterLabels"><span>◀ accuracy</span><span>power ▶</span></div>
   </div>
   <div id="controls">

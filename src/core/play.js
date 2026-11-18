@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, M2Y,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -32,6 +32,9 @@ export function aimMarkLabel(m) {
   const ground = m.ground === 'flat' ? 'Flat' : `${m.ground === 'up' ? '▲' : '▼'} ${Math.max(1, Math.round(Math.abs(m.rise) * M2Y))} yd`;
   return `${Math.round(m.dist * M2Y)} yd · ${ground}${m.capped ? ` · max ${Math.round(m.power * 100)}%` : ''}`;
 }
+
+// S22 (owner on PR #53): the ticks the minimap draws: only the 50% one (MINIMAP_TICKS), the 3D line has all
+export const minimapTicks = m => m?.ticks.filter(t => MINIMAP_TICKS.includes(t.frac)) ?? [];
 
 export function createHolePlay(hole, { seed = 1 } = {}) {
   const terrain = makeTerrain(hole);

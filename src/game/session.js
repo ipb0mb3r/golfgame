@@ -18,7 +18,7 @@ import { paintCourse } from './coursePainter.js';
 import { buildScene, disposeScene } from './scene.js';
 import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
-import { createHud, createMinimap, setupHolePage, yd } from './hud.js';
+import { createHud, createMinimap, setupHolePage, fitMinimap, yd } from './hud.js';
 import { greenStyle } from '../core/menu.js';
 
 // What the game waits before carrying out core's decision (play.next), in ms
@@ -247,7 +247,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // K5: wireframe outlines of the colliders (the debug overlay turns them on)
   function showColliders(on) { colliderOutlines.visible = !!on; }
 
-  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); }
+  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); }
 
   function debugText(fps) {
     const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
