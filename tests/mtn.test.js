@@ -132,3 +132,51 @@ test('mtn-06: the deep bunker is escaped with the Sand Wedge; the bank feeds a b
   const bank = shot(startAt(h, { x: 0, z: 0 }, 0), { at: { x: 21, z: -158 }, acc: 0.07 });
   assert.equal(bank.surface, 'green');
 });
+
+test('mtn-07: the shelf is a short carry and a better angle; the left fairway is the long way in', () => {
+  const h = HOLES['mtn-07'];
+  const shelf = shot(startAt(h, { x: 0, z: 0 }, 0), { at: { x: 23, z: -230 }, club: 'driver', power: 1 });
+  const safe = shot(startAt(h, { x: 0, z: 0 }, 0));
+  assert.equal(shelf.surface, 'fairway');
+  assert.ok(shelf.x > 10, 'the brave drive is on the shelf, right of the creek');
+  assert.ok(safe.x < 0, 'the default drive is on the left fairway');
+  assert.ok(shelf.toCup < safe.toCup - 15, `shelf leaves ${shelf.toCup.toFixed(0)} m, safe ${safe.toCup.toFixed(0)} m`);
+});
+
+test('mtn-08: drivable with a good drive; deep bunkers escaped with the Sand Wedge (PM #49)', () => {
+  const h = HOLES['mtn-08'], green = { x: 0, z: -274 };
+  for (const pk of [0.85, 0.9]) {
+    const e = shot(startAt(h, { x: 0, z: 0 }, 0), { at: green, club: 'driver', power: pk });
+    assert.equal(e.surface, 'green', `a ${pk * 100}% Driver ends on ${e.surface}`);
+  }
+  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { at: green, club: 'driver', power: 0.95, acc: 0.06 }).ev, 'penalty', 'a hook finds the pond');
+  for (const b of [{ x: 19, z: -258 }, { x: 19, z: -282 }]) {
+    assert.ok(h.heightAt(b.x, b.z) < h.heightAt(b.x - 8, b.z) - 1, 'a deep hollow');
+    for (const pk of [0.9, 1, 1.1]) for (const acc of [0, 0.06]) {
+      const e = shot(startAt(h, b), { pk, acc });
+      assert.equal(e.club, 'sw');
+      assert.ok(['green', 'fringe'].includes(e.surface) || e.ev === 'holed', `bunker (${b.x}, ${b.z}) ×${pk} acc ${acc} ends on ${e.surface}`);
+    }
+  }
+});
+
+test('mtn-09: reachable in two with good, not perfect shots; the safe lay-up leaves a wedge (PM #49)', () => {
+  const h = HOLES['mtn-09'];
+  const drive = shot(startAt(h, { x: 0, z: 0 }, 0), { club: 'driver', power: 0.95 });
+  assert.equal(drive.surface, 'fairway');
+  for (const pk of [0.95, 1]) {
+    const e = shot(startAt(h, { x: drive.x, z: drive.z }), { pk });
+    assert.equal(e.surface, 'green', `second shot ×${pk} ends on ${e.surface}`);
+  }
+  // the safe route: the default drive, a lay-up round the lake, a wedge
+  const p = startAt(h);
+  shot(p);
+  const lay = { x: 30, z: -415 };
+  p.setAim(aimTo(p, lay));
+  const want = Math.hypot(lay.x - p.ball.pos.x, lay.z - p.ball.pos.z), from = { x: p.ball.pos.x, z: p.ball.pos.z };
+  let lo = 0, hi = 1.2;
+  for (let k = 0; k < 18; k++) { const m = (lo + hi) / 2; const r = p.restPoint(p.clubIdx, p.aim, m); if (Math.hypot(r.x - from.x, r.z - from.z) < want) lo = m; else hi = m; }
+  const e = shot(p, { power: hi });
+  assert.equal(e.surface, 'fairway');
+  assert.ok(e.toCup > 70 && e.toCup < 120, `the lay-up leaves ${e.toCup.toFixed(0)} m`);
+});

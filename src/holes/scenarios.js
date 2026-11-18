@@ -137,6 +137,42 @@ export const SCENARIOS = {
     hole: 'mtn-06', ball: { x: 8, z: -166 }, strokes: 1, seed: 1603, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Mountain 6: putt toward the creek', text: 'The green tilts left toward the creek: this putt breaks left.',
   },
+  'mtn7-shelf': {
+    hole: 'mtn-07', ball: { x: 0, z: 0 }, aimAt: { x: 23, z: -230 }, strokes: 0, seed: 1701, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 7: the upper shelf', text: 'Aimed at the narrow shelf right of the creek: a short carry over the water, a rock edge below it.',
+  },
+  'mtn7-left-approach': {
+    hole: 'mtn-07', ball: { x: -18, z: -206 }, strokes: 1, seed: 1702, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 7: the long way in', text: 'From the wide left fairway: a long approach over the front-left bunker.',
+  },
+  'mtn7-up-a-tier': {
+    hole: 'mtn-07', ball: { x: 12, z: -380 }, strokes: 2, seed: 1703, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Mountain 7: putt up a tier', text: 'From the lower front tier, up the step to the cup on the back tier.',
+  },
+  'mtn8-drive-green': {
+    hole: 'mtn-08', ball: { x: 0, z: 0 }, aimAt: { x: 0, z: -274 }, strokes: 0, seed: 1801, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 8: drive the green', text: 'Aimed at the green, 280 m and 12 m down. Pick the Driver: about 90% gets there. Pond left, deep bunkers right.',
+  },
+  'mtn8-deep-bunker': {
+    hole: 'mtn-08', ball: { x: 19, z: -258 }, strokes: 1, seed: 1802, wind: { x: 0, z: 0 }, lie: 'sand',
+    name: 'Mountain 8: deep bunker', text: 'In the deep bunker right of the green (1.4 m). The Sand Wedge gets out.',
+  },
+  'mtn8-ridge-putt': {
+    hole: 'mtn-08', ball: { x: -4, z: -287 }, strokes: 2, seed: 1803, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Mountain 8: over the ridge', text: 'From the back of the green, down over the ridge to the cup: hard to read.',
+  },
+  'mtn9-big-drop': {
+    hole: 'mtn-09', ball: { x: 0, z: 0 }, strokes: 0, seed: 1901, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 9: the big drop', text: 'The finale\'s tee, 20 m above the fairway. A full Driver runs a long way down the slope.',
+  },
+  'mtn9-over-the-lake': {
+    hole: 'mtn-09', ball: { x: -5, z: -342.7 }, strokes: 1, seed: 1902, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 9: over the lake in two', text: 'After a big drive, about 165 m: a 5 Iron over the corner of the lake to the raised green.',
+  },
+  'mtn9-layup': {
+    hole: 'mtn-09', ball: { x: -3.3, z: -268.1 }, aimAt: { x: 30, z: -415 }, strokes: 1, seed: 1903, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 9: lay up round the lake', text: 'The safe second shot, up the left around the lake. Leaves about 95 m.',
+  },
 };
 
 // Checked when they load (Gate A T7): a bad spot fails here, naming the scenario and the field.

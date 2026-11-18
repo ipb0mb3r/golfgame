@@ -10,9 +10,12 @@ import mtn03 from './mtn-03.js';
 import mtn04 from './mtn-04.js';
 import mtn05 from './mtn-05.js';
 import mtn06 from './mtn-06.js';
+import mtn07 from './mtn-07.js';
+import mtn08 from './mtn-08.js';
+import mtn09 from './mtn-09.js';
 import { validateHole } from '../core/validate.js';
 
-export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06];
+export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
 // Every hole is checked when it loads (Gate A T7): a typo fails here, naming the hole and the field.
 export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN].map(h => [validateHole(h).id, h]));
 export const DEFAULT_HOLE = hole1.id;
