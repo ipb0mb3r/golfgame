@@ -15,6 +15,8 @@
 - **Not particularly hard.** "Don't focus on the trees that matter and rock bounces, these were for the prototype of the engine."
 - **Risk/reward:** "when you take the safe line it should be around par or birdie, but when you take the brave line it should be birdie or better."
 - **No blind shots** (prototype decision, 2026-11-18).
+- **Hills, not flat holes** (owner, 2026-11-18): "I don't really like when holes are flat." Every hole has real ground shape: rolling fairways, mounds, slopes that move the ball, raised or sunken greens.
+- **Hazards live in the ground, not on it** (owner): "a bunker needs to be an actual hole like in a real golf course. Sometimes the hole is deep and sometimes not." Vary bunker depth: shallow fairway bunkers you can advance from, deep greenside or pot bunkers with a steep face. Ponds and creeks sit in a dip too.
 
 ## 3. Do
 - **Two routes on every hole** (except the first warm-up holes): a safe line (longer, forgiving, par most of the time) and a hero line (shorter or a better angle, risky, saves a stroke).
@@ -71,6 +73,10 @@ Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist
 | — | Hero carries checked against character stats | No characters (out of scope, DESIGN §1) |
 
 Already there: the elevation change is shown (↑/↓ yards to the cup in the distance readout).
+
+### Engine notes for hills and deep bunkers (no engine work, to check while building)
+- Bunker depth is hole data (`heightAt`), so deep bunkers need no new code. Today's bunkers are only 0.30–0.35 m deep.
+- To check on each hole: a ball can always get out of a deep bunker with the sand wedge (no stuck ball, guidelines §4), a steep face doesn't hide the sand from the camera (no blind shots), and a ball on a slope comes to rest where it can be played.
 
 ## 8. Differences with HOLE_GUIDELINES.md (not changed here, listed in the PR)
 - Guidelines §2 ramp ("Demanding", "hard but fair") and the earlier "harder is much better" taste vs. "not particularly hard" now.
