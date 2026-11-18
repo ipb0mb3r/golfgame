@@ -144,6 +144,25 @@
     table.sc th:first-child { width: 3.1em; }
     table.sc th:last-child, table.sc td.sum { width: 2.3em; }
   }
+  /* Phase T (T3): the leaderboard on the summary card and the final standings on the scorecard */
+  table.lb { width: 100%; max-width: 360px; margin: 6px auto 4px; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  table.lb caption { text-align: left; font-weight: 800; color: var(--accent); font-size: 13px; padding-bottom: 3px; }
+  table.lb th, table.lb td { padding: 3px 4px; text-align: center; border-bottom: 1px solid rgba(255,255,255,.12); white-space: nowrap; }
+  table.lb th { color: var(--muted); font-weight: 600; font-size: 11px; }
+  table.lb .pos { width: 2.6em; text-align: left; }
+  table.lb .name { text-align: left; overflow: hidden; text-overflow: ellipsis; max-width: 9em; }
+  table.lb td.tp { font-weight: 800; }
+  table.lb tr.you td { background: rgba(255,212,71,.16); color: #fff; font-weight: 800; }
+  #scorePlace { text-align: center; font-size: 20px; font-weight: 800; color: var(--text); margin: 0 0 4px; }
+  #scorePlace.won { color: var(--accent); }
+  #menu .rivals { list-style: none; padding: 0; margin: 0; font-size: 13px; }
+  #menu .rivals li { padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+  #menu .rivals small { color: var(--muted); }
+  @media (max-height: 500px) {
+    table.lb { font-size: 12px; margin: 2px auto; }
+    table.lb th, table.lb td { padding: 1px 4px; }
+    #scorePlace { font-size: 17px; }
+  }
   /* Phase 7: menus (src/game/menus.js). An opaque sky-to-grass background: no hole is loaded behind them. */
   #menu { background: linear-gradient(180deg, #7cc3f2 0%, #a9dcff 45%, #5fa64f 45.2%, #2f6b2c 100%); }
   #menu .card { max-width: 440px; }
@@ -416,6 +435,7 @@
     <p id="summaryText"></p>
     <p id="summaryPen" hidden></p>
     <p id="summaryRound"></p>
+    <div id="summaryBoard" hidden></div>
     <button class="big" id="summaryBtn">Next hole</button>
   </div>
 </div>
@@ -423,6 +443,8 @@
   <div class="card">
     <h1>Round complete</h1>
     <h2 id="scoreSet"></h2>
+    <p id="scorePlace" hidden></p>
+    <div id="scoreStandings" hidden></div>
     <div id="scoreGroups"></div>
     <p id="scoreTotal"></p>
     <p id="scoreNotes" hidden></p>
@@ -470,6 +492,17 @@
     <section data-screen="solo" hidden>
       <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Solo: pick a course</h1></div>
       <div id="menuCourses"></div>
+    </section>
+    <section data-screen="ai" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>vs AI: pick a course</h1></div>
+      <div id="menuAiCourses"></div>
+    </section>
+    <section data-screen="aiDiff" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>vs AI: difficulty</h1></div>
+      <p id="menuAiCourse" class="tagline"></p>
+      <div id="menuDifficulties"></div>
+      <h3>Your rivals</h3>
+      <ul id="menuRivals" class="rivals"></ul>
     </section>
     <section data-screen="practice" hidden>
       <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Practice</h1></div>

@@ -6,14 +6,17 @@
 // Dev and designer links skip the menu (core/menu.js DEV_PARAMS): ?set=<id> plays a round, ?hole=<id>
 // or ?scenario=<id> one hole (X8), ?tune=NAME:value overrides tunables, ?seed=<n> fixes the wind,
 // ?debug=1 opens the debug overlay (Gate A C5, for phones). Any of them alone plays hole 1 as before.
+// Phase T: vs AI (Play → vs AI → course → difficulty) plays a round against 5 rivals; ?ai=easy|normal|hard
+// plays the ?set= round (or the first Solo course) vs AI.
 import * as THREE from 'three';
 import { applyTune, tuneSummary } from '../core/tune.js';
 import { MAX_FRAME_DT } from '../core/config.js';
 import { HOLES, SETS, resolveHole, getHole, resolveSet } from '../holes/sets.js';
-import { createRound, isNewBest, toParText } from '../core/round.js';
+import { createRound, isNewBest, toParText, bestId } from '../core/round.js';
+import { resolveDifficulty, DEFAULT_DIFFICULTY } from '../core/rivals.js';
 import { SCENARIOS, resolveScenario } from '../holes/scenarios.js';
 import { parseSeed } from '../core/rng.js';
-import { skipsMenu, PLAY_PARAMS } from '../core/menu.js';
+import { skipsMenu, PLAY_PARAMS, soloCourses } from '../core/menu.js';
 import { createRenderer } from './scene.js';
 import { bindInput, nowSeconds } from './input.js';
 import { createDebug } from './debug.js';
@@ -40,8 +43,12 @@ function launchFromUrl() {
   const { hole, unknown: unknownHole } = scenario ? { hole: getHole(scenario.hole), unknown: false } : resolveHole(requestedHole);
   // A round (Phase 6) from ?set=<id>, only when no single hole or scenario is asked for (those stay single-hole)
   const requestedSet = params.get('set');
-  const set = scenario || requestedHole ? null : resolveSet(requestedSet);
-  const unknownSet = !!requestedSet && !set && !scenario && !requestedHole;
+  // Phase T: ?ai=<difficulty> plays the round vs AI (the first Solo course when no ?set= is given)
+  const requestedAi = params.get('ai');
+  const single = !!(scenario || requestedHole);
+  const aiDifficulty = requestedAi == null || single ? null : resolveDifficulty(requestedAi) ?? DEFAULT_DIFFICULTY;
+  const set = single ? null : resolveSet(requestedSet) ?? (aiDifficulty && !requestedSet ? resolveSet(soloCourses(SETS, HOLES)[0].id) : null);
+  const unknownSet = !!requestedSet && !set && !single;
   if (unknownHole) {
     console.warn(`Pocket Links: unknown hole "${requestedHole}", playing ${hole.id} instead.`);
     notices.push(`There is no hole "${requestedHole}", so you're playing Hole ${hole.number}.`);
@@ -54,11 +61,13 @@ function launchFromUrl() {
     console.warn(`Pocket Links: unknown hole set "${requestedSet}".`);
     notices.push(`There is no course "${requestedSet}", so you're playing Hole ${hole.number} on its own.`);
   }
+  if (requestedAi != null && single) notices.push('?ai= plays a round, so it is ignored with ?hole= or ?scenario=.');
+  else if (requestedAi != null && !resolveDifficulty(requestedAi) && set) notices.push(`There is no difficulty "${requestedAi}", so the rivals play on Normal.`);
   if (tune.rejected.length) {
     console.warn('Pocket Links: ignored tune values', tune.rejected);
     notices.push(`Ignored in ?tune=: ${tune.rejected.map(r => `"${r.text}" (${r.why})`).join(', ')}.`);
   }
-  const launch = set ? { kind: 'round', setId: set.id } : scenario ? { kind: 'scenario', scenarioId: scenario.id } : { kind: 'hole', holeId: hole.id };
+  const launch = set ? { kind: 'round', setId: set.id, ...(aiDifficulty ? { mode: 'ai', difficulty: aiDifficulty } : {}) } : scenario ? { kind: 'scenario', scenarioId: scenario.id } : { kind: 'hole', holeId: hole.id };
   return { launch, notices };
 }
 if (tune.set.length) { const b = $('tuned'); b.textContent = `TUNED · ${tuneSummary(tune)}`; b.hidden = false; }
@@ -78,6 +87,7 @@ const debugParam = params.get('debug') === '1';
 let session = null, round = null, game = null;
 let paused = false;
 const extraInfo = () => [
+  ...(round?.mode === 'ai' ? [`vs AI  ${round.difficulty}  ${round.leaderboard().map(r => `${r.posText} ${r.id} ${toParText(r.toPar)}`).join(' · ')}`] : []),
   ...(round ? [`round  ${round.set.id}  hole ${Math.min(round.index + 1, round.length)}/${round.length}  round seed ${round.seed}  ${toParText(round.totals.toPar)} (${round.totals.strokes})`] : []),
   ...(tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : []),
 ];
@@ -139,7 +149,7 @@ function startGame(launch, { fromMenu = true, notices = [] } = {}) {
     Object.assign(game, { hole: getHole(launch.holeId), seed: freshSeed(), start: null });
   }
   n.textContent = notices.join(' '); n.hidden = !notices.length; n.className = 'notice';
-  if (launch.kind === 'round') startRound(resolveSet(launch.setId), freshSeed());
+  if (launch.kind === 'round') startRound(resolveSet(launch.setId), freshSeed(), launch);
   else loadHole(game.hole, { seed: game.seed, start: game.start });
 }
 
@@ -180,7 +190,7 @@ function pauseGame() {
   if (!canPause()) return;
   session.pause();
   setPaused(true);
-  $('pauseSub').textContent = round ? `${round.set.name} · Hole ${round.current.number} of ${round.length}` : `Practice · Hole ${session.hole.number}`;
+  $('pauseSub').textContent = round ? `${round.set.name}${round.mode === 'ai' ? ' vs AI' : ''} · Hole ${round.current.number} of ${round.length}` : `Practice · Hole ${session.hole.number}`;
   $('resumeBtn').focus({ preventScroll: true });
 }
 function resumeGame() {
@@ -225,8 +235,9 @@ function escape() {
 // =====================================================================
 const roundUi = createRoundUi({ next: nextHole, again: playAgain, menu: () => toMenu() });
 
-function startRound(set, roundSeed) {
-  round = createRound(set, { seed: roundSeed, getHole });
+// launch.mode 'ai' (Phase T): the same round against the rivals at launch.difficulty
+function startRound(set, roundSeed, { mode = 'solo', difficulty = DEFAULT_DIFFICULTY } = {}) {
+  round = createRound(set, { seed: roundSeed, getHole, mode, difficulty });
   loadRoundHole();
 }
 function loadRoundHole() {
@@ -245,21 +256,22 @@ function nextHole() {
   if (!round || round.cards.length <= round.index) return;
   if (round.advance()) { loadRoundHole(); return; }
   $('summary').classList.add('hidden');
-  const set = round.set, t = round.totals, prev = readBest(set.id), isNew = isNewBest(prev, t);
-  if (isNew) writeBest(set.id, { strokes: t.strokes, toPar: t.toPar, seed: round.seed, date: new Date().toISOString().slice(0, 10) });
+  // Personal best per course and mode (Phase T: vs AI has its own)
+  const set = round.set, t = round.totals, id = bestId(set.id, round.mode), prev = readBest(id), isNew = isNewBest(prev, t);
+  if (isNew) writeBest(id, { strokes: t.strokes, toPar: t.toPar, seed: round.seed, date: new Date().toISOString().slice(0, 10) });
   roundUi.showScorecard(round, { prev, isNew });
 }
 // Play again: a brand-new round from hole 1 (nothing carries over: scorecard, strokes, timers, wind, ball)
 function playAgain() {
   if (!round) return;
-  const set = round.set, g = game;
+  const set = round.set, g = game, opts = { mode: round.mode, difficulty: round.difficulty ?? DEFAULT_DIFFICULTY };
   endGame();
   game = g;
-  startRound(set, freshSeed());
+  startRound(set, freshSeed(), opts);
 }
 
 const menus = createMenus({
-  sets: SETS, holes: HOLES, scenarios: SCENARIOS, readBest, settings,
+  sets: SETS, holes: HOLES, scenarios: SCENARIOS, readBest: (setId, mode) => readBest(bestId(setId, mode)), settings,
   onLaunch: l => startGame(l, { fromMenu: true }),
   onSettings: s => saveSettings(s),
 });
@@ -314,7 +326,10 @@ window.__golf = {
   // memory as Three.js counts it (geometries, textures, shader programs)
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return session.hole.id; },
   // Phase 6: the round (null when playing a single hole)
-  get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null }; },
+  get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null,
+    // Phase T: vs AI (null in solo)
+    mode: round.mode, difficulty: round.difficulty, rivals: round.rivals?.map(r => ({ id: r.id, name: r.name, skill: r.skill, strokes: [...r.strokes] })) ?? null,
+    leaderboard: round.leaderboard() }; },
   nextHole: () => nextHole(),
   playAgain: () => playAgain(),
   renderInfo: () => ({ ...renderer.info.memory, programs: renderer.info.programs?.length ?? 0 }),

@@ -11,11 +11,15 @@
 //   round.restart()        back to hole 1 with an empty scorecard (same seed, so the same winds)
 //   round.totals           { played, strokes, par, toPar, penalties, pickedUp }
 //   round.groups()         the scorecard in groups of SCORECARD_GROUP (Out / In / Holes 19–27 …) with subtotals
+//   round.mode             'solo' or 'ai' (Phase T: vs 5 AI rivals, createRound(set, { mode: 'ai', difficulty }))
+//   round.rivals           vs AI: every rival's strokes on every hole, fixed by the round seed (null in solo)
+//   round.leaderboard()    vs AI: you and the rivals after the holes you have played (null in solo)
 //
 // Pure: no DOM, no Three.js. The game layer (main.js) loads a hole session for round.current.
 import { createRng } from './rng.js';
 import { resultName } from './scoring.js';
 import { SCORECARD_GROUP } from './config.js';
+import { rivalScores, leaderboard as boardOf, DEFAULT_DIFFICULTY, resolveDifficulty } from './rivals.js';
 
 // R7: each hole's seed comes from the round seed and its place in the round (not its id, so the same
 // hole played twice in one round gets a different wind). Same round seed → same seeds → same winds.
@@ -28,7 +32,9 @@ export function holeSeed(roundSeed, index) {
 // "+3", "-2", "E" (even par)
 export const toParText = n => (n === 0 ? 'E' : n > 0 ? `+${n}` : `${n}`);
 
-export function createRound(set, { seed = 1, getHole }) {
+export const ROUND_MODES = Object.freeze(['solo', 'ai']);
+
+export function createRound(set, { seed = 1, getHole, mode = 'solo', difficulty = DEFAULT_DIFFICULTY }) {
   if (!set || !Array.isArray(set.holes) || set.holes.length === 0) throw new Error(`round: hole set "${set?.id ?? '?'}" has no holes`);
   const holes = set.holes.map(id => {
     const h = getHole(id);
@@ -37,19 +43,32 @@ export function createRound(set, { seed = 1, getHole }) {
   });
   const N = holes.length;
   const seeds = holes.map((_, i) => holeSeed(seed, i));
+  if (!ROUND_MODES.includes(mode)) throw new Error(`round: unknown mode "${mode}"`);
+  const ai = mode === 'ai';
+  if (ai && !resolveDifficulty(difficulty)) throw new Error(`round: unknown difficulty "${difficulty}"`);
+  // Phase T: the rivals' scores for the whole round, from the hole seeds (same round seed = same scores)
+  const rivals = ai ? rivalScores(holes, seeds, difficulty) : null;
+  const pars = holes.map(h => h.par);
   let index = 0;
   let cards = []; // one row per finished hole, in order
 
   const round = {
-    set, seed, length: N,
+    set, seed, length: N, mode, difficulty: ai ? difficulty : null, rivals,
     get index() { return index; },
     get done() { return index >= N; },
     get cards() { return cards; },
     get current() { return index < N ? { index, number: index + 1, of: N, hole: holes[index], seed: seeds[index] } : null; },
     get totals() { return totalsOf(cards); },
     holeAt: i => holes[i], seedAt: i => seeds[i],
-    record, advance, restart, groups,
+    record, advance, restart, groups, leaderboard,
   };
+
+  // vs AI: positions after the holes played so far (you, then the rivals; ties share a position)
+  function leaderboard(played = cards.length) {
+    if (!ai) return null;
+    const you = { id: 'you', name: 'You', you: true, strokes: cards.map(r => r.strokes) };
+    return boardOf([you, ...rivals], pars, Math.min(played, cards.length));
+  }
 
   // The current hole is over. `finished` = play.finished { strokes, penalties, pickedUp, par }.
   // A picked-up hole counts the strokes taken (the stroke limit, maxStrokes) and is flagged.
@@ -114,6 +133,10 @@ function totalsOf(cards) {
     penalties: cards.reduce((s, r) => s + r.penalties, 0), pickedUp: cards.filter(r => r.pickedUp).length,
   };
 }
+
+// R6 + Phase T: personal best per course AND mode. Solo keeps the course id (bests saved before
+// Phase T stay valid); vs AI has its own ("prototype3.ai"), whatever the difficulty.
+export const bestId = (setId, mode = 'solo') => (mode === 'ai' ? `${setId}.ai` : setId);
 
 // R6: personal best per course. A best is { strokes, toPar, seed, date }; lower to-par wins (the
 // course is the same, so this is also fewer strokes). Only a finished round counts.

@@ -114,6 +114,18 @@ export const TUNABLES = Object.freeze({
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)
+  // AI rivals (Phase T, DESIGN §8 "Rivals", core/rivals.js). A rival's expected score on a hole, in strokes
+  // over par, is RIVAL_BASE + RIVAL_DIFF_K × (difficulty − 1) − skill; the score is drawn from a normal
+  // curve (width RIVAL_SPREAD) around it, rounded to whole strokes. Skill is in strokes per hole: the
+  // roster spreads from RIVAL_SKILL_MIN (weakest) to RIVAL_SKILL_MAX (best); a difficulty adds its shift.
+  RIVAL_BASE:            { def: 0.3,  min: -1,    max: 2 },    // strokes over par expected from a skill-0 rival on a difficulty-1 hole
+  RIVAL_DIFF_K:          { def: 0.2,  min: 0,     max: 1 },    // each step of hole difficulty (1–5) adds this many strokes
+  RIVAL_SPREAD:          { def: 0.75, min: 0.2,   max: 2 },    // strokes: how much a rival's score varies from hole to hole
+  RIVAL_BEST_TO_PAR:     { def: -2,   min: -4,    max: 0 },    // a rival's best score on a hole, to par (owner on PR #44: eagle at best; never a hole in one on any par)
+  RIVAL_SKILL_MIN:       { def: 0,    min: -1,    max: 2 },    // the weakest rival's skill (strokes per hole better than RIVAL_BASE)
+  RIVAL_SKILL_MAX:       { def: 0.45, min: -1,    max: 2 },    // the best rival's skill
+  RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)
+  RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones

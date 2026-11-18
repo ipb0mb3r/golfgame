@@ -181,10 +181,11 @@ See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no
 
 ## Phase T: AI rivals (owner, 2026-11-17)
 See DESIGN §8 "Rivals".
-- [ ] **T1** `rivals.js` (core, pure): 5 invented rivals, each with a skill; per-hole score generated from skill, hole par and hole `difficulty` (1–5), seeded by the round seed (same seed = same scores)
-- [ ] **T2** Difficulty Easy / Normal / Hard shifts the rivals' skill
-- [ ] **T3** Leaderboard after each hole (position, name, thru, to par) + final standings with the player's place
-- [ ] **T4** Tests: same seed = same rival scores, Hard rivals average lower than Easy over many rounds, ties sorted consistently
+- [x] **T1** `rivals.js` (core, pure): 5 invented rivals, each with a skill; per-hole score generated from skill, hole par and hole `difficulty` (1–5), seeded by the round seed (same seed = same scores) *(Dev, Nov 18, `dev/T-rivals`: Bea Marlowe, Hank Fairweather, Ottoline Pike, Rusty Dunmore, Pip Larkin, each with a flavour line; a normal curve around `RIVAL_BASE + RIVAL_DIFF_K × (difficulty − 1) − skill`, cut into whole strokes, best score par − 2 and never a hole in one (owner on PR #44, `RIVAL_BEST_TO_PAR`); one RNG stream per hole from its seed; `RIVAL_*` tunables in config.js and `?tune=`)*
+- [x] **T2** Difficulty Easy / Normal / Hard shifts the rivals' skill *(`RIVAL_EASY_SHIFT` −0.35, `RIVAL_HARD_SHIFT` +0.3; Play → vs AI → course → difficulty, which also lists the rivals; `?ai=easy|normal|hard` dev link)*
+- [x] **T3** Leaderboard after each hole (position, name, thru, to par) + final standings with the player's place *(summary card: Pos, Name, this hole, Thru, ±, your row highlighted; scorecard: "You finished 2nd of 6 (Normal)" + final standings; ties "T2", you first then roster order; personal best per course and mode)*
+- [x] **T4** Tests: same seed = same rival scores, Hard rivals average lower than Easy over many rounds, ties sorted consistently *(tests/rivals.test.js, 1 000-round checks incl. the proposed Normal target "winner par to −2" on Test 9; any length 1–99; `tools/menu-check.mjs` plays every vs AI course × difficulty and a whole round vs AI)*
+- [x] vs AI enabled on the Play menu
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view
