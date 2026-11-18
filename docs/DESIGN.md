@@ -249,7 +249,7 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 8. Rounds, scoring, menus and rivals ❌ (re-planned 2026-11-17 by the owner)
+## 8. Rounds, scoring, menus and rivals 🟡 (re-planned 2026-11-17 by the owner; rounds ✅ Phase 6, menus and rivals ❌)
 
 ### Modes
 - **Solo, 9 holes:** a full round with a scorecard, total vs par, and a personal best per course.
@@ -257,11 +257,16 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - **Practice:** one hole or a `?scenario=` spot, no scorecard.
 
 ### Rules
-- A **hole set** is an ordered list of hole ids plus a name ("Mountain 9", "Prototype holes", "Rainy Day"…).
-- A round has **one seed**. Each hole's wind (and rivals' scores) derive from it, so a round can be replayed.
-- A round plays its holes in order and keeps a scorecard: strokes, par, result per hole (eagle, birdie, par, bogey…).
-- The stroke cap per hole (`maxStrokes`) means "picked up" and the round continues.
-- Between holes: a summary card (and the leaderboard in vs AI) with a Next Hole button. At the end: the full scorecard, total vs par, (vs AI) final place, with Play Again and Menu buttons.
+- A **hole set** (a course) is an ordered list of hole ids plus a name ("Mountain 9", "Prototype holes", "Rainy Day"…).
+- ✅ **Owner rule (2026-11-17): a course is just a playlist of hole ids, of ANY length (1, 9, 18, 99…), and the same hole can appear in several courses (or several times in one).** Nothing may assume 9 holes: `round.js`, the summary card and the final scorecard work for any length. In a round a hole is numbered by its place in the round ("Hole 4 of 9"), not by its own `number`.
+- ✅ A round has **one seed**. Each hole's seed comes from the round seed and the hole's place in the round (`holeSeed`), so its wind (and later the rivals' scores) can be replayed, and the same hole played twice gets two winds. `?seed=` fixes it; the debug overlay shows the round seed and each hole's seed.
+- ✅ A round plays its holes in order and keeps a scorecard: strokes (penalties included), par, result per hole (eagle, birdie, par, bogey…), total vs par.
+- ✅ The stroke cap per hole (`maxStrokes`) means "picked up": the hole counts the strokes taken (the cap), is flagged on the card, and the round continues.
+- ✅ Hole 1 of a round opens with the full intro card (how to play). **Holes 2+ open with a compact hole card** (PM on PR #38): "Hole 4 of 9", par, distance ("· plays N yd" when the play line is longer) and the hole's one-line `intro.tagline`; it closes by itself after `TIMING.holeCard` (2.5 s) or on a tap. Single-hole play (`?hole=`) keeps the full intro.
+- ✅ Between holes: a summary card (result, penalty strokes, running total vs par) with a **Next hole** button (and later the leaderboard in vs AI). The next hole loads in the same page as a new hole session (no reload).
+- ✅ At the end: the full scorecard with **Play again** (a new round, everything cleared) and **Menu** (reloads the page until Phase 7). **The scorecard shows the holes in groups of 9** (`SCORECARD_GROUP`): "Front 9", "Back 9", then by number ("Holes 19–27"), the last group may be shorter; a round of 9 or fewer is one group named by its holes ("Holes 1–3"). Each group has Par, Score and ± rows and a subtotal column, then the round total. It fits a phone in portrait (320 px) for any length; a long round scrolls. (vs AI adds the final place.)
+- ✅ Personal best per course (lowest to par) in localStorage, read and written in try/catch (the game works without storage).
+- Until the menus (Phase 7): `?set=<id>` starts a round; `?hole=` and `?scenario=` play one hole with no round. Temporary test sets: `prototype3` (holes 1–3) and `test9` (holes 1–3 three times).
 - Saving a round in progress: **later** (owner: not a priority).
 
 ### Rivals (vs AI)
@@ -275,8 +280,8 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - Restarting or quitting must clear **all** round state, timers and the trail.
 
 ### Acceptance
-- [ ] A simulated 9-hole round gives the correct total, including a picked-up hole.
-- [ ] The same round seed gives the same winds and the same rival scores.
+- [x] A simulated 9-hole round gives the correct total, including a picked-up hole (and a 1-hole and a 20-hole set work, `tests/round.test.js`).
+- [~] The same round seed gives the same winds (✅) and the same rival scores (Phase T).
 - [ ] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball, rivals).
 
 ---
@@ -304,11 +309,11 @@ src/
     play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator, and the hole flow
                               (swing is the only hit, next / proceed / finished; Gate A A1/A8)
     scoring.js             ✅ score names and result text
-    round.js               ⏳ round state, scorecard, hole sequencing (Phase 6)
+    round.js               ✅ a round of any length: hole order, per-hole seeds, scorecard rows, totals, groups of 9 (Phase 6)
   holes/
     hole1.js, hole2.js     ✅ hole data
     hole3.js               ✅ pl-03, par 4 dogleg with trees, boulders and rock (Phase K prototype)
-    sets.js                ✅ HOLES registry (validated at load), SETS, resolveHole
+    sets.js                ✅ HOLES registry (validated at load), SETS (playlists of any length), resolveHole, resolveSet
     scenarios.js           ✅ designer test spots for ?scenario= (validated at load)
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
     main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, frame loop; loads hole sessions
@@ -319,6 +324,7 @@ src/
     camera.js              ✅
     hud.js                 ✅ HUD panel, meter, minimap, cards, flash
     input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
+    roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6)
     debug.js               ✅ debug overlay (backtick, or ?debug=1 on phones, Gate A C5)
     menus.js, weatherFx.js ⏳ Phase 7 / Phase 5
 tests/
@@ -345,11 +351,11 @@ export default {
   map: { x0: -70, x1: 70, z0: -500, z1: 25 },               // texture/minimap bounds
   number: 2,                                                // shown as "Hole 2"
   scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
-  intro: { subtitle, steps, ... },                          // intro card text; {yards} in the subtitle = holeLength (K12)
+  intro: { subtitle, tagline, steps, ... },                 // intro card text; {yards} in the subtitle = holeLength (K12); tagline = one line for the compact hole card (Phase 6)
   playLine: [tee, { x, z }, ..., cup],                      // optional (K12): how a dogleg plays, for its yardage; default tee → cup
   features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt; green { cx, cz } = approach default aim (S18)
   obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r, sink }], // optional (Phase K, §4 "Obstacles")
-  difficulty: 2,                                            // optional for now, 1–5 (HOLE_GUIDELINES §2, rivals)
+  difficulty: 2,                                            // required (Phase 6), 1–5 (HOLE_GUIDELINES §2, rivals)
   heightAt(x, z) { ... },                                   // may use helpers from core/terrain.js
   surfaceAt(x, z) { ... },
 };
@@ -399,6 +405,7 @@ The physics never reads presentation fields (`scenery`, `intro`, `playLine`). **
 | 2026-11-17 | **Trees are real obstacles:** solid trunks, leaves that slow and deflect the ball, a rock/hard surface, and a warning on the aim preview (no blind shots) | Trees "sometimes in the way" create choices (cut the corner or play safe) | After hole 3 playtest |
 | 2026-11-17 | **Chip-range aim:** within ~30 m, the default aim is the cup on any surface (S19) | From close to the green the player always wants the flag | |
 | 2026-11-17 | **The ⚑ aims where the ball stops** (S15), not where it lands | One rule for every club: the flag means "finish here" | |
+| 2026-11-17 | **A course is a playlist of hole ids of any length** (9, 18, 99…), and the same hole can be in several courses. Nothing assumes 9 holes; the scorecard shows groups of 9 (Front 9 / Back 9 / …) with subtotals and a total, and fits a phone in portrait (owner, Phase 6) | Courses can be built and reordered freely from existing holes, and longer or shorter rounds need no code change | |
 | 2026-11-17 | **A ⚑ chip stops 1.5 m short** (`CHIP_FLAG_SHORT`, PM on PR #31) | No free chip-ins: holing a chip takes extra power on purpose | Owner compares 0 / 1.5 / 3 |
 
 ### Future direction (not in the prototype)

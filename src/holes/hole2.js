@@ -169,7 +169,7 @@ const TREES_IN_PLAY = [
 ];
 
 export default {
-  id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12,
+  id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12, difficulty: 3,
   tee: { x: 0, z: 0 }, cup: { x: 26, z: -448 },
   // S18: the tee shot's default aim, the dogleg corner in the middle of the fairway (a full Driver
   // carries the big hill and runs out to about here). Approaches aim at the centre of the green.
@@ -218,6 +218,7 @@ export default {
   },
   intro: {
     subtitle: 'Par 5 · {yards} yards · <i>prototype</i>',
+    tagline: 'A long, rolling par 5 with a pond on the left and a two-level green.',
     steps: [
       '<b>Same swing as Hole 1:</b> aim with <kbd>◀</kbd> <kbd>▶</kbd>, change club with <kbd>▲</kbd> <kbd>▼</kbd>, and swing in three clicks (start, <b>power</b>, <b>accuracy</b>).',
       '<b>Hills matter here.</b> The ball runs on downhill slopes, stalls going uphill, kicks off the side of mounds, and putts curl toward the low side.',

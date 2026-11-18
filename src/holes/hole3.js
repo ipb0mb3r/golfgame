@@ -130,6 +130,7 @@ export default {
   },
   intro: {
     subtitle: 'Par 4 · {yards} yards · <i>prototype</i>',
+    tagline: 'A dogleg right with a lone tree in the landing area. Play it safe, or cut it.',
     steps: [
       '<b>Trees are in play here.</b> Hit a trunk and the ball bounces off. Fly into the leaves and it drops like a stone.',
       'The aim line turns <b style="color:#ff5a4a">red</b> when your shot would hit a tree or a rock, with a red marker where. High clubs fly over trees that low ones can\'t.',

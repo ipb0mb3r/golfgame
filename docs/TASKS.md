@@ -14,7 +14,7 @@ Re-planned 2026-11-17 (owner): **menus, scoring and a 9-hole round (solo or vs A
 | A | Review gate A + Fix passes 1–2 | ✅ done (#18–#28) | |
 | FP3 | **Feel pass 3** (small: S15, S19, X11) | **NEXT** | `dev/feel-pass-3` |
 | K | **Obstacles and hard surface** (rock, trunks, leaves, aim warning) + prototype hole 3 | after FP3 | `dev/K-obstacles` |
-| 6 | Rounds and scoring (9-hole round, solo) | after K | `dev/R-rounds` |
+| 6 | Rounds and scoring (any-length course, solo) | in review | `dev/R-rounds` |
 | C | **Mountain course, prototype** (9 holes, a test run for the engine and the course designer, co-designed with the owner, one hole per PR) | runs alongside 6, 7, T | `course/<hole-id>` |
 | — | Before real courses: genre study for the course designer (`docs/GENRE_NOTES.md`) + art style decision | owner, later | |
 | 7 | Menus (Solo 9, vs AI 9, Practice) | after 6 | `dev/M-menus` |
@@ -143,15 +143,17 @@ Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" sur
 - [ ] **W4** Tests: wetness 0 matches today, wetness 1 rolls 30–50% less, wet greens are slower
 - [ ] **W5** "Rainy Day" hole set (holes 1 and 2 with wetness 1)
 
-## Phase 6: Multi-hole rounds and scoring (9-hole round, solo)
-- [ ] **R1** `round.js`: start a round from a hole set, current hole, advance, finish
-- [ ] **R2** Scorecard model (strokes, par, result per hole, total vs par, picked-up flag)
-- [ ] **R3** Hole loading/unloading in the game layer (scene, terrain, texture, flag) with no leftovers
-- [ ] **R4** Between-hole summary card + final scorecard screen
-- [ ] **R5** Tests: a 2-hole simulated round gives correct totals, a picked-up hole is counted correctly, restart resets everything
+## Phase 6: Multi-hole rounds and scoring (any-length course, solo)
+*Owner rule (2026-11-17): a course is a playlist of hole ids of **any length** (9, 18, 99…), and the same hole can appear in several courses. Nothing may assume 9 holes.*
+- [x] **R1** `round.js`: start a round from a hole set, current hole, advance, finish *(Dev, Nov 17, `dev/R-rounds`: `src/core/round.js` `createRound(set, { seed, getHole })` → `current` { index, number, of, hole, seed }, `record(play.finished)`, `advance()`, `restart()`, `done`. Any length; holes are numbered by their place in the round. `?set=<id>` starts a round; `?hole=` / `?scenario=` stay single-hole)*
+- [x] **R2** Scorecard model (strokes, par, result per hole, total vs par, picked-up flag) *(rows { number, holeId, par, strokes, penalties, pickedUp, toPar, result }; `totals` and `groups()` (groups of `SCORECARD_GROUP` 9 with subtotals). A picked-up hole counts its strokes (the stroke limit). `play.finished` now also has `penalties`)*
+- [x] **R3** Hole loading/unloading in the game layer (scene, terrain, texture, flag) with no leftovers *(the next hole is a new A2 session in the same page, no reload; in a round the "Try Hole 2 / Back to Hole 1" links are hidden (A6 for rounds; single-hole links stay until the menus))*
+- [x] **R4** Between-hole summary card + final scorecard screen *(`src/game/roundUi.js`: summary = result, penalties, running total, "Next hole: Hole N · par P" / "See the scorecard". Scorecard = one small table per group of 9 (Front 9 / Back 9 / Holes 19–20 …, or "Holes 1–3" for a short round) with Par, Score, ± rows and a Sub column, then the total, picked-up / penalty notes and the personal best, with Play again (new round, new seed unless `?seed=`) and Menu (reloads for now). Fits 320 px portrait; a long round scrolls. PM on PR #38: holes 2+ open with a compact hole card (Hole N of M, par, distance / plays N yd, `intro.tagline`) that closes after 2.5 s or on a tap; Play again = new seed and Menu = reload confirmed)*
+- [x] **R5** Tests: a 2-hole simulated round gives correct totals, a picked-up hole is counted correctly, restart resets everything *(tests/round.test.js: 9-hole totals with a picked-up hole and a penalty, a 1-hole set, a 20-hole set (and 99), same seed = same winds, restart, real hole play into the round)*
 
-- [ ] **R6** A 9-hole round works with the 3 prototype holes repeated or any hole set (the mountain course arrives hole by hole in Phase C). Personal best per mode and per course in localStorage (try/catch)
-- [ ] **R7** Round seed: one seed per round, each hole's wind derived from it, shown in debug (as planned in Phase 0)
+- [x] **R6** A 9-hole round works with the 3 prototype holes repeated or any hole set (the mountain course arrives hole by hole in Phase C). Personal best per mode and per course in localStorage (try/catch) *(temporary sets `prototype3` "Prototype 3" and `test9` "Test 9" (holes 1–3 three times). Best per set: `pocketlinks.best.v1.<setId>` = lowest to-par; per mode comes with T (vs AI))*
+- [x] **R7** Round seed: one seed per round, each hole's wind derived from it, shown in debug (as planned in Phase 0) *(`holeSeed(roundSeed, index)`: by place, so a hole played twice gets two winds; `?seed=` fixes the round seed. Debug: `hole pl-02 (5/9) seed …` and a `round` line with the round seed and running score)*
+- [x] **R8** (PM, with Phase 6) `difficulty` 1–5 on holes 1–3 (h1 1, h2 3, h3 2), required by validateHole · at the tee, "To pin" adds "· plays N yd" when the play line is longer than the straight line (hole 3: plays 408 yd, QA feel note)
 
 ## Phase C: Mountain course (co-designed with the owner, one hole per PR)
 See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.

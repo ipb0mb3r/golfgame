@@ -47,7 +47,7 @@ const TREES_IN_PLAY = [
 ];
 
 export default {
-  id: 'pl-01', number: 1, name: 'Pocket Links #1', par: 3, maxStrokes: 10,
+  id: 'pl-01', number: 1, name: 'Pocket Links #1', par: 3, maxStrokes: 10, difficulty: 1,
   tee: { x: 0, z: 0 }, cup: { x: 4, z: -152 },
   bag: ['3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
   windMax: 5.5,
@@ -94,6 +94,7 @@ export default {
   },
   intro: {
     subtitle: 'Par 3 · {yards} yards',
+    tagline: 'A short par 3 over the water.', // Phase 6: the compact hole card (holes 2+ of a round)
     steps: [
       '<b>Aim</b> with <kbd>◀</kbd> <kbd>▶</kbd> (arrow keys or the buttons). The yellow ring shows where a full-power shot lands.',
       '<b>Pick a club</b> with <kbd>▲</kbd> <kbd>▼</kbd> or the ‹ › buttons. The best club is chosen for you.',
