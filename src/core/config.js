@@ -121,6 +121,7 @@ export const TUNABLES = Object.freeze({
   RIVAL_BASE:            { def: 0.3,  min: -1,    max: 2 },    // strokes over par expected from a skill-0 rival on a difficulty-1 hole
   RIVAL_DIFF_K:          { def: 0.2,  min: 0,     max: 1 },    // each step of hole difficulty (1–5) adds this many strokes
   RIVAL_SPREAD:          { def: 0.75, min: 0.2,   max: 2 },    // strokes: how much a rival's score varies from hole to hole
+  RIVAL_BEST_TO_PAR:     { def: -2,   min: -4,    max: 0 },    // a rival's best score on a hole, to par (owner on PR #44: eagle at best; never a hole in one on any par)
   RIVAL_SKILL_MIN:       { def: 0,    min: -1,    max: 2 },    // the weakest rival's skill (strokes per hole better than RIVAL_BASE)
   RIVAL_SKILL_MAX:       { def: 0.45, min: -1,    max: 2 },    // the best rival's skill
   RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)

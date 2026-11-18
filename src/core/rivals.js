@@ -48,14 +48,16 @@ export function rivalSkill(rival, difficulty = DEFAULT_DIFFICULTY) {
   return base + (d.shift ? TUNE[d.shift] : 0);
 }
 
-// The chance of each score on a hole, from a hole in one to the stroke limit (maxStrokes): a normal
-// curve around the expected score, cut into whole strokes. Higher skill and easier holes move it
+// The chance of each score on a hole, from the best score a rival may make to the stroke limit
+// (maxStrokes): a normal curve around the expected score, cut into whole strokes. The best score is
+// RIVAL_BEST_TO_PAR (eagle) and never a hole in one (owner on PR #44): at least 2 strokes on any par. Higher skill and easier holes move it
 // toward birdies; harder holes toward bogeys and doubles.
 export function holeOdds(skill, hole) {
   const mean = TUNE.RIVAL_BASE + TUNE.RIVAL_DIFF_K * (hole.difficulty - 1) - skill;
   const s2 = 2 * TUNE.RIVAL_SPREAD * TUNE.RIVAL_SPREAD;
   const odds = [];
-  for (let toPar = 1 - hole.par; toPar <= hole.maxStrokes - hole.par; toPar++) odds.push({ toPar, p: Math.exp(-((toPar - mean) ** 2) / s2) });
+  const best = Math.max(Math.round(TUNE.RIVAL_BEST_TO_PAR), 2 - hole.par);
+  for (let toPar = best; toPar <= hole.maxStrokes - hole.par; toPar++) odds.push({ toPar, p: Math.exp(-((toPar - mean) ** 2) / s2) });
   const sum = odds.reduce((s, o) => s + o.p, 0);
   for (const o of odds) o.p /= sum;
   return odds;

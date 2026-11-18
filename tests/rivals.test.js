@@ -48,10 +48,10 @@ test('T1: 5 invented rivals, each with a name, a flavour line and a place in the
   assert.equal(Math.min(...skills), TUNE.RIVAL_SKILL_MIN);
 });
 
-test('T1: hole odds: a proper distribution from a hole in one to the stroke limit, shifted by skill and difficulty', () => {
+test('T1: hole odds: a proper distribution from an eagle (par − 2) to the stroke limit, shifted by skill and difficulty', () => {
   const h = HOLES['pl-02'];
   const odds = holeOdds(0.2, h);
-  assert.equal(odds[0].toPar, 1 - h.par);
+  assert.equal(odds[0].toPar, -2);
   assert.equal(odds.at(-1).toPar, h.maxStrokes - h.par);
   assert.ok(Math.abs(sum(odds.map(o => o.p)) - 1) < 1e-12);
   const mean = o => sum(o.map(x => x.toPar * x.p));
@@ -61,6 +61,28 @@ test('T1: hole odds: a proper distribution from a hole in one to the stroke limi
   // Birdie, par, bogey, double are all possible on a normal hole for a mid-skill rival
   const p = t => odds.find(o => o.toPar === t).p;
   for (const t of [-1, 0, 1, 2]) assert.ok(p(t) > 0.01, `to par ${t}: ${p(t)}`);
+});
+
+test('T1 (owner on PR #44): no rival score is ever better than par − 2, and never a hole in one', () => {
+  const holes = [...Object.values(HOLES), fake(3, 1), fake(4, 1), fake(5, 1), fake(6, 1)];
+  let eagles = 0;
+  for (const d of ['easy', 'normal', 'hard']) for (let s = 0; s < 400; s++) {
+    for (const r of rivalScores(holes, seedsOf(holes, s), d)) r.strokes.forEach((st, i) => {
+      assert.ok(st >= holes[i].par - 2, `${d} seed ${s} ${holes[i].id}: ${st} on a par ${holes[i].par}`);
+      assert.ok(st >= 2, `${d} seed ${s} ${holes[i].id}: a hole in one`);
+      if (st === holes[i].par - 2) eagles++;
+    });
+  }
+  assert.ok(eagles > 0, 'eagles still happen');
+  // Even the strongest rival on the easiest par 3 can't ace it: the best is a birdie
+  for (const u of [0, 1e-12]) assert.equal(rivalHoleScore(5, fake(3, 1), u), 2);
+  assert.equal(holeOdds(5, fake(3, 1))[0].toPar, -1);
+  assert.equal(holeOdds(5, fake(5, 1))[0].toPar, -2);
+  // The cap is a tunable: RIVAL_BEST_TO_PAR:-1 = birdie at best, 0 = never under par
+  applyTune('RIVAL_BEST_TO_PAR:-1');
+  assert.equal(holeOdds(5, fake(5, 1))[0].toPar, -1);
+  applyTune('RIVAL_BEST_TO_PAR:0');
+  assert.equal(rivalHoleScore(5, fake(4, 1), 0), 4);
 });
 
 test('T1: a score is always a whole number of strokes between 1 and the hole\'s stroke limit', () => {
@@ -129,7 +151,7 @@ test('T2: difficulty Easy / Normal / Hard shifts every rival\'s skill (from conf
 });
 
 test('T2: the rival tunables are in config.js and ?tune= can change them for a visit', () => {
-  for (const k of ['RIVAL_BASE', 'RIVAL_DIFF_K', 'RIVAL_SPREAD', 'RIVAL_SKILL_MIN', 'RIVAL_SKILL_MAX', 'RIVAL_EASY_SHIFT', 'RIVAL_HARD_SHIFT']) {
+  for (const k of ['RIVAL_BASE', 'RIVAL_DIFF_K', 'RIVAL_SPREAD', 'RIVAL_BEST_TO_PAR', 'RIVAL_SKILL_MIN', 'RIVAL_SKILL_MAX', 'RIVAL_EASY_SHIFT', 'RIVAL_HARD_SHIFT']) {
     assert.ok(TUNABLES[k], k);
   }
   const holes = holesOf('test9');

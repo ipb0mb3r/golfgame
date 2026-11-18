@@ -42,7 +42,8 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
 - Since Fix pass 2: the meter reads the real click time (`pressMeterAt`), rolls always end (`stopped.reason`), ⏩ Skip (`play.skip()`), default aim (`play.target`, hole `aimTarget`), designer tuning S17. v1 exceptions for intentional physics changes live in `tests/baseline-exceptions.js`.
 - Since Phase 6: `?set=<id>` plays a round (`src/core/round.js` + `src/game/roundUi.js`): a course is a playlist of hole ids of **any length**, never assume 9. Test sets `prototype3`, `test9`.
-- Since Phase 7: `index.html` opens on the main menu (`src/game/menus.js`, lists from `src/core/menu.js`): Solo (courses from `sets.js`), Practice (holes and test spots), pause menu, settings. Any dev link (`?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=`) skips the menu.
+- Since Phase 7: `index.html` opens on the main menu (`src/game/menus.js`, lists from `src/core/menu.js`): Solo (courses from `sets.js`), Practice (holes and test spots), pause menu, settings. Any dev link (`?hole=`, `?scenario=`, `?set=`, `?ai=`, `?seed=`, `?tune=`, `?debug=`) skips the menu.
+- Since Phase T: vs AI (`src/core/rivals.js`): a round against 5 AI rivals whose scores are generated from the round seed. `?ai=easy|normal|hard` plays the `?set=` round vs AI (alone: the first Solo course), e.g. `?set=test9&ai=normal`.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
 
 ## Tools (dev and QA only, never part of the game)
