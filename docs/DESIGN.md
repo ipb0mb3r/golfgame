@@ -161,6 +161,11 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 - ✅ The physics constants and surface values were duplicated in two files → `src/core/config.js` and `surfaces.js` + `surfaceOverrides` (F6/F7).
 - Since hole 1 now uses the slope-aware roll (stop speed 0.06 m/s and the `CREEP` friction blend instead of its old 0.03 m/s stop) and the hill-aware reach estimate, its rolls end a few centimetres differently. All baseline shots are within 0.5 m.
 
+### Camera 🟡 (Phase V, owner 2026-11-18; V1 + V2 done, V3 + V4 to come)
+Where the camera stands is pure math in core (`src/core/views.js`, tests/views.test.js); `src/game/camera.js` only eases toward it. **Never a blind shot**, in phone portrait and landscape.
+- ✅ **V1 aiming view.** Behind the ball on the aim line. The camera stands `CAM_AIM_BACK_K` (0.08) × the marker's distance behind the ball (clamped to `CAM.aim` 6–20 m) and its height is **solved** so the ball shows at `CAM_AIM_BALL` (0.86) and the aim marker at `CAM_AIM_MARK` (0.16) of the **free band** of the screen: from the lowest top panel that covers the screen's centre column (portrait: the scorecard; landscape: none) down to the top of the meter panel (`session.js measureFrame`, measured on every HUD change and resize). So the flight, the landing area and the hazards in the way are between ball and marker, and the ball is never behind the hint line (landscape before V1). If a hill hides the marker, the camera steps back ×1.35 (and so up) until it sees it (`CAM.losTries`). Putts: the same with the end of the putt line and `CAM_PUTT_BALL` / `CAM_PUTT_MARK` (0.8 / 0.3). Every hole and scenario, every club, portrait and landscape: ball and marker on screen and in sight (test). All five are `?tune=` tunables.
+- ✅ **V2 view button** (small, above the meter on the left, only while aiming before click 1; ⏩ Skip uses the right side of that row while the ball moves). Optional: nothing needs it. A **tap** opens a view until tapped again, **holding** it (> `CAM.holdMs`, 300 ms) shows the view until it is released; **V** on a keyboard is a tap. Full shots: **🔍 Landing**, from behind and above the marker looking at it (the marker in the free band). Putts: **👁 Read** steps through **from above** (ball and cup both in the band, the putt up the screen, the grid if the green has one), then **low** (crouched 3 m behind the ball at 0.45 m, looking at the cup), then back. The label says what the next tap does (↩ Back on the last view). Aiming and changing club still work in a view; starting the swing (click 1) or a new shot returns to the aiming view.
+
 ### Surface table (today's values: `rest` / `keep` / `decel`)
 The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in §3 "Lie". There is no `lie` power multiplier any more (removed in S11).
 
@@ -334,6 +339,7 @@ src/
     scoring.js             ✅ score names and result text
     round.js               ✅ a round of any length: hole order, per-hole seeds, scorecard rows, totals, groups of 9 (Phase 6); mode solo / ai, rivals, leaderboard, bestId (Phase T)
     rivals.js              ✅ the 5 rivals, difficulties, seeded per-hole scores, leaderboard with ties (Phase T)
+    views.js               ✅ camera views (Phase V): aiming view solved for the free screen band, landing and green-reading views, never blind (tests/views.test.js)
     menu.js                ✅ what the menus list (from SETS / HOLES / SCENARIOS passed in), launches, dev links that skip the menu, settings parsing (Phase 7)
   holes/
     hole1.js, hole2.js     ✅ hole data
@@ -348,7 +354,7 @@ src/
     scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene
     coursePainter.js       ✅ painted course texture + minimap image
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
-    camera.js              ✅
+    camera.js              ✅ eases the camera toward the view core/views.js gives (Phase V)
     hud.js                 ✅ HUD panel, meter, minimap, cards, flash
     input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
     roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6); leaderboard and final standings (Phase T)
