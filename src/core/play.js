@@ -26,11 +26,12 @@ import { isShotEnd } from './states.js';
 
 
 // S22: the label at the aim marker: the full-power (or capped) carry in yards and the ground there,
-// e.g. "164 yd · Flat", "152 yd · ▲ 5 yd", "98 yd · ▼ 3 yd · max 85%". Pure, so tests read it too.
+// e.g. "164 yd · Flat", "152 yd · ▲ 5 yd", "98 yd · ▼ 3 yd". A capped lie only greys the marker (owner on
+// PR #53: no "max N%" here, the bar and the lie line already show it). Pure, so tests read it too.
 export function aimMarkLabel(m) {
   if (!m) return '';
   const ground = m.ground === 'flat' ? 'Flat' : `${m.ground === 'up' ? '▲' : '▼'} ${Math.max(1, Math.round(Math.abs(m.rise) * M2Y))} yd`;
-  return `${Math.round(m.dist * M2Y)} yd · ${ground}${m.capped ? ` · max ${Math.round(m.power * 100)}%` : ''}`;
+  return `${Math.round(m.dist * M2Y)} yd · ${ground}`;
 }
 
 // S22 (owner on PR #53): the ticks the minimap draws: only the 50% one (MINIMAP_TICKS), the 3D line has all

@@ -1,6 +1,7 @@
 // S22 (owner, playtest 1): no ⚑ on full shots; the power bar is in POWER_SECTIONS equal parts and the
 // aim line ends in a marker where a straight, no-wind full-power shot lands, with ticks at 25/50/75%
-// and a label "N yd · Flat / ▲ n yd / ▼ n yd" (+ "max 85%" when the lie caps the power, PM on PR #53).
+// and a label "N yd · Flat / ▲ n yd / ▼ n yd". On a capped lie the marker sits at the cap, greyed (PM on PR #53),
+// with no "max N%" in the label (owner on PR #53: the bar and the lie line show it).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHolePlay, aimMarkLabel, minimapTicks } from '../src/core/play.js';
@@ -38,7 +39,7 @@ test('S22: carry is linear in power, so the ticks sit at 25/50/75% of the full c
   }
 });
 
-test('S22: on a capped lie the marker is at the cap (greyed, "max n%") and only the ticks below it are drawn', () => {
+test('S22: on a capped lie the marker is at the cap (greyed, no "max n%" in the label) and only the ticks below it are drawn', () => {
   const rough = on('rough').aimMarks();
   assert.equal(rough.capped, true);
   assert.equal(rough.power, 0.85);
@@ -46,7 +47,8 @@ test('S22: on a capped lie the marker is at the cap (greyed, "max n%") and only 
   const flat = on('fairway').aimMarks();
   assert.ok(Math.abs(rough.dist - 0.85 * flat.dist) < 0.5, 'the capped carry');
   assert.ok(Math.abs(rough.ticks[1].dist - flat.ticks[1].dist) < 1e-9, 'a tick means the same power everywhere');
-  assert.match(aimMarkLabel(rough), /· max 85%$/);
+  assert.match(aimMarkLabel(rough), /^\d+ yd · (Flat|[▲▼] \d+ yd)$/);
+  assert.doesNotMatch(aimMarkLabel(rough), /max/, 'owner on PR #53: no "max N%" in the label');
   const sand = on('sand').aimMarks();
   assert.equal(sand.power, 0.5);
   assert.deepEqual(sand.ticks.map(t => t.frac), [0.25], 'the 50% tick sits on the cap, so only 25% shows');
