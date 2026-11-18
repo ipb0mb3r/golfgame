@@ -32,7 +32,7 @@ export default makeMtnHole({
     { pts: [{ x: 0, z: -40, w: 12 }, { x: -2, z: -170, w: 21 }, { x: -4, z: -300, w: 23 }] },
     // the safe second leg: up the left and round the top of the lake, KISSING its rock edge (owner), one
     // smooth blob that runs on into the apron and the green (L4, L9: no notches)
-    { pts: [{ x: -4, z: -300, w: 21 }, { x: 12, z: -405, w: 20 }, { x: 56, z: -468, w: 18 }, { x: 100, z: -484, w: 15 }, { x: 116, z: -488, w: 14 }] },
+    { pts: [{ x: -4, z: -300, w: 24 }, { x: 10, z: -400, w: 26 }, { x: 46, z: -458, w: 26 }, { x: 88, z: -480, w: 22 }, { x: 114, z: -488, w: 17 }] },
   ],
   roughs: [{ cx: -26, cz: -430, rx: 8, rz: 14, rot: 0.3, wob: 0.15, seed: 3 }], // L6: rough biting in on the far left
   bunkers: [
@@ -45,10 +45,10 @@ export default makeMtnHole({
   // the lake lies ACROSS the line to the green (rot): a carry is about 50 m of water, a short ball stays dry
   // in front of it, and its far end eats into the safe fairway's edge
   ponds: [{ cx: 76, cz: -404, rx: 42, rz: 25, rot: 0.55, wob: 0.07, seed: 4, depth: 2.6, lip: 'rock', lipW: 2.5, lobes: [{ cx: 100, cz: -380, rx: 22, rz: 20 }] }],
-  creek: { pts: [{ x: 112, z: 10, w: 2.4 }, { x: 74, z: -130, w: 2.8 }, { x: 72, z: -250, w: 3.6 }, { x: 76, z: -310, w: 5 }, { x: 86, z: -352, w: 8 }, { x: 94, z: -372, w: 12 }], depth: 1.4, bank: 3.5, lip: 'rough' },
+  creek: { pts: [{ x: 112, z: 10, w: 2.8 }, { x: 74, z: -130, w: 3.4 }, { x: 72, z: -250, w: 4.4 }, { x: 78, z: -312, w: 7 }, { x: 88, z: -350, w: 12 }, { x: 96, z: -372, w: 18 }], depth: 1.5, bank: 3.5, lip: 'rough', meander: { amp: 5, len: 90, wvar: 0.25, seed: 4 } },
   ob: { x0: -64, x1: 182, z0: -528, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.2, 1.8], seed: 91, keep: 7, clear: [{ pts: [{ x: -4, z: -285 }, { x: 128, z: -492 }], w: 14 }] }, // the brave line over the lake stays open
-  obstacles: [boulder(34, -312, 1.3), boulder(150, -420, 1.4)],
+  obstacles: [boulder(46, -300, 1.3), boulder(150, -420, 1.4)],
   intro: mtnIntro({
     par: 5, prev: 'mtn-08',
     tagline: 'The finale: a big drop, then round the lake or over it.',

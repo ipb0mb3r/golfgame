@@ -80,6 +80,24 @@ export function smoothLine(pts, rounds = 3) {
   }
   return a;
 }
+// A meandering creek (playtest 1, L8/L10): resample the smoothed line every ~3 m, push it sideways
+// in gentle S-bends (amp m, wavelength len m) and let its width breathe (wvar, 0..0.5). The ends stay put.
+export function meander(pts, { amp = 4, len = 70, wvar = 0.3, seed = 1 } = {}) {
+  const out = [], total = polyLen(pts);
+  let run = 0;
+  for (let k = 1; k < pts.length; k++) {
+    const a = pts[k - 1], b = pts[k], L = Math.hypot(b.x - a.x, b.z - a.z), nx = -(b.z - a.z) / L, nz = (b.x - a.x) / L;
+    const n = Math.max(1, Math.round(L / 3));
+    for (let i = (k === 1 ? 0 : 1); i <= n; i++) {
+      const t = i / n, s = run + L * t, fade = Math.min(1, s / 25, (total - s) / 25);
+      const off = amp * fade * (Math.sin(s / len * 2 * Math.PI + seed) + 0.35 * Math.sin(s / len * 5.1 + 2 * seed));
+      const w = (a.w ?? 0) + ((b.w ?? 0) - (a.w ?? 0)) * t;
+      out.push({ x: a.x + (b.x - a.x) * t + nx * off, z: a.z + (b.z - a.z) * t + nz * off, w: w * (1 + wvar * Math.sin(s / (len * 0.6) + 3 * seed)) });
+    }
+    run += L;
+  }
+  return out;
+}
 // Length of a polyline (m)
 export const polyLen = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.z - pts[i].z), 0);
 
@@ -121,7 +139,7 @@ export function makeMtnHole(spec) {
   const hills = spec.hills ?? [], bunkers = spec.bunkers ?? [], ponds = spec.ponds ?? [], rocks = spec.rocks ?? [];
   const fairways = (spec.fairways ?? []).map(f => (f.pts.length > 2 ? { ...f, pts: smoothLine(f.pts) } : f));
   const paths = spec.paths ?? [];
-  const creek = spec.creek ? { ...spec.creek, pts: smoothLine(spec.creek.pts) } : null;
+  const creek = spec.creek ? { ...spec.creek, pts: meander(smoothLine(spec.creek.pts), spec.creek.meander ?? {}) } : null;
   const OB = spec.ob;
   const banks = spec.banks ?? 0.03;
   const tee = spec.tee, pad = spec.teePad ?? { h: 0.4, r: 4.5 };

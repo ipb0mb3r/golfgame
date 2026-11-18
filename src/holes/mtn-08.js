@@ -39,8 +39,8 @@ export default makeMtnHole({
     { cx: -16, cz: -196, rx: 6, rz: 8, rot: 0.3, wob: 0.14, seed: 6, depth: 0.5, lobes: [{ cx: -10, cz: -206, rx: 4, rz: 4 }] }, // L5: on the plateau's left
   ],
   // the creek feeds the pond, down the left side from the hills, widening into it (L8)
-  ponds: [{ cx: -21, cz: -284, rx: 7, rz: 12, rot: 0.15, wob: 0.1, seed: 5, depth: 2.0, lip: 'rough', lipW: 2.2 }],
-  creek: { pts: [{ x: -68, z: -165, w: 2.4 }, { x: -46, z: -230, w: 3.0 }, { x: -29, z: -268, w: 4.5 }], depth: 1.3, bank: 2.5, lip: 'rough' },
+  ponds: [{ cx: -21, cz: -284, rx: 7, rz: 12, rot: 0.15, wob: 0.12, seed: 5, depth: 2.0, lip: 'rough', lipW: 2.2, lobes: [{ cx: -26, cz: -272, rx: 7, rz: 7 }] }],
+  creek: { pts: [{ x: -68, z: -165, w: 2.4 }, { x: -46, z: -230, w: 3.4 }, { x: -36, z: -254, w: 5.5 }, { x: -29, z: -268, w: 8 }], depth: 1.3, bank: 2.5, lip: 'rough', meander: { amp: 3, len: 60, wvar: 0.25, seed: 5 } },
   ob: { x0: -58, x1: 58, z0: -334, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 11, size: [1.1, 1.7], seed: 81, keep: 7, clear: [{ pts: [{ x: 0, z: 0 }, { x: 0, z: -300 }], w: 14 }] },
   obstacles: [boulder(-36, -120, 1.2)],

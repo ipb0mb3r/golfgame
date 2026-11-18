@@ -10,7 +10,7 @@ const CUP = { x: 4, z: -430 };
 
 // the shelf right of the creek sits up to about 3 m above the lower fairway and runs downhill toward
 // the green, so a drive on it rolls on
-const shelf = (x, z) => 3.2 * (1 - 0.65 * Math.min(1, Math.max(0, (-z - 150) / 210))) * Math.min(1, Math.max(0, (x - 8) / 8)) ** 2 * (x > 8 ? 1 : 0)
+const shelf = (x, z) => 3.2 * (1 - 0.65 * Math.min(1, Math.max(0, (-z - 150) / 210))) * Math.min(1, Math.max(0, (x - 13) / 8)) ** 2 * (x > 13 ? 1 : 0)
   * Math.min(1, Math.max(0, (-z - 100) / 40)) * Math.min(1, Math.max(0, (z + 385) / 45));
 
 export default makeMtnHole({
@@ -32,10 +32,10 @@ export default makeMtnHole({
   },
   blend: 16,
   fairways: [
-    // the wide lower fairway on the left, merging into the green (L4, L9)
-    { pts: [{ x: 0, z: -32, w: 12 }, { x: -18, z: -120, w: 19 }, { x: -24, z: -270, w: 20 }, { x: -10, z: -375, w: 15 }, { x: 2, z: -408, w: 14 }] },
-    // the upper shelf on the right: narrower but a real fairway, not a strip (playtest 1)
-    { pts: [{ x: 26, z: -140, w: 10 }, { x: 27, z: -270, w: 11 }, { x: 21, z: -380, w: 10 }, { x: 13, z: -406, w: 12 }] },
+    // the wide lower fairway on the left: a blob that swells in the landing zone and runs into the green (L4, L9)
+    { pts: [{ x: -2, z: -32, w: 13 }, { x: -18, z: -120, w: 22 }, { x: -26, z: -220, w: 26 }, { x: -24, z: -300, w: 21 }, { x: -10, z: -375, w: 19 }, { x: 2, z: -408, w: 17 }] },
+    // the upper shelf on the right, a blob of its own, narrower than the left side (the brave line)
+    { pts: [{ x: 32, z: -140, w: 11 }, { x: 34, z: -220, w: 15 }, { x: 31, z: -300, w: 13 }, { x: 22, z: -375, w: 13 }, { x: 13, z: -406, w: 14 }] },
   ],
   roughs: [{ cx: -40, cz: -205, rx: 8, rz: 14, rot: 0.2, wob: 0.15, seed: 4 }], // L6: rough biting into the left fairway
   bunkers: [
@@ -44,10 +44,12 @@ export default makeMtnHole({
     { cx: 27, cz: -433, rx: 4, rz: 7, rot: 0.3, wob: 0.12, seed: 5, depth: 0.9 },   // right of the green
   ],
   // L8: a real creek between the fairways (8–10 m of water), widening smoothly into the lake
-  creek: { pts: [{ x: 64, z: 16, w: 2.6 }, { x: 36, z: -55, w: 3.2 }, { x: 9, z: -125, w: 4.0 }, { x: 7, z: -220, w: 4.6 }, { x: 6, z: -280, w: 6.5 }], depth: 1.4, bank: 2.5, lip: 'rock', lipW: 2.0 },
-  ponds: [{ cx: 5, cz: -312, rx: 11, rz: 28, wob: 0.08, seed: 2, depth: 2.2, lip: 'rock', lipW: 2.0 }],
-  ob: { x0: -66, x1: 64, z0: -458, z1: 18 },
-  forest: { gap: 8, rows: 2, spacing: 12, size: [1.1, 1.7], seed: 71, keep: 7 },
+  // L8/L10: a real creek between the fairways (10–14 m of water), meandering, widening into the lake
+  creek: { pts: [{ x: 66, z: 16, w: 2.8 }, { x: 38, z: -55, w: 3.6 }, { x: 10, z: -125, w: 5.0 }, { x: 6, z: -200, w: 6.0 }, { x: 6, z: -250, w: 8 }, { x: 6, z: -272, w: 12 }],
+    depth: 1.5, bank: 2.5, lip: 'rock', lipW: 2.0, meander: { amp: 3, len: 70, wvar: 0.25, seed: 3 } },
+  ponds: [{ cx: 6, cz: -308, rx: 15, rz: 34, rot: 0.08, wob: 0.1, seed: 2, depth: 2.4, lip: 'rock', lipW: 2.0, lobes: [{ cx: 12, cz: -330, rx: 12, rz: 16 }, { cx: 0, cz: -290, rx: 12, rz: 14 }] }],
+  ob: { x0: -70, x1: 72, z0: -458, z1: 18 },
+  forest: { gap: 7, rows: 3, spacing: 10, size: [1.1, 1.8], seed: 71, keep: 7 },
   obstacles: [boulder(46, -396, 1.3)],
   intro: mtnIntro({
     par: 4, prev: 'mtn-06', next: 'mtn-08',

@@ -102,6 +102,7 @@ Alexis played the Mountain 9 prototype. These are rules from now on (his words w
 | L7 | **Not always right turns: some doglegs left.** | Mix the turns across the 9. |
 | L8 | **A creek presented as an obstacle must be big enough to be one.** Creek beds widen where they reach a lake (no "balloon"). | Creeks that are in play are 5–8 m of water; the bed widens smoothly into the lake. |
 | L9 | **The fairway approach merges smoothly into the green.** | The approach widens to the green's width and runs into its fringe, no neck. |
+| L10 | **Creeks meander and vary in width, and widen into lakes; check the minimap by eye for lines and balloons** (PM fix pass, holes 4, 7, 9). | Gentle S-bends, width that breathes, a delta where the bed meets the lake; lakes are blobs, not circles. |
 
 ## 6b. Ideas for later courses (not the prototype)
 - **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:

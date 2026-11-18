@@ -29,9 +29,9 @@ export default makeMtnHole({
   green: { cx: -44, cz: -470, rx: 15, rz: 13, raise: 1.0, bank: 1.1, contour: (x, z) => 0.014 * (x + 44) - 0.008 * (z + 470) },
   blend: 16,
   fairways: [
-    { pts: [{ x: 0, z: -26, w: 12 }, { x: 0, z: -130, w: 21 }, { x: 0, z: -250, w: 23 }, { x: -20, z: -360, w: 20 }, { x: -31, z: -410, w: 18 }] },
+    { pts: [{ x: 0, z: -26, w: 13 }, { x: 0, z: -130, w: 23 }, { x: 0, z: -250, w: 26 }, { x: -18, z: -330, w: 22 }, { x: -28, z: -372, w: 26 }, { x: -32, z: -410, w: 22 }] },
     // the apron between the creek and the green, merging into the green (L9)
-    { pts: [{ x: -40, z: -440, w: 13 }, { x: -43, z: -456, w: 15 }] },
+    { pts: [{ x: -38, z: -442, w: 18 }, { x: -43, z: -456, w: 19 }] },
   ],
   // L6: a patch of rough biting into the left of the second leg
   roughs: [{ cx: -38, cz: -372, rx: 9, rz: 16, rot: -0.2, wob: 0.15, seed: 2 }],
@@ -43,9 +43,10 @@ export default makeMtnHole({
   ],
   // L8: the creek is a real obstacle in front of the green: 8–10 m of water, wider where it turns
   creek: {
-    pts: [{ x: 64, z: 10, w: 2.4 }, { x: 56, z: -220, w: 2.8 }, { x: 46, z: -360, w: 3.4 }, { x: 10, z: -418, w: 4.2 }, { x: -40, z: -430, w: 4.8 }, { x: -100, z: -418, w: 4.4 }],
-    depth: 1.5, bank: 3.5, lip: 'rough', lipW: 2.6,
+    pts: [{ x: 64, z: 10, w: 2.4 }, { x: 58, z: -220, w: 3.0 }, { x: 48, z: -350, w: 4.0 }, { x: 12, z: -420, w: 5.5 }, { x: -40, z: -430, w: 6.5 }, { x: -100, z: -418, w: 5.5 }],
+    depth: 1.6, bank: 3.5, lip: 'rough', lipW: 2.6, meander: { amp: 5, len: 80, wvar: 0.3, seed: 2 },
   },
+
   ob: { x0: -104, x1: 74, z0: -508, z1: 18 },
   forest: { gap: 9, rows: 2, spacing: 12, size: [1.1, 1.7], seed: 41, keep: 7 },
   obstacles: [],

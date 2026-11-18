@@ -31,7 +31,7 @@ export default makeMtnHole({
   ],
   bunkers: [{ cx: 12, cz: -158, rx: 4, rz: 4.5, rot: 0.4, wob: 0.14, seed: 2, depth: 1.4, lobes: [{ cx: 15, cz: -153, rx: 3, rz: 3 }] }],
   // the creek runs down the left of the green and close round the back of it: long is wet (owner liked it)
-  creek: { pts: [{ x: -68, z: -120, w: 2.8 }, { x: -28, z: -154, w: 3.2 }, { x: -19, z: -182, w: 3.4 }, { x: 4, z: -193, w: 3.4 }, { x: 60, z: -201, w: 3.4 }], depth: 1.4, bank: 3, lip: 'rock', lipW: 1.6 },
+  creek: { pts: [{ x: -68, z: -120, w: 2.8 }, { x: -28, z: -154, w: 3.2 }, { x: -19, z: -182, w: 3.4 }, { x: 4, z: -193, w: 3.4 }, { x: 60, z: -201, w: 3.4 }], depth: 1.4, bank: 3, lip: 'rock', lipW: 1.6, meander: { amp: 0, wvar: 0.15 } }, // kept tight behind the green (long is wet)
   ob: { x0: -58, x1: 58, z0: -214, z1: 14 },
   forest: { gap: 9, rows: 3, spacing: 11, size: [1.2, 1.8], seed: 61, keep: 7 },
   obstacles: [boulder(-30, -194, 1.4), boulder(-34, -172, 1.1)],

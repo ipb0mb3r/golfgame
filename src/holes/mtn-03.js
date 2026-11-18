@@ -24,7 +24,7 @@ export default makeMtnHole({
   fairways: [{ pts: [{ x: 6, z: -104, w: 9 }, { x: 6, z: -136, w: 13 }, { x: 5, z: -152, w: 15 }] }],
   bunkers: [{ cx: 22, cz: -176, rx: 4, rz: 7, rot: 0.3, wob: 0.12, seed: 4, depth: 0.8, lobes: [{ cx: 19, cz: -184, rx: 4, rz: 3 }] }],
   // the creek comes in from the left, bends round the front left of the green and leaves behind it (L8: a real hazard, 5–6 m wide)
-  creek: { pts: [{ x: -72, z: -104, w: 2.6 }, { x: -36, z: -128, w: 2.9 }, { x: -24, z: -152, w: 3.0 }, { x: -25, z: -178, w: 3.0 }, { x: -66, z: -206, w: 3.0 }], depth: 1.4, bank: 3, lip: 'rough' },
+  creek: { pts: [{ x: -72, z: -104, w: 2.6 }, { x: -36, z: -128, w: 2.9 }, { x: -24, z: -152, w: 3.0 }, { x: -25, z: -178, w: 3.0 }, { x: -66, z: -206, w: 3.0 }], depth: 1.4, bank: 3, lip: 'rough', meander: { amp: 2, len: 60, wvar: 0.25 } },
   ob: { x0: -62, x1: 58, z0: -206, z1: 14 },
   forest: { gap: 10, rows: 3, spacing: 11, size: [1.2, 1.8], seed: 31, keep: 7 },
   obstacles: [boulder(-36, -112, 1.3)],
