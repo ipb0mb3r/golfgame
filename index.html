@@ -71,6 +71,11 @@
   #sweetFrame { position: absolute; top: calc(-1 * var(--acc-over, 6px)); height: calc(34px + 2 * var(--acc-over, 6px)); box-sizing: border-box;
     pointer-events: none; z-index: 0; border-left: var(--acc-w, 1.5px) solid rgba(255,255,255,var(--acc-op, .6)); border-right: var(--acc-w, 1.5px) solid rgba(255,255,255,var(--acc-op, .6)); }
   #meterBar { z-index: 1; }
+  /* S14: a putt is 2 clicks (no accuracy). The bar shows only the power side (hud.js maps 0..1 to the
+     full width) and the ⚑; the accuracy window, its edge lines and its label are hidden. */
+  #meterWrap.putt #meterBar { background: #1d2a1f; }
+  #meterWrap.putt #sweet, #meterWrap.putt #sweetFrame, #meterWrap.putt #accLabel { display: none; }
+  #powLabel { margin-left: auto; }
   #powerMark { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; display: none; }
   #marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #fff; border-radius: 3px; box-shadow: 0 0 6px #000; }
   /* S8: the power click was missed, so the next click is a mini shot */
@@ -400,7 +405,7 @@
       <div id="marker"></div>
     </div>
     <div id="sweetFrame"></div>
-    <div id="meterLabels"><span>◀ accuracy</span><span>power ▶</span></div>
+    <div id="meterLabels"><span id="accLabel">◀ accuracy</span><span id="powLabel">power ▶</span></div>
   </div>
   <div id="controls">
     <button class="aimBtn" id="aimL">◀<span> Aim</span></button>
@@ -535,7 +540,7 @@
       <ol class="howList">
         <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow ring shows where the ball lands.</li>
         <li><b>Pick a club</b> with ‹ › or ▲ ▼. The best club is chosen for you.</li>
-        <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the bar is in quarters, like the ticks on the aim line; the ⚑ shows a putt's power), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right.</li>
+        <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the bar is in quarters, like the ticks on the aim line; the ⚑ shows a putt's power), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right. <b>Putts take 2 clicks</b> (start, power) and always roll straight along your aim.</li>
         <li>Watch the <b>wind</b> (top right) and the <b>lie</b>: rough and sand cap your power (the gray part of the meter).</li>
         <li>Water and out of bounds cost a penalty stroke. Sink it in as few strokes as you can.</li>
       </ol>

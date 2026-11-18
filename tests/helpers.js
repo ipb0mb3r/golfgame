@@ -33,8 +33,8 @@ export function scriptedSwing(clickTimes, { speed = 1, ...opts } = {}) {
   if (speed != null) TUNE.METER_SPEED = speed;
   try { return runSwing(clickTimes, opts); } finally { TUNE.METER_SPEED = was; }
 }
-function runSwing(clickTimes, { dt = 1 / 1000, maxT = 10, cap = 1, start = 0 } = {}) {
-  const meter = createMeter(cap), events = [];
+function runSwing(clickTimes, { dt = 1 / 1000, maxT = 10, cap = 1, start = 0, putt = false } = {}) {
+  const meter = createMeter(cap, putt), events = [];
   const clicks = [0, ...clickTimes].map(c => c + start);
   let i = 0, result = null;
   for (let k = 0; k * dt <= maxT + start && !result; k++) {

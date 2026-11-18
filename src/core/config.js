@@ -34,7 +34,6 @@ export const AUTO_CLUB_REACH = 0.95; // auto-pick: shortest club whose reach is 
 export const FRINGE_PUTT_DIST = 18;  // on the fringe closer than this, the putter is picked
 export const SPIN = { base: 1.2, loftScale: 40, min: 0.3, max: 1 }; // first-bounce keep × clamp(base − loft / loftScale, min, max)
 export const PUTT = {
-  aimErrorK: 0.25,    // a mistimed putt pushes the line by error × this (rad)
   rangeK: 1.5,        // putt range = distance (plays-like) × this ...
   rangeMin: 6,        // ... clamped to [min, max] meters
   rangeMax: 36,
@@ -90,7 +89,7 @@ export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, a
 export const POWER_SECTIONS = 4;
 // S22 (owner on PR #53): the minimap's aim line shows only these ticks (less busy than the 3D line)
 export const MINIMAP_TICKS = Object.freeze([0.5]);
-export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 } }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below)
+export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 }, puttMarkerMinPx: 8 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below); puttMarkerMinPx (S14, PM on PR #61): on a putt bar the marker's centre stays at least this far from the left edge, inside the rounded end
 
 // --- Tunables: ?tune= overrides (X8), one entry each (Gate A A5) ---
 // The only names a tune link may change. Each entry is the whole definition: the default (`def`)

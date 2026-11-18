@@ -1,19 +1,25 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
 import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE, POWER_SECTIONS } from '../core/config.js';
-import { sweetHalfWidth } from '../core/swing.js';
+import { sweetHalfWidth, swingClicks } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
 import { minimapTicks } from '../core/play.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
 
 const $ = id => document.getElementById(id);
 export const yd = m => Math.round(m * M2Y);
-const meterPct = p => ((p - METER_MIN) / (1 - METER_MIN)) * 100;
 const HINTS = {
   aim: 'Aim and pick a club, then click or press Space to swing',
   power: 'Click again to set POWER',
   grace: 'MAX! Click now for full power',
   nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
+};
+// S14: a putt is 2 clicks (start, power); the hints that differ
+const PUTT_HINTS = {
+  ...HINTS,
+  aim: 'Putt: click to start, click again to set power',
+  power: 'Click again to set POWER (the putt rolls straight)',
+  nopower: 'No power! Click for a mini putt, or wait to cancel',
 };
 // S18: where the default aim points (PM on PR #27: how a new player learns the aim rule).
 // S19: 'chip' = the cup because the ball is within CHIP_AIM_RANGE of it (any surface), and the line says so.
@@ -96,16 +102,27 @@ export function fitMinimap() {
 export function createHud(play) {
   const { cup, terrain, surfaces, wind, bag } = play;
   let msgTimer = 0;
+  // Where a meter value sits on the bar (%). The left end is METER_MIN (the accuracy side), or 0 for a
+  // putt (S14: no accuracy side, see layoutBar)
+  let barMin = METER_MIN;
+  const meterPct = p => ((p - barMin) / (1 - barMin)) * 100;
   // S22 (owner on PR #53): the accuracy window's thin edge lines, from config
   const rs = document.documentElement.style, af = HUD.accFrame;
   rs.setProperty('--acc-w', `${af.widthPx}px`); rs.setProperty('--acc-op', `${af.opacity}`); rs.setProperty('--acc-over', `${af.overPx}px`);
   // S22: the power side of the bar in POWER_SECTIONS equal parts (lines at 25/50/75% for 4)
   const sections = $('sections');
-  sections.replaceChildren(...Array.from({ length: POWER_SECTIONS - 1 }, (_, k) => {
-    const d = document.createElement('div');
-    d.style.left = `${meterPct((k + 1) / POWER_SECTIONS)}%`;
-    return d;
-  }));
+  sections.replaceChildren(...Array.from({ length: POWER_SECTIONS - 1 }, () => document.createElement('div')));
+  // S14: the bar for a putt (2 clicks) shows only the power side; for every other club the accuracy
+  // side too. Lays out the parts that depend on where the bar starts.
+  let barPutt = null;
+  function layoutBar(putt) {
+    if (putt === barPutt) return;
+    barPutt = putt; barMin = putt ? 0 : METER_MIN;
+    [...sections.children].forEach((d, k) => { d.style.left = `${meterPct((k + 1) / POWER_SECTIONS)}%`; });
+    $('meterFill').style.left = `${meterPct(0)}%`;
+    $('meterWrap').classList.toggle('putt', putt);
+  }
+  layoutBar(false);
   // The lie on the meter (S11): the green impact zone at its real width (SWEET × sweetScale) and the
   // grayed-out part above the power cap.
   function drawLie({ maxPower, sweetScale }) {
@@ -118,10 +135,11 @@ export function createHud(play) {
     const cap = $('capShade').style;
     cap.left = `${meterPct(maxPower)}%`; cap.display = maxPower < 1 ? 'block' : 'none';
   }
-  // "Rough · max 85% · harder timing"
-  function lieText({ maxPower, sweetScale }) {
+  // "Rough · max 85% · harder timing". A putt has no timing (S14), so no timing part.
+  function lieText({ maxPower, sweetScale }, putt = false) {
     const parts = [surfaces[play.lie].name];
     if (maxPower < 1) parts.push(`max ${Math.round(maxPower * 100)}%`);
+    if (putt) return parts.join(' · ');
     if (sweetScale < 1) parts.push('harder timing'); else if (sweetScale > 1) parts.push('easier timing');
     return parts.join(' · ');
   }
@@ -172,10 +190,12 @@ export function createHud(play) {
   function update(state, power) {
     const aiming = isAimingState(state);
     const club = bag[play.clubIdx];
+    const putt = swingClicks(club) === 2;
+    layoutBar(putt);
     $('strokeTxt').textContent = Math.min(play.strokes + (aiming ? 1 : 0), play.hole.maxStrokes);
     $('distTxt').textContent = distText(state);
     const lie = play.lieOf();
-    $('lieTxt').textContent = lieText(lie);
+    $('lieTxt').textContent = lieText(lie, putt);
     $('aimTxt').textContent = AIM_TEXT[play.targetKind]?.() ?? '-';
     drawLie(lie);
     $('slopeTxt').textContent = aiming ? slopeText() : '-';
@@ -189,7 +209,7 @@ export function createHud(play) {
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
     const warn = state === 'aim' ? play.shotWarning() : null;
-    $('hint').textContent = warn ? warnHint(warn) : HINTS[state] || '';
+    $('hint').textContent = warn ? warnHint(warn) : (putt ? PUTT_HINTS : HINTS)[state] || '';
     $('hint').classList.toggle('warn', !!warn);
     const pm = $('powerMark');
     if (state === 'accuracy' || state === 'flight' || state === 'roll') { pm.style.display = 'block'; pm.style.left = `${meterPct(power)}%`; }
@@ -198,7 +218,8 @@ export function createHud(play) {
   }
 
   function updateMeter(state, value, power) {
-    $('marker').style.left = `${meterPct(value)}%`;
+    // S14 (PM on PR #61): a putt bar starts at 0, so keep the marker inside its rounded left end
+    $('marker').style.left = barPutt ? `max(${meterPct(value)}%, ${HUD.puttMarkerMinPx}px)` : `${meterPct(value)}%`;
     const fillTo = state === 'power' ? value : state === 'grace' ? play.lieOf().maxPower : (state === 'aim' || state === 'nopower') ? 0 : power;
     $('meterBar').classList.toggle('nopower', state === 'nopower');
     $('meterFill').style.width = `${meterPct(fillTo) - meterPct(0)}%`;

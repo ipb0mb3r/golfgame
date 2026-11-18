@@ -10,7 +10,7 @@
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
 import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
-import { createMeter, resetMeter, pressMeterAt, tickMeterTo } from '../core/swing.js';
+import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
@@ -91,11 +91,11 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     if (snapCamera) rig.snap(camView());
   }
 
-  // The three-click swing. `at` = when the click happened (s, performance.now() clock, S16)
+  // The three-click swing (two clicks with the putter, S14). `at` = when the click happened (s, performance.now() clock, S16)
   function onSwingInput(at = performance.now() / 1000) {
     if (!isAimingState(state)) return;
-    // The top of the meter is the lie's power cap for this club (S11)
-    if (state === 'aim') { input.releaseAim(); meter.cap = play.lieOf().maxPower; }
+    // The top of the meter is the lie's power cap for this club (S11); the putter's meter has no accuracy click (S14)
+    if (state === 'aim') { input.releaseAim(); resetMeter(meter, play.lieOf().maxPower, swingClicks(play.club) === 2); }
     const result = pressMeterAt(meter, at);
     if (result) endSwing(result);
     else state = meter.phase;
@@ -112,7 +112,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       state = 'aim'; resetMeter(meter); updateHud();
       return null;
     }
-    hud.flash(shot.label);
+    if (shot.label) hud.flash(shot.label); // a putt has no label (S14)
     state = shot.kind === 'putt' ? 'roll' : 'flight';
     shotT = 0; treeFlash = false;
     updateHud();

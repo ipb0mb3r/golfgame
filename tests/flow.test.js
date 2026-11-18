@@ -158,6 +158,24 @@ test('A3: every meter phase the swing can reach is listed, and each is "swinging
   assert.deepEqual(METER_PHASES.filter(isSwinging), [...SWING_PHASES]);
 });
 
+// S14: a putt (2 clicks) reaches every listed phase except 'accuracy', and each script ends
+test('A3 / S14: a 2-click putt meter reaches only listed phases, never accuracy', () => {
+  const seen = new Set();
+  const scripts = [[0.5], [1.05], [1.4], [0.5, 0.9], []];
+  for (const clicks of scripts) {
+    const m = createMeter(1, true), times = [0, ...clicks];
+    seen.add(m.phase);
+    let k = 0;
+    for (let t = 0; t <= 4 && m.phase !== 'done'; t += 1 / 240) {
+      while (k < times.length && times[k] <= t) { pressMeter(m); k++; seen.add(m.phase); }
+      if (m.phase === 'done') break;
+      tickMeter(m, 1 / 240); seen.add(m.phase);
+    }
+    assert.equal(m.phase, 'done', `script [${clicks}] ends`);
+  }
+  assert.deepEqual([...seen].sort(), METER_PHASES.filter(ph => ph !== 'accuracy').sort());
+});
+
 test('A3: game-state predicates (used by the HUD, camera and input) cover every state once', () => {
   for (const ph of SWING_PHASES) assert.ok(GAME_STATES.includes(ph), `${ph} is a game state`);
   for (const s of GAME_STATES) {

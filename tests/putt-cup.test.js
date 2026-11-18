@@ -12,34 +12,25 @@ const putt = (acc, outcome = 'normal') => resolveShot({ club: CLUBS.putter, powe
 // Direction of a putt in degrees: > 0 = right of the aim line (x = right, holes play toward −z)
 const angle = s => deg(Math.atan2(s.dir.x, -s.dir.z));
 
-// --- T5 putt accuracy ---
-test('T5: an early putt goes left, a late putt goes right, by the same amount', () => {
-  for (const a of [0.1, 0.15, 0.2]) {
-    const early = angle(putt(a)), late = angle(putt(-a));
-    assert.ok(early < 0, `acc +${a}: left (${early.toFixed(2)}°)`);
-    assert.ok(late > 0, `acc −${a}: right (${late.toFixed(2)}°)`);
-    assert.ok(Math.abs(early + late) < 1e-9, 'same size');
+// --- T5 putt accuracy, since S14: a putt is always struck straight (owner, 2026-11-18) ---
+test('T5 / S14: a putt goes exactly along the aim whatever acc or outcome says (no pull, push or curve)', () => {
+  for (let a = METER_MIN; a <= 1 + 1e-9; a += 0.01) {
+    for (const outcome of ['normal', 'shank', 'topped']) {
+      const s = putt(a, outcome);
+      assert.equal(s.kind, 'putt');
+      assert.equal(s.err, 0, `acc ${a.toFixed(2)} ${outcome}: no error`);
+      assert.equal(angle(s), 0, `acc ${a.toFixed(2)} ${outcome}: straight`);
+      assert.deepEqual(s.curve, { x: 0, y: 0, z: 0 });
+    }
   }
-  assert.equal(angle(putt(0.065)), 0, 'inside the green window (0.045 × 1.5 = 0.0675, S17) the putt is straight');
-  assert.notEqual(angle(putt(0.07)), 0, 'just outside it is pushed');
-});
-
-test('T5: how far a mistimed putt is pushed (pins PUTT.aimErrorK and the curve shape)', () => {
-  // S17 linear curve (CURVE_SHAPE 1): acc 0.15 → error 0.15 → × aimErrorK 0.25 = 0.0375 rad ≈ 2.15°
-  // (1.61° with the quadratic curve before S17)
-  assert.equal(PUTT.aimErrorK, 0.25);
-  assert.ok(Math.abs(angle(putt(-0.15)) - 2.148) < 0.005, `${angle(putt(-0.15)).toFixed(3)}°`);
-  // at the far end of the meter (0.2) it is 0.05 rad ≈ 2.86°
-  assert.ok(Math.abs(angle(putt(METER_MIN)) - 2.865) < 0.005);
-  // the speed is unchanged by a mistimed putt: only the line
+  // the speed doesn't depend on acc either; a 'shank' (only reachable through testHit) is a normal putt
   const v = s => Math.hypot(s.vel.x, s.vel.z);
   assert.ok(Math.abs(v(putt(0.15)) - v(putt(0))) < 1e-12);
-});
-
-test('T5: a shanked putt (no 3rd click) stays mild: pushed right, under 10°', () => {
-  const a = angle(putt(METER_MIN, 'shank'));
-  assert.ok(a > 0 && a <= 10, `${a.toFixed(2)}°`);
-  assert.ok(Math.abs(a - 8.594) < 0.01, 'today: 0.6 × 0.25 rad = 8.59°');
+  // no timing grade on a putt (PM on PR #61): no label, except "Topped!" for a mini putt
+  assert.equal(putt(0).label, ''); assert.equal(putt(METER_MIN, 'shank').label, '');
+  assert.equal(resolveShot({ club: CLUBS.putter, power: 1, acc: 0, aim: 0, puttMax: 10, greenDecel: 1.1 }).label, '', 'no "Perfect!"');
+  assert.equal(putt(0, 'topped').label, 'Topped!');
+  assert.equal(PUTT.aimErrorK, undefined, 'the putt aim error is gone');
 });
 
 // --- T6 cup rules ---
