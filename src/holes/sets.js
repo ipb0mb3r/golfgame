@@ -3,10 +3,15 @@
 import hole1 from './hole1.js';
 import hole2 from './hole2.js';
 import hole3 from './hole3.js';
+// Mountain 9 prototype (Phase C, course designer): docs/COURSE_PLAN_MTN.md
+import mtn01 from './mtn-01.js';
+import mtn02 from './mtn-02.js';
+import mtn03 from './mtn-03.js';
 import { validateHole } from '../core/validate.js';
 
+export const MTN = [mtn01, mtn02, mtn03];
 // Every hole is checked when it loads (Gate A T7): a typo fails here, naming the hole and the field.
-export const HOLES = Object.fromEntries([hole1, hole2, hole3].map(h => [validateHole(h).id, h]));
+export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN].map(h => [validateHole(h).id, h]));
 export const DEFAULT_HOLE = hole1.id;
 
 // A set (course) is a playlist of hole ids of ANY length, and the same hole may appear in several
@@ -15,6 +20,8 @@ export const DEFAULT_HOLE = hole1.id;
 // `menu` says otherwise: 'practice' = its holes are the Practice menu's holes, 'hidden' = only
 // reachable with ?set=. `tag` is shown next to the name on the menu.
 export const SETS = [
+  // Phase C: the Mountain 9 prototype course (holes are added as they are built)
+  { id: 'mountain9', name: 'Mountain 9', tag: 'Prototype', holes: MTN.map(h => h.id) },
   // Temporary round test sets (R6), only until the real course exists (Phase C)
   { id: 'prototype3', name: 'Prototype 3', tag: 'Prototype', holes: ['pl-01', 'pl-02', 'pl-03'] },
   { id: 'test9', name: 'Test 9', tag: 'Prototype', holes: ['pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03'] },

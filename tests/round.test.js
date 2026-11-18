@@ -190,7 +190,7 @@ test('R6: personal best: lower to-par wins, the first finished round is a best',
 });
 
 test('holes need a difficulty 1–5 (the AI rivals use it in Phase T)', () => {
-  assert.deepEqual(Object.values(HOLES).map(h => h.difficulty), [1, 3, 2]);
+  assert.deepEqual(['pl-01', 'pl-02', 'pl-03'].map(id => HOLES[id].difficulty), [1, 3, 2]); // the Mountain 9 holes: tests/mtn.test.js
   for (const d of [0, 6, 2.5, undefined, '3']) assert.throws(() => validateHole({ ...HOLES['pl-01'], difficulty: d }), /difficulty must be a whole number 1–5/);
 });
 
