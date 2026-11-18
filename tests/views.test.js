@@ -2,8 +2,9 @@
 // toward them. These check the "never a blind shot" rule on every hole, in phone portrait and landscape.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEPS } from '../src/core/views.js';
-import { TUNE } from '../src/core/config.js';
+import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEPS, pickFlightView, flightSpot, flyoverRoute, flyoverPath, FLIGHT_VIEWS } from '../src/core/views.js';
+import { TUNE, CAM, setTunable, resetTunables } from '../src/core/config.js';
+import { createRng } from '../src/core/rng.js';
 import { createHolePlay } from '../src/core/play.js';
 import { HOLES } from '../src/holes/sets.js';
 import { SCENARIOS } from '../src/holes/scenarios.js';
@@ -129,4 +130,82 @@ test('V5: views are pure: the same inputs give the same view', () => {
   const a = aimView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
   const b = aimView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
   assert.deepEqual(a, b);
+});
+
+// --- V3: flight views ---------------------------------------------------------------------------
+const drive = (over = {}) => ({ putt: false, from: { x: 0, y: 0, z: 0 }, land: { x: 0, y: 0, z: -200 }, carry: 200, dir: { x: 0, z: -1 }, apex: 30, ...over });
+const run = (h, rng, n, shot = drive) => { const hist = []; for (let i = 0; i < n; i++) hist.push(pickFlightView(h, rng, hist, typeof shot === 'function' ? shot(i) : shot).kind); return hist; };
+
+test('V3: putts, short shots and the Classic setting are always filmed from behind', () => {
+  const rng = createRng(5);
+  for (let i = 0; i < 50; i++) {
+    assert.equal(pickFlightView(flat, rng, [], drive({ putt: true })).kind, 'behind');
+    assert.equal(pickFlightView(flat, rng, [], drive({ carry: TUNE.CAM_VARIETY_MIN - 1 })).kind, 'behind');
+    assert.equal(pickFlightView(flat, rng, [], drive({ classic: true })).kind, 'behind');
+  }
+  try { setTunable('CAM_VARIETY', 0); assert.ok(run(flat, createRng(9), 60).every(k => k === 'behind'), '?tune=CAM_VARIETY:0'); }
+  finally { resetTunables(); }
+});
+
+test('V3: varied, never the same view more than CAM_MAX_RUN times in a row, landing never twice, weights roughly kept', () => {
+  const hist = run(flat, createRng(42), 3000);
+  const count = Object.fromEntries(FLIGHT_VIEWS.map(k => [k, hist.filter(x => x === k).length]));
+  for (const k of FLIGHT_VIEWS) assert.ok(count[k] > 300, `${k} shows (${count[k]})`);
+  let r = 1;
+  for (let i = 1; i < hist.length; i++) {
+    r = hist[i] === hist[i - 1] ? r + 1 : 1;
+    assert.ok(r <= TUNE.CAM_MAX_RUN, `run of ${r} × ${hist[i]} at ${i}`);
+    assert.ok(!(hist[i] === 'landing' && hist[i - 1] === 'landing'), 'landing twice');
+  }
+  assert.ok(count.behind > count.side && count.behind > count.landing, JSON.stringify(count));
+});
+
+test('V3: seeded: the same seed gives the same views, and every pick takes exactly 2 numbers from the stream', () => {
+  assert.deepEqual(run(flat, createRng(7), 40), run(flat, createRng(7), 40));
+  assert.notDeepEqual(run(flat, createRng(7), 40), run(flat, createRng(8), 40));
+  const a = createRng(3), b = createRng(3);
+  pickFlightView(flat, a, [], drive({ putt: true })); b(); b();
+  assert.equal(a(), b(), 'a putt still takes its 2 numbers, so later shots do not depend on what came before');
+});
+
+test('V3 never blind: a side or landing spot that cannot see the shot is not used', () => {
+  // A wall all round except a corridor along the flight line: no side or landing spot can see the landing
+  const walled = (x, z) => (Math.abs(x) > 3 ? 60 : 0);
+  assert.ok(run(walled, createRng(11), 200).every(k => k === 'behind'));
+  // On a real hole the spots stand above the ground and see the landing
+  const play = createHolePlay(HOLES['mtn-04'], { seed: 1 }); play.reset();
+  const h = play.terrain.heightAt, from = { ...play.ball.pos }, land = play.landingPoint(play.clubIdx, play.aim, 1);
+  const shot = { putt: false, from, land, carry: Math.hypot(land.x - from.x, land.z - from.z), dir: dirFromAim(play.aim), apex: 30 };
+  for (const kind of ['side', 'landing']) for (const side of [-1, 1]) {
+    const p = flightSpot(h, kind, shot, side);
+    assert.ok(p.y > h(p.x, p.z), `${kind} ${side} above ground`);
+  }
+});
+
+// --- V4: the flyover ----------------------------------------------------------------------------
+test('V4: the route is tee → aimTarget → green (par 3: tee → green), never the playLine corner', () => {
+  for (const hole of Object.values(HOLES)) {
+    const r = flyoverRoute(hole, { x: 1, z: -2 });
+    assert.deepEqual(r[0], { x: hole.tee.x, z: hole.tee.z }, hole.id);
+    assert.deepEqual(r[r.length - 1], { x: hole.cup.x, z: hole.cup.z }, hole.id);
+    if (hole.par <= 3) assert.equal(r.length, 2, hole.id);
+    else assert.deepEqual(r[1], hole.aimTarget ? { x: hole.aimTarget.x, z: hole.aimTarget.z } : { x: 1, z: -2 }, hole.id);
+  }
+  assert.deepEqual(flyoverRoute({ par: 4, tee: { x: 0, z: 0 }, cup: { x: 0, z: -300 } }, { x: 5, z: -200 })[1], { x: 5, z: -200 }, 'no aimTarget: the tee aim point');
+});
+
+test('V4: the flyover starts at the tee, ends past the cup looking at the flag, stays above the ground and lasts 3.5-6.5 s', () => {
+  for (const hole of Object.values(HOLES)) {
+    const play = createHolePlay(hole, { seed: 1 }); play.reset();
+    const h = play.terrain.heightAt, path = flyoverPath(h, flyoverRoute(hole, play.target));
+    assert.ok(path.duration >= CAM.flyover.minTime && path.duration <= CAM.flyover.maxTime, `${hole.id} ${path.duration}`);
+    const a = path.at(0), z = path.at(path.duration + 1);
+    assert.ok(Math.hypot(a.pos.x - hole.tee.x, a.pos.z - hole.tee.z) < 1, `${hole.id} starts at the tee`);
+    assert.ok(Math.hypot(z.look.x - hole.cup.x, z.look.z - hole.cup.z) < 1e-6, `${hole.id} ends on the flag`);
+    assert.ok(Math.hypot(z.pos.x - hole.cup.x, z.pos.z - hole.cup.z) > CAM.flyover.past * 0.8, `${hole.id} ends behind the green`);
+    for (let t = 0; t <= path.duration; t += 0.05) {
+      const v = path.at(t);
+      assert.ok(v.pos.y >= h(v.pos.x, v.pos.z) + CAM.flyover.endHeight - 1e-6, `${hole.id} at ${t.toFixed(2)} s`);
+    }
+  }
 });

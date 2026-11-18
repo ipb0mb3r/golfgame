@@ -12,7 +12,8 @@ export const SWING_PHASES = Object.freeze(['power', 'grace', 'nopower', 'accurac
 //   intro   the intro card is up      aim      waiting for click 1      (SWING_PHASES) mid-swing
 //   flight  ball in the air           roll     ball rolling             wait  core decided what's next, the game shows it
 //   holed   ball dropping in the cup  result   the result card is up
-export const GAME_STATES = Object.freeze(['intro', 'aim', ...SWING_PHASES, 'flight', 'roll', 'wait', 'holed', 'result']);
+//   flyover the hole flyover (Phase V, V4): after the card, before the first aim; a tap skips it
+export const GAME_STATES = Object.freeze(['intro', 'flyover', 'aim', ...SWING_PHASES, 'flight', 'roll', 'wait', 'holed', 'result']);
 
 const SWINGING = new Set(SWING_PHASES);
 // The meter is running
@@ -21,6 +22,8 @@ export const isSwinging = phase => SWINGING.has(phase);
 export const isAimingState = state => state === 'aim' || isSwinging(state);
 // The camera stands behind the ball looking down the aim line (also behind the intro card)
 export const isAimView = state => state === 'intro' || isAimingState(state);
+// V4: the hole flyover is playing (the camera flies the route; a tap, Space or Enter skips it)
+export const isFlyover = state => state === 'flyover';
 // The ball is moving and physics runs
 export const isBallMoving = state => state === 'flight' || state === 'roll';
 

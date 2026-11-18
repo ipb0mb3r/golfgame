@@ -1,7 +1,7 @@
 // The camera rig: eases the Three.js camera toward the view core asks for. Where to stand is decided
 // in core/views.js (pure, tested); this file only follows it and keeps the camera above the ground.
 import * as THREE from 'three';
-import { isAimView, isBallMoving } from '../core/states.js';
+import { isAimView, isBallMoving, isFlyover } from '../core/states.js';
 import { CAM } from '../core/config.js';
 import { aimView, landingView, readView } from '../core/views.js';
 
@@ -17,8 +17,11 @@ export function createCameraRig(camera, heightAt) {
   // v = { state, ball, dir (aim), putter (club is the putter), isPutt (the moving ball is a putt), shotDir,
   //       mark (the aim marker, or a putt's end point), cup, view (V2 button view: null | 'landing' | 'above' | 'low'),
   //       frame ({ aspect, fov, top, bottom }: the free band of the screen, see core/views.js) }
+  let lookK = 0, cut = false; // set by goal(): the look eases at its own speed (0 = with the position); cut = jump there now
   function goal(v) {
     const { ball, dir: d } = v;
+    lookK = 0; cut = false;
+    if (isFlyover(v.state) && v.fly) { want(v.fly); cut = true; return 0; } // V4: the path is already smooth
     const gy = heightAt(ball.x, ball.z);
     if (isAimView(v.state)) { // incl. the S8 phases grace / nopower (Gate A A3: this list used to miss them)
       if (v.view === 'landing' && v.mark) { want(landingView(heightAt, { ball, dir: d, mark: v.mark }, v.frame)); return CAM.ease.view; }
@@ -33,6 +36,14 @@ export function createCameraRig(camera, heightAt) {
       return CAM.ease.aim; // nothing to aim at yet: stay
     }
     if (isBallMoving(v.state)) {
+      // V3: a standing camera (side / landing) watches the ball from its spot; the shot starts with a cut to it
+      const f = v.flight;
+      if (f && f.spot && !f.dropped) {
+        wantPos.set(f.spot.x, f.spot.y, f.spot.z); wantLook.set(ball.x, ball.y, ball.z);
+        if (f.cut) { f.cut = false; cut = true; }
+        lookK = CAM.flightEase.look;
+        return 0;
+      }
       const back = v.isPutt ? 3.5 : 11, s = v.shotDir;
       wantPos.set(ball.x - s.x * back, 0, ball.z - s.z * back);
       wantPos.y = gy + Math.max((ball.y - gy) * 0.6, 0) + (v.isPutt ? 1.6 : 3.5);
@@ -46,8 +57,11 @@ export function createCameraRig(camera, heightAt) {
     snap(v) { goal(v); camPos.copy(wantPos); camLook.copy(wantLook); camera.position.copy(camPos); camera.lookAt(camLook); },
     update(v, dt) {
       const k = goal(v);
-      const a = 1 - Math.exp(-k * dt);
-      camPos.lerp(wantPos, a); camLook.lerp(wantLook, a);
+      if (cut) { camPos.copy(wantPos); camLook.copy(wantLook); }
+      else {
+        const a = 1 - Math.exp(-k * dt), al = lookK ? 1 - Math.exp(-lookK * dt) : a;
+        camPos.lerp(wantPos, a); camLook.lerp(wantLook, al);
+      }
       keepAboveGround(camPos, 0.5);
       camera.position.copy(camPos); camera.lookAt(camLook);
     },

@@ -107,6 +107,18 @@ export const CAM = Object.freeze({
   // the middle (× the height), so the putt points up the screen. readLow: back m behind the ball, height m up. *At = where that point shows in the free band.
   readAbove: Object.freeze({ fill: 0.7, margin: 2, hMin: 6, hMax: 60, tilt: 0.2, midAt: 0.5 }),
   readLow:   Object.freeze({ back: 3, height: 0.45, cupAt: 0.45 }),
+  // V3 flight views (core/views.js pickFlightView): side = a spot `along` × the carry down the line and
+  // `off` × the carry to one side, at max(minH, apexK × the apex) m; landingCam = `past` m beyond the
+  // predicted landing and `off` m to one side, `height` m up. The landing camera hands over to the chase
+  // camera when the ball runs more than passBy m past it.
+  side:       Object.freeze({ along: 0.45, off: 0.42, minH: 8, apexK: 0.8 }),
+  landingCam: Object.freeze({ past: 25, off: 9, height: 7, passBy: 40 }),
+  flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
+  viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)
+  // V4 flyover (core/views.js flyoverPath): height m over the ground, down to endHeight over the last
+  // `descend` m; past = m the path runs on beyond the cup; lookAhead = m ahead it looks; from lookCup m
+  // before the cup it looks at the flag. Time = length / CAM_FLYOVER_SPEED, clamped to [minTime, maxTime] s.
+  flyover:    Object.freeze({ height: 32, endHeight: 16, descend: 90, past: 30, lookAhead: 90, lookCup: 30, samples: 24, minTime: 3.5, maxTime: 6.5 }),
   holdMs: 300,  // V2: a press on a view button longer than this is a hold (the view goes back on release); shorter is a tap (stays until tapped again)
   ease: Object.freeze({ aim: 5, view: 4 }), // how fast the camera eases to the aiming view / a button view (1/s)
   bandProbe: 60, // px each side of the screen's centre: a top panel inside this column pushes the free band down (portrait)
@@ -160,6 +172,14 @@ export const TUNABLES = Object.freeze({
   CAM_AIM_MARK:          { def: 0.16, min: 0.05,  max: 0.5 },  // ... and the aim marker here (the camera height is solved for both)
   CAM_PUTT_BALL:         { def: 0.8,  min: 0.5,   max: 0.95 }, // the same for a putt (the marker = the end of the putt line)
   CAM_PUTT_MARK:         { def: 0.3,  min: 0.05,  max: 0.6 },
+  // Camera (Phase V): ball-flight variety (V3) and the hole flyover (V4)
+  CAM_VARIETY:           { def: 1,    min: 0,     max: 1 },    // 1 = varied flight camera, 0 = classic (always behind); the Settings switch sets it too
+  CAM_VARIETY_MIN:       { def: 60,   min: 0,     max: 200 },  // m: shots carrying less than this (chips, pitches) are always filmed from behind
+  CAM_W_BEHIND:          { def: 0.5,  min: 0,     max: 1 },    // weights of the flight views (normalised)
+  CAM_W_SIDE:            { def: 0.25, min: 0,     max: 1 },
+  CAM_W_LANDING:         { def: 0.25, min: 0,     max: 1 },
+  CAM_MAX_RUN:           { def: 2,    min: 1,     max: 10 },   // no flight view more than this many shots in a row (landing: never twice)
+  CAM_FLYOVER_SPEED:     { def: 90,   min: 20,    max: 300 },  // m/s along the route (the flyover lasts CAM.flyover minTime..maxTime s)
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones

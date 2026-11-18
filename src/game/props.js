@@ -95,7 +95,7 @@ export function createProps(scene, hole, terrain, cup) {
     // marks = play.aimMarks() (S22, full shots): the marker and the 25/50/75% ticks; putts keep the ring
     setAimGuide(visible, from, dir, len, target, putter, warn = null, marks = null) {
       dots.visible = visible;
-      ring.visible = visible && putter;
+      ring.visible = visible && !!putter; // !!: club.putter is undefined on other clubs, and Three.js draws anything not === false (the S22 ring showed on full shots, PR #63)
       markTri.visible = ticks.visible = visible && !putter && !!marks;
       warnMark.visible = warnFoot.visible = warnPole.visible = visible && !!warn;
       if (!visible) return;

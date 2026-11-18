@@ -556,6 +556,7 @@
         <tr><th>Aim</th><td>◀ ▶ or A / D</td></tr>
         <tr><th>Club</th><td>▲ ▼ or W / S</td></tr>
         <tr><th>Skip</th><td>⏩ Skip, Space or Enter while the ball rolls</td></tr>
+        <tr><th>View</th><td>🔍 / 👁 above the meter, or V, while aiming: a look at the landing area, or at the green on a putt (tap: stays, hold: back when you let go)</td></tr>
         <tr><th>Pause</th><td>the II button or Esc</td></tr>
       </table>
     </section>
@@ -568,6 +569,14 @@
       <div class="setRow stack">
         <div><b>Putt grid</b><small>Grid lines on the green help you read the slope.</small></div>
         <div class="seg" id="setGrid"></div>
+      </div>
+      <div class="setRow stack">
+        <div><b>Flight camera</b><small>Varied: some shots are filmed from the side or from where the ball lands. Classic: always from behind.</small></div>
+        <div class="seg" id="setCam"></div>
+      </div>
+      <div class="setRow">
+        <div><b>Hole flyover</b><small>A short flight over each hole the first time you play it. Tap to skip.</small></div>
+        <button class="switch" id="setFlyover" role="switch" aria-checked="true" data-setting="flyover">On</button>
       </div>
       <p id="setSaved"></p>
     </section>

@@ -139,3 +139,122 @@ export function nextView(cur, putt) {
   const i = steps.indexOf(cur);
   return i < 0 ? steps[0] : i + 1 < steps.length ? steps[i + 1] : null;
 }
+
+// --- V3: the ball-flight camera ---------------------------------------------------------------
+// The flight views. 'behind' is the chase camera (game/camera.js, as before Phase V). 'side' and
+// 'landing' stand still at a spot picked when the ball is hit and turn to watch the ball.
+export const FLIGHT_VIEWS = Object.freeze(['behind', 'side', 'landing']);
+
+// Where a 'side' or 'landing' camera stands for a shot. shot = { from, dir: {x,z} (unit), land
+// (predicted landing, no wind/curve), carry (m, flat), apex (m above the start) }, side = ±1 (right / left
+// of the flight line). Returns { x, y, z }.
+export function flightSpot(heightAt, kind, shot, side) {
+  const { from, dir, land, carry, apex } = shot;
+  const px = -dir.z * side, pz = dir.x * side; // perpendicular, to the right for side = +1
+  let x, z, up;
+  if (kind === 'side') {
+    const c = CAM.side;
+    x = from.x + dir.x * carry * c.along + px * carry * c.off;
+    z = from.z + dir.z * carry * c.along + pz * carry * c.off;
+    up = Math.max(c.minH, apex * c.apexK);
+  } else {
+    const c = CAM.landingCam;
+    x = land.x + dir.x * c.past + px * c.off;
+    z = land.z + dir.z * c.past + pz * c.off;
+    up = c.height;
+  }
+  return { x, y: heightAt(x, z) + up, z };
+}
+
+// Can a camera at `spot` see the shot: the landing spot and the top of the flight (never blind)?
+function seesShot(heightAt, spot, shot) {
+  const top = { x: (shot.from.x + shot.land.x) / 2, y: shot.from.y + shot.apex, z: (shot.from.z + shot.land.z) / 2 };
+  return lineClear(heightAt, spot, { ...shot.land, y: shot.land.y + 1 }) && lineClear(heightAt, spot, top);
+}
+
+// V3 rules: which view films this shot. rng = the view stream (its own seeded RNG, never the
+// physics one), history = the views of this hole's earlier shots (oldest first), shot as above plus
+// putt (true for a putt) and classic (the Settings switch: always 'behind'). Returns { kind, spot (null for 'behind'), side }.
+//   1. putts, and full shots carrying less than CAM_VARIETY_MIN, are 'behind' (and CAM_VARIETY 0 = Classic: always)
+//   2. else a weighted draw (CAM_W_BEHIND / SIDE / LANDING)
+//   3. no view more than CAM_MAX_RUN times in a row, and 'landing' never twice in a row
+//   4. a 'side' or 'landing' spot that can't see the shot is not used
+// The draw always takes the same number of random numbers (2), so the stream stays in step whatever wins.
+export function pickFlightView(heightAt, rng, history, shot) {
+  const r1 = rng(), r2 = rng();
+  const behind = { kind: 'behind', spot: null, side: 0 };
+  if (TUNE.CAM_VARIETY < 0.5 || shot.classic || shot.putt || shot.carry < TUNE.CAM_VARIETY_MIN) return behind;
+  const side = r2 < 0.5 ? -1 : 1;
+  const run = k => { let n = 0; for (let i = history.length - 1; i >= 0 && history[i] === k; i--) n++; return n; };
+  const allowed = k => (k === 'landing' ? run(k) < 1 : run(k) < TUNE.CAM_MAX_RUN);
+  const w = { behind: TUNE.CAM_W_BEHIND, side: TUNE.CAM_W_SIDE, landing: TUNE.CAM_W_LANDING };
+  const total = FLIGHT_VIEWS.reduce((a, k) => a + w[k], 0);
+  let pick = 'behind', acc = 0;
+  if (total > 0) for (const k of FLIGHT_VIEWS) { acc += w[k] / total; if (r1 < acc) { pick = k; break; } }
+  // The drawn view breaks a rule: the next view in the list that doesn't (wrapping round)
+  const order = FLIGHT_VIEWS.slice(FLIGHT_VIEWS.indexOf(pick)).concat(FLIGHT_VIEWS.slice(0, FLIGHT_VIEWS.indexOf(pick)));
+  for (const k of order) {
+    if (!allowed(k) || (k !== 'behind' && !(w[k] > 0))) continue;
+    if (k === 'behind') return behind;
+    const spot = flightSpot(heightAt, k, shot, side);
+    if (seesShot(heightAt, spot, shot)) return { kind: k, spot, side };
+  }
+  return behind;
+}
+
+// --- V4: the hole flyover -------------------------------------------------------------------------
+// The hole's regular route (owner: no need to show every route): tee → the landing area → green.
+// Par 3: tee → cup. Par 4/5: the landing area is the hole's `aimTarget`, else `teeAim` (the S21 tee aim
+// point with the Driver, given by the caller). Doglegs use aimTarget, not the playLine corner (PM on #63).
+export function flyoverRoute(hole, teeAim = null) {
+  const pt = p => ({ x: p.x, z: p.z });
+  if (hole.par <= 3) return [pt(hole.tee), pt(hole.cup)];
+  const land = hole.aimTarget ?? teeAim;
+  return land ? [pt(hole.tee), pt(land), pt(hole.cup)] : [pt(hole.tee), pt(hole.cup)];
+}
+
+// The flyover's camera path: the route smoothed (Catmull-Rom), run on past the cup by CAM.flyover.past
+// so the camera ends behind the green looking back at the flag. Returns { length (m), duration (s), at(t) }
+// where at(t) for t in seconds gives { pos, look } (t is clamped; smoothstep easing at both ends).
+export function flyoverPath(heightAt, route) {
+  const c = CAM.flyover;
+  const n = route.length, a = route[n - 2], b = route[n - 1];
+  const dl = Math.hypot(b.x - a.x, b.z - a.z) || 1;
+  const pts = [...route, { x: b.x + (b.x - a.x) / dl * c.past, z: b.z + (b.z - a.z) / dl * c.past }];
+  // Sample the spline densely and measure it, so the camera moves at an even speed
+  const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))];
+  const cr = (p0, p1, p2, p3, s) => 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s);
+  const samples = [];
+  for (let i = 0; i < pts.length - 1; i++) {
+    for (let k = 0; k < c.samples; k++) {
+      const s = k / c.samples, p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+      samples.push({ x: cr(p0.x, p1.x, p2.x, p3.x, s), z: cr(p0.z, p1.z, p2.z, p3.z, s) });
+    }
+  }
+  samples.push(pts[pts.length - 1]);
+  const cum = [0];
+  for (let i = 1; i < samples.length; i++) cum.push(cum[i - 1] + Math.hypot(samples[i].x - samples[i - 1].x, samples[i].z - samples[i - 1].z));
+  const length = cum[cum.length - 1];
+  const cupAt = (() => { let best = 0, bd = Infinity; samples.forEach((p, i) => { const d = Math.hypot(p.x - b.x, p.z - b.z); if (d < bd) { bd = d; best = i; } }); return cum[best]; })();
+  const duration = clamp(length / TUNE.CAM_FLYOVER_SPEED, c.minTime, c.maxTime);
+  const pointAt = d => {
+    d = clamp(d, 0, length);
+    let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
+    const f = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
+    return { x: samples[i - 1].x + (samples[i].x - samples[i - 1].x) * f, z: samples[i - 1].z + (samples[i].z - samples[i - 1].z) * f };
+  };
+  const cupPt = { x: b.x, y: heightAt(b.x, b.z), z: b.z };
+  function at(t) {
+    const u = clamp(t / duration, 0, 1), e = u * u * (3 - 2 * u), d = e * length;
+    const q = pointAt(d);
+    // Height: c.height over the course, down to c.endHeight over the last c.descend of the path
+    const near = clamp((d - (length - c.descend)) / c.descend, 0, 1);
+    const pos = { x: q.x, y: heightAt(q.x, q.z) + c.height + (c.endHeight - c.height) * near, z: q.z };
+    // Look ahead along the route; from c.lookCup m before the cup on, at the flag (so the end looks back at it)
+    let look;
+    if (d >= cupAt - c.lookCup) look = { ...cupPt };
+    else { const l = pointAt(Math.min(d + c.lookAhead, cupAt)); look = { x: l.x, y: heightAt(l.x, l.z), z: l.z }; }
+    return { pos, look };
+  }
+  return { length, duration, at };
+}
