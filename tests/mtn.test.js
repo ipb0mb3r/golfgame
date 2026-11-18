@@ -210,3 +210,19 @@ test('mtn-09: reachable in two with good, not perfect shots; the safe lay-up lea
   }
   assert.ok(kiss, 'the fairway touches the lake edge');
 });
+
+test('Mountain 9: the trees behind the greens frame them but never block the normal approach (owner, L11)', () => {
+  for (const h of MTN) {
+    if (h.par === 3) continue; // a par 3's tee shot is the approach: checked by validateHole (K8)
+    const p = startAt(h);
+    shot(p); // the default first shot
+    if (h.par === 5) shot(p);
+    if (p.finished || p.lie === 'green') continue;
+    const pin = Math.min(p.pinPower(), p.lieOf().maxPower);
+    const w = p.aimWarning(p.clubIdx, p.aim, pin);
+    assert.equal(w, null, `${h.id}: the ⚑ approach from (${p.ball.pos.x.toFixed(0)}, ${p.ball.pos.z.toFixed(0)}) hits ${w && w.kind} ${w && w.dist.toFixed(0)} m out`);
+    // there are trees behind the green
+    const g = h.features.green, behind = h.obstacles.filter(o => o.type === 'tree' && Math.hypot(o.x - g.cx, o.z - g.cz) < Math.max(g.rx, g.rz) + 35);
+    assert.ok(behind.length >= 5, `${h.id}: only ${behind.length} trees near the green`);
+  }
+});

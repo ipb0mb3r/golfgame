@@ -103,6 +103,7 @@ Alexis played the Mountain 9 prototype. These are rules from now on (his words w
 | L8 | **A creek presented as an obstacle must be big enough to be one.** Creek beds widen where they reach a lake (no "balloon"). | Creeks that are in play are 5–8 m of water; the bed widens smoothly into the lake. |
 | L9 | **The fairway approach merges smoothly into the green.** | The approach widens to the green's width and runs into its fringe, no neck. |
 | L10 | **Creeks meander and vary in width, and widen into lakes; check the minimap by eye for lines and balloons** (PM fix pass, holes 4, 7, 9). | Gentle S-bends, width that breathes, a delta where the bed meets the lake; lakes are blobs, not circles. |
+| L11 | **"Tree rules depend on the biome. Forest and mountain courses need lots of trees: along the fairways and behind the greens. Other biomes (seaside, desert, tropical) get their own rule in their genre talk."** (owner, 2026-11-18) | Mountain kit: tree lines along every fairway plus an arc of trees on the rough behind each green (≥ 13 m beyond the fringe, a long ball is a chip), never between the approach and the green, never hiding the flag. |
 
 ## 6b. Ideas for later courses (not the prototype)
 - **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:

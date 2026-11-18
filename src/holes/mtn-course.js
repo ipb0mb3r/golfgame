@@ -132,7 +132,13 @@ const SCENERY = {
 //   ob: { x0, x1, z0, z1 }   out-of-bounds box; map = the box + margin
 //   banks: k  how fast the rough rises away from the fairway (m per m beyond 8 m), default 0.03
 //   obstacles: [...]  trees and boulders
-export function makeMtnHole(spec) {
+export function makeMtnHole(spec0) {
+  // the OB line keeps at least 40 m of rough around the green, so the trees behind it fit in bounds
+  const g0 = spec0.green, m0 = 40;
+  const spec = { ...spec0, ob: {
+    x0: Math.min(spec0.ob.x0, g0.cx - g0.rx - m0), x1: Math.max(spec0.ob.x1, g0.cx + g0.rx + m0),
+    z0: Math.min(spec0.ob.z0, g0.cz - g0.rz - m0), z1: Math.max(spec0.ob.z1, g0.cz + g0.rz + m0),
+  } };
   const fringeW = spec.fringe ?? 2.2;
   const G = spec.green;
   const base = spec.base ?? (() => 0);
@@ -365,6 +371,25 @@ function plantForest(hole, spec, fairways) {
     }
     return hole.surfaceAt(x, z) === 'rough';
   };
+  // Behind the green (owner, 2026-11-18, GENRE_NOTES screenshot 3): an arc of trees on the rough
+  // around the back of the green, framing the target. Far enough back (backGap m beyond the fringe)
+  // that a ball running a little long is a chip, never stuck behind trunks; never between the
+  // approach and the green (the arc only covers the back half, seen from where approaches come from).
+  const G = spec.green, back = f.back ?? {};
+  if (back !== false && f.back !== false) {
+    const from = spec.approachFrom ?? (spec.playLine ? spec.playLine[spec.playLine.length - 2] : spec.tee);
+    const ax = G.cx - from.x, az = G.cz - from.z, aL = Math.hypot(ax, az), bx = ax / aL, bz = az / aL;
+    const R = Math.max(G.rx, G.rz) + 2.2 + (back.gap ?? 13), span = back.span ?? 1.35; // ±77°
+    for (let row = 0; row < (back.rows ?? 2); row++) {
+      const rr = R + row * 8, n = Math.round(2 * span * rr / (back.spacing ?? 9));
+      for (let i = 0; i <= n; i++) {
+        const a = -span + 2 * span * i / n + (r() - 0.5) * 0.08;
+        const c = Math.cos(a), sn = Math.sin(a), dx = bx * c - bz * sn, dz = bx * sn + bz * c;
+        const d = rr + (r() - 0.5) * 4;
+        spots.push({ x: G.cx + dx * d, z: G.cz + dz * d, s: s0 + r() * (s1 - s0) });
+      }
+    }
+  }
   let trees = spots
     .filter(t => t.x > OB.x0 + 3 && t.x < OB.x1 - 3 && t.z > OB.z0 + 3 && t.z < OB.z1 - 3)
     .filter(t => Math.hypot(t.x - hole.tee.x, t.z - hole.tee.z) > 16)
