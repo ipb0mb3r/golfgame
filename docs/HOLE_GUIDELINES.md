@@ -39,7 +39,7 @@ Follow a hard hole with a breather. Never put two big difficulty jumps in a row.
   - par 4: 285–440 m (a short, drivable par 4 may go down to 260 m)
   - par 5: 460–550 m
   - A normal player must be able to reach par with good, not perfect, shots.
-- **The default tee shot never ends in a penalty** (S21): it aims straight along the tee's facing (down −z, or toward `teeFacing` when the tee box is turned) at the club's carry, and may end in the rough, a bunker or under trees, but never in water or OB (`validateHole` checks it at full and ⚑ power). `aimTarget` (optional) sits out of penalty surfaces.
+- **The default tee shot never ends in a penalty** (S21): it aims straight along the tee's facing (down −z, or toward `teeFacing` when the tee box is turned) at the club's carry, and may end in the rough, a bunker or under trees, but never in water or OB (`validateHole` checks the shot that finishes at the aim point; a full swing may run long into trouble). Where straight down −z finds a penalty, set `teeFacing` (mtn-07). `aimTarget` (optional) sits out of penalty surfaces.
 - **A ball must never get stuck.** No pockets it can't be played out of; a deep bunker can always be escaped with the sand wedge; check rest spots on steep slopes, cliffs and against rocks.
 
 ## 5. Building a hole (technical)
