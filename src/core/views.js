@@ -223,7 +223,7 @@ export function flyoverRoute(hole, teeAim = null) {
 }
 
 // The flyover's camera path (owner on #63: slower, start behind the tee, no dive at the end).
-//   travel: from CAM.flyover.startBack m behind the tee (startHeight m up, so the tee box is in view) along
+//   travel: from CAM.flyover.startBack m behind the tee (startHeight m up, looking at the tee box) along
 //           the route smoothed (Catmull-Rom), rising to `height`, easing down to endHeight over the last
 //           `descend` m, and stopping endBack m short of the cup, looking at it. length / CAM_FLYOVER_SPEED s,
 //           clamped to [minTime, maxTime]; smoothstep easing at both ends.
@@ -237,7 +237,9 @@ export function flyoverPath(heightAt, route) {
   const start = { x: t0.x - (t1.x - t0.x) / d0 * c.startBack, z: t0.z - (t1.z - t0.z) / d0 * c.startBack };
   const endBack = Math.min(c.endBack, dl * 0.5);
   const stop = { x: b.x - (b.x - a.x) / dl * endBack, z: b.z - (b.z - a.z) / dl * endBack };
-  const pts = [start, ...route.slice(0, -1), stop];
+  // A point lead m down the first leg keeps the spline from swinging back behind the start
+  const lead = Math.min(c.lead, d0 * 0.5), ahead = { x: t0.x + (t1.x - t0.x) / d0 * lead, z: t0.z + (t1.z - t0.z) / d0 * lead };
+  const pts = [start, t0, ahead, ...route.slice(1, -1), stop];
   // Sample the spline densely and measure it, so the camera moves at an even speed
   const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))];
   const cr = (p0, p1, p2, p3, s) => 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s);
@@ -262,16 +264,23 @@ export function flyoverPath(heightAt, route) {
     return { x: samples[i - 1].x + (samples[i].x - samples[i - 1].x) * f, z: samples[i - 1].z + (samples[i].z - samples[i - 1].z) * f };
   };
   const cupPt = { x: b.x, y: heightAt(b.x, b.z), z: b.z };
+  // Never blind at the start: behind a tee cut into a slope the camera rises until it sees the tee box
+  const teeY = heightAt(t0.x, t0.z) + 1, gs = heightAt(start.x, start.z);
+  let lift = 0;
+  while (lift < c.startLiftMax && !lineClear(heightAt, { x: start.x, y: gs + c.startHeight + lift, z: start.z }, { x: t0.x, y: teeY, z: t0.z })) lift += 1;
   const heightOver = d => {
     const up = clamp(d / c.rise, 0, 1), down = clamp((d - (length - c.descend)) / c.descend, 0, 1);
     const sm = u => u * u * (3 - 2 * u);
-    return c.startHeight + (c.height - c.startHeight) * sm(up) + (c.endHeight - c.height) * sm(down);
+    return c.startHeight + lift * (1 - sm(up)) + (c.height - c.startHeight) * sm(up) + (c.endHeight - c.height) * sm(down);
   };
   const lookFrom = d => {
     if (d >= length - c.lookCup) return { ...cupPt };
-    const l = pointAt(Math.min(d + c.lookAhead, length));
+    let l = pointAt(Math.min(d + c.lookAhead, length));
+    // At the start it looks at the tee box, then turns ahead over the first `rise` m
+    const s0 = clamp(d / c.rise, 0, 1), sm0 = s0 * s0 * (3 - 2 * s0);
+    l = { x: t0.x + (l.x - t0.x) * sm0, z: t0.z + (l.z - t0.z) * sm0 };
     // Near the end the look point slides onto the flag, so there is no turn at the stop
-    const k = clamp((d - (length - c.lookCup - c.lookAhead)) / c.lookAhead, 0, 1);
+    const k = clamp((d - (length - c.lookCup - c.lookAhead)) / c.lookAhead, 0, 1) * sm0; // (a short hole: the tee first, then the flag)
     const lx = l.x + (cupPt.x - l.x) * k, lz = l.z + (cupPt.z - l.z) * k;
     return { x: lx, y: heightAt(lx, lz), z: lz };
   };

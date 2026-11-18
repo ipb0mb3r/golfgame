@@ -120,13 +120,15 @@ export const CAM = Object.freeze({
   flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
   viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)
   // V4 flyover (core/views.js flyoverPath; owner on #63: slower, start behind the tee, no dive): it starts
+  // (lead: a path point that many m down the first leg, so the start runs straight; startLiftMax: m it may
+  // rise at the start until it sees the tee box over a bank behind it)
   // startBack m behind the tee at startHeight m, rises to `height` over the first `rise` m, eases down to
   // endHeight over the last `descend` m and stops endBack m short of the cup; lookAhead = m ahead it looks,
   // within lookCup m of the stop it looks at the flag. Travel = length / CAM_FLYOVER_SPEED, clamped to
   // [minTime, maxTime] s; then CAM_FLYOVER_PAUSE s still and an orbit of orbitDeg in CAM_FLYOVER_ORBIT s.
   // easeTime: s to ease from the green into the tee's aiming view at the end (a skip cuts at once);
   // easeLift: m the camera rises mid-way through that ease (it passes over the trees).
-  flyover:    Object.freeze({ startBack: 30, startHeight: 9, height: 32, rise: 80, endHeight: 22, descend: 120, endBack: 35,
+  flyover:    Object.freeze({ startBack: 12, startHeight: 4.5, startLiftMax: 30, lead: 40, height: 32, rise: 80, endHeight: 22, descend: 120, endBack: 35,
     lookAhead: 90, lookCup: 40, orbitDeg: 70, samples: 24, minTime: 6, maxTime: 18, easeTime: 1.8, easeLift: 45 }),
   holdMs: 300,  // V2: a press on a view button longer than this is a hold (the view goes back on release); shorter is a tap (stays until tapped again)
   ease: Object.freeze({ aim: 5, view: 4 }), // how fast the camera eases to the aiming view / a button view (1/s)

@@ -273,7 +273,15 @@ test('V4 (owner on #63): the flyover starts behind and above the tee, travels sl
     const a = path.at(0), t0 = route[0], t1 = route[1];
     const back = (t0.x - a.pos.x) * (t1.x - t0.x) + (t0.z - a.pos.z) * (t1.z - t0.z);
     assert.ok(back > 0 && Math.abs(Math.hypot(a.pos.x - t0.x, a.pos.z - t0.z) - c.startBack) < 1, `${id} starts ${c.startBack} m behind the tee`);
-    assert.ok(Math.abs(a.pos.y - h(a.pos.x, a.pos.z) - c.startHeight) < 1e-6, `${id} a little above`);
+    assert.ok(a.pos.y - h(a.pos.x, a.pos.z) >= c.startHeight - 1e-6, `${id} a little above`);
+    assert.ok(lineClear(h, a.pos, { x: t0.x, y: h(t0.x, t0.z) + 1, z: t0.z }), `${id} sees the tee box`);
+    assert.ok(Math.hypot(a.look.x - t0.x, a.look.z - t0.z) < 1e-6, `${id} looks at the tee box first`);
+    // It moves forward from the start, never back behind it
+    let prev = -Infinity;
+    for (let t = 0; t <= Math.min(3, path.travel); t += 0.05) {
+      const q = path.at(t).pos, along = (q.x - t0.x) * (t1.x - t0.x) + (q.z - t0.z) * (t1.z - t0.z);
+      assert.ok(along >= prev - 1e-6, `${id} goes back at ${t.toFixed(2)} s`); prev = along;
+    }
     // End of travel: short of the cup, at endHeight, looking at the flag; then still for the pause
     const e = path.at(path.travel), cup = hole.cup;
     const rEnd = Math.hypot(e.pos.x - cup.x, e.pos.z - cup.z);
