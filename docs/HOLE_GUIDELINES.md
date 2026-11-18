@@ -36,7 +36,7 @@ Follow a hard hole with a breather. Never put two big difficulty jumps in a row.
 - **Proportional punishment:** a small miss costs a little; water and OB sit mainly on the hero line, never in the middle of the safe line. A missed hero shot leaves a recovery shot more often than a penalty drop. No hazard every player must cross unless the carry is short; island greens or forced carries at most once per course.
 - **No holes that are too long.** Guide lengths (tee to cup, along the playing line), about 10% longer since playtest 1 (owner, 2026-11-18: "a little bit longer overall, not too much"):
   - par 3: 120–210 m
-  - par 4: 285–440 m
+  - par 4: 285–440 m (a short, drivable par 4 may go down to 260 m)
   - par 5: 460–550 m
   - A normal player must be able to reach par with good, not perfect, shots.
 - **The default aim never points into a hazard** (`aimTarget` for par 4/5 tee shots sits on the fairway, `validateHole` checks it).
