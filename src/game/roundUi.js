@@ -6,6 +6,7 @@
 import { SCORECARD_GROUP } from '../core/config.js';
 import { resultText } from '../core/scoring.js';
 import { toParText } from '../core/round.js';
+import { placeText, DIFFICULTIES } from '../core/rivals.js';
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -26,6 +27,10 @@ export function createRoundUi(on) {
     $('summaryPen').textContent = row.penalties ? `Includes ${row.penalties} penalty stroke${row.penalties > 1 ? 's' : ''}.` : '';
     $('summaryPen').hidden = !row.penalties;
     $('summaryRound').innerHTML = `<b>${esc(round.set.name)}</b>: ${toParText(t.toPar)} after ${t.played} of ${round.length} hole${round.length > 1 ? 's' : ''} · ${t.strokes} stroke${t.strokes === 1 ? '' : 's'}`;
+    // Phase T (T3): vs AI, the leaderboard after this hole
+    const board = round.leaderboard();
+    $('summaryBoard').innerHTML = board ? boardTable(board, { hole: row.number }) : '';
+    $('summaryBoard').hidden = !board;
     const next = last ? null : round.holeAt(row.number);
     $('summaryBtn').textContent = last ? 'See the scorecard' : `Next hole: Hole ${row.number + 1} · par ${next.par}`;
     $('summary').classList.remove('hidden');
@@ -47,6 +52,14 @@ export function createRoundUi(on) {
       ? (best.prev ? `New personal best! (was ${toParText(best.prev.toPar)})` : 'First round on this course: that\'s your personal best.')
       : `Personal best: ${toParText(best.prev.toPar)} (${best.prev.strokes} strokes)`;
     $('scoreBest').classList.toggle('new', !!best.isNew);
+    // Phase T (T3): vs AI, the final standings and the player's place
+    const board = round.leaderboard();
+    const me = board?.find(r => r.you);
+    $('scorePlace').textContent = me ? `${placeText(me, board.length)} (${difficultyName(round.difficulty)})` : '';
+    $('scorePlace').hidden = !board;
+    $('scorePlace').classList.toggle('won', !!me && me.pos === 1);
+    $('scoreStandings').innerHTML = board ? boardTable(board, { caption: 'Final standings' }) : '';
+    $('scoreStandings').hidden = !board;
     $('scorecard').classList.remove('hidden');
     $('scorecard').scrollTop = 0;
     $('cardAgainBtn').focus({ preventScroll: true });
@@ -55,6 +68,18 @@ export function createRoundUi(on) {
   function hide() { $('summary').classList.add('hidden'); $('scorecard').classList.add('hidden'); }
 
   return { showSummary, showScorecard, hide };
+}
+
+const difficultyName = id => DIFFICULTIES.find(d => d.id === id)?.name ?? '';
+
+// Phase T (T3): a leaderboard: position (T2 for a tie), name, this hole's strokes (on the summary
+// card), holes played (thru) and to par. The player's row is highlighted.
+function boardTable(rows, { hole = null, caption = '' } = {}) {
+  const thru = r => (r.thru === 0 ? '–' : r.thru);
+  return `<table class="lb">${caption ? `<caption>${esc(caption)}</caption>` : ''}
+    <tr><th class="pos">Pos</th><th class="name">Name</th>${hole ? `<th>H${hole}</th>` : ''}<th>Thru</th><th>±</th></tr>
+    ${rows.map(r => `<tr class="${r.you ? 'you' : ''}" data-id="${esc(r.id)}"><td class="pos">${esc(r.posText)}</td><td class="name">${esc(r.name)}</td>${hole ? `<td>${r.last ?? '–'}</td>` : ''}<td>${thru(r)}</td><td class="tp">${toParText(r.toPar)}</td></tr>`).join('')}
+  </table>`;
 }
 
 // One group: hole numbers, par and score rows, and a subtotal column (or the total for a one-group
@@ -77,7 +102,7 @@ function groupTable(g, cols, many) {
   </table>`;
 }
 
-// R6: personal best per course in localStorage. Storage can be missing or throw (private mode,
+// R6: personal best per course (and, since Phase T, per mode: id = round.js bestId) in localStorage. Storage can be missing or throw (private mode,
 // blocked site data), so every read and write is wrapped and the round works without it.
 const bestKey = setId => `pocketlinks.best.v1.${setId}`;
 export function readBest(setId) {

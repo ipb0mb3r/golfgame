@@ -13,7 +13,9 @@
 //      the same hole and wind, quitting a round asks first,
 //   5. a whole round from the menu (Prototype 3): summary cards, the compact hole card starts with
 //      Space, the scorecard, its Menu button,
-//   6. settings are saved (and a page without storage still starts).
+//   6. settings are saved (and a page without storage still starts),
+//   7. vs AI (Phase T): every course × difficulty reaches a playable hole; a whole round vs AI shows the
+//      leaderboard after every hole and the final standings with your place; its best is kept apart.
 // Exit code 1 on a problem.
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
@@ -82,7 +84,7 @@ const solo = await items(['play', 'solo']);
 const practice = await items(['play', 'practice']);
 ok(solo.includes('prototype3') && solo.includes('test9'), `Solo lists the prototype courses (${solo.join(', ')})`);
 ok(!solo.includes('practice'), 'the practice set is not a Solo course');
-ok(await ev(() => document.getElementById('mode-ai')?.disabled === true), 'vs AI is shown but disabled');
+ok(await ev(() => document.getElementById('mode-ai')?.disabled === false), 'vs AI is enabled (Phase T)');
 const paths = [...solo.map(id => [['play', 'solo'], id]), ...practice.map(id => [['play', 'practice'], id])];
 let n = 0;
 for (const [path, id] of paths) {
@@ -96,7 +98,34 @@ for (const [path, id] of paths) {
   a = await app();
   ok(a.menu === 'main' && !a.playing, `${id}: quit leads back to the main menu`);
 }
-console.log(`menu paths: ${paths.length} (${solo.length} courses, ${practice.length} practice items)`);
+// Phase T: Play → vs AI → course → difficulty
+async function openAi(course, difficulty) {
+  await ev(() => window.__golf.app.toMenu('main'));
+  for (const go of ['play', 'ai']) await click(`#menu [data-screen]:not([hidden]) [data-go="${go}"]`);
+  await click(`#menu [data-screen="ai"] [data-pick="${course}"]`);
+  ok(await ev(() => window.__golf.app.menu === 'aiDiff' && document.querySelectorAll('#menuRivals li').length === 5), `vs AI ${course}: the difficulty screen lists the 5 rivals`);
+  await click(`#menu [data-screen="aiDiff"] [data-id="${difficulty}"]`);
+}
+const aiCoursesListed = await ev(async () => {
+  window.__golf.app.toMenu('main');
+  document.querySelector('#menu [data-go="play"]').click();
+  document.querySelector('#menu [data-go="ai"]').click();
+  return [...document.querySelectorAll('#menuAiCourses [data-pick]')].map(b => b.dataset.pick);
+});
+ok(aiCoursesListed.join() === solo.join(), `vs AI lists the Solo courses (${aiCoursesListed.join(', ')})`);
+await page.keyboard.press('Escape');
+ok((await app()).menu === 'play', 'Esc on the vs AI course list goes back to Play');
+let aiPaths = 0;
+for (const id of aiCoursesListed) for (const d of ['easy', 'normal', 'hard']) {
+  await openAi(id, d);
+  const r = await teeOff();
+  const g = await ev(() => window.__golf.round);
+  ok(r.st === 'aim' && g?.mode === 'ai' && g.difficulty === d && g.rivals.length === 5, `vs AI ${id} ${d}: a playable round against 5 rivals (${r.st}, ${g?.mode}, ${g?.difficulty})`);
+  await ev(() => window.__golf.app.quit(true));
+  ok(!(await ev(() => window.__golf.round)), `vs AI ${id} ${d}: quitting leaves no round or rivals`);
+  aiPaths++;
+}
+console.log(`menu paths: ${paths.length + aiPaths} (${solo.length} courses, ${aiPaths} vs AI, ${practice.length} practice items)`);
 
 // --- 3: menu → play → quit → play again leaves nothing behind ---
 const mem = [];
@@ -204,6 +233,51 @@ ok(a.menu === 'main' && !a.playing, 'the scorecard Menu button goes to the main 
 await items(['play', 'solo']);
 ok(await ev(() => /best/.test(document.querySelector('#menuCourses [data-id="prototype3"] small').textContent)), 'the course shows its personal best');
 
+// --- 7: a whole round vs AI (Prototype 3, Hard): the leaderboard after every hole, the final standings ---
+const soloBest = await ev(() => localStorage.getItem('pocketlinks.best.v1.prototype3'));
+await openAi('prototype3', 'hard');
+for (let hole = 1; hole <= 3; hole++) {
+  await page.waitForFunction(() => window.__golf.state === 'intro');
+  await ev(() => { document.activeElement?.blur(); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true })); });
+  await page.waitForFunction(() => window.__golf.state === 'aim', null, { timeout: 10000 });
+  await ev(() => { const c = window.__golf.HOLE; window.__golf.place(c.x, c.z + 0.6); });
+  for (let k = 0; k < 20; k++) {
+    const st = await ev(() => window.__golf.state);
+    if (st === 'result') break;
+    if (st === 'aim') await ev(() => window.__golf.testHit(Math.max(0.05, window.__golf.play.pinPower()), 0));
+    await ev(() => window.__golf.skip());
+    await page.waitForTimeout(250);
+  }
+  await page.waitForFunction(() => !document.getElementById('summary').classList.contains('hidden'), null, { timeout: 10000 });
+  const lb = await ev(() => ({
+    rows: [...document.querySelectorAll('#summaryBoard tr[data-id]')].map(tr => [...tr.children].map(td => td.textContent)),
+    you: document.querySelector('#summaryBoard tr.you')?.dataset.id, core: window.__golf.round.leaderboard,
+  }));
+  ok(lb.rows.length === 6 && lb.you === 'you', `vs AI hole ${hole}: the summary card shows the 6-player leaderboard (${lb.rows.length} rows)`);
+  ok(lb.rows.every(r => r[3] === String(hole)), `vs AI hole ${hole}: everyone is thru ${hole}`);
+  ok(lb.rows.map(r => r[0]).join() === lb.core.map(r => r.posText).join(), `vs AI hole ${hole}: positions match core (${lb.rows.map(r => r[0]).join(' ')})`);
+  if (hole === 1) await page.screenshot({ path: process.env.LB_SHOT ?? '/dev/null' }).catch(() => {});
+  await ev(() => document.getElementById('summaryBtn').click());
+}
+await page.waitForFunction(() => !document.getElementById('scorecard').classList.contains('hidden'), null, { timeout: 5000 }).catch(() => {});
+const fin = await ev(() => ({
+  place: document.getElementById('scorePlace').textContent, placeShown: !document.getElementById('scorePlace').hidden,
+  rows: document.querySelectorAll('#scoreStandings tr[data-id]').length,
+}));
+ok(fin.placeShown && /^You (won!|finished|tied for)/.test(fin.place) && /Hard/.test(fin.place), `vs AI: the scorecard shows your place (${fin.place})`);
+ok(fin.rows === 6, `vs AI: the final standings list 6 players (${fin.rows})`);
+if (process.env.LB_SHOT_FINAL) await page.screenshot({ path: process.env.LB_SHOT_FINAL });
+const bests = await ev(() => ({ ai: localStorage.getItem('pocketlinks.best.v1.prototype3.ai'), solo: localStorage.getItem('pocketlinks.best.v1.prototype3') }));
+ok(!!bests.ai && bests.solo === soloBest, 'vs AI: the personal best is saved for vs AI, the solo best is untouched');
+await click('#cardAgainBtn');
+await page.waitForFunction(() => window.__golf.state === 'intro');
+const again = await ev(() => window.__golf.round);
+ok(again.mode === 'ai' && again.difficulty === 'hard' && again.cards.length === 0, 'vs AI: Play again is a new round vs AI on the same difficulty');
+await ev(() => window.__golf.app.quit(true));
+const soloAgain = await ev(() => { window.__golf.app.start({ kind: 'round', setId: 'prototype3' }); return window.__golf.round; });
+ok(soloAgain.mode === 'solo' && soloAgain.rivals === null, 'a Solo round after vs AI has no rivals');
+await ev(() => window.__golf.app.quit(true));
+
 // --- 6: settings are saved ---
 await items(['settings']);
 await click('#setDebug');
@@ -244,12 +318,19 @@ await p2.waitForFunction(() => window.__golf?.app, null, { timeout: 10000 }).cat
 ok(await p2.evaluate(() => window.__golf?.app?.menu === 'main'), 'with storage blocked the game still opens the menu');
 
 // --- Dev links still skip the menu ---
-for (const q of ['?hole=pl-02', '?scenario=h1-bunker', '?set=test9', '?seed=4', '?tune=SWEET:0.06', '?debug=1']) {
+for (const q of ['?hole=pl-02', '?scenario=h1-bunker', '?set=test9', '?seed=4', '?tune=SWEET:0.06', '?debug=1', '?set=test9&ai=hard', '?ai=easy']) {
   await page.goto(`http://golf.test/index.html${q}`);
   await page.waitForFunction(() => window.__golf?.app);
   a = await app();
   ok(a.menu === null && a.playing, `${q} skips the menu`);
+  if (/ai=/.test(q)) {
+    const g = await ev(() => window.__golf.round);
+    ok(g?.mode === 'ai' && g.difficulty === (q.includes('hard') ? 'hard' : 'easy') && g.set === (q.includes('test9') ? 'test9' : 'prototype3'), `${q} plays a round vs AI (${g?.set} ${g?.difficulty})`);
+  }
 }
+// Same ?seed= = same rival scores
+const rivalsAt = async () => { await page.goto('http://golf.test/index.html?set=test9&ai=normal&seed=77'); await page.waitForFunction(() => window.__golf?.round); return ev(() => JSON.stringify(window.__golf.round.rivals)); };
+ok((await rivalsAt()) === (await rivalsAt()), 'the same ?seed= gives the same rival scores after a reload');
 
 ok(errors.length === 0, `no page errors (${errors.join(' | ')})`);
 await browser.close();

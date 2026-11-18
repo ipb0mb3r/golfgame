@@ -39,8 +39,8 @@ test('M0: Practice lists each practice hole once, then every test spot under its
   }
 });
 
-test('M0: modes are Solo, vs AI (shown, disabled until Phase T) and Practice', () => {
-  assert.deepEqual(MODES.map(m => [m.id, m.enabled]), [['solo', true], ['ai', false], ['practice', true]]);
+test('M0 + Phase T: modes are Solo, vs AI (enabled since Phase T) and Practice', () => {
+  assert.deepEqual(MODES.map(m => [m.id, m.enabled]), [['solo', true], ['ai', true], ['practice', true]]);
 });
 
 test('M6: every menu path reaches a playable hole (the launch resolves and the hole can be hit)', () => {
@@ -49,7 +49,8 @@ test('M6: every menu path reaches a playable hole (the launch resolves and the h
   for (const l of launches) {
     let hole, start = null;
     if (l.kind === 'round') {
-      const round = createRound(resolveSet(l.setId), { seed: 1, getHole });
+      const round = createRound(resolveSet(l.setId), { seed: 1, getHole, mode: l.mode, difficulty: l.difficulty });
+      if (l.mode === 'ai') assert.equal(round.rivals.length, 5, `${l.setId}: vs AI has 5 rivals`);
       hole = round.current.hole;
     } else if (l.kind === 'hole') hole = HOLES[l.holeId];
     else {

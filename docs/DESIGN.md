@@ -249,35 +249,39 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 8. Rounds, scoring, menus and rivals 🟡 (re-planned 2026-11-17 by the owner; rounds ✅ Phase 6, menus ✅ Phase 7, rivals ❌)
+## 8. Rounds, scoring, menus and rivals ✅ (re-planned 2026-11-17 by the owner; rounds ✅ Phase 6, menus ✅ Phase 7, rivals ✅ Phase T)
 
 ### Modes
 - ✅ **Solo:** pick a course (any length), play it as a round with a scorecard, total vs par, and a personal best per course.
-- **vs AI:** the same round against **5 AI rivals**, with a leaderboard after each hole and final standings (Phase T; on the Play menu now, disabled, "Coming soon").
+- ✅ **vs AI:** the same round against **5 AI rivals**, with a leaderboard after each hole and final standings (Phase T). Play → vs AI → course → difficulty → round.
 - ✅ **Practice:** one hole or a test spot (`scenarios.js`), no scorecard.
 
 ### Rules
 - A **hole set** (a course) is an ordered list of hole ids plus a name ("Mountain 9", "Prototype holes", "Rainy Day"…).
 - ✅ **Owner rule (2026-11-17): a course is just a playlist of hole ids, of ANY length (1, 9, 18, 99…), and the same hole can appear in several courses (or several times in one).** Nothing may assume 9 holes: `round.js`, the summary card and the final scorecard work for any length. In a round a hole is numbered by its place in the round ("Hole 4 of 9"), not by its own `number`.
-- ✅ A round has **one seed**. Each hole's seed comes from the round seed and the hole's place in the round (`holeSeed`), so its wind (and later the rivals' scores) can be replayed, and the same hole played twice gets two winds. `?seed=` fixes it; the debug overlay shows the round seed and each hole's seed.
+- ✅ A round has **one seed**. Each hole's seed comes from the round seed and the hole's place in the round (`holeSeed`), so its wind and the rivals' scores can be replayed, and the same hole played twice gets two winds. `?seed=` fixes it; the debug overlay shows the round seed and each hole's seed.
 - ✅ A round plays its holes in order and keeps a scorecard: strokes (penalties included), par, result per hole (eagle, birdie, par, bogey…), total vs par.
 - ✅ The stroke cap per hole (`maxStrokes`) means "picked up": the hole counts the strokes taken (the cap), is flagged on the card, and the round continues.
 - ✅ Hole 1 of a round opens with the full intro card (how to play). **Holes 2+ open with a compact hole card** (PM on PR #38): "Hole 4 of 9", par, distance ("· plays N yd" when the play line is longer) and the hole's one-line `intro.tagline`; it closes by itself after `TIMING.holeCard` (2.5 s, counted from when the hole is on screen, owner on PR #40) or on a tap. Single-hole play (`?hole=`) keeps the full intro.
 - ✅ Between holes: a summary card (result, penalty strokes, running total vs par) with a **Next hole** button (and later the leaderboard in vs AI). The next hole loads in the same page as a new hole session (no reload).
 - ✅ At the end: the full scorecard with **Play again** (a new round, everything cleared) and **Menu** (back to the main menu, no reload, Phase 7). **The scorecard shows the holes in groups of 9** (`SCORECARD_GROUP`): a full first group is **"Out"**, a full second group **"In"** (PM Phase 7, golf's names), every other group by its numbers ("Holes 19–27", "Holes 10–12"); the last group may be shorter; a round shorter than 9 is one group named by its holes ("Holes 1–3"), a 9-hole round is one "Out" group. Each group has Par, Score and ± rows and a subtotal column, then the round total. It fits a phone in portrait (320 px) for any length; a long round scrolls. (vs AI adds the final place.)
-- ✅ Personal best per course (lowest to par) in localStorage, read and written in try/catch (the game works without storage).
+- ✅ Personal best per course **and mode** (lowest to par) in localStorage (Solo keeps its key `pocketlinks.best.v1.<set>`; vs AI has `….<set>.ai`, one for all difficulties), read and written in try/catch (the game works without storage).
 - ✅ Rounds start from the Solo menu (Phase 7). Dev links still work: `?set=<id>` starts a round; `?hole=` and `?scenario=` play one hole with no round. Temporary test sets: `prototype3` (holes 1–3) and `test9` (holes 1–3 three times), listed on the Solo menu with a "Prototype" tag.
 - Saving a round in progress: **later** (owner: not a priority).
 
-### Rivals (vs AI)
-- 5 invented golfers (no real names), each with a **skill**. They don't play shots. Their score on each hole is **generated** from skill, par and the hole's `difficulty` (1–5), seeded by the round seed.
-- **Difficulty Easy / Normal / Hard** shifts every rival's skill.
-- Leaderboard: position, name, holes played, to par. Ties share a position and are sorted consistently.
+### Rivals (vs AI) ✅ (Phase T, `core/rivals.js`)
+- ✅ 5 invented golfers (no real names), each with a **skill** and a one-line flavour text (shown on the difficulty screen). They don't play shots. Their score on each hole is **generated** from skill, par and the hole's `difficulty` (1–5), seeded by the hole's seed (so by the round seed): the same round seed always gives the same rival scores, whatever the player does, and Restart hole / quitting a hole never changes them. Play again is a new seed, so new scores.
+- ✅ **The score model** (tunables `RIVAL_*` in `config.js`, all in `?tune=`): expected strokes over par = `RIVAL_BASE + RIVAL_DIFF_K × (difficulty − 1) − skill`; the score is drawn from a normal curve of width `RIVAL_SPREAD` around it, cut into whole strokes from a hole in one to `maxStrokes`. Skill is in strokes per hole: the roster spreads evenly from `RIVAL_SKILL_MIN` (weakest) to `RIVAL_SKILL_MAX` (best).
+- ✅ **Difficulty Easy / Normal / Hard** shifts every rival's skill (`RIVAL_EASY_SHIFT`, Normal 0, `RIVAL_HARD_SHIFT`). With the same seed a rival never scores worse on Hard than on Normal, nor on Normal than on Easy.
+- ✅ **Calibration target (proposed in Phase T, owner to confirm):** on the prototype holes (Test 9, par 36), the Normal winner is about **par to 2 under** (median −1); Easy's winner is over par (≈ +2.5), Hard's at least 2 under (≈ −3.5). `tests/rivals.test.js` checks it over 1 000 rounds.
+- ✅ Leaderboard: position, name, holes played (thru), to par; the summary card also shows each player's strokes on the hole just played. Ties share a position ("T2", the next position after a 3-way tie for 2nd is 5) and are sorted consistently: the player first, then the rivals in roster order. The player's row is highlighted.
+- ✅ The final scorecard opens with your place ("You won!", "You finished 3rd of 6", "You tied for 1st of 6", plus the difficulty) and the final standings, then your own card as in Solo.
+- ✅ Dev link: `?ai=easy|normal|hard` plays the `?set=` round vs AI (alone: the first Solo course; an unknown value plays Normal and says so; with `?hole=` / `?scenario=` it is ignored and says so).
 
 ### Menus ✅ (Phase 7)
-- ✅ `index.html` opens on the **main menu**: Play, How to Play, Settings. **Play** → Solo (pick a course) / vs AI ("Coming soon" until Phase T, then the difficulty choice) / Practice (a hole, or a test spot grouped by hole). Every screen has a Back button; Esc goes back too.
+- ✅ `index.html` opens on the **main menu**: Play, How to Play, Settings. **Play** → Solo (pick a course) / vs AI (pick a course, then Easy / Normal / Hard, Phase T) / Practice (a hole, or a test spot grouped by hole). Every screen has a Back button; Esc goes back too.
 - ✅ **The lists come from the data, never a hardcoded list** (`core/menu.js`): every set in `sets.js` is a Solo course, in order, unless its `menu` is `'practice'` (its holes are the Practice holes) or `'hidden'` (only reachable with `?set=`). A set's `tag` ("Prototype") shows next to its name. A course shows its length, par and personal best. The test spots are every entry of `scenarios.js`.
-- ✅ **Dev links skip the menu** and behave as before: `?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=` (any one of them; `?tune=` alone plays hole 1 tuned). Quitting to the menu removes `?hole/scenario/set` from the address (a reload then shows the menu); `?tune/seed/debug` stay for the visit.
+- ✅ **Dev links skip the menu** and behave as before: `?hole=`, `?scenario=`, `?set=`, `?ai=` (Phase T), `?seed=`, `?tune=`, `?debug=` (any one of them; `?tune=` alone plays hole 1 tuned). Quitting to the menu removes `?hole/scenario/set/ai` from the address (a reload then shows the menu); `?tune/seed/debug` stay for the visit.
 - ✅ A hole started from the menu hides the old "Try Hole 2 →" links; its intro card has "Back to menu" and the single-hole result card has Play again + Menu.
 - ✅ **Pause menu** (the II button under the scorecard panel, beside it on short landscape screens, or Esc): Resume, Restart hole, Quit to menu. While paused the ball, the meter and the hole's timers stop (timers keep the time they had left). **A swing in progress is cancelled with no stroke** (the meter runs on real time, so it can't be frozen fairly). Restart = the same hole and wind again (from the test spot in Practice); in a round it doesn't touch the scorecard (the hole isn't recorded until it's over). **Quitting a round asks first** ("Quit this round? Your score after N holes will be lost."); Practice quits at once. Pause isn't offered once the hole is over (the summary or result card is up).
 - ✅ **Settings** (saved in localStorage `pocketlinks.settings.v1`, read and written in try/catch; with storage blocked they last for the visit and the screen says so): **Debug overlay** (open when a game starts; the backtick still toggles it), **Putt grid** (Hole default = each hole's own green, hole 2 has a grid / Every green / Off). They apply from the next hole you start. A hole's intro mentions its grid only when the green shows one (`intro.grid` replaces `{grid}` in a step, owner on PR #40).
@@ -286,8 +290,8 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ### Acceptance
 - [x] A simulated 9-hole round gives the correct total, including a picked-up hole (and a 1-hole and a 20-hole set work, `tests/round.test.js`).
-- [~] The same round seed gives the same winds (✅) and the same rival scores (Phase T).
-- [x] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball; rivals with Phase T) (`tools/menu-check.mjs`).
+- [x] The same round seed gives the same winds and the same rival scores (`tests/rivals.test.js`, `tools/menu-check.mjs`).
+- [x] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball, rivals) (`tools/menu-check.mjs`).
 
 ---
 
@@ -314,7 +318,8 @@ src/
     play.js                ✅ one hole's rules: strokes, lie, auto club, accumulator, and the hole flow
                               (swing is the only hit, next / proceed / finished; Gate A A1/A8)
     scoring.js             ✅ score names and result text
-    round.js               ✅ a round of any length: hole order, per-hole seeds, scorecard rows, totals, groups of 9 (Phase 6)
+    round.js               ✅ a round of any length: hole order, per-hole seeds, scorecard rows, totals, groups of 9 (Phase 6); mode solo / ai, rivals, leaderboard, bestId (Phase T)
+    rivals.js              ✅ the 5 rivals, difficulties, seeded per-hole scores, leaderboard with ties (Phase T)
     menu.js                ✅ what the menus list (from SETS / HOLES / SCENARIOS passed in), launches, dev links that skip the menu, settings parsing (Phase 7)
   holes/
     hole1.js, hole2.js     ✅ hole data
@@ -330,9 +335,9 @@ src/
     camera.js              ✅
     hud.js                 ✅ HUD panel, meter, minimap, cards, flash
     input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
-    roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6)
+    roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6); leaderboard and final standings (Phase T)
     debug.js               ✅ debug overlay (backtick, or ?debug=1 on phones, Gate A C5)
-    menus.js               ✅ main menu, Play, Solo, Practice, How to Play, Settings screens (Phase 7)
+    menus.js               ✅ main menu, Play, Solo, vs AI (course, difficulty), Practice, How to Play, Settings screens (Phase 7, Phase T)
     settings.js            ✅ settings in localStorage, try/catch (Phase 7)
     weatherFx.js           ⏳ Phase 5
 tests/
