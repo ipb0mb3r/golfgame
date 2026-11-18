@@ -23,6 +23,7 @@ export const SHOTS = [
   // Gate A T2 (Fix pass 1): the swing feel itself. Lies with a cap below 1, curves off the window
   // edge, every meter outcome, a lip-out and a sloped bunker. Optional fields: `club` (club id,
   // instead of the auto-pick) and `outcome` (from the meter: 'shank', 'topped'; default 'normal').
+  // `power: 'pin'` (S21) hits at the ⚑ power for the default aim (at most the lie's cap).
   { name: 'T2 h1 from the rough (cap 85%, narrow window)', hole: 'pl-01', seed: null, start: { x: -28, z: -50 }, strokes: 1, power: 0.85, acc: -0.06, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, sand wedge', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.4, acc: 0, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, 9 iron (no SW)', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.3, acc: 0, aimOff: 0, club: '9i' },
@@ -54,6 +55,11 @@ export const SHOTS = [
   { name: 'K h3 drive through the corner onto the rock', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: -0.0572 },
   { name: 'K h3 from the rock (cap 90%)', hole: 'pl-03', seed: null, start: { x: -4, z: -254 }, strokes: 1, power: 0.9, acc: 0.03, aimOff: 0 },
   { name: 'K h3 putt off the rock into a boulder', hole: 'pl-03', seed: null, start: { x: -2, z: -260 }, strokes: 1, power: 0.6, acc: 0, aimOff: -1.1779, club: 'putter' },
+  // S21: the default tee shot as the game offers it (straight along the tee's facing, auto club, at
+  // the ⚑ power: `power: 'pin'`), so a change to the tee aim or its ⚑ shows up here
+  { name: 'S21 h1 default tee shot at the ⚑', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
+  { name: 'S21 h2 default tee shot at the ⚑', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
+  { name: 'S21 h3 default tee shot at the ⚑', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
 ];
 
 // Play one shot to the end. seed null = wind forced to 0 (and the seed is 1, for lip-outs);
@@ -68,7 +74,8 @@ export function playShot(s) {
   play.aim += s.aimOff;
   if (s.club) play.setClub(play.bag.findIndex(c => c.id === s.club));
   const club = play.club.id;
-  play.hit(s.power, s.acc, s.outcome ?? 'normal');
+  const power = s.power === 'pin' ? Math.min(play.pinPower(), play.lieOf().maxPower) : s.power; // S21: 'pin' = the ⚑ power
+  play.hit(power, s.acc, s.outcome ?? 'normal');
   let ev = null, lippedOut = false;
   for (let i = 0; i < 1e6 && play.ball.moving; i++) {
     const e = play.step();

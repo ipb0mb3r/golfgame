@@ -20,7 +20,7 @@ const HINTS = {
 const WARN_TEXT = { trunk: 'a tree', leaves: 'the trees', boulder: 'a rock' };
 const WARN_AT = { pin: 'at ⚑ power', full: 'at full power', both: 'at ⚑ and full power' }; // PM on PR #33: say which
 export const warnHint = w => `⚠ ${WARN_AT[w.at] ?? ''} this shot hits ${WARN_TEXT[w.kind]} (${yd(w.dist)} yd): aim around it or change your power`.replace('⚠ a', '⚠ A');
-const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', fairway: () => 'fairway target', spot: () => 'test spot target' }; // spot: a scenario's aimAt (K9)
+const AIM_TEXT = { cup: () => 'the cup', chip: () => `the cup (within ${yd(TUNE.CHIP_AIM_RANGE)} yd)`, green: () => 'green centre', tee: () => 'straight ahead (tee)', spot: () => 'test spot target' }; // spot: a scenario's aimAt (K9)
 const FLASH_BAND = 60, FLASH_MIN_W = 120; // px: panels this close above/below the flash text count as beside it
 
 export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }

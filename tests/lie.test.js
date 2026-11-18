@@ -79,12 +79,15 @@ test('below the cap, power % is the same distance from every lie (no hidden mult
 test('the ⚑ mark matches the real distance on every lie', () => {
   for (const lie of ['fairway', 'rough', 'tee']) {
     const play = playOn(lie, '7i', -100);
+    play.setClub(play.clubIdx); // S21: on the tee the aim point is at the club's carry (150 m for the 7 Iron), elsewhere the cup (100 m)
+    const want = lie === 'tee' ? play.club.carry : 100;
+    assert.ok(near(play.targetDist(), want, 1e-9), `${lie}: aims ${play.targetDist().toFixed(1)} m out`);
     const p = play.pinPower();
     assert.ok(p < 1);
     // S15: the ⚑ is the power that FINISHES at the target (the ball lands short and runs out)
     const rp = play.restPoint(play.clubIdx, play.aim, p), rest = Math.hypot(rp.x - play.ball.pos.x, rp.z - play.ball.pos.z);
-    assert.ok(near(rest, 100, 0.3), `${lie}: ⚑ at ${p.toFixed(3)} finishes at ${rest.toFixed(2)} m`);
-    assert.ok(carryOf(play, p).carry < 100, `${lie}: and lands short of it`);
+    assert.ok(near(rest, want, 0.3), `${lie}: ⚑ at ${p.toFixed(3)} finishes at ${rest.toFixed(2)} m`);
+    assert.ok(carryOf(play, p).carry < want, `${lie}: and lands short of it`);
   }
   // out of reach: the mark sits above the cap (in the grayed-out part)
   const far = playOn('sand', '7i', -120);

@@ -114,6 +114,7 @@ export const TUNABLES = Object.freeze({
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)
+  TEE_AIM_CARRY:         { def: 1,    min: 0.5,   max: 1.2 },  // S21: a tee shot's default aim point is this share of the club's carry straight ahead along the tee's facing
   // AI rivals (Phase T, DESIGN §8 "Rivals", core/rivals.js). A rival's expected score on a hole, in strokes
   // over par, is RIVAL_BASE + RIVAL_DIFF_K × (difficulty − 1) − skill; the score is drawn from a normal
   // curve (width RIVAL_SPREAD) around it, rounded to whole strokes. Skill is in strokes per hole: the

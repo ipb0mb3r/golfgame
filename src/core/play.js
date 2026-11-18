@@ -42,14 +42,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles,
     strokes: 0, penalties: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
-    target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'green' | 'fairway')
+    target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'tee' | 'green' | 'spot')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
     finished: null,  // when the hole is over: { holed, pickedUp, strokes, penalties, par } (round.js records it)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, shotWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, slope, simulate,
+    restPoint, aimWarning, shotWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
   function newWind() {
@@ -82,16 +82,34 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   //   on the green or the fringe (putt or chip)       the cup (PM on PR #27: a fringe chip aims at the flag)
   //   within CHIP_AIM_RANGE of the cup, any surface  the cup, kind 'chip' (S19, owner: from close to the
   //                                                  green the player always wants the flag)
-  //   tee shot on a par 4 or 5                       the hole's fairway target (hole.aimTarget)
-  //   everything else (approaches, par 3 tee shots)  the centre of the green (hole.features.green)
+  //   tee shot, any par (S21, owner: "on the tee   straight ahead along the tee's facing (teeFacing below),
+  //   box the aiming should just be straight away")  at the club's carry × TEE_AIM_CARRY, kind 'tee'
+  //   everything else (approaches)                   the centre of the green (hole.features.green)
   // A hole without that data (test holes) aims at the cup. Returns { kind, x, z }.
   const greenCentre = hole.features?.green ? { x: hole.features.green.cx, z: hole.features.green.cz } : null;
-  function defaultTarget(lie = p.lie) {
+  function defaultTarget(lie = p.lie, i = p.clubIdx) {
     if (lie === 'green' || lie === 'fringe') return { kind: 'cup', x: cup.x, z: cup.z };
     if (distToCup() <= TUNE.CHIP_AIM_RANGE) return { kind: 'chip', x: cup.x, z: cup.z };
-    if (lie === 'tee' && hole.par >= 4 && hole.aimTarget) return { kind: 'fairway', ...hole.aimTarget };
+    if (lie === 'tee') return { kind: 'tee', ...teeAimPoint(i) };
     if (greenCentre) return { kind: 'green', ...greenCentre };
     return { kind: 'cup', x: cup.x, z: cup.z };
+  }
+  // S21: the way the tee box faces, the general line of the hole. The point it faces is the hole's
+  // `teeFacing` { x, z } when the designer sets one, else the par 4/5 fairway target (`aimTarget`),
+  // else the green centre (else the cup), so every hole made before S21 keeps working unchanged.
+  // Returns { x, z, dist (m from the tee to that point), dx, dz (unit direction) }.
+  const facePt = hole.teeFacing ?? (hole.par >= 4 ? hole.aimTarget : null) ?? greenCentre ?? hole.cup;
+  const facing = (() => {
+    const dx = facePt.x - hole.tee.x, dz = facePt.z - hole.tee.z, dist = Math.hypot(dx, dz) || 1;
+    return Object.freeze({ x: facePt.x, z: facePt.z, dist, dx: dx / dist, dz: dz / dist });
+  })();
+  function teeFacing() { return facing; }
+  // The tee shot's default aim point: straight ahead from the ball along the facing, at club i's
+  // normal distance (its carry, scaled by TEE_AIM_CARRY). Not a solved spot: it may end in the rough,
+  // a bunker or under trees (the player adjusts); validateHole only makes sure it is never a penalty.
+  function teeAimPoint(i = p.clubIdx) {
+    const d = (bag[i].putter ? 0 : bag[i].carry) * TUNE.TEE_AIM_CARRY;
+    return { x: ball.pos.x + facing.dx * d, z: ball.pos.z + facing.dz * d };
   }
   // The lie for club i from where the ball is (S11): { maxPower, sweetScale }
   function lieOf(i = p.clubIdx) { return lieFor(bag[i], p.lie, surfaces); }
@@ -245,18 +263,36 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);
-    const t = spot ? { kind: 'spot', x: spot.x, z: spot.z } : defaultTarget();
-    p.targetKind = t.kind;
-    set(p.target, t.x, terrain.heightAt(t.x, t.z), t.z);
-    p.aim = aimAt(ball.pos, p.target);
     const d = distToCup();
     p.puttMax = Math.min(PUTT.rangeMax, Math.max(PUTT.rangeMin, Math.round(Math.max(d, puttPlaysLike()) * PUTT.rangeK)));
-    // The auto-pick (S13) for the default aim's distance (S18): see clubs.pickClub
-    p.clubIdx = pickClub(bag, { lie: p.lie, dist: targetDist(), cupDist: d, reach: i => clubReach(i) });
+    if (spot || defaultTarget().kind !== 'tee') {
+      const t = spot ? { kind: 'spot', x: spot.x, z: spot.z } : defaultTarget();
+      setTarget(t);
+      p.aim = aimAt(ball.pos, p.target);
+      // The auto-pick (S13) for the default aim's distance (S18): see clubs.pickClub
+      p.clubIdx = pickClub(bag, { lie: p.lie, dist: targetDist(), cupDist: d, reach: i => clubReach(i) });
+    } else {
+      // S21 tee shot: aim straight along the facing. The auto-pick reaches the point the tee faces
+      // (the general line: the fairway target or, on a par 3, the green), then the aim point sits at
+      // that club's normal distance on the line (and moves with the club the player picks, setClub).
+      p.aim = aimAt({ x: 0, z: 0 }, { x: facing.dx, z: facing.dz });
+      const far = dist2D(ball.pos, facing);
+      p.clubIdx = pickClub(bag, { lie: p.lie, dist: far, cupDist: d, reach: i => clubReach(i) });
+      setTarget(defaultTarget());
+    }
+  }
+  function setTarget(t) {
+    p.targetKind = t.kind;
+    set(p.target, t.x, terrain.heightAt(t.x, t.z), t.z);
   }
 
   // The player's choices while aiming, always through these (A8): the club index is clamped to the bag.
-  function setClub(i) { p.clubIdx = Math.min(Math.max(Math.round(i), 0), PUTTER); return p.clubIdx; }
+  // On the tee (S21) the default aim point is at the club's distance, so it follows the club.
+  function setClub(i) {
+    p.clubIdx = Math.min(Math.max(Math.round(i), 0), PUTTER);
+    if (p.targetKind === 'tee') setTarget(defaultTarget());
+    return p.clubIdx;
+  }
   function setAim(a) { if (Number.isFinite(a)) p.aim = a; return p.aim; }
 
   // A finished swing from the meter { power, acc, outcome }: hit it. This is the only way to hit the

@@ -1057,7 +1057,7 @@
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": 2.7563426582098547,
+        "x": 2.756342658209853,
         "y": -0.009761394044846428,
         "z": -241.7040635464222,
         "event": "stopped",
@@ -1250,6 +1250,84 @@
         "reason": "settled",
         "strokes": 2,
         "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "S21 h1 default tee shot at the ⚑",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": "pin",
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 3.00276531622752,
+        "y": 0,
+        "z": -150.13826581137272,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "S21 h2 default tee shot at the ⚑",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": "pin",
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4.965874339071533,
+        "y": 2.2280528874689254,
+        "z": -208.98129535966945,
+        "event": "stopped",
+        "reason": "settled",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "S21 h3 default tee shot at the ⚑",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": "pin",
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 8.767646745084896,
+        "y": -0.2389591241981882,
+        "z": -214.8252181482725,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
         "wind": {
           "x": 0,
           "z": 0

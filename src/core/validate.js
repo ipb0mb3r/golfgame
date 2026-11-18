@@ -64,11 +64,18 @@ export function validateHole(hole) {
   const g = hole.features?.green;
   if (!g || !isNum(g.cx) || !isNum(g.cz)) bad('features.green must be { cx, cz, ... } (the default aim for approaches, S18)');
   if (at(g.cx, g.cz) !== 'green') bad(`the centre of features.green (${g.cx}, ${g.cz}) is not on the "green" surface`);
-  if (hole.par >= 4 && hole.aimTarget === undefined) bad('a par 4 or 5 needs aimTarget: { x, z }, the default aim for the tee shot (S18)');
+  // S21: the tee shot aims straight along the tee's facing: toward `teeFacing` when set, else toward
+  // aimTarget (par 4/5), else the green centre. aimTarget also sets how far the auto-pick reaches.
+  if (hole.par >= 4 && hole.aimTarget === undefined && hole.teeFacing === undefined) bad('a par 4 or 5 needs aimTarget: { x, z } (or teeFacing), the general line of the tee shot (S18, S21)');
   if (hole.aimTarget !== undefined) {
     if (!isPoint(hole.aimTarget)) bad('aimTarget must be { x, z } with finite numbers');
     const s = at(hole.aimTarget.x, hole.aimTarget.z);
     if (BASE_SURFACES[s].penalty) bad(`aimTarget (${hole.aimTarget.x}, ${hole.aimTarget.z}) is in ${s}`);
+  }
+  if (hole.teeFacing !== undefined) {
+    if (!isPoint(hole.teeFacing)) bad('teeFacing must be { x, z } with finite numbers (the point the tee box faces, S21)');
+    if (Math.hypot(hole.teeFacing.x - hole.tee.x, hole.teeFacing.z - hole.tee.z) < 1) bad('teeFacing must be away from the tee (it sets the direction the tee box faces)');
+    at(hole.teeFacing.x, hole.teeFacing.z);
   }
   // K12: an optional play line (a dogleg's yardage): tee first, cup last
   if (hole.playLine !== undefined) {
@@ -77,9 +84,9 @@ export function validateHole(hole) {
     if (!same(pl[0], hole.tee) || !same(pl.at(-1), hole.cup)) bad('playLine must start at the tee and end at the cup');
   }
   // K2/K3: obstacles (DESIGN §4 "Obstacles"): known types, positive sizes, inside the OB line.
-  // K8 fairness guards: never on the tee, the fringe or the green, never on the fairway unless the
-  // hole says it is meant to be there (`onFairway: true`, like hole 3's lone tree), and the default
-  // tee shot (default aim and club, at full and at ⚑ power) must not hit any of them.
+  // K8 fairness guards: never on the tee, the fringe or the green, and never on the fairway unless the
+  // hole says it is meant to be there (`onFairway: true`, like hole 3's lone tree). (The default tee
+  // shot may run into trees since S21: the K4 warning shows it and the player adjusts; see below.)
   if (hole.obstacles !== undefined) {
     if (!Array.isArray(hole.obstacles)) bad('obstacles must be a list');
     const FIELDS = { tree: ['trunkR', 'trunkH', 'canopyR', 'canopyH'], boulder: ['r'] };
@@ -117,12 +124,19 @@ export function validateHole(hole) {
       if (sc.ground.y > low.y - GROUND_PLANE_MARGIN) bad(`scenery.ground.y (${sc.ground.y}) must be at least ${GROUND_PLANE_MARGIN} m below the lowest terrain, ${low.y.toFixed(2)} m at (${low.x}, ${low.z}): use ${(Math.floor((low.y - GROUND_PLANE_MARGIN) * 10) / 10).toFixed(1)} or lower`);
     }
   }
-  // K8: the default tee shot is never blocked (no blind shots, HOLE_GUIDELINES §4)
-  if (hole.obstacles?.length) {
+  // S21 fairness (owner: "it's ok sometimes if the default aim ends not in the fairway, makes the
+  // player adjust it"): the default tee shot (default aim and club, no wind, straight) may finish in
+  // the rough, a bunker or under trees, but never in a penalty (water, out of bounds), at the ⚑
+  // power or at full power. It replaces the K8 "clean default tee shot" rule.
+  {
     const play = createHolePlay(hole, { seed: 1 });
     play.reset({ wind: { x: 0, z: 0 } });
-    const w = play.shotWarning();
-    if (w) bad(`the default tee shot (${play.club.name}, ${w.at} power) hits obstacles[${w.index}] (${w.kind}) ${w.dist.toFixed(0)} m out`);
+    const cap = play.lieOf().maxPower, pin = play.pinPower();
+    for (const [what, power] of [['⚑', Math.min(pin, cap)], ['full', cap]]) {
+      const r = play.restPoint(play.clubIdx, play.aim, power);
+      const s = hole.surfaceAt(r.x, r.z);
+      if (r.end === 'penalty' || BASE_SURFACES[s]?.penalty) bad(`the default tee shot (${play.club.name}, ${what} power, straight along the tee's facing) ends in ${s} at (${r.x.toFixed(0)}, ${r.z.toFixed(0)}): move teeFacing or aimTarget`);
+    }
   }
   return hole;
 }

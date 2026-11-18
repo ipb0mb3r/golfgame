@@ -255,7 +255,9 @@ test('K2: hole data checks name the obstacle and the field', () => {
   // K8 fairness guards
   bad([{ ...TREE, x: 9, z: -40 }], /stands on the fringe/);
   bad([{ ...TREE, x: 5 }], /stands on the fairway \(set onFairway/);
-  bad([{ ...TREE, x: 0, z: -10, onFairway: true }], /default tee shot .* hits obstacles\[0\]/);
+  // S21: a tree in the default tee line is allowed now (the K4 warning shows it, the player adjusts);
+  // only a default tee shot that ends in a penalty is refused (tests/default-aim.test.js)
+  assert.doesNotThrow(() => validateHole({ ...base, obstacles: [{ ...TREE, x: 0, z: -10, onFairway: true }] }));
   assert.doesNotThrow(() => validateHole({ ...base, obstacles: [{ ...TREE, x: 7, z: -10, trunkH: 1, canopyH: 1, canopyR: 0.5, onFairway: true }] }), 'a fairway tree out of the line is fine when meant');
 });
 
