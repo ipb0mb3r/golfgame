@@ -113,6 +113,9 @@ Note (owner, 2026-11-18, hole 5): a separate small circle of fairway beside the 
     - **White sand beaches:** a tropical feel, with sand between the fairway and the sea.
     - Engine: the sea is the existing water surface (penalty + drop), the shore is rock or sand. No new physics; the look comes with the art pass.
 
+### Greens on the real courses (owner, 2026-11-18)
+- **More slope, and sometimes larger greens** than the prototype: "eventually in real courses, I'd like the greens to have more slope and even be larger sometimes." Putting becomes 2 clicks (S14, aim + power, always struck straight), so the read of the slope is the putting skill.
+
 ## 6c. Next genre talk
 Before the **real courses** (after the prototype and the art pass), have a similar talk with Alexis for each course theme: its signature idea, its surfaces, its hills, more screenshots.
 

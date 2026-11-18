@@ -51,10 +51,9 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 **Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), Phase 7 menus (#40, QA #42). **PM role moved to Claude Code** (#41), 2026-11-17. **Phase T: AI rivals** (#44, QA Full #46: ready, no bugs), 2026-11-18. Owner's PM rules (#45).
 
 **In flight (2026-11-18):**
-- **Phase C, Mountain 9 prototype: PR #50** (owner exception: all 9 holes in one session and one PR). Built in ~27 min of work; QA Full #51: ready, 1 tooling bug fixed. **Playtest 1** (owner): the course designer is reworking all 9 holes in #50 (lessons first in GENRE_NOTES, then every hole, then a lesson-by-lesson self-check).
-- **Playtest 1 gameplay pass (dev):** **S21** tee shots aim straight ahead (may end off the fairway, never in water/OB), PR to come on `dev/S21-tee-aim`. **S22** power bar: no ⚑ on full shots, 4 segments on the bar and the minimap, ⚑ kept for putts: **waits for the owner's example HUD**.
-- **C11** (lay-up default aim on par 5 second shots): **dropped** by the owner (2026-11-18): the player adjusts the aim himself.
-- **Time per hole** (owner question): ~3–4 min of build per hole once the shared kit exists; the time that matters is testing and owner fix rounds. Budget real courses ≈ 15 min per hole + playtest rounds.
+- Done today: Phase T (#44), genre study (#48), C0 plan (#49), **Mountain 9 prototype** (#50, rework after playtest 1, hole 5 island #55), **S21 tee aim straight ahead + S22 power bar** (#53, QA #57), Phase U/BC/V plans (#52, #56).
+- **X12 + S23** (dev): faster loading (build holes lazily, validation off startup) and the marker's water/OB warning, PR to come on `dev/X12-S23`.
+- C11 dropped (owner). Time per hole: ~3–4 min of build once the kit exists; budget real courses ≈ 15 min per hole + playtest rounds.
 
 **Next (in order):**
 1. **Finish Phase C + the playtest 1 gameplay pass** (above).
@@ -67,7 +66,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). The owner compares `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.
 - **CHIP_FLAG_SHORT** default 1.5 m. The owner can compare 0 / 1.5 / 3.
-- **S14:** should putting become 2 clicks? Decide at the next swing design pass.
+- **S14 decided (owner, 2026-11-18): putting becomes 2 clicks** (aim + power, no accuracy click, always struck straight: "slicing is not really a thing while putting"). Feel change → v2 re-record. Dev PR right after X12 + S23; the dev records it in TASKS/DESIGN. Real courses get more sloped and sometimes larger greens (GENRE_NOTES).
 - **G4:** putt grid H-key toggle, unpainted grid (half done in Phase 7).
 - Debug overlay small issues (low).
 - From Phase 7 QA (low): `window.__golf` throws while the menu shows (test tools); "Menu" on a Practice result should go back to the Practice list; quitting from a seeded link keeps `?seed=` so the next round reuses it.
