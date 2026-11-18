@@ -1269,9 +1269,9 @@
       "acc": 0.02,
       "aimOff": 0,
       "end": {
-        "x": -6.764803827029477,
-        "y": -4.781967892499641,
-        "z": -251.05340205399472,
+        "x": -7.315009180725624,
+        "y": -4.152527847326951,
+        "z": -253.1945910575538,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1293,11 +1293,11 @@
       "strokes": 0,
       "power": 0.95,
       "acc": 0,
-      "aimOff": 0.0681,
+      "aimOff": 0.0644,
       "end": {
-        "x": 15.025655189304752,
-        "y": -4.885573604175602,
-        "z": -261.62310277476587,
+        "x": 13.963127731916158,
+        "y": -4.07163044265494,
+        "z": -262.6970953317883,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1309,21 +1309,21 @@
       }
     },
     {
-      "name": "C mtn1 flat putt (13 m)",
+      "name": "C mtn1 putt across the tilted green (13 m)",
       "hole": "mtn-01",
       "seed": null,
       "start": {
         "x": -8,
-        "z": -336
+        "z": -366
       },
       "strokes": 2,
       "power": 0.75,
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": 3.785159522119018,
-        "y": -5.8263035657162465,
-        "z": -341.98221088085745,
+        "x": 4.966820575090382,
+        "y": -5.429185995464339,
+        "z": -371.78503227048793,
         "event": "holed",
         "strokes": 3,
         "club": "putter",
@@ -1334,7 +1334,7 @@
       }
     },
     {
-      "name": "C mtn2 full Driver carries the pines",
+      "name": "C mtn2 full Driver on the shortcut",
       "hole": "mtn-02",
       "seed": null,
       "start": {
@@ -1344,12 +1344,12 @@
       "strokes": 0,
       "power": 1,
       "acc": 0,
-      "aimOff": 0.3312,
+      "aimOff": 0.2452,
       "club": "driver",
       "end": {
-        "x": 75.1002015693775,
-        "y": 2.0434920164411636,
-        "z": -229.66427020188914,
+        "x": 58.1522059395191,
+        "y": 2.5777495816911173,
+        "z": -238.48135936285468,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1361,7 +1361,7 @@
       }
     },
     {
-      "name": "C mtn2 85% Driver caught by the pines",
+      "name": "C mtn2 85% Driver on the shortcut drops in the rough",
       "hole": "mtn-02",
       "seed": 6,
       "start": {
@@ -1371,13 +1371,13 @@
       "strokes": 0,
       "power": 0.85,
       "acc": 0,
-      "aimOff": 0.3312,
+      "aimOff": 0.2452,
       "club": "driver",
       "windless": true,
       "end": {
-        "x": 50.60345213528007,
-        "y": 2.2306994530286284,
-        "z": -149.77396766002363,
+        "x": 38.71696653774142,
+        "y": 1.427400376901799,
+        "z": -153.68166010520875,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1389,25 +1389,25 @@
       }
     },
     {
-      "name": "C mtn2 out from under the pines",
+      "name": "C mtn2 out from under the pines to the fairway",
       "hole": "mtn-02",
       "seed": null,
       "start": {
-        "x": 36,
-        "z": -126
+        "x": 33,
+        "z": -108
       },
       "strokes": 1,
       "power": 0.7,
       "acc": 0,
-      "aimOff": -0.6,
+      "aimOff": -0.6763,
       "end": {
-        "x": 5.809355450480417,
-        "y": 3.637649600882687,
-        "z": -246.0357521456436,
+        "x": -14.289555060273699,
+        "y": 5.05474791958104,
+        "z": -239.75411625205265,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
-        "club": "5i",
+        "club": "3w",
         "wind": {
           "x": 0,
           "z": 0
@@ -1425,14 +1425,14 @@
       "strokes": 0,
       "power": 0.9,
       "acc": 0.08,
-      "aimOff": -0.0468,
+      "aimOff": -0.0422,
       "end": {
         "x": 0,
-        "y": 2.875753478259316,
+        "y": 3.503435153809534,
         "z": 0,
         "event": "penalty",
         "strokes": 2,
-        "club": "9i",
+        "club": "7i",
         "wind": {
           "x": 0,
           "z": 0
@@ -1444,17 +1444,17 @@
       "hole": "mtn-03",
       "seed": null,
       "start": {
-        "x": 12,
-        "z": -156
+        "x": 14,
+        "z": -172
       },
       "strokes": 1,
       "power": 0.6,
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": -4.149019202413561,
-        "y": -11.2726062568468,
-        "z": -147.9679754302173,
+        "x": -5.289236853102757,
+        "y": -12.591320154523467,
+        "z": -162.75655793587288,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
@@ -1470,8 +1470,8 @@
       "hole": "mtn-04",
       "seed": null,
       "start": {
-        "x": 0.6,
-        "z": -222.4
+        "x": 0.5,
+        "z": -249
       },
       "strokes": 1,
       "power": 0.95,
@@ -1479,9 +1479,9 @@
       "aimOff": 0,
       "club": "3w",
       "end": {
-        "x": -37.9422802482944,
-        "y": -2.0180463250880663,
-        "z": -434.8942736315601,
+        "x": -48.46027740708317,
+        "y": -2.2279589931967902,
+        "z": -478.50028454382306,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
@@ -1497,19 +1497,19 @@
       "hole": "mtn-04",
       "seed": null,
       "start": {
-        "x": -30,
-        "z": -392
+        "x": -31,
+        "z": -408
       },
       "strokes": 2,
       "power": 0.5,
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": -36.61054511726634,
-        "y": -2.8202973980935018,
-        "z": -427.27565631713384,
+        "x": -38.834532431167034,
+        "y": -3.32245427220797,
+        "z": -444.5208616274868,
         "event": "stopped",
-        "reason": "settled",
+        "reason": "still",
         "strokes": 3,
         "club": "sw",
         "wind": {
@@ -1519,7 +1519,7 @@
       }
     },
     {
-      "name": "C mtn5 carry the pond, full Driver",
+      "name": "C mtn5 carry the pond to the island, full Driver",
       "hole": "mtn-05",
       "seed": null,
       "start": {
@@ -1529,12 +1529,12 @@
       "strokes": 0,
       "power": 1,
       "acc": 0,
-      "aimOff": 0.2523,
+      "aimOff": -0.2181,
       "club": "driver",
       "end": {
-        "x": 60.083722043532596,
-        "y": 0.897593395698201,
-        "z": -240.3600955122613,
+        "x": -52.08413591541652,
+        "y": 0.5471687366872319,
+        "z": -245.19802935815042,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1556,12 +1556,12 @@
       "strokes": 0,
       "power": 0.85,
       "acc": 0,
-      "aimOff": 0.2523,
+      "aimOff": -0.2181,
       "club": "driver",
       "windless": true,
       "end": {
         "x": 0,
-        "y": 1.2076553232943175,
+        "y": 1.3957703256437142,
         "z": 0,
         "event": "penalty",
         "strokes": 2,
@@ -1577,18 +1577,19 @@
       "hole": "mtn-05",
       "seed": null,
       "start": {
-        "x": 100,
-        "z": -330
+        "x": -106,
+        "z": -362
       },
       "strokes": 2,
       "power": 0.5,
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": 88.15300009450871,
-        "y": 2.6167029000043516,
-        "z": -318.15300009450755,
-        "event": "holed",
+        "x": -91.62998209658292,
+        "y": 1.9615168166732482,
+        "z": -349.1045289075715,
+        "event": "stopped",
+        "reason": "still",
         "strokes": 3,
         "club": "putter",
         "wind": {
@@ -1606,13 +1607,13 @@
         "z": 0
       },
       "strokes": 0,
-      "power": 0.87,
+      "power": 0.9,
       "acc": 0.07,
-      "aimOff": 0.1321,
+      "aimOff": 0.1229,
       "end": {
-        "x": 3.1283237374543056,
-        "y": 6.627617630791833,
-        "z": -161.2748386993628,
+        "x": -0.09088704403449419,
+        "y": 4.223236338800623,
+        "z": -179.26934174300192,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1629,16 +1630,16 @@
       "seed": null,
       "start": {
         "x": 12,
-        "z": -145
+        "z": -158
       },
       "strokes": 1,
-      "power": 0.5,
+      "power": 0.35,
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": -14.564096770450579,
-        "y": 6.099336693456886,
-        "z": -169.8879859202118,
+        "x": -5.232511712430287,
+        "y": 4.158986797454061,
+        "z": -176.26659951837348,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
@@ -1660,12 +1661,12 @@
       "strokes": 0,
       "power": 1,
       "acc": 0,
-      "aimOff": 0.1868,
+      "aimOff": 0.1974,
       "club": "driver",
       "end": {
-        "x": 22.528256095028752,
-        "y": 2.3909325509208847,
-        "z": -233.36642242948363,
+        "x": 24.43330558114427,
+        "y": 2.0163569049673344,
+        "z": -250.7273987751278,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1689,13 +1690,13 @@
       "acc": -0.02,
       "aimOff": 0,
       "end": {
-        "x": -18.332975348117323,
-        "y": -0.4290148625539327,
-        "z": -199.25520942192594,
+        "x": -21.293669532698996,
+        "y": -0.2376132614850025,
+        "z": -227.01003357863675,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
-        "club": "3w",
+        "club": "driver",
         "wind": {
           "x": -0.3152052074501023,
           "z": 0.2978781475442096
@@ -1703,7 +1704,7 @@
       }
     },
     {
-      "name": "C mtn8 drive the green (90%)",
+      "name": "C mtn8 drive the green (full Driver)",
       "hole": "mtn-08",
       "seed": null,
       "start": {
@@ -1711,14 +1712,14 @@
         "z": 0
       },
       "strokes": 0,
-      "power": 0.9,
+      "power": 1,
       "acc": 0,
       "aimOff": 0,
       "club": "driver",
       "end": {
-        "x": -0.5124555557513768,
-        "y": -11.36393897552297,
-        "z": -269.1361465617756,
+        "x": -0.7975034844679716,
+        "y": -13.788104255037856,
+        "z": -298.00585511330394,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1738,14 +1739,14 @@
         "z": 0
       },
       "strokes": 0,
-      "power": 0.95,
+      "power": 1,
       "acc": 0.06,
       "aimOff": 0,
       "club": "driver",
       "windless": true,
       "end": {
         "x": 0,
-        "y": 1.1465883939246042,
+        "y": 1.6604793196458831,
         "z": 0,
         "event": "penalty",
         "strokes": 2,
@@ -1757,7 +1758,7 @@
       }
     },
     {
-      "name": "C mtn9 full drive down the big drop",
+      "name": "C mtn9 95% drive down the big drop",
       "hole": "mtn-09",
       "seed": null,
       "start": {
@@ -1765,14 +1766,14 @@
         "z": 0
       },
       "strokes": 0,
-      "power": 1,
+      "power": 0.95,
       "acc": 0,
       "aimOff": 0,
       "club": "driver",
       "end": {
-        "x": -4.985452864953048,
-        "y": 0.18356633502720276,
-        "z": -342.71461006684416,
+        "x": -4.395346293621482,
+        "y": -0.48710189357655087,
+        "z": -334.58277455477327,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1784,25 +1785,26 @@
       }
     },
     {
-      "name": "C mtn9 5 Iron over the lake in two",
+      "name": "C mtn9 3 Wood over the lake in two",
       "hole": "mtn-09",
       "seed": null,
       "start": {
-        "x": -5,
-        "z": -342.7
+        "x": -4.4,
+        "z": -334.6
       },
       "strokes": 1,
-      "power": 0.85,
+      "power": 0.95,
       "acc": 0,
       "aimOff": 0,
+      "club": "3w",
       "end": {
-        "x": 113.65156587230997,
-        "y": 1.7476643889565886,
-        "z": -447.54611880373267,
+        "x": 134.47284712209984,
+        "y": 2.5111600299367525,
+        "z": -498.4795756655965,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
-        "club": "5i",
+        "club": "3w",
         "wind": {
           "x": 0,
           "z": 0

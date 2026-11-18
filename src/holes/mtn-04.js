@@ -17,7 +17,7 @@ export default makeMtnHole({
   playLine: [TEE, CORNER, CUP],
   teePad: { h: 0.6, r: 4.5 },
   // rolling first leg, then the second leg falls about 4.5 m toward the creek; the green sits up again
-  base: (x, z) => -4.5 * Math.min(1, Math.max(0, (-z - 250) / 180)) + 0.9 * Math.sin(x / 17) * Math.cos(z / 29) + 0.5 * Math.sin(z / 19),
+  base: (x, z) => -4.5 * Math.min(1, Math.max(0, (-z - 250) / 140)) + 0.9 * Math.sin(x / 17) * Math.cos(z / 29) + 0.5 * Math.sin(z / 19),
   hills: [
     { x: 42, z: -165, r: 28, h: 3.4 },   // banks right of the first leg
     { x: 36, z: -285, r: 24, h: 3.0 },   // stops drives running through the corner
