@@ -50,10 +50,10 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 ## 4. Current status (update on every merge)
 **Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), Phase 7 menus (#40, QA #42). **PM role moved to Claude Code** (#41), 2026-11-17. **Phase T: AI rivals** (#44, QA Full #46: ready, no bugs), 2026-11-18. Owner's PM rules (#45).
 
-**In flight:** **Genre study.** The owner teaches the `course-designer` in its own session (2026-11-18) → `docs/GENRE_NOTES.md`, PR "Course: genre notes from the owner" on `course/genre-notes`. No hole building in that session.
+**In flight:** **Genre study done:** PR #48 `docs/GENRE_NOTES.md` (course designer session with the owner, 2026-11-18). This PR aligns HOLE_GUIDELINES and TASKS Phase C with it.
 
 **Next (in order):**
-1. **Phase C: mountain course, prototype test run.** After the genre notes merge, the owner works directly with `course-designer`, starting with the **C0 course plan**. It's a test run for the engine and the designer, not final content.
+1. **Phase C: mountain course, prototype test run.** After #48 and this PR merge: the `course-designer` designs **all 9 new holes** (owner plays and comments on each), starting with the **C0 course plan** (designer proposes, owner approves, PM checks). It's a test run for the engine and the designer, not final content.
 2. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 3. **Phase 5: rain** (rules already in DESIGN §7).
 
@@ -65,6 +65,6 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - Debug overlay small issues (low).
 - From Phase 7 QA (low): `window.__golf` throws while the menu shows (test tools); "Menu" on a Practice result should go back to the Practice list; quitting from a seeded link keeps `?seed=` so the next round reuses it.
 - From Phase T (low): 320 px "Next hole" button wraps (on main before T); 320 px scorecard personal-best line sits under the sticky buttons until you scroll; rival flavour lines during the round (owner: not now); best per difficulty (owner: not now).
-- **HOLE_GUIDELINES.md update** (PM): difficulty ramp vs "not particularly hard", the two-route rule, realistic hazards only. Do it after the genre notes PR lists the differences.
 - Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
+- **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).

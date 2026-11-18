@@ -155,9 +155,9 @@ Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" sur
 - [x] **R7** Round seed: one seed per round, each hole's wind derived from it, shown in debug (as planned in Phase 0) *(`holeSeed(roundSeed, index)`: by place, so a hole played twice gets two winds; `?seed=` fixes the round seed. Debug: `hole pl-02 (5/9) seed …` and a `round` line with the round seed and running score)*
 - [x] **R8** (PM, with Phase 6) `difficulty` 1–5 on holes 1–3 (h1 1, h2 3, h3 2), required by validateHole · at the tee, "To pin" adds "· plays N yd" when the play line is longer than the straight line (hole 3: plays 408 yd, QA feel note)
 
-## Phase C: Mountain course (co-designed with the owner, one hole per PR)
-See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
-- [ ] **C0** 🅿️ Owner + course designer: the 9-hole plan (par per hole, length, signature hazard, difficulty 1–5), checked against the guidelines by the PM
+## Phase C: Mountain course prototype (9 new holes by the course designer, one hole per PR)
+See `docs/HOLE_GUIDELINES.md` and `docs/GENRE_NOTES.md`. The course designer designs all 9; the owner plays and comments on each (owner, 2026-11-18). pl-01..03 are not part of it. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
+- [ ] **C0** 🅿️ Course designer proposes the 9-hole plan (par per hole, length, the course's signature idea and each hole's twist, safe and hero routes, difficulty 1–5); the owner approves; the PM checks it against the guidelines
 - [ ] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`)
 - [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
 
