@@ -17,6 +17,7 @@
 - **No blind shots** (prototype decision, 2026-11-18).
 - **Hills, not flat holes** (owner, 2026-11-18): "I don't really like when holes are flat." Every hole has real ground shape: rolling fairways, mounds, slopes that move the ball, raised or sunken greens.
 - **Hazards live in the ground, not on it** (owner): "a bunker needs to be an actual hole like in a real golf course. Sometimes the hole is deep and sometimes not." Vary bunker depth: shallow fairway bunkers you can advance from, deep greenside or pot bunkers with a steep face. Ponds and creeks sit in a dip too.
+- **Flat is OK, a field is not** (owner): "flat fairways are mostly ok, especially if around it there is a bit of hills for variety (the out of bounds area). I just don't want to feel like we are playing in a field." A flat fairway needs shaped surroundings: hills, mounds or banks in the rough and beyond OB, so the hole sits in a landscape.
 - **Mix the terrain** (owner): "it really depends on the holes and even the course themes … sometimes we do gentle hills and sometimes big drops." Decide hole by hole with Alexis.
 - **Sloped lies are OK, but fair most of the time** (owner): the main landing zones are mostly playable lies; a sloped lie is the price of a miss or of the hero line, not the norm.
 - **Greens: a mix** (owner): "Hilly greens are interesting but if they are always with slopes it will be too hard." Some flat, some with one clear slope, a few with big breaks. Discuss each green when designing its hole.
