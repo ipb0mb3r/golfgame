@@ -101,6 +101,42 @@ export const SCENARIOS = {
     hole: 'mtn-03', ball: { x: 12, z: -156 }, strokes: 1, seed: 1303, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Mountain 3: putt toward the creek', text: 'The green tilts toward the creek: this putt breaks left and runs on.',
   },
+  'mtn4-layup': {
+    hole: 'mtn-04', ball: { x: 0.6, z: -222.4 }, aimAt: { x: -30, z: -394 }, strokes: 1, seed: 1401, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 4: lay up', text: 'After the drive, aimed at the lay-up zone short of the creek (about 165 m). Leaves a wedge of about 50 m.',
+  },
+  'mtn4-go-for-it': {
+    hole: 'mtn-04', ball: { x: 0.6, z: -222.4 }, aimAt: { x: -40, z: -447 }, strokes: 1, seed: 1402, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 4: go for it in two', text: 'Aimed at the green over the creek. A good 3 Wood gets there; a weak one is wet.',
+  },
+  'mtn4-pitch-over': {
+    hole: 'mtn-04', ball: { x: -30, z: -392 }, strokes: 2, seed: 1403, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 4: pitch over the creek', text: 'From the lay-up zone, about 55 m: pitch over the creek. Even a short one stays dry on the apron.',
+  },
+  'mtn5-carry-pond': {
+    hole: 'mtn-05', ball: { x: 0, z: 0 }, aimAt: { x: 56, z: -226 }, strokes: 0, seed: 1501, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 5: carry the pond', text: 'Aimed over the pond at the fairway beyond it. A full Driver makes it; 90% with a hook doesn\'t.',
+  },
+  'mtn5-bunker': {
+    hole: 'mtn-05', ball: { x: -22, z: -212 }, strokes: 1, seed: 1502, lie: 'sand',
+    name: 'Mountain 5: corner bunker', text: 'The bunker on the outside of the corner, about 150 m from the green.',
+  },
+  'mtn5-two-tier': {
+    hole: 'mtn-05', ball: { x: 100, z: -330 }, strokes: 2, seed: 1503, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Mountain 5: down a tier', text: 'From the top tier, putt down the step to the cup on the lower tier.',
+  },
+  'mtn6-feeder-bank': {
+    hole: 'mtn-06', ball: { x: 0, z: 0 }, aimAt: { x: 21, z: -158 }, strokes: 0, seed: 1601, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 6: use the bank', text: 'Aimed at the grassy bank right of the green: a slight hook feeds down onto the green.',
+  },
+  'mtn6-deep-bunker': {
+    hole: 'mtn-06', ball: { x: 12, z: -145 }, strokes: 1, seed: 1602, wind: { x: 0, z: 0 }, lie: 'sand',
+    name: 'Mountain 6: deep bunker', text: 'In the deep bunker in front of the bank (1.4 m deep). The Sand Wedge gets out.',
+  },
+  'mtn6-creek-putt': {
+    hole: 'mtn-06', ball: { x: 8, z: -166 }, strokes: 1, seed: 1603, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Mountain 6: putt toward the creek', text: 'The green tilts left toward the creek: this putt breaks left.',
+  },
 };
 
 // Checked when they load (Gate A T7): a bad spot fails here, naming the scenario and the field.

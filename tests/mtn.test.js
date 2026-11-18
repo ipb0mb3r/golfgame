@@ -83,3 +83,52 @@ test('mtn-03: the safe shot finds the green; a hook at the flag finds the creek'
   const hook = shot(startAt(h, { x: 0, z: 0 }, 0), { at: h.cup, acc: 0.08 });
   assert.equal(hook.ev, 'penalty');
 });
+
+test('mtn-04: the lay-up leaves a wedge, a short pitch stays dry, a good 3 Wood reaches in two (PM #49)', () => {
+  const h = HOLES['mtn-04'], drive = { x: 0.6, z: -222.4 }, lay = { x: -30, z: -394 };
+  // the lay-up: a 5 Iron to the lay-up zone, at the power that finishes there (the ⚑ for that spot) ±8%
+  for (const pk of [0.92, 1, 1.06]) {
+    const p = startAt(h, drive);
+    p.setAim(aimTo(p, lay)); p.setClub(p.bag.findIndex(c => c.id === '5i'));
+    const want = Math.hypot(lay.x - drive.x, lay.z - drive.z);
+    let lo = 0, hi = 1.2;
+    for (let k = 0; k < 18; k++) { const m = (lo + hi) / 2; const r = p.restPoint(p.clubIdx, p.aim, m); if (Math.hypot(r.x - drive.x, r.z - drive.z) < want) lo = m; else hi = m; }
+    const e = shot(p, { power: hi, pk });
+    assert.equal(e.ev, 'stopped', `lay-up ×${pk}`);
+    assert.ok(e.toCup >= 40 && e.toCup <= 75, `lay-up ×${pk} leaves ${e.toCup.toFixed(0)} m`);
+  }
+  // a pitch from the lay-up zone hit 25–35% short still stays dry
+  for (const pk of [0.75, 0.65]) {
+    const e = shot(startAt(h, { x: -30, z: -392 }, 2), { pk });
+    assert.equal(e.ev, 'stopped', `pitch ×${pk}`);
+    assert.notEqual(e.surface, 'water');
+  }
+  // the brave second shot: a 95% 3 Wood after a normal drive reaches the green; 90% is wet
+  const go = shot(startAt(h, drive), { at: { x: -40, z: -447 }, club: '3w', power: 0.95 });
+  assert.ok(['green', 'fringe'].includes(go.surface), `95% 3 Wood ends on ${go.surface}`);
+  assert.equal(shot(startAt(h, drive), { at: { x: -40, z: -447 }, club: '3w', power: 0.9 }).ev, 'penalty');
+});
+
+test('mtn-05: carrying the pond leaves a wedge; a weak carry is wet; the safe drive leaves a mid-iron', () => {
+  const h = HOLES['mtn-05'], over = { x: 56, z: -226 };
+  const brave = shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 1 });
+  assert.equal(brave.surface, 'fairway');
+  assert.ok(brave.toCup < 100, `the brave drive leaves ${brave.toCup.toFixed(0)} m`);
+  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 0.85 }).ev, 'penalty');
+  const safe = shot(startAt(h, { x: 0, z: 0 }, 0));
+  assert.ok(safe.toCup > 120, `the safe drive leaves ${safe.toCup.toFixed(0)} m`);
+});
+
+test('mtn-06: the deep bunker is escaped with the Sand Wedge; the bank feeds a ball onto the green (PM #49)', () => {
+  const h = HOLES['mtn-06'];
+  // a deep hollow: the face on the green side is well above the sand; the front lip (toward the tee) is low, so the sand stays in view
+  assert.ok(h.heightAt(12, -145) < h.heightAt(12, -150) - 1.5, 'the bunker face is deep');
+  assert.ok(h.heightAt(12, -138) - h.heightAt(12, -145) < 1, 'the front lip is low');
+  for (const pk of [0.9, 1, 1.1]) for (const acc of [0, 0.06]) {
+    const e = shot(startAt(h, { x: 12, z: -145 }), { pk, acc });
+    assert.equal(e.club, 'sw');
+    assert.ok(['green', 'fringe'].includes(e.surface) || e.ev === 'holed', `bunker shot ×${pk} acc ${acc} ends on ${e.surface}`);
+  }
+  const bank = shot(startAt(h, { x: 0, z: 0 }, 0), { at: { x: 21, z: -158 }, acc: 0.07 });
+  assert.equal(bank.surface, 'green');
+});
