@@ -25,6 +25,7 @@ Prompts and budgets: `docs/AGENT_PROMPTS.md`. The agent files point there, so up
 **Owner's PM rules (2026-11-18, always apply):**
 1. **The PM never edits game code** (`src/`, `tests/`, `tools/`, `index.html`). All of that goes to the `dev` agent, even a one-line fix.
 2. **Before launching any agent, tell the owner in one line:** "Launching <agent> on <task> (budget N min)".
+3. **Every agent signs its work.** Each PR description, report and PR comment ends with a signature line: "— Agent: <name>" (`dev`, `qa`, `reviewer-testing`, `course-designer`…). The PM signs "— PM". (On GitHub the signature goes just above the Claude Code footer.) The rule is in the shared header of `docs/AGENT_PROMPTS.md`, so every prompt carries it.
 
 **Every dev PR goes: dev → PM review → QA → owner playtest → owner merges.** (Exception: PM-only docs PRs skip QA.)
 
