@@ -73,7 +73,10 @@ Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are
 |---|---|---|
 | 1 | Par 4 dogleg, medium difficulty. Ponds inside the turn, bunkers on the outside around the landing zone. "It allows a brave shot on the left above the ponds. It shows the slopes in the bunker and ponds too." | **Two kinds of risk on one corner:** water on the inside is the brave shortcut (a miss costs a stroke); bunkers on the outside are the cost of the safe line (a harder next shot, no penalty). Hazards sit in visible hollows with sloped edges and a rough lip; trees stand in the rough, not the fairway. |
 | 2 | Short par 4 (333 y) as an example of an **easy, medium-hilly** course. | **Easy and hilly can go together.** A very wide fairway that rolls in waves, a big hollow to play over, bunkers set into the slopes at the edges and at the bend, a tree line framing both sides out of play, no water. Difficulty comes from width and hazard placement, not flat ground. |
+| 3 | A 96 y approach to a slightly raised green. "Sometimes greens with a bit of elevation are really interesting for approaches." | **A small rise makes a short approach a real decision:** come up short and the ball rolls back down the bank; miss on the bunker side (a big bunker cut into the slope) and the chip is hard. A **backdrop behind the green** (tree line, stone wall) frames the target and helps judge depth. Elevation shown as a number (we have the ↑/↓ readout). |
 
+- **Raised greens, sometimes** (owner, screenshot 3): a green a little above the approach, with a bank in front and one bad side.
+- **Backdrops behind greens** (owner, screenshot 3): a tree line, a stone wall or a slope behind the green so the target reads clearly. A wall or tree line is scenery (art pass) unless it sits in bounds; trees in play follow the usual rules.
 - **Cart paths, sometimes** (owner, from screenshot 1): "while not necessary, it could sometimes be interesting." A path beside the fairway, built with the existing **rock** surface (hard bounce). Gameplay detail and scenery at once; use it on a few holes, never in the main landing zone.
 
 ## 6b. Ideas for later courses (not the prototype)
