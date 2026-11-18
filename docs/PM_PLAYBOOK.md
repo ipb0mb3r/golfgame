@@ -58,7 +58,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Next (in order):**
 1. **Finish Phase C + the playtest 1 gameplay pass** (above).
-2. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover (was D3). Dev prompt below.
+2. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover along the regular route (was D3). Dev prompt below.
 3. Then the art / assets pass decision.
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Phase 5: rain** (rules already in DESIGN §7).
@@ -80,7 +80,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 Assignment: "Phase V: Camera". Branch: dev/V-camera, from main. Task IDs: V1–V5. Read docs/TASKS.md → Phase V and DESIGN (camera, states, S21/S22 aim marker) first.
 Context: the owner wants all of: a better aiming view; optional view buttons while aiming (zoom to the landing marker on full
 shots, a green-reading view on putts), temporary and never required; ball-flight camera variety (behind as today, at an angle,
-from the landing spot looking back at the incoming ball); a skippable hole intro flyover (safe route, hero route, green).
+from the landing spot looking back at the incoming ball); a skippable hole intro flyover along the regular route to the green (not every route).
 Rules: never a blind shot; phone portrait + landscape; camera choice logic in core (pure, seeded, tested), Three.js only in
 src/game; tunables in config.js and ?tune=; a setting for classic (no-variety) flight camera; session-check passes.
 Propose the view list and the variety rules in the PR first comment before building V3. Ask before changing the swing or physics.

@@ -191,7 +191,7 @@ See DESIGN §8 "Rivals".
 From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
-- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green. → **scheduled as V4** (Phase V).
+- [ ] D3 Hole intro flyover camera. → **scheduled as V4** (Phase V): the regular route only.
 - [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
@@ -203,7 +203,7 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [ ] V1 Aiming view: a better default view behind the ball while aiming, showing the landing area, the aim marker and the hazards in the way.
 - [ ] V2 Optional view buttons while aiming (temporary: the view goes back when released / tapped again): on full shots, **zoom to the landing marker**; on putts, **a green-reading view** (from above or low down). Optional, never required to play.
 - [ ] V3 Ball-flight camera with **variety**: sometimes the flight as today (behind), sometimes **at an angle** from the side, sometimes **from the landing spot, looking back at the ball coming in**. Chosen per shot by rules + the seeded RNG (no same view many times in a row; short shots and putts stay simple). A setting to turn variety off (classic camera).
-- [ ] V4 Hole intro flyover (was D3): safe route, then hero route, then the green; tap to skip; once per hole per round.
+- [ ] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round.
 - [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
 
 ## Phase 8: Small polish (only if useful for testing)
