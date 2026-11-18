@@ -187,6 +187,16 @@ See DESIGN §8 "Rivals".
 - [x] **T4** Tests: same seed = same rival scores, Hard rivals average lower than Easy over many rounds, ties sorted consistently *(tests/rivals.test.js, 1 000-round checks incl. the proposed Normal target "winner par to −2" on Test 9; any length 1–99; `tools/menu-check.mjs` plays every vs AI course × difficulty and a whole round vs AI)*
 - [x] vs AI enabled on the Play menu
 
+## Engine wishlist from the genre study (owner, 2026-11-18, not scheduled)
+From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
+- [ ] D1 Several tee sets per hole (3–5, offset, flat tee boxes). Today: 1 tee per hole.
+- [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
+- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green.
+- [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
+- [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
+- [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
+- Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
+
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view
 - [x] **X2** Shot trail
