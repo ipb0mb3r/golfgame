@@ -58,10 +58,11 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Next (in order):**
 1. **Finish Phase C + the playtest 1 gameplay pass** (above).
-2. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover along the regular route (was D3). Dev prompt below.
-3. Then the art / assets pass decision.
-4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-5. **Phase 5: rain** (rules already in DESIGN §7).
+2. **X12 load time** (small dev PR: build holes lazily, keep heavy validation out of startup).
+3. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover along the regular route (was D3). Dev prompt below.
+4. Then the art / assets pass decision.
+5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+6. **Phase 5: rain** (rules already in DESIGN §7).
 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). The owner compares `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.

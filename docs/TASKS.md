@@ -198,6 +198,9 @@ From the owner's design doc "Arcade Golf Course Design Principles", relayed by t
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
 - Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
 
+## Load time (PM, 2026-11-18, before Phase V)
+- [ ] X12 Startup builds and validates every hole: `sets.js` imports all holes, each mountain module builds its grids/forest at import, and `validateHole` runs its shot simulations on every hole at load (heavier since S21). So `?hole=pl-02` pays for all 9 mountain holes (Node: ~2.2 s to import all holes, was 1.76 s; headless page load +0.7–1.4 s). Build a hole's data on first use (lazy), and keep the full `validateHole` simulations in tests (or run them only for the hole being loaded). Measure phone-size load before/after.
+
 ## Phase V: Camera (owner, 2026-11-18, after the playtest 1 pass)
 The camera matters more now that the player aims himself (S21/S22). Camera code is game layer (`src/game/camera.js`); any choice logic (which view, seeded variety) goes in core so it's tested. Never a blind shot; works on phones (portrait and landscape).
 - [ ] V1 Aiming view: a better default view behind the ball while aiming, showing the landing area, the aim marker and the hazards in the way.
