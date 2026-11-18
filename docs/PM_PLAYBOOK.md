@@ -6,7 +6,8 @@
 - **Owner and game designer.** Approves every merge to `main`. Owns vision and feel.
 - **Plays on his phone**, mostly through GitHub Pages: https://ipb0mb3r.github.io/golfgame/ . Always give him **tap-ready links** (GitHub Pages after a merge, raw.githack for a branch: `https://raw.githack.com/ipb0mb3r/golfgame/<branch>/index.html?...`).
 - Not a programmer (BI / data background: SQL, DAX). Explain in **plain language**, short, mobile-friendly. Tables are fine. No jargon without a one-line explanation.
-- Feel direction so far: **"harder is much better"**, trees that matter, the hard rock bounce, a game that feels fair (no blind shots).
+- Feel direction: a game that feels fair, **no blind shots, ever**. Holes **"not particularly hard"**: the safe line ≈ par or birdie, the hero line = birdie or better (owner, 2026-11-18, genre study). The earlier "harder is much better" / trees that matter / hard rock bounce taste was for testing the engine. His design doc: "Arcade Golf Course Design Principles" (claude.ai artifact).
+- Course workflow: the 9-hole mountain prototype tests the level-design workflow; an art / assets pass comes after it, then the real courses. He gives hole ideas himself and keeps talking with the course designer, who sometimes designs holes alone. HOLE_GUIDELINES lengths stay in metres until the prototype is played.
 - He sometimes brings ideas in quick messages. Turn them into DESIGN decisions + TASKS lines, confirm the reading back to him in one line, and ask **one** clear question when something is ambiguous (offer options A/B/C with a recommendation).
 - He has outside playtesters (friends). Their feedback is valuable, but **don't overcorrect**: send them a tune link to compare.
 
@@ -47,15 +48,14 @@ Tokens: give every agent a budget (see AGENT_PROMPTS "Budgets"). If an agent run
 Things this environment **can't** do (as of 2026-11-17): delete branches from a cloud session (the owner deletes them on GitHub; auto-delete on merge is ON), change repo settings, fetch most docs sites directly.
 
 ## 4. Current status (update on every merge)
-**Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), **Phase 7 menus** (#40, QA Light after merge #42: all paths OK, no bugs). **PM role moved to Claude Code** (#41), 2026-11-17.
+**Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), Phase 7 menus (#40, QA #42). **PM role moved to Claude Code** (#41), 2026-11-17. **Phase T: AI rivals** (#44, QA Full #46: ready, no bugs), 2026-11-18. Owner's PM rules (#45).
 
-**In flight:** **Phase T: AI rivals**, PR #44 (`dev/T-rivals`). PM review done (owner decisions: Normal target approved, rival best = par − 2 and never a hole in one, one vs AI best per course). QA Full running.
+**In flight:** **Genre study done:** PR #48 `docs/GENRE_NOTES.md` (course designer session with the owner, 2026-11-18). This PR aligns HOLE_GUIDELINES and TASKS Phase C with it.
 
 **Next (in order):**
-1. **Phase T: AI rivals** (prompt below).
-2. **Phase C: mountain course, prototype test run.** The owner works directly with `course-designer`, starting with the **C0 course plan**. It's a test run for the engine and the designer, not final content.
-3. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-4. **Phase 5: rain** (rules already in DESIGN §7).
+1. **Phase C: mountain course, prototype test run.** After #48 and this PR merge: the `course-designer` designs **all 9 new holes** (owner plays and comments on each), starting with the **C0 course plan** (designer proposes, owner approves, PM checks). It's a test run for the engine and the designer, not final content.
+2. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+3. **Phase 5: rain** (rules already in DESIGN §7).
 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). The owner compares `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.
@@ -64,25 +64,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **G4:** putt grid H-key toggle, unpainted grid (half done in Phase 7).
 - Debug overlay small issues (low).
 - From Phase 7 QA (low): `window.__golf` throws while the menu shows (test tools); "Menu" on a Practice result should go back to the Practice list; quitting from a seeded link keeps `?seed=` so the next round reuses it.
-- **Later:** save a round in progress; genre study for the course designer (`docs/GENRE_NOTES.md`, the owner will teach it); **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
-
-### Phase T prompt (ready: send to `dev` next)
-```
-Assignment: "Phase T: AI rivals". Branch: dev/T-rivals, from main. Task IDs: T1–T4 (+ enable vs AI in the menu).
-Read docs/TASKS.md → Phase T and DESIGN §8 "Rivals" first.
-Context: the owner wants 9-hole rounds solo or against 5 AI rivals. Rivals don't play shots: their score per hole
-is generated from their skill, the hole's par and `difficulty` (1–5), seeded by the round seed.
-1. T1 src/core/rivals.js (pure): 5 invented rivals (names and short flavour lines, no real golfers), each with a
-   skill. Per-hole scores from a seeded distribution (birdie/par/bogey/double… weighted by skill and difficulty),
-   any course length.
-2. T2 difficulty Easy / Normal / Hard shifts every rival's skill. Pick it in the vs AI menu.
-3. T3 leaderboard after each hole (position, name, thru, to par, ties share a position, sorted consistently) on the
-   summary card, and final standings with the player's place on the scorecard. Personal best per course AND mode.
-4. Enable "vs AI" in the Play menu (course → difficulty → round).
-5. T4 tests: same seed = same rival scores; over 1 000 rounds, Hard rivals average lower than Easy, and Normal
-   lands around a target (propose one in the PR, e.g. Normal winner ≈ par to −2 on the prototype holes);
-   ties; any course length.
-Put tunables (skill ranges, difficulty shifts) in config.js and in ?tune=.
-PR: "Phase T: AI rivals (vs AI mode)". Include raw.githack links and a sample leaderboard screenshot.
-Budget: check in after ~90 min. QA will be Full.
-```
+- From Phase T (low): 320 px "Next hole" button wraps (on main before T); 320 px scorecard personal-best line sits under the sticky buttons until you scroll; rival flavour lines during the round (owner: not now); best per difficulty (owner: not now).
+- Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
+- **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
+- **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).

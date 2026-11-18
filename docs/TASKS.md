@@ -155,9 +155,9 @@ Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" sur
 - [x] **R7** Round seed: one seed per round, each hole's wind derived from it, shown in debug (as planned in Phase 0) *(`holeSeed(roundSeed, index)`: by place, so a hole played twice gets two winds; `?seed=` fixes the round seed. Debug: `hole pl-02 (5/9) seed …` and a `round` line with the round seed and running score)*
 - [x] **R8** (PM, with Phase 6) `difficulty` 1–5 on holes 1–3 (h1 1, h2 3, h3 2), required by validateHole · at the tee, "To pin" adds "· plays N yd" when the play line is longer than the straight line (hole 3: plays 408 yd, QA feel note)
 
-## Phase C: Mountain course (co-designed with the owner, one hole per PR)
-See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
-- [ ] **C0** 🅿️ Owner + course designer: the 9-hole plan (par per hole, length, signature hazard, difficulty 1–5), checked against the guidelines by the PM
+## Phase C: Mountain course prototype (9 new holes by the course designer, one hole per PR)
+See `docs/HOLE_GUIDELINES.md` and `docs/GENRE_NOTES.md`. The course designer designs all 9; the owner plays and comments on each (owner, 2026-11-18). pl-01..03 are not part of it. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
+- [ ] **C0** 🅿️ Course designer proposes the 9-hole plan (par per hole, length, the course's signature idea and each hole's twist, safe and hero routes, difficulty 1–5); the owner approves; the PM checks it against the guidelines
 - [ ] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`)
 - [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
 
@@ -186,6 +186,17 @@ See DESIGN §8 "Rivals".
 - [x] **T3** Leaderboard after each hole (position, name, thru, to par) + final standings with the player's place *(summary card: Pos, Name, this hole, Thru, ±, your row highlighted; scorecard: "You finished 2nd of 6 (Normal)" + final standings; ties "T2", you first then roster order; personal best per course and mode)*
 - [x] **T4** Tests: same seed = same rival scores, Hard rivals average lower than Easy over many rounds, ties sorted consistently *(tests/rivals.test.js, 1 000-round checks incl. the proposed Normal target "winner par to −2" on Test 9; any length 1–99; `tools/menu-check.mjs` plays every vs AI course × difficulty and a whole round vs AI)*
 - [x] vs AI enabled on the Play menu
+
+## Engine wishlist from the genre study (owner, 2026-11-18, not scheduled)
+From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
+- ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
+- [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
+- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green.
+- [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
+- [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
+- [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
+- [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
+- Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view
