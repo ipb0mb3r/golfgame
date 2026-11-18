@@ -1519,7 +1519,7 @@
       }
     },
     {
-      "name": "C mtn5 carry the pond to the island, full Driver",
+      "name": "C mtn5 carry the pond onto the island (95% Driver)",
       "hole": "mtn-05",
       "seed": null,
       "start": {
@@ -1527,14 +1527,14 @@
         "z": 0
       },
       "strokes": 0,
-      "power": 1,
+      "power": 0.95,
       "acc": 0,
-      "aimOff": -0.2181,
+      "aimOff": -0.2785,
       "club": "driver",
       "end": {
-        "x": -51.750582843281016,
-        "y": 0.4924718677676985,
-        "z": -243.74674039401788,
+        "x": -63.139133112878746,
+        "y": 0.2851414204480025,
+        "z": -230.10113612112448,
         "event": "stopped",
         "reason": "still",
         "strokes": 1,
@@ -1556,7 +1556,7 @@
       "strokes": 0,
       "power": 0.85,
       "acc": 0,
-      "aimOff": -0.2181,
+      "aimOff": -0.2785,
       "club": "driver",
       "windless": true,
       "end": {
