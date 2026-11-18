@@ -20,6 +20,7 @@
 - **Mix the terrain** (owner): "it really depends on the holes and even the course themes … sometimes we do gentle hills and sometimes big drops." Decide hole by hole with Alexis.
 - **Sloped lies are OK, but fair most of the time** (owner): the main landing zones are mostly playable lies; a sloped lie is the price of a miss or of the hero line, not the norm.
 - **Greens: a mix** (owner): "Hilly greens are interesting but if they are always with slopes it will be too hard." Some flat, some with one clear slope, a few with big breaks. Discuss each green when designing its hole.
+- **Rivers and lakes are fun, sometimes** (owner): two jobs. (1) A **shortcut / brave line**: carry the river or bite off the lake to save a stroke. (2) A **"don't hit it" hazard** the player must keep clear of on the safe line, with room to miss. Use them on some holes, not every hole.
 
 ## 3. Do
 - **Two routes on every hole** (except the first warm-up holes): a safe line (longer, forgiving, par most of the time) and a hero line (shorter or a better angle, risky, saves a stroke).
