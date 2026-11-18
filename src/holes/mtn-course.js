@@ -10,6 +10,8 @@
 //   - tee and green are smoothed so the first shot is from a flat lie and the cup sits on a gentle slope
 import { ss, ell, bump, meshAxis } from '../core/terrain.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from '../core/config.js';
+import { createRng } from '../core/rng.js';
+import { createHolePlay } from '../core/play.js';
 
 // ---- geometry helpers ----
 // Distance from (x, z) to a polyline of points { x, z, w? }. Returns { d, w, t } where w is the
@@ -30,6 +32,30 @@ export function polyDist(x, z, pts, w0 = 0) {
     run += L;
   }
   return best;
+}
+// Smooth minimum (k = blend distance in m): unions of shapes get rounded joints instead of sharp
+// inside corners (playtest 1, L4: "no sharp angles", fairways flow like blobs)
+export function smin(a, b, k) {
+  if (!(k > 0)) return Math.min(a, b);
+  const h = Math.max(k - Math.abs(a - b), 0) / k;
+  return Math.min(a, b) - h * h * k * 0.25;
+}
+// A blob (playtest 1, L4/L5): a main ellipse plus optional lobes, rotated by `rot` (rad), its edge
+// wobbling by `wob` (0..0.3). Returns a "radius" like sqrt(ell): < 1 inside, 1 on the edge.
+//   { cx, cz, rx, rz, rot?, wob?, seed?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates)
+export function blobR(x, z, b) {
+  const one = (e) => {
+    const dx = x - e.cx, dz = z - e.cz, c = Math.cos(b.rot ?? 0), sn = Math.sin(b.rot ?? 0);
+    const u = (dx * c + dz * sn) / e.rx, v = (-dx * sn + dz * c) / e.rz;
+    return Math.sqrt(u * u + v * v);
+  };
+  let r = one(b);
+  for (const l of b.lobes ?? []) r = Math.min(r, one(l));
+  if (b.wob) {
+    const a = Math.atan2(z - b.cz, x - b.cx), k = b.seed ?? 1;
+    r *= 1 + b.wob * (0.6 * Math.sin(3 * a + k) + 0.4 * Math.sin(5 * a + 2.3 * k));
+  }
+  return r;
 }
 // Length of a polyline (m)
 export const polyLen = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.z - pts[i].z), 0);
@@ -78,9 +104,22 @@ export function makeMtnHole(spec) {
 
   // the green's own outline size, ellipse "radius" (1 = on the edge)
   const gE = (x, z) => Math.sqrt(ell(x, z, G));
+  const roughs = spec.roughs ?? [];
+  const blend = spec.blend ?? 12; // m: how round the joints between fairway legs are
+  const fLen = fairways.map(f => polyLen(f.pts));
+  // Signed distance to the fairway edge (< 0 = on the fairway). Every segment of every fairway is a
+  // rounded strip; they are joined with a smooth minimum so legs flow into each other (L4), and the
+  // edge wobbles a little along its length (f.wob, default 0.08) so it reads as a blob, not a ruler.
   const fairwayGap = (x, z) => {
     let gap = Infinity;
-    for (const f of fairways) { const p = polyDist(x, z, f.pts); gap = Math.min(gap, p.d - p.w); }
+    fairways.forEach((f, i) => {
+      for (let k = 1; k < f.pts.length; k++) {
+        const p = polyDist(x, z, [f.pts[k - 1], f.pts[k]]);
+        const along = (p.t + k - 1) / (f.pts.length - 1) * fLen[i];
+        const wob = 1 + (f.wob ?? 0.08) * (0.6 * Math.sin(along / 17 + i * 1.7 + (x > 0 ? 0 : 2)) + 0.4 * Math.sin(along / 7.3 + i));
+        gap = smin(gap, p.d - p.w * wob, f.blend ?? blend);
+      }
+    });
     return gap;
   };
   const creekAt = (x, z) => (creek ? polyDist(x, z, creek.pts) : null);
@@ -110,9 +149,9 @@ export function makeMtnHole(spec) {
     const tw = 1 - ss(pad.r, pad.r + 9, td);
     if (tw > 0) h = h * (1 - tw) + teeY * tw;
     // bunkers are hollows of their own depth, with a sloped face
-    for (const b of bunkers) h -= (b.depth ?? 0.6) * (1 - ss(0.25, 1.12, Math.sqrt(ell(x, z, b))));
-    // ponds sit in a bowl
-    for (const p of ponds) h -= (p.depth ?? 2.2) * (1 - ss(0.55, 1.15, Math.sqrt(ell(x, z, p))));
+    for (const b of bunkers) h -= (b.depth ?? 0.6) * (1 - ss(0.25, 1.12, blobR(x, z, b)));
+    // ponds and lakes sit in a bowl
+    for (const p of ponds) h -= (p.depth ?? 2.2) * (1 - ss(0.55, 1.15, blobR(x, z, p)));
     // the creek runs in a channel: water at the bottom, sloped banks (the lip) on each side
     if (creek) {
       const c = creekAt(x, z);
@@ -130,15 +169,16 @@ export function makeMtnHole(spec) {
       if (c.d < c.w + (creek.lipW ?? 2.5)) return creek.lip ?? 'rough';
     }
     for (const p of ponds) {
-      const e = Math.sqrt(ell(x, z, p));
+      const e = blobR(x, z, p);
       if (e < 1) return 'water';
-      if (Math.sqrt(ell(x, z, p, p.lipW ?? 2.5)) < 1) return p.lip ?? 'rough';
+      if (e < 1 + (p.lipW ?? 2.5) / Math.min(p.rx, p.rz)) return p.lip ?? 'rough';
     }
-    for (const b of bunkers) if (ell(x, z, b) < 1) return 'sand';
+    for (const b of bunkers) if (blobR(x, z, b) < 1) return 'sand';
     if (ell(x, z, G) < 1) return 'green';
     if (ell(x, z, G, fringeW) < 1) return 'fringe';
     for (const r of rocks) if (ell(x, z, r) < 1) return 'rock';
     for (const p of paths) { const d = polyDist(x, z, p.pts); if (d.d < (p.w ?? 1.4)) return 'rock'; }
+    for (const r of roughs) if (blobR(x, z, r) < 1) return 'rough'; // L6: rough that bites into the fairway
     if (fairwayGap(x, z) < 0) return 'fairway';
     return 'rough';
   }
@@ -191,7 +231,65 @@ export function makeMtnHole(spec) {
     },
     intro: spec.intro,
   };
+  if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways)];
   return hole;
+}
+
+// Playtest 1, L2: "many more trees close to the course". Tree lines along both sides of every
+// fairway, on rough only, a few rows deep, big and varied (some taller than a drive's peak).
+// forest: { gap (m beyond the fairway edge, default 7), rows (default 2), spacing (m, default 11),
+//   size: [min, max] (default [1.1, 1.7]), seed, clear: [{ pts, w }] corridors kept free (brave lines),
+//   keep (m: distance kept from water, sand, green, tee; default 6) }
+// Trees that would block the default tee shot are left out (K8 / validateHole), so the hole stays fair.
+function plantForest(hole, spec, fairways) {
+  const f = spec.forest, r = createRng(f.seed ?? 7);
+  const gap = f.gap ?? 7, rows = f.rows ?? 2, spacing = f.spacing ?? 11, [s0, s1] = f.size ?? [1.1, 1.7];
+  const keep = f.keep ?? 6, OB = spec.ob;
+  const clear = f.clear ?? [];
+  const spots = [];
+  for (const fw of fairways) {
+    for (let k = 1; k < fw.pts.length; k++) {
+      const a = fw.pts[k - 1], b = fw.pts[k], L = Math.hypot(b.x - a.x, b.z - a.z);
+      const ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
+      for (let d = 0; d < L; d += spacing) {
+        const t = d / L, w = (a.w ?? 0) + ((b.w ?? 0) - (a.w ?? 0)) * t;
+        for (const side of [-1, 1]) for (let row = 0; row < rows; row++) {
+          const off = w + gap + row * 8 + r() * 5;
+          const along = d + (r() - 0.5) * spacing * 0.8;
+          spots.push({ x: a.x + ux * along - uz * off * side, z: a.z + uz * along + ux * off * side, s: s0 + r() * (s1 - s0) });
+        }
+      }
+    }
+  }
+  const far = (x, z, d) => {
+    for (let i = 0; i < 8; i++) {
+      const a = i / 8 * Math.PI * 2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
+      const sf = hole.surfaceAt(px, pz);
+      if (sf !== 'rough' && sf !== 'ob' && sf !== 'rock') return false;
+    }
+    return hole.surfaceAt(x, z) === 'rough';
+  };
+  let trees = spots
+    .filter(t => t.x > OB.x0 + 3 && t.x < OB.x1 - 3 && t.z > OB.z0 + 3 && t.z < OB.z1 - 3)
+    .filter(t => Math.hypot(t.x - hole.tee.x, t.z - hole.tee.z) > 16)
+    .filter(t => far(t.x, t.z, keep * 0.5) && far(t.x, t.z, keep))
+    .filter(t => !clear.some(c => polyDist(t.x, t.z, c.pts).d < c.w));
+  // thin out trees that stand on top of each other
+  const out = [];
+  for (const t of trees) if (!out.some(o => Math.hypot(o.x - t.x, o.z - t.z) < 5.5)) out.push(t);
+  trees = out.map(t => pine(+t.x.toFixed(1), +t.z.toFixed(1), +t.s.toFixed(2)));
+  // fairness: the default tee shot must not hit a tree (validateHole checks the same, K8)
+  for (let n = 0; n < 40; n++) {
+    const probe = { ...hole, obstacles: [...hole.obstacles, ...trees] };
+    const play = createHolePlay(probe, { seed: 1 });
+    play.reset({ wind: { x: 0, z: 0 } });
+    const w = play.shotWarning();
+    if (!w) break;
+    const i = w.index - hole.obstacles.length;
+    if (i < 0) break; // a hand-placed obstacle: validateHole will name it
+    trees.splice(i, 1);
+  }
+  return trees;
 }
 
 // A minimap that keeps the hole's proportions inside the same box as the other holes

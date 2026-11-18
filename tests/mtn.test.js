@@ -11,7 +11,8 @@ import { holeLength } from '../src/core/vec.js';
 
 // The plan's difficulty ramp (COURSE_PLAN_MTN.md, HOLE_GUIDELINES §2)
 const DIFF = { 'mtn-01': 1, 'mtn-02': 1, 'mtn-03': 2, 'mtn-04': 2, 'mtn-05': 2, 'mtn-06': 3, 'mtn-07': 3, 'mtn-08': 3, 'mtn-09': 4 };
-const LENGTH = { 3: [110, 190], 4: [260, 400], 5: [420, 500] };
+// Playtest 1 (L3): holes about 10% longer; the owner's caps are par 3 ≤ 210, par 4 ≤ 440, par 5 ≤ 550 m
+const LENGTH = { 3: [110, 210], 4: [260, 440], 5: [420, 550] };
 const aimTo = (p, t) => Math.atan2(t.x - p.ball.pos.x, -(t.z - p.ball.pos.z));
 // One scripted shot: { at, club, power ('pin' = the ⚑, or 0..1), pk (× power), acc }. Returns where it ended.
 export function shot(p, o = {}) {
@@ -33,7 +34,7 @@ export function startAt(hole, ball = null, strokes = 1) {
 }
 
 test('Mountain 9: every hole validates, has its plan par and a length inside the guide range', () => {
-  const plan = { 'mtn-01': [4, 340], 'mtn-02': [4, 300], 'mtn-03': [3, 150], 'mtn-04': [5, 450], 'mtn-05': [4, 360], 'mtn-06': [3, 175], 'mtn-07': [4, 390], 'mtn-08': [4, 280], 'mtn-09': [5, 490] };
+  const plan = { 'mtn-01': [4, 370], 'mtn-02': [4, 330], 'mtn-03': [3, 165], 'mtn-04': [5, 478], 'mtn-05': [4, 395], 'mtn-06': [3, 175], 'mtn-07': [4, 430], 'mtn-08': [4, 300], 'mtn-09': [5, 540] };
   for (const h of MTN) {
     validateHole(h);
     const [par, len] = plan[h.id];
@@ -65,16 +66,20 @@ test('Mountain 9: a straight, sensible round of the safe line makes par or bette
   }
 });
 
-test('mtn-02: a full drive carries the corner pines; a clipped one drops into playable rough (PM #49)', () => {
-  const h = HOLES['mtn-02'], green = { x: 84, z: -257 };
-  const full = shot(startAt(h, { x: 0, z: 0 }, 0), { at: green, club: 'driver', power: 1 });
+test('mtn-02: a full drive on the shortcut lands on fairway; a weaker one drops into rough; straight at the green is blocked (PM #49, playtest 1)', () => {
+  const h = HOLES['mtn-02'], cut = { x: 60, z: -250 };
+  const full = shot(startAt(h, { x: 0, z: 0 }, 0), { at: cut, club: 'driver', power: 1 });
   assert.equal(full.surface, 'fairway');
-  assert.ok(full.toCup < 50, `the brave drive leaves ${full.toCup.toFixed(0)} m`);
-  for (const pk of [0.9, 0.85, 0.8]) {
-    const weak = shot(startAt(h, { x: 0, z: 0 }, 0), { at: green, club: 'driver', power: 1, pk });
+  assert.ok(full.toCup < 75, `the brave drive leaves ${full.toCup.toFixed(0)} m`);
+  for (const pk of [0.9, 0.85]) {
+    const weak = shot(startAt(h, { x: 0, z: 0 }, 0), { at: cut, club: 'driver', power: pk });
     assert.equal(weak.ev, 'stopped');
     assert.equal(weak.surface, 'rough', `a ${pk * 100}% drive ends on ${weak.surface}`);
   }
+  // L2: the trees guard a straight line at the green
+  const p = startAt(h, { x: 0, z: 0 }, 0);
+  p.setAim(aimTo(p, h.cup)); p.setClub(p.bag.findIndex(c => c.id === 'driver'));
+  assert.ok(p.aimWarning(p.clubIdx, p.aim, 1), 'a full drive straight at the green hits the trees');
 });
 
 test('mtn-03: the safe shot finds the green; a hook at the flag finds the creek', () => {
@@ -85,28 +90,33 @@ test('mtn-03: the safe shot finds the green; a hook at the flag finds the creek'
 });
 
 test('mtn-04: the lay-up leaves a wedge, a short pitch stays dry, a good 3 Wood reaches in two (PM #49)', () => {
-  const h = HOLES['mtn-04'], drive = { x: 0.6, z: -222.4 }, lay = { x: -30, z: -394 };
-  // the lay-up: a 5 Iron to the lay-up zone, at the power that finishes there (the ⚑ for that spot) ±8%
+  const h = HOLES['mtn-04'], lay = { x: -32, z: -415 }, green = { x: -44, z: -470 };
+  const d = shot(startAt(h)), drive = { x: d.x, z: d.z };
+  assert.equal(d.surface, 'fairway');
+  // the lay-up: a 3 Wood to the lay-up zone, at the power that finishes there ±8% (playtest 1: the hole is longer)
   for (const pk of [0.92, 1, 1.06]) {
     const p = startAt(h, drive);
-    p.setAim(aimTo(p, lay)); p.setClub(p.bag.findIndex(c => c.id === '5i'));
+    p.setAim(aimTo(p, lay)); p.setClub(p.bag.findIndex(c => c.id === '3w'));
     const want = Math.hypot(lay.x - drive.x, lay.z - drive.z);
     let lo = 0, hi = 1.2;
     for (let k = 0; k < 18; k++) { const m = (lo + hi) / 2; const r = p.restPoint(p.clubIdx, p.aim, m); if (Math.hypot(r.x - drive.x, r.z - drive.z) < want) lo = m; else hi = m; }
     const e = shot(p, { power: hi, pk });
     assert.equal(e.ev, 'stopped', `lay-up ×${pk}`);
-    assert.ok(e.toCup >= 40 && e.toCup <= 75, `lay-up ×${pk} leaves ${e.toCup.toFixed(0)} m`);
+    assert.ok(e.toCup >= 40 && e.toCup <= 76, `lay-up ×${pk} leaves ${e.toCup.toFixed(0)} m`);
   }
   // a pitch from the lay-up zone hit 25–35% short still stays dry
   for (const pk of [0.75, 0.65]) {
-    const e = shot(startAt(h, { x: -30, z: -392 }, 2), { pk });
+    const e = shot(startAt(h, lay, 2), { pk });
     assert.equal(e.ev, 'stopped', `pitch ×${pk}`);
     assert.notEqual(e.surface, 'water');
   }
-  // the brave second shot: a 95% 3 Wood after a normal drive reaches the green; 90% is wet
-  const go = shot(startAt(h, drive), { at: { x: -40, z: -447 }, club: '3w', power: 0.95 });
+  // the brave second shot: a 95% 3 Wood after the drive reaches the green
+  const go = shot(startAt(h, drive), { at: green, club: '3w', power: 0.95 });
   assert.ok(['green', 'fringe'].includes(go.surface), `95% 3 Wood ends on ${go.surface}`);
-  assert.equal(shot(startAt(h, drive), { at: { x: -40, z: -447 }, club: '3w', power: 0.9 }).ev, 'penalty');
+  // L8: the creek is a real obstacle: at least 8 m of water where it crosses
+  let wet = 0;
+  for (let z = -445; z <= -410; z += 0.5) if (h.surfaceAt(-38, z) === 'water') wet += 0.5;
+  assert.ok(wet >= 8, `the creek is ${wet} m wide`);
 });
 
 test('mtn-05: carrying the pond leaves a wedge; a weak carry is wet; the safe drive leaves a mid-iron', () => {

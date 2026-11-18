@@ -7,48 +7,48 @@
 import { makeMtnHole, mtnIntro, pine } from './mtn-course.js';
 
 const TEE = { x: 0, z: 0 };
-const CORNER = { x: 0, z: -228 };
-const CUP = { x: -38, z: -449 };
+const CORNER = { x: 0, z: -252 };
+const CUP = { x: -42, z: -472 };
 
 export default makeMtnHole({
   id: 'mtn-04', number: 4, name: 'Mountain 9 · 4', par: 5, difficulty: 2,
   tee: TEE, cup: CUP,
-  aimTarget: { x: 1, z: -222 },
+  aimTarget: { x: 1, z: -240 },
   playLine: [TEE, CORNER, CUP],
   teePad: { h: 0.6, r: 4.5 },
-  // rolling first leg, then the second leg falls about 4 m toward the creek; the green sits up again
-  base: (x, z) => -4 * Math.min(1, Math.max(0, (-z - 230) / 180)) + 0.5 * Math.sin(x / 17) * Math.cos(z / 29),
+  // rolling first leg, then the second leg falls about 4.5 m toward the creek; the green sits up again
+  base: (x, z) => -4.5 * Math.min(1, Math.max(0, (-z - 250) / 180)) + 0.9 * Math.sin(x / 17) * Math.cos(z / 29) + 0.5 * Math.sin(z / 19),
   hills: [
-    { x: 40, z: -150, r: 26, h: 3.0 },   // banks right of the first leg
-    { x: 34, z: -260, r: 22, h: 2.6 },   // stops drives running through the corner
-    { x: -48, z: -140, r: 24, h: 2.2 },
-    { x: -74, z: -330, r: 26, h: 2.8 },  // left of the second leg
-    { x: -46, z: -478, r: 26, h: 3.2 },  // behind the green (a backdrop)
+    { x: 42, z: -165, r: 28, h: 3.4 },   // banks right of the first leg
+    { x: 36, z: -285, r: 24, h: 3.0 },   // stops drives running through the corner
+    { x: -50, z: -150, r: 26, h: 2.6 },
+    { x: -80, z: -365, r: 28, h: 3.2 },  // left of the second leg
+    { x: -50, z: -506, r: 28, h: 3.6 },  // behind the green (a backdrop)
   ],
-  green: { cx: -40, cz: -447, rx: 15, rz: 13, raise: 0.9, bank: 1.1, contour: (x, z) => 0.005 * (x + 40) },
+  // the slope just before the green bounces a ball up onto it (owner liked it); the green tilts left
+  green: { cx: -44, cz: -470, rx: 15, rz: 13, raise: 1.0, bank: 1.1, contour: (x, z) => 0.014 * (x + 44) - 0.008 * (z + 470) },
+  blend: 16,
   fairways: [
-    { pts: [{ x: 0, z: -24, w: 12 }, { x: 0, z: -120, w: 20 }, { x: 0, z: -236, w: 22 }] },
-    // the second leg to the lay-up zone (ends before the creek's lip)
-    { pts: [{ x: 0, z: -236, w: 20 }, { x: -18, z: -330, w: 18 }, { x: -28, z: -392, w: 17 }] },
-    // the apron between the creek and the green
-    { pts: [{ x: -38, z: -418, w: 12 }, { x: -40, z: -432, w: 13 }] },
+    { pts: [{ x: 0, z: -26, w: 12 }, { x: 0, z: -130, w: 21 }, { x: 0, z: -250, w: 23 }, { x: -20, z: -360, w: 20 }, { x: -31, z: -410, w: 18 }] },
+    // the apron between the creek and the green, merging into the green (L9)
+    { pts: [{ x: -40, z: -440, w: 13 }, { x: -43, z: -456, w: 15 }] },
   ],
+  // L6: a patch of rough biting into the left of the second leg
+  roughs: [{ cx: -38, cz: -372, rx: 9, rz: 16, rot: -0.2, wob: 0.15, seed: 2 }],
   bunkers: [
-    { cx: 18, cz: -250, rx: 6, rz: 9, depth: 0.5 },     // through the corner on the right
-    { cx: -58, cz: -455, rx: 4, rz: 7, depth: 0.9 },    // left of the green
-    { cx: -22, cz: -460, rx: 5, rz: 4, depth: 0.8 },    // back right
+    // L5: where the default drive finishes, on the right
+    { cx: 17, cz: -266, rx: 7, rz: 10, rot: -0.3, wob: 0.14, seed: 1, depth: 0.5, lobes: [{ cx: 11, cz: -276, rx: 5, rz: 4 }] },
+    { cx: -61, cz: -478, rx: 4, rz: 8, rot: 0.3, wob: 0.12, seed: 3, depth: 0.9 },  // left of the green
+    { cx: -24, cz: -484, rx: 6, rz: 4, rot: -0.3, wob: 0.1, depth: 0.8 },           // back right
   ],
-  // the creek: down the right of the first leg, then across the fairway in front of the green
+  // L8: the creek is a real obstacle in front of the green: 8–10 m of water, wider where it turns
   creek: {
-    pts: [{ x: 62, z: 10, w: 2.2 }, { x: 54, z: -200, w: 2.4 }, { x: 44, z: -330, w: 2.6 }, { x: 10, z: -398, w: 2.8 }, { x: -38, z: -410, w: 2.8 }, { x: -96, z: -398, w: 2.6 }],
-    depth: 1.3, bank: 3, lip: 'rough', lipW: 2.4,
+    pts: [{ x: 64, z: 10, w: 2.4 }, { x: 56, z: -220, w: 2.8 }, { x: 46, z: -360, w: 3.4 }, { x: 10, z: -418, w: 4.2 }, { x: -40, z: -430, w: 4.8 }, { x: -100, z: -418, w: 4.4 }],
+    depth: 1.5, bank: 3.5, lip: 'rough', lipW: 2.6,
   },
-  ob: { x0: -100, x1: 72, z0: -482, z1: 18 },
-  obstacles: [
-    // pines inside the dogleg, on rough
-    pine(-34, -236, 1.0), pine(-42, -252, 1.1), pine(-50, -270, 0.95),
-    pine(-36, -100, 1.0), pine(30, -70, 1.05),
-  ],
+  ob: { x0: -104, x1: 74, z0: -508, z1: 18 },
+  forest: { gap: 9, rows: 2, spacing: 12, size: [1.1, 1.7], seed: 41, keep: 7 },
+  obstacles: [],
   intro: mtnIntro({
     par: 5, prev: 'mtn-03', next: 'mtn-05',
     tagline: 'Lay up short of the creek, or carry it and reach in two.',

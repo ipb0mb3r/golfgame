@@ -66,31 +66,31 @@ export const SCENARIOS = {
   },
   // Phase C: Mountain 9 prototype (course designer). The key shot, a recovery spot and a putt per hole.
   'mtn1-drive-right': {
-    hole: 'mtn-01', ball: { x: 0, z: 0 }, aimAt: { x: 14, z: -235 }, strokes: 0, seed: 1101, wind: { x: 0, z: 0 }, lie: 'tee',
+    hole: 'mtn-01', ball: { x: 0, z: 0 }, aimAt: { x: 14, z: -250 }, strokes: 0, seed: 1101, wind: { x: 0, z: 0 }, lie: 'tee',
     name: 'Mountain 1: drive down the right', text: 'Aimed down the right side, toward the creek: the best angle into the green.',
   },
   'mtn1-bunker': {
-    hole: 'mtn-01', ball: { x: -21, z: -238 }, strokes: 1, seed: 1102, lie: 'sand',
+    hole: 'mtn-01', ball: { x: -19, z: -246 }, strokes: 1, seed: 1102, lie: 'sand',
     name: 'Mountain 1: fairway bunker', text: 'The shallow bunker left of the landing zone, about 110 m out.',
   },
   'mtn1-putt': {
-    hole: 'mtn-01', ball: { x: -8, z: -336 }, strokes: 2, seed: 1103, wind: { x: 0, z: 0 }, lie: 'green',
-    name: 'Mountain 1: flat putt', text: 'A 13 m putt on the big, almost flat green.',
+    hole: 'mtn-01', ball: { x: -8, z: -366 }, strokes: 2, seed: 1103, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Mountain 1: flat putt', text: 'A 13 m putt across the big green: it breaks a little toward the front left.',
   },
   'mtn2-carry-pines': {
-    hole: 'mtn-02', ball: { x: 0, z: 0 }, aimAt: { x: 84, z: -257 }, strokes: 0, seed: 1201, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Mountain 2: carry the pines', text: 'Aimed at the green, over the pines. A full Driver clears them; a weak one drops into the rough under them.',
+    hole: 'mtn-02', ball: { x: 0, z: 0 }, aimAt: { x: 60, z: -250 }, strokes: 0, seed: 1201, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 2: carry the pines', text: 'The shortcut over the pines inside the corner. A full Driver lands on the fairway; a weaker one drops into the rough.',
   },
   'mtn2-under-pines': {
-    hole: 'mtn-02', ball: { x: 36, z: -126 }, strokes: 1, seed: 1202, lie: 'rough',
+    hole: 'mtn-02', ball: { x: 33, z: -108 }, strokes: 1, seed: 1202, lie: 'rough',
     name: 'Mountain 2: under the pines', text: 'Caught by the pines: in the rough under them. Chip out to the fairway or find a gap.',
   },
   'mtn2-downhill-putt': {
-    hole: 'mtn-02', ball: { x: 95, z: -258 }, strokes: 2, seed: 1203, wind: { x: 0, z: 0 }, lie: 'green',
+    hole: 'mtn-02', ball: { x: 106, z: -288 }, strokes: 2, seed: 1203, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Mountain 2: downhill putt', text: 'From the back of the green, downhill toward the fairway: easy does it.',
   },
   'mtn3-at-flag': {
-    hole: 'mtn-03', ball: { x: 0, z: 0 }, aimAt: { x: -3, z: -149 }, strokes: 0, seed: 1301, wind: { x: 0, z: 0 }, lie: 'tee',
+    hole: 'mtn-03', ball: { x: 0, z: 0 }, aimAt: { x: -2, z: -165 }, strokes: 0, seed: 1301, wind: { x: 0, z: 0 }, lie: 'tee',
     name: 'Mountain 3: at the flag', text: 'Aimed straight at the flag near the creek. A hook finds the water.',
   },
   'mtn3-creek-side': {
@@ -98,20 +98,20 @@ export const SCENARIOS = {
     name: 'Mountain 3: beside the creek', text: 'In the rough on the creek bank, short left of the green. Chip over the corner of the water.',
   },
   'mtn3-tilted-putt': {
-    hole: 'mtn-03', ball: { x: 12, z: -156 }, strokes: 1, seed: 1303, wind: { x: 0, z: 0 }, lie: 'green',
+    hole: 'mtn-03', ball: { x: 14, z: -172 }, strokes: 1, seed: 1303, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Mountain 3: putt toward the creek', text: 'The green tilts toward the creek: this putt breaks left and runs on.',
   },
   'mtn4-layup': {
-    hole: 'mtn-04', ball: { x: 0.6, z: -222.4 }, aimAt: { x: -30, z: -394 }, strokes: 1, seed: 1401, wind: { x: 0, z: 0 }, lie: 'fairway',
-    name: 'Mountain 4: lay up', text: 'After the drive, aimed at the lay-up zone short of the creek (about 165 m). Leaves a wedge of about 50 m.',
+    hole: 'mtn-04', ball: { x: 0.7, z: -240.2 }, aimAt: { x: -32, z: -415 }, strokes: 1, seed: 1401, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 4: lay up', text: 'After the drive, aimed at the lay-up zone short of the creek (a 3 Wood at about 75%). Leaves a wedge of about 60 m.',
   },
   'mtn4-go-for-it': {
-    hole: 'mtn-04', ball: { x: 0.6, z: -222.4 }, aimAt: { x: -40, z: -447 }, strokes: 1, seed: 1402, wind: { x: 0, z: 0 }, lie: 'fairway',
+    hole: 'mtn-04', ball: { x: 0.7, z: -240.2 }, aimAt: { x: -44, z: -470 }, strokes: 1, seed: 1402, wind: { x: 0, z: 0 }, lie: 'fairway',
     name: 'Mountain 4: go for it in two', text: 'Aimed at the green over the creek. A good 3 Wood gets there; a weak one is wet.',
   },
   'mtn4-pitch-over': {
-    hole: 'mtn-04', ball: { x: -30, z: -392 }, strokes: 2, seed: 1403, wind: { x: 0, z: 0 }, lie: 'fairway',
-    name: 'Mountain 4: pitch over the creek', text: 'From the lay-up zone, about 55 m: pitch over the creek. Even a short one stays dry on the apron.',
+    hole: 'mtn-04', ball: { x: -32, z: -415 }, strokes: 2, seed: 1403, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Mountain 4: pitch over the creek', text: 'From the lay-up zone, about 60 m: pitch over the creek (now a real one, 8–10 m wide). Even a short one stays dry on the apron.',
   },
   'mtn5-carry-pond': {
     hole: 'mtn-05', ball: { x: 0, z: 0 }, aimAt: { x: 56, z: -226 }, strokes: 0, seed: 1501, wind: { x: 0, z: 0 }, lie: 'tee',

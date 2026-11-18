@@ -5,34 +5,36 @@
 import { makeMtnHole, mtnIntro, pine } from './mtn-course.js';
 
 const TEE = { x: 0, z: 0 };
-const CUP = { x: 4, z: -342 };
+const CUP = { x: 5, z: -372 };
 
 export default makeMtnHole({
   id: 'mtn-01', number: 1, name: 'Mountain 9 · 1', par: 4, difficulty: 1,
   tee: TEE, cup: CUP,
-  aimTarget: { x: -2, z: -232 },
+  aimTarget: { x: -2, z: -236 },
   teePad: { h: 1.0, r: 4.5 },
-  // gently downhill all the way (about 6 m), then a little rise to the green
-  base: (x, z) => 0.018 * z + 0.6 * Math.sin(x / 23) * Math.cos(z / 41),
+  // gently downhill (about 6 m), rolling across the fairway (playtest 1, L1), a little rise to the green
+  base: (x, z) => 0.017 * z + 0.9 * Math.sin(x / 21) * Math.cos(z / 37) + 0.5 * Math.sin(z / 23 + x / 40),
   hills: [
-    { x: -8, z: -150, r: 26, h: 0.7 },   // a soft swell in the first landing area
-    { x: 14, z: -268, r: 20, h: -0.6 },  // a shallow dip right of the landing zone
-    { x: -42, z: -90, r: 22, h: 2.4 },   // mounds in the left rough (not a field)
-    { x: -46, z: -300, r: 26, h: 2.8 },
+    { x: -10, z: -150, r: 28, h: 1.2 },  // a swell in the first landing area
+    { x: 14, z: -280, r: 22, h: -0.9 },  // a dip right of the landing zone
+    { x: -46, z: -90, r: 24, h: 3.0 },   // mounds in the left rough
+    { x: -48, z: -320, r: 28, h: 3.4 },
+    { x: 8, z: -405, r: 26, h: 3.0 },    // a backdrop behind the green
   ],
-  green: { cx: 2, cz: -340, rx: 17, rz: 14, raise: 0.3, contour: (x, z) => 0.004 * (x - 2) },
-  fairways: [{ pts: [{ x: 0, z: -24, w: 13 }, { x: 0, z: -110, w: 24 }, { x: 0, z: -290, w: 24 }, { x: 2, z: -322, w: 14 }] }],
+  // a big, gently tilted green (back right high): putts break toward the front left
+  green: { cx: 3, cz: -370, rx: 17, rz: 14, raise: 0.3, contour: (x, z) => 0.012 * (x - 3) - 0.01 * (z + 370) },
+  // L4/L9: one flowing blob, widest in the landing zone, merging into the green's front
+  fairways: [{ pts: [{ x: 0, z: -26, w: 13 }, { x: -1, z: -120, w: 25 }, { x: 1, z: -250, w: 26 }, { x: 3, z: -330, w: 19 }, { x: 3, z: -360, w: 15 }] }],
   bunkers: [
-    { cx: -21, cz: -238, rx: 7, rz: 11, depth: 0.45 },  // left of the landing zone, shallow
-    { cx: -14, cz: -330, rx: 5, rz: 7, depth: 0.9 },    // front left of the green
+    // L5: a shallow blob bunker where real drives finish, left of centre
+    { cx: -19, cz: -246, rx: 6, rz: 10, rot: 0.25, wob: 0.12, seed: 2, depth: 0.45, lobes: [{ cx: -14, cz: -258, rx: 5, rz: 5 }] },
+    { cx: -14, cz: -360, rx: 5, rz: 7, rot: -0.3, wob: 0.1, depth: 0.9 },   // front left of the green
   ],
   // the creek runs far right of the fairway, beyond a wide strip of rough
-  creek: { pts: [{ x: 50, z: 20, w: 2.4 }, { x: 44, z: -120, w: 2.6 }, { x: 47, z: -250, w: 2.8 }, { x: 40, z: -370, w: 2.8 }], depth: 1.3, bank: 3, lip: 'rough' },
-  ob: { x0: -62, x1: 62, z0: -372, z1: 18 },
-  obstacles: [
-    pine(-36, -60, 1), pine(-40, -72, 1.1), pine(-33, -178, 0.95), pine(-38, -192, 1.05),
-    pine(32, -150, 1), pine(30, -300, 0.95),
-  ],
+  creek: { pts: [{ x: 52, z: 20, w: 2.6 }, { x: 46, z: -130, w: 3.0 }, { x: 49, z: -270, w: 3.2 }, { x: 42, z: -400, w: 3.4 }], depth: 1.3, bank: 3, lip: 'rough' },
+  ob: { x0: -64, x1: 64, z0: -402, z1: 18 },
+  forest: { gap: 9, rows: 2, spacing: 13, size: [1.1, 1.6], seed: 11, keep: 6 },
+  obstacles: [],
   intro: mtnIntro({
     par: 4, next: 'mtn-02',
     tagline: 'A wide, friendly opener. The creek runs far right.',
