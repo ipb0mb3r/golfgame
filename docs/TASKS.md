@@ -192,7 +192,7 @@ From the owner's design doc "Arcade Golf Course Design Principles", relayed by t
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
 - [ ] D3 Hole intro flyover camera. → **scheduled as V4** (Phase V): the regular route only.
-- [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
+- [ ] D4 Intentional draw / fade. → **moved to Phase B, ball control (B1)**.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
@@ -208,6 +208,17 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [ ] V3 Ball-flight camera with **variety**: sometimes the flight as today (behind), sometimes **at an angle** from the side, sometimes **from the landing spot, looking back at the ball coming in**. Chosen per shot by rules + the seeded RNG (no same view many times in a row; short shots and putts stay simple). A setting to turn variety off (classic camera).
 - [ ] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round.
 - [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
+
+## Phase B: Ball control (owner, 2026-11-18, backlog, not scheduled)
+Shape the shot on purpose, before the swing. Physics and swing feel change, so AGENTS.md rules 8–9 apply (v2 re-record, per-shot v1 exceptions). Design the controls with the owner first (B0).
+- [ ] B0 🅿️ Owner + PM: how the player picks curve / height / spin (controls on phone and desktop, how it shows on the aim line and marker)
+- [ ] B1 Curve the ball on purpose: draw / fade (was D4). Today it only curves on a mistimed 3rd click.
+- [ ] B2 Trajectory: a high lob or a low, straighter punch (changes carry, roll and wind effect)
+- [ ] B3 Spin: topspin (runs on after landing) or backspin (checks up, can spin back), changing how the ball reacts on landing
+- [ ] B4 The aim line and marker show the chosen shape, so there are no blind surprises
+
+## Small gameplay items (owner, 2026-11-18)
+- [ ] S23 The aim marker warns when the full-power landing would be in water or OB (like it already turns red for trees), with a different colour or icon so the player can tell water from a tree
 
 ## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
 A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.

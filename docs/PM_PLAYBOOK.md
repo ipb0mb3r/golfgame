@@ -58,7 +58,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Next (in order):**
 1. **Finish Phase C + the playtest 1 gameplay pass** (above).
-2. **X12 load time** (small dev PR: build holes lazily, keep heavy validation out of startup).
+2. **X12 load time + S23 marker water/OB warning** (one small dev PR, QA Light).
 3. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover along the regular route (was D3). Dev prompt below.
 4. Then the art / assets pass decision, and **Phase U: UI pass for phones and desktop** (owner, 2026-11-18; scope U0 with the owner first, probably alongside the art style).
 5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
@@ -74,6 +74,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - From Phase T (low): 320 px "Next hole" button wraps (on main before T); 320 px scorecard personal-best line sits under the sticky buttons until you scroll; rival flavour lines during the round (owner: not now); best per difficulty (owner: not now).
 - Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
 - **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
+- **Phase B: ball control** (owner, 2026-11-18, backlog): curve, lob / low punch, top / back spin. Design the controls with the owner first (B0).
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
 
 ### Phase V prompt (ready: send to `dev` after the playtest 1 pass merges)
