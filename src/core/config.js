@@ -112,7 +112,10 @@ export const CAM = Object.freeze({
   // `off` × the carry to one side, at max(minH, apexK × the apex) m; landingCam = `past` m beyond the
   // predicted landing and `off` m to one side, `height` m up. The landing camera hands over to the chase
   // camera when the ball runs more than passBy m past it.
-  side:       Object.freeze({ along: 0.4, off: 0.17, minH: 15, apexK: 1 }),
+  side:       Object.freeze({ along: 0.4, off: 0.17, minH: 15, apexK: 1,
+    // QA-1 (PR #64): on tree-lined holes the first spot often has leaves in the way, so these are tried
+    // next, in order (on the drawn side, then the other side): up = m higher, off = × the carry further out
+    tries: Object.freeze([{ up: 0, off: 0 }, { up: 12, off: 0 }, { up: 12, off: 0.08 }, { up: 25, off: 0.12 }, { up: 40, off: 0.18 }]) }),
   landingCam: Object.freeze({ past: 25, off: 9, height: 7, passBy: 40 }),
   flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
   viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)

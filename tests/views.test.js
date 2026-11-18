@@ -7,7 +7,7 @@ import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEP
 import { TUNE, CAM, setTunable, resetTunables } from '../src/core/config.js';
 import { createRng } from '../src/core/rng.js';
 import { createHolePlay } from '../src/core/play.js';
-import { HOLES } from '../src/holes/sets.js';
+import { HOLES, MTN } from '../src/holes/sets.js';
 import { SCENARIOS } from '../src/holes/scenarios.js';
 import { dirFromAim } from '../src/core/vec.js';
 
@@ -203,6 +203,31 @@ test('V3 never blind: a side or landing spot that cannot see the shot is not use
     if (f.spot) assert.ok(!play.surfaces[play.terrain.surfaceAt(f.spot.x, f.spot.z)].penalty, `${f.kind} in bounds`);
   }
   assert.ok(hist.some(k => k !== 'behind'), 'mtn-04 still gets some variety: ' + [...new Set(hist)])
+});
+
+test('QA-1 (PR #64): on the tree-lined Mountain 9 the side view finds a clear spot from most tees and landing areas (higher / further out first)', () => {
+  try {
+    // Only the side view, to see where it is possible (the weights and rules are not changed by this)
+    setTunable('CAM_W_BEHIND', 0); setTunable('CAM_W_LANDING', 0); setTunable('CAM_W_SIDE', 1);
+    for (const fromLanding of [false, true]) for (const pw of [0.75, 0.9, 1]) {
+      let ok = 0;
+      for (const hole of MTN) {
+        const play = createHolePlay(hole, { seed: 1 }); play.reset();
+        if (fromLanding && hole.aimTarget) {
+          const a = hole.aimTarget; Object.assign(play.ball.pos, { x: a.x, z: a.z, y: play.terrain.heightAt(a.x, a.z) }); play.prepare();
+        }
+        const from = { ...play.ball.pos }, land = play.landingPoint(play.clubIdx, play.aim, pw);
+        const vy = play.hit(pw, 0).vel.y;
+        const shot = { putt: false, from, land, carry: Math.hypot(land.x - from.x, land.z - from.z), dir: { x: play.shotDir.x, z: play.shotDir.z }, apex: vy * vy / 19.62 };
+        const world = { heightAt: play.terrain.heightAt, surfaceAt: play.terrain.surfaceAt, obstacles: play.obstacles, penalty: id => !!play.surfaces[id]?.penalty };
+        if (shot.carry < TUNE.CAM_VARIETY_MIN) { ok++; continue; } // a short shot is behind by rule, not for lack of a spot
+        const f = pickFlightView(world, createRng(1), [], shot);
+        if (f.kind === 'side') ok++;
+      }
+      // Measured today: 9 of 9 in every case (before QA-1: full-power drives on mtn-01, 04, 05 and 09 found none)
+      assert.ok(ok >= 7, `${fromLanding ? 'landing area' : 'tee'} at ${pw}: side possible on ${ok} of ${MTN.length}`);
+    }
+  } finally { resetTunables(); }
 });
 
 // --- V4: the flyover ----------------------------------------------------------------------------

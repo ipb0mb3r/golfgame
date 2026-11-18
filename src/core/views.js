@@ -129,16 +129,16 @@ export const FLIGHT_VIEWS = Object.freeze(['behind', 'side', 'landing']);
 
 // Where a 'side' or 'landing' camera stands for a shot. shot = { from, dir: {x,z} (unit), land
 // (predicted landing, no wind/curve), carry (m, flat), apex (m above the start) }, side = ±1 (right / left
-// of the flight line). Returns { x, y, z }.
-export function flightSpot(heightAt, kind, shot, side) {
+// of the flight line), tryAt = { up, off } (CAM.side.tries: higher and further out, QA-1). Returns { x, y, z }.
+export function flightSpot(heightAt, kind, shot, side, tryAt = { up: 0, off: 0 }) {
   const { from, dir, land, carry, apex } = shot;
   const px = -dir.z * side, pz = dir.x * side; // perpendicular, to the right for side = +1
   let x, z, up;
   if (kind === 'side') {
     const c = CAM.side;
-    x = from.x + dir.x * carry * c.along + px * carry * c.off;
-    z = from.z + dir.z * carry * c.along + pz * carry * c.off;
-    up = Math.max(c.minH, apex * c.apexK);
+    x = from.x + dir.x * carry * c.along + px * carry * (c.off + tryAt.off);
+    z = from.z + dir.z * carry * c.along + pz * carry * (c.off + tryAt.off);
+    up = Math.max(c.minH, apex * c.apexK) + tryAt.up;
   } else {
     const c = CAM.landingCam;
     x = land.x + dir.x * c.past + px * c.off;
@@ -170,7 +170,9 @@ function seesShot(world, spot, shot) {
 //   1. putts, and full shots carrying less than CAM_VARIETY_MIN, are 'behind' (and CAM_VARIETY 0 = Classic: always)
 //   2. else a weighted draw (CAM_W_BEHIND / SIDE / LANDING)
 //   3. no view more than CAM_MAX_RUN times in a row, and 'landing' never twice in a row
-//   4. a 'side' or 'landing' spot that can't see the shot (seesShot) is not used: the other side is tried first
+//   4. a 'side' or 'landing' spot that can't see the shot (seesShot) is not used. A side camera first tries
+//      higher and further out (CAM.side.tries, QA-1: above the tree tops), then the same on the other side;
+//      a landing camera tries the other side. Then 'behind'.
 // The draw always takes the same number of random numbers (2), so the stream stays in step whatever wins.
 export function pickFlightView(world, rng, history, shot) {
   if (typeof world === 'function') world = { heightAt: world };
@@ -190,8 +192,9 @@ export function pickFlightView(world, rng, history, shot) {
   for (const k of order) {
     if (!allowed(k) || (k !== 'behind' && !(w[k] > 0))) continue;
     if (k === 'behind') return behind;
-    for (const sd of [side, -side]) {
-      const spot = flightSpot(heightAt, k, shot, sd);
+    const tries = k === 'side' ? CAM.side.tries : [undefined];
+    for (const sd of [side, -side]) for (const tryAt of tries) {
+      const spot = flightSpot(heightAt, k, shot, sd, tryAt);
       if (seesShot(world, spot, shot)) return { kind: k, spot, side: sd };
     }
   }
