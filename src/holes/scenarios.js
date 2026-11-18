@@ -114,8 +114,8 @@ export const SCENARIOS = {
     name: 'Mountain 4: pitch over the creek', text: 'From the lay-up zone, about 60 m: pitch over the creek (now a real one, 8–10 m wide). Even a short one stays dry on the apron.',
   },
   'mtn5-carry-pond': {
-    hole: 'mtn-05', ball: { x: 0, z: 0 }, aimAt: { x: -48, z: -226 }, strokes: 0, seed: 1501, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Mountain 5: carry the pond', text: 'Aimed over the pond at the island of fairway beyond it. 90% or more makes it; 85% is wet.',
+    hole: 'mtn-05', ball: { x: 0, z: 0 }, aimAt: { x: -60, z: -217 }, strokes: 0, seed: 1501, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Mountain 5: carry the pond', text: 'Aimed over the pond at the small island of fairway beyond it, beside the trees. A 95% Driver lands on it; a bit more or less finds the rough around it; 85% is wet.',
   },
   'mtn5-bunker': {
     hole: 'mtn-05', ball: { x: 24, z: -236 }, strokes: 1, seed: 1502, lie: 'sand',

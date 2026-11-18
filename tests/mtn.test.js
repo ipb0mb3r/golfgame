@@ -140,17 +140,21 @@ test('mtn-04: the lay-up leaves a wedge, a short pitch stays dry, a good 3 Wood 
   assert.ok(wet >= 8, `the creek is ${wet} m wide`);
 });
 
-test('mtn-05: carrying the pond reaches the fairway island; a weak carry is wet; the safe drive is longer in', () => {
-  const h = HOLES['mtn-05'], over = { x: -48, z: -226 };
-  for (const pk of [0.95, 0.9]) {
-    const e = shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: pk });
-    assert.equal(e.surface, 'fairway', `a ${pk * 100}% carry ends on ${e.surface}`);
-  }
-  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 1 }).ev, 'stopped', 'a full carry stays dry');
-  const brave = shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 1 });
+test('mtn-05: the island beyond the pond is a separate target; missing it is dry rough; a weak carry is wet (owner)', () => {
+  const h = HOLES['mtn-05'], over = { x: -60, z: -217 };
+  const on = shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 0.95 });
+  assert.equal(on.surface, 'fairway', `a 95% carry ends on ${on.surface}`);
+  for (const pk of [1, 0.9]) assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: pk }).ev, 'stopped', `a ${pk * 100}% carry stays dry`);
   assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { at: over, club: 'driver', power: 0.85 }).ev, 'penalty');
+  // a strip of rough separates the island from the main fairway (owner: it reads as its own circle)
+  let gapRough = false;
+  for (let t = 0; t <= 1 && !gapRough; t += 0.02) {
+    const x = -60 + (-20 + 60) * t, z = -217 + (-260 + 217) * t;
+    if (h.surfaceAt(x, z) === 'rough') gapRough = true;
+  }
+  assert.ok(gapRough, 'rough between the island and the main fairway');
   const safe = shot(startAt(h, { x: 0, z: 0 }, 0));
-  assert.ok(safe.toCup > brave.toCup + 30, `safe leaves ${safe.toCup.toFixed(0)} m, brave ${brave.toCup.toFixed(0)} m`);
+  assert.ok(safe.toCup > on.toCup + 20, `safe leaves ${safe.toCup.toFixed(0)} m, brave ${on.toCup.toFixed(0)} m`);
 });
 
 test('mtn-06: the deep bunker is escaped with the Sand Wedge; the bank feeds a ball onto the green (PM #49)', () => {

@@ -168,9 +168,17 @@ export function makeMtnHole(spec0) {
       run += L;
     }
   });
+  // A fairway with blend: 0 is an island (owner, hole 5): it never melts into the others, so the
+  // rough between them stays visible. Islands join the rest with a plain minimum, after the blend.
   function fairwayGapRaw(x, z) {
-    let gap = Infinity;
+    let gap = Infinity, island = Infinity;
     for (const g of SEG) {
+      if (g.k === 0) {
+        const u = Math.min(1, Math.max(0, ((x - g.ax) * g.dx + (z - g.az) * g.dz) / g.L2));
+        const px = g.ax + g.dx * u - x, pz = g.az + g.dz * u - z;
+        island = Math.min(island, Math.sqrt(px * px + pz * pz) - (g.wa + (g.wb - g.wa) * u));
+        continue;
+      }
       const u = Math.min(1, Math.max(0, ((x - g.ax) * g.dx + (z - g.az) * g.dz) / g.L2));
       const px = g.ax + g.dx * u - x, pz = g.az + g.dz * u - z;
       const d2 = px * px + pz * pz, w = g.wa + (g.wb - g.wa) * u;
@@ -180,7 +188,7 @@ export function makeMtnHole(spec0) {
       const wob = 1 + g.wob * (0.6 * Math.sin(along / 17 + g.i * 1.7 + (x > 0 ? 0 : 2)) + 0.4 * Math.sin(along / 7.3 + g.i));
       gap = smin(gap, Math.sqrt(d2) - w * wob, g.k);
     }
-    return gap;
+    return Math.min(gap, island);
   }
   // Cached on a 1 m grid over the course (bilinear in between): every lookup is a few multiplies
   const GS = 2; // m per cell
