@@ -76,6 +76,7 @@ Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are
 | 3 | A 96 y approach to a slightly raised green. "Sometimes greens with a bit of elevation are really interesting for approaches." | **A small rise makes a short approach a real decision:** come up short and the ball rolls back down the bank; miss on the bunker side (a big bunker cut into the slope) and the chip is hard. A **backdrop behind the green** (tree line, stone wall) frames the target and helps judge depth. Elevation shown as a number (we have the ↑/↓ readout). |
 | 4 | Par 5 tee shot from high up (↓ 21.7 y to the pin), the sea and a rocky bay on the right, the course wrapping around it. "Starting with a drop like this is interesting for the drive and is fun to aim on the fairway." | **A raised tee** shows the whole hole (never blind) and makes the drive exciting. **The sea shapes the routing:** the hole wraps around a bay with a rocky shore (the rocky-coast theme), so you play around the water, with a chance to cut across it later as a brave line. |
 | 5 | Par 3 (176 yd) through a gap between rocky cliffs, to a green by a beach and the sea; a big boulder near the tee. "Sometimes walls could be fun." | **Natural walls:** rock cliffs on both sides frame a narrow, clear target, and the ball bounces off them. In our engine a cliff can be **terrain** (a steep `heightAt` slope with the rock surface): no engine work, as long as it's not vertical and never traps the ball. |
+| 6 | Par 5 (538 yd) curving right around a big beach, a lagoon behind it, the ocean beyond. "An example of how the theme can influence the course design." | **The theme creates the hazards**, it doesn't just decorate a normal hole: on a beach course the **beach is the bunker**. Sand between the fairway and the water layers the punishment (small miss: sand, playable; big miss: water, penalty). Cutting over the beach and lagoon is the brave line to reach in two. Palms and rocks double as aim points. |
 
 - **Raised greens, sometimes** (owner, screenshot 3): a green a little above the approach, with a bank in front and one bad side.
 - **Backdrops behind greens** (owner, screenshot 3): a tree line, a stone wall or a slope behind the green so the target reads clearly. A wall or tree line is scenery (art pass) unless it sits in bounds; trees in play follow the usual rules.
@@ -93,7 +94,7 @@ Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist
 
 | ID | His doc asks for | Engine today |
 |---|---|---|
-| D1 | 3–5 tee sets per hole (offset, flat) | 1 tee per hole |
+| ~~D1~~ | ~~3–5 tee sets per hole~~ **Dropped by the owner (2026-11-18): "we don't need multiple tee boxes, a single one is fine."** | 1 tee per hole (enough) |
 | D2 | 4+ pin positions per green | 1 cup per hole |
 | D3 | Intro flyover: safe route, then hero route, then the green | No flyover camera |
 | D4 | Shaping a draw or fade on purpose | The ball curves only on a mistimed 3rd click |
