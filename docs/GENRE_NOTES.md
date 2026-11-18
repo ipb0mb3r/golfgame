@@ -57,19 +57,20 @@
 _To fill as Alexis and the course designer talk._
 
 ## 7. Needs engine work (for the PM, not built by the course designer)
-Sent to the PM on 2026-11-18.
+Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist from the genre study".
 
-| # | His doc asks for | Engine today |
+| ID | His doc asks for | Engine today |
 |---|---|---|
-| 1 | 3–5 tee sets per hole (offset, flat) | 1 tee per hole |
-| 2 | 4+ pin positions per green | 1 cup per hole |
-| 3 | Intro flyover: safe route, then hero route, then the green | No flyover camera |
-| 4 | Shaping a draw or fade on purpose | The ball curves only on a mistimed 3rd click |
-| 5 | More surfaces: deep rough, waste areas, gorse / heather | fairway, fringe, green, rough, sand, rock, water, OB |
-| 6 | Rain as a difficulty lever | Planned (DESIGN §7), not built |
-| 7 | Elevation change shown as a number at the tee | To check |
-| 8 | Wind visible in the landing zones (flags, trees moving) | Wind shown in the HUD |
-| 9 | Hero carries checked against character stats | No characters (out of scope, DESIGN §1) |
+| D1 | 3–5 tee sets per hole (offset, flat) | 1 tee per hole |
+| D2 | 4+ pin positions per green | 1 cup per hole |
+| D3 | Intro flyover: safe route, then hero route, then the green | No flyover camera |
+| D4 | Shaping a draw or fade on purpose | The ball curves only on a mistimed 3rd click |
+| D5 | More surfaces: deep rough, waste areas, gorse / heather | fairway, fringe, green, rough, sand, rock, water, OB |
+| D6 | Wind visible in the landing zones (flags, trees moving) | HUD arrow + mph, and the flag at the cup |
+| Phase 5 | Rain as a difficulty lever | Planned (DESIGN §7), not built |
+| — | Hero carries checked against character stats | No characters (out of scope, DESIGN §1) |
+
+Already there: the elevation change is shown (↑/↓ yards to the cup in the distance readout).
 
 ## 8. Differences with HOLE_GUIDELINES.md (not changed here, listed in the PR)
 - Guidelines §2 ramp ("Demanding", "hard but fair") and the earlier "harder is much better" taste vs. "not particularly hard" now.
