@@ -28,7 +28,8 @@ export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 // Fill in the page for this hole: titles, intro card, links, minimap size.
 // In a round (Phase 6) `round` = { number, of }: the hole is numbered by its place in the round
 // ("Hole 4 of 9"), and the links to other holes are hidden (the round moves on by itself, A6).
-export function setupHolePage(hole, round = null) {
+// links = false hides them too (a hole started from the menu: the menu is the way to other holes, M0).
+export function setupHolePage(hole, round = null, { links = true } = {}) {
   const yards = yd(holeLength(hole)); // K12: along the play line on a dogleg
   const num = round ? round.number : hole.number;
   document.title = round ? `Pocket Links: Hole ${num} of ${round.of}` : `Pocket Links: Hole ${num}`;
@@ -39,7 +40,7 @@ export function setupHolePage(hole, round = null) {
   $('introBlurb').textContent = it.blurb;
   for (const [id, link] of [['introLink', it.link], ['resultLink', it.resultLink]]) {
     const a = $(id);
-    if (link && !round) { a.href = holeHref(link.hole); a.textContent = link.text; a.parentElement.style.display = ''; } else a.parentElement.style.display = 'none';
+    if (link && !round && links) { a.href = holeHref(link.hole); a.textContent = link.text; a.parentElement.style.display = ''; } else a.parentElement.style.display = 'none';
   }
   // Phase 6 (PM on PR #38): holes 2+ of a round open with a compact card instead of the full intro
   if (round) {

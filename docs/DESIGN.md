@@ -249,12 +249,12 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 8. Rounds, scoring, menus and rivals 🟡 (re-planned 2026-11-17 by the owner; rounds ✅ Phase 6, menus and rivals ❌)
+## 8. Rounds, scoring, menus and rivals 🟡 (re-planned 2026-11-17 by the owner; rounds ✅ Phase 6, menus ✅ Phase 7, rivals ❌)
 
 ### Modes
-- **Solo, 9 holes:** a full round with a scorecard, total vs par, and a personal best per course.
-- **vs AI, 9 holes:** the same round against **5 AI rivals**, with a leaderboard after each hole and final standings.
-- **Practice:** one hole or a `?scenario=` spot, no scorecard.
+- ✅ **Solo:** pick a course (any length), play it as a round with a scorecard, total vs par, and a personal best per course.
+- **vs AI:** the same round against **5 AI rivals**, with a leaderboard after each hole and final standings (Phase T; on the Play menu now, disabled, "Coming soon").
+- ✅ **Practice:** one hole or a test spot (`scenarios.js`), no scorecard.
 
 ### Rules
 - A **hole set** (a course) is an ordered list of hole ids plus a name ("Mountain 9", "Prototype holes", "Rainy Day"…).
@@ -264,9 +264,9 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - ✅ The stroke cap per hole (`maxStrokes`) means "picked up": the hole counts the strokes taken (the cap), is flagged on the card, and the round continues.
 - ✅ Hole 1 of a round opens with the full intro card (how to play). **Holes 2+ open with a compact hole card** (PM on PR #38): "Hole 4 of 9", par, distance ("· plays N yd" when the play line is longer) and the hole's one-line `intro.tagline`; it closes by itself after `TIMING.holeCard` (2.5 s) or on a tap. Single-hole play (`?hole=`) keeps the full intro.
 - ✅ Between holes: a summary card (result, penalty strokes, running total vs par) with a **Next hole** button (and later the leaderboard in vs AI). The next hole loads in the same page as a new hole session (no reload).
-- ✅ At the end: the full scorecard with **Play again** (a new round, everything cleared) and **Menu** (reloads the page until Phase 7). **The scorecard shows the holes in groups of 9** (`SCORECARD_GROUP`): "Front 9", "Back 9", then by number ("Holes 19–27"), the last group may be shorter; a round of 9 or fewer is one group named by its holes ("Holes 1–3"). Each group has Par, Score and ± rows and a subtotal column, then the round total. It fits a phone in portrait (320 px) for any length; a long round scrolls. (vs AI adds the final place.)
+- ✅ At the end: the full scorecard with **Play again** (a new round, everything cleared) and **Menu** (back to the main menu, no reload, Phase 7). **The scorecard shows the holes in groups of 9** (`SCORECARD_GROUP`): a full first group is **"Out"**, a full second group **"In"** (PM Phase 7, golf's names), every other group by its numbers ("Holes 19–27", "Holes 10–12"); the last group may be shorter; a round shorter than 9 is one group named by its holes ("Holes 1–3"), a 9-hole round is one "Out" group. Each group has Par, Score and ± rows and a subtotal column, then the round total. It fits a phone in portrait (320 px) for any length; a long round scrolls. (vs AI adds the final place.)
 - ✅ Personal best per course (lowest to par) in localStorage, read and written in try/catch (the game works without storage).
-- Until the menus (Phase 7): `?set=<id>` starts a round; `?hole=` and `?scenario=` play one hole with no round. Temporary test sets: `prototype3` (holes 1–3) and `test9` (holes 1–3 three times).
+- ✅ Rounds start from the Solo menu (Phase 7). Dev links still work: `?set=<id>` starts a round; `?hole=` and `?scenario=` play one hole with no round. Temporary test sets: `prototype3` (holes 1–3) and `test9` (holes 1–3 three times), listed on the Solo menu with a "Prototype" tag.
 - Saving a round in progress: **later** (owner: not a priority).
 
 ### Rivals (vs AI)
@@ -274,15 +274,20 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - **Difficulty Easy / Normal / Hard** shifts every rival's skill.
 - Leaderboard: position, name, holes played, to par. Ties share a position and are sorted consistently.
 
-### Menus
-- Main menu (Play, How to Play, Settings) → Play: Solo 9 / vs AI 9 (difficulty) / Practice.
-- Pause menu (Resume, Restart Hole, Quit to Menu). Settings (debug overlay, putt grid), saved to localStorage (try/catch).
-- Restarting or quitting must clear **all** round state, timers and the trail.
+### Menus ✅ (Phase 7)
+- ✅ `index.html` opens on the **main menu**: Play, How to Play, Settings. **Play** → Solo (pick a course) / vs AI ("Coming soon" until Phase T, then the difficulty choice) / Practice (a hole, or a test spot grouped by hole). Every screen has a Back button; Esc goes back too.
+- ✅ **The lists come from the data, never a hardcoded list** (`core/menu.js`): every set in `sets.js` is a Solo course, in order, unless its `menu` is `'practice'` (its holes are the Practice holes) or `'hidden'` (only reachable with `?set=`). A set's `tag` ("Prototype") shows next to its name. A course shows its length, par and personal best. The test spots are every entry of `scenarios.js`.
+- ✅ **Dev links skip the menu** and behave as before: `?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=` (any one of them; `?tune=` alone plays hole 1 tuned). Quitting to the menu removes `?hole/scenario/set` from the address (a reload then shows the menu); `?tune/seed/debug` stay for the visit.
+- ✅ A hole started from the menu hides the old "Try Hole 2 →" links; its intro card has "Back to menu" and the single-hole result card has Play again + Menu.
+- ✅ **Pause menu** (the II button under the scorecard panel, beside it on short landscape screens, or Esc): Resume, Restart hole, Quit to menu. While paused the ball, the meter and the hole's timers stop (timers keep the time they had left). **A swing in progress is cancelled with no stroke** (the meter runs on real time, so it can't be frozen fairly). Restart = the same hole and wind again (from the test spot in Practice); in a round it doesn't touch the scorecard (the hole isn't recorded until it's over). **Quitting a round asks first** ("Quit this round? Your score after N holes will be lost."); Practice quits at once. Pause isn't offered once the hole is over (the summary or result card is up).
+- ✅ **Settings** (saved in localStorage `pocketlinks.settings.v1`, read and written in try/catch; with storage blocked they last for the visit and the screen says so): **Debug overlay** (open when a game starts; the backtick still toggles it), **Putt grid** (Hole default = each hole's own green, hole 2 has a grid / Every green / Off). They apply from the next hole you start.
+- ✅ Restarting or quitting clears **all** game state (hole session, round, timers, trail, cards, pause); the menus have no hole loaded behind them.
+- ✅ Space and Enter start the hole from the intro card and the compact hole card (QA R-1). The wind on a hole's first card is the wind you play (Tee off doesn't re-roll it).
 
 ### Acceptance
 - [x] A simulated 9-hole round gives the correct total, including a picked-up hole (and a 1-hole and a 20-hole set work, `tests/round.test.js`).
 - [~] The same round seed gives the same winds (✅) and the same rival scores (Phase T).
-- [ ] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball, rivals).
+- [x] Menu → play → quit → play again leaves no leftover state (strokes, timers, wind, ball; rivals with Phase T) (`tools/menu-check.mjs`).
 
 ---
 
@@ -310,13 +315,14 @@ src/
                               (swing is the only hit, next / proceed / finished; Gate A A1/A8)
     scoring.js             ✅ score names and result text
     round.js               ✅ a round of any length: hole order, per-hole seeds, scorecard rows, totals, groups of 9 (Phase 6)
+    menu.js                ✅ what the menus list (from SETS / HOLES / SCENARIOS passed in), launches, dev links that skip the menu, settings parsing (Phase 7)
   holes/
     hole1.js, hole2.js     ✅ hole data
     hole3.js               ✅ pl-03, par 4 dogleg with trees, boulders and rock (Phase K prototype)
     sets.js                ✅ HOLES registry (validated at load), SETS (playlists of any length), resolveHole, resolveSet
     scenarios.js           ✅ designer test spots for ?scenario= (validated at load)
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
-    main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, frame loop; loads hole sessions
+    main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, menus, pause, frame loop; starts and ends games, loads hole sessions
     session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
     scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene
     coursePainter.js       ✅ painted course texture + minimap image
@@ -326,7 +332,9 @@ src/
     input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
     roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6)
     debug.js               ✅ debug overlay (backtick, or ?debug=1 on phones, Gate A C5)
-    menus.js, weatherFx.js ⏳ Phase 7 / Phase 5
+    menus.js               ✅ main menu, Play, Solo, Practice, How to Play, Settings screens (Phase 7)
+    settings.js            ✅ settings in localStorage, try/catch (Phase 7)
+    weatherFx.js           ⏳ Phase 5
 tests/
   *.test.js                ✅ node --test
   baseline-v2.shots.js     ✅ the v2 shot list
@@ -336,6 +344,7 @@ tools/
   baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
   record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
   session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2)
+  menu-check.mjs           ✅ clicks through every menu path, pause, quit and play again in a headless browser (Phase 7, M6)
 ```
 
 ### Hole module contract
@@ -365,7 +374,7 @@ The physics never reads presentation fields (`scenery`, `intro`, `playLine`). **
 ### Architecture rules
 - **Events, not hidden coupling:** `ball.js` emits `landed`, `stopped`, `holed`, `lippedOut`, `penalty`. The game layer turns these into flash text, camera moves and HUD updates.
 - **Game loop:** physics runs on a fixed accumulator (1/240 s). Rendering interpolates or just draws the latest state. The same inputs give the same resting position at 30, 60 or 144 fps.
-- **Debug overlay** (backtick key, or `?debug=1` on phones ✅): state, speed, surface, slope, wetness, meter values, default aim (S18), render quality, fps. ✅ X10: in portrait it sits above the bottom panel (never over the TUNED badge) and long lines wrap inside the screen; it is placed again on every refresh, so `?debug=1` in landscape lands between the scorecard and the minimap like the backtick. ✅ X11: it also stays clear of the ⏩ Skip button (its place is kept free between shots, so the overlay doesn't jump), and on short landscape phones (667x375, 568x320) it ends above the bottom panel: it narrows to end left of Skip or stops above it, whichever keeps the bigger font, shrinks its font (10 → 7 px), and as a last resort cuts off its bottom lines (568x320 with a long `?tune=` list). Never over the scorecard, minimap, TUNED badge, hint, meter, controls or Skip. A file that fails to load is named in the start-up message only when the browser says which one (otherwise no name, instead of always `main.js`).
+- **Debug overlay** (backtick key, `?debug=1` on phones ✅, or the Settings switch, Phase 7). It sits under every card and menu (z-order). On short screens it starts right of the pause button's place. Shows: state, speed, surface, slope, wetness, meter values, default aim (S18), render quality, fps. ✅ X10: in portrait it sits above the bottom panel (never over the TUNED badge) and long lines wrap inside the screen; it is placed again on every refresh, so `?debug=1` in landscape lands between the scorecard and the minimap like the backtick. ✅ X11: it also stays clear of the ⏩ Skip button (its place is kept free between shots, so the overlay doesn't jump), and on short landscape phones (667x375, 568x320) it ends above the bottom panel: it narrows to end left of Skip or stops above it, whichever keeps the bigger font, shrinks its font (10 → 7 px), and as a last resort cuts off its bottom lines (568x320 with a long `?tune=` list). Never over the scorecard, minimap, TUNED badge, hint, meter, controls or Skip. A file that fails to load is named in the start-up message only when the browser says which one (otherwise no name, instead of always `main.js`).
 - **Test hooks:** keep `window.__golf` (state, ball, meter, testHit, surfaceAt, …) for browser-level tests.
 - **Designer test links (X8):** `?scenario=<id>` starts at a named spot with a fixed seed (data in `src/holes/scenarios.js`, each with the surface it promises, checked by a test; "Play again" goes back to the spot). `?tune=NAME:value,…` overrides tunables for that visit only: only the names in `TUNABLES` (config.js), numbers only, clamped to each range, with a pink "TUNED" badge above the meter. Unknown names or values are ignored and listed on the intro card. Each tunable is one `TUNABLES` entry in config.js (`{ def, min, max }`); code reads the live value from `TUNE` and only `setTunable()` changes it. Lie values (`rough.maxPower`, `sw.sand.maxPower`, …) and, since S17, surface physics (`green.decel`, `green.keep`, `fairway.rest`, …) go into a tune layer: the surface and club tables stay frozen, and a tuned value wins over a hole's `surfaceOverrides`. **Tunes are read when a hole starts** (the link is applied before the first hole is created). Quality tunables (Gate A C4): `DPR_CAP` (default 2) and `ANTIALIAS` (1 on, 0 off), e.g. `?tune=DPR_CAP:1,ANTIALIAS:0` on a slow phone.
 - **Local run:** ES modules need a local server (`python3 -m http.server`). The README must say so. No internet is needed (Three.js is in `vendor/`).
@@ -406,6 +415,8 @@ The physics never reads presentation fields (`scenery`, `intro`, `playLine`). **
 | 2026-11-17 | **Chip-range aim:** within ~30 m, the default aim is the cup on any surface (S19) | From close to the green the player always wants the flag | |
 | 2026-11-17 | **The ⚑ aims where the ball stops** (S15), not where it lands | One rule for every club: the flag means "finish here" | |
 | 2026-11-17 | **A course is a playlist of hole ids of any length** (9, 18, 99…), and the same hole can be in several courses. Nothing assumes 9 holes; the scorecard shows groups of 9 (Front 9 / Back 9 / …) with subtotals and a total, and fits a phone in portrait (owner, Phase 6) | Courses can be built and reordered freely from existing holes, and longer or shorter rounds need no code change | |
+| 2026-11-18 | **The game opens on a menu; dev links skip it** (Phase 7). Courses and practice items are listed from `sets.js` / `scenarios.js` | A game you can start and finish without editing the address; new courses appear with no code change | |
+| 2026-11-18 | **Pausing mid-swing cancels the swing** (no stroke) | The meter runs on real time; freezing it would let a player pause just before the sweet spot | If players complain |
 | 2026-11-17 | **A ⚑ chip stops 1.5 m short** (`CHIP_FLAG_SHORT`, PM on PR #31) | No free chip-ins: holing a chip takes extra power on purpose | Owner compares 0 / 1.5 / 3 |
 
 ### Future direction (not in the prototype)

@@ -52,10 +52,10 @@ test('R1/R2: a 9-hole round gives the correct total, including a picked-up hole 
   assert.equal(c[4].toPar, 7, 'a picked-up par 5 at the 12-stroke limit counts 12 (+7)');
   assert.deepEqual(c.map(r => r.number), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
   assert.deepEqual(c.map(r => r.holeId), set.holes, 'the same hole id can appear several times');
-  // One group of 9: its subtotal is the total
+  // One group of 9 ("Out", PM Phase 7): its subtotal is the total
   const g = round.groups();
   assert.equal(g.length, 1);
-  assert.equal(g[0].label, 'Holes 1–9');
+  assert.equal(g[0].label, 'Out');
   assert.equal(g[0].strokes, 44);
   assert.equal(g[0].par, 36);
 });
@@ -75,7 +75,7 @@ test('R5: a 1-hole set works end to end (no 9-hole assumption)', () => {
   assert.equal(g[0].toPar, -1);
 });
 
-test('R5: a 20-hole set: groups of 9 (Front 9, Back 9, Holes 19–20) with subtotals that add up to the total', () => {
+test('R5: a 20-hole set: groups of 9 (Out, In, Holes 19–20) with subtotals that add up to the total', () => {
   const ids = Array.from({ length: 20 }, (_, i) => ['pl-01', 'pl-02', 'pl-03'][i % 3]);
   const round = createRound({ id: 'twenty', name: 'Twenty', holes: ids }, { seed: 99, getHole: lookup });
   assert.equal(round.length, 20);
@@ -91,7 +91,7 @@ test('R5: a 20-hole set: groups of 9 (Front 9, Back 9, Holes 19–20) with subto
   playRound(round, scores.slice(12));
   assert.equal(round.done, true);
   g = round.groups();
-  assert.deepEqual(g.map(x => x.label), ['Front 9', 'Back 9', 'Holes 19–20']);
+  assert.deepEqual(g.map(x => x.label), ['Out', 'In', 'Holes 19–20']);
   assert.deepEqual(g.map(x => [x.from, x.to]), [[1, 9], [10, 18], [19, 20]]);
   const t = round.totals;
   assert.equal(g.reduce((s, x) => s + x.strokes, 0), t.strokes);
@@ -104,6 +104,7 @@ test('R5: a 20-hole set: groups of 9 (Front 9, Back 9, Holes 19–20) with subto
   const big = createRound({ id: 'big', name: 'Big', holes: Array(99).fill('pl-01') }, { seed: 1, getHole: lookup });
   assert.deepEqual(big.groups().map(x => x.rows.length), Array(11).fill(9));
   assert.equal(big.groups()[10].label, 'Holes 91–99');
+  assert.deepEqual(big.groups().slice(0, 3).map(x => x.label), ['Out', 'In', 'Holes 19–27']);
 });
 
 test('R7: one seed per round; each hole\'s seed (and so its wind) comes from it', () => {
@@ -198,4 +199,13 @@ test('PM on PR #38: every hole has a one-line tagline for the compact hole card 
     assert.equal(typeof h.intro.tagline, 'string', h.id);
     assert.ok(h.intro.tagline.length > 0 && h.intro.tagline.length <= 90 && !h.intro.tagline.includes('\n'), `${h.id}: ${h.intro.tagline}`);
   }
+});
+
+test('Phase 7: scorecard group names: Out / In only for full groups of 9, else the hole numbers', () => {
+  const labels = n => createRound({ id: 'n', name: 'N', holes: Array(n).fill('pl-01') }, { seed: 1, getHole: lookup }).groups().map(g => g.label);
+  assert.deepEqual(labels(3), ['Holes 1–3']);
+  assert.deepEqual(labels(9), ['Out']);
+  assert.deepEqual(labels(12), ['Out', 'Holes 10–12']);
+  assert.deepEqual(labels(18), ['Out', 'In']);
+  assert.deepEqual(labels(27), ['Out', 'In', 'Holes 19–27']);
 });

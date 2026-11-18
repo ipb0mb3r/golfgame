@@ -1,6 +1,6 @@
 // The round's cards (Phase 6, R4): the summary card between holes and the final scorecard.
 // DOM only: it shows what core/round.js says. Works for a round of any length (owner rule, DESIGN §8):
-// the scorecard lists the holes in groups of SCORECARD_GROUP (Front 9 / Back 9 / …), each with a
+// the scorecard lists the holes in groups of SCORECARD_GROUP (Out / In / Holes 19–27 …), each with a
 // subtotal, then the total. Every group is a small fixed-width table, so it fits a phone in portrait
 // whatever the length; a long round just scrolls (the overlay card scrolls, H1).
 import { SCORECARD_GROUP } from '../core/config.js';

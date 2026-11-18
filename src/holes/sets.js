@@ -11,16 +11,23 @@ export const DEFAULT_HOLE = hole1.id;
 
 // A set (course) is a playlist of hole ids of ANY length, and the same hole may appear in several
 // sets or several times in one (owner rule, DESIGN §8). ?set=<id> plays it as a round (Phase 6).
+// Menus (Phase 7, core/menu.js): every set is a course on the Solo menu, in this order, unless
+// `menu` says otherwise: 'practice' = its holes are the Practice menu's holes, 'hidden' = only
+// reachable with ?set=. `tag` is shown next to the name on the menu.
 export const SETS = [
   // Temporary round test sets (R6), only until the real course exists (Phase C)
-  { id: 'prototype3', name: 'Prototype 3', holes: ['pl-01', 'pl-02', 'pl-03'] },
-  { id: 'test9', name: 'Test 9', holes: ['pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03'] },
-  { id: 'pl-1-2', name: 'Pocket Links 1–2', holes: ['pl-01', 'pl-02'] },
-  { id: 'slope-test', name: 'Slope Test', holes: ['pl-02'] },
-  // The practice and test holes (HOLE_GUIDELINES §7), played from the Practice menu later (M0)
-  { id: 'practice', name: 'Practice holes', holes: ['pl-01', 'pl-02', 'pl-03'] },
+  { id: 'prototype3', name: 'Prototype 3', tag: 'Prototype', holes: ['pl-01', 'pl-02', 'pl-03'] },
+  { id: 'test9', name: 'Test 9', tag: 'Prototype', holes: ['pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03', 'pl-01', 'pl-02', 'pl-03'] },
+  { id: 'pl-1-2', name: 'Pocket Links 1–2', menu: 'hidden', holes: ['pl-01', 'pl-02'] },
+  { id: 'slope-test', name: 'Slope Test', menu: 'hidden', holes: ['pl-02'] },
+  // The practice and test holes (HOLE_GUIDELINES §7), played from the Practice menu (M0)
+  { id: 'practice', name: 'Practice holes', menu: 'practice', holes: ['pl-01', 'pl-02', 'pl-03'] },
 ];
-for (const s of SETS) for (const id of s.holes) if (!Object.hasOwn(HOLES, id)) throw new Error(`hole set "${s.id}": unknown hole "${id}"`);
+const SET_MENUS = [undefined, 'practice', 'hidden'];
+for (const s of SETS) {
+  for (const id of s.holes) if (!Object.hasOwn(HOLES, id)) throw new Error(`hole set "${s.id}": unknown hole "${id}"`);
+  if (!SET_MENUS.includes(s.menu)) throw new Error(`hole set "${s.id}": menu must be 'practice' or 'hidden' (or left out), not "${s.menu}"`);
+}
 
 // ?hole= value → hole. Ids are matched case-insensitively. An unknown id falls back to the
 // default hole and reports `unknown: true` so the page can say so.
