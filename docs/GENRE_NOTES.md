@@ -88,6 +88,21 @@ Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are
 - **Walls, sometimes** (owner, screenshots 3 and 5): natural rock walls and cliffs are terrain (steep slope + rock surface), buildable today. Built walls (a stone wall, a thin vertical wall) as in-play obstacles need engine work (D7, below).
 - **Cart paths, sometimes** (owner, from screenshot 1): "while not necessary, it could sometimes be interesting." A path beside the fairway, built with the existing **rock** surface (hard bounce). Gameplay detail and scenery at once; use it on a few holes, never in the main landing zone.
 
+## 6d. Lessons from playtest 1 (2026-11-18)
+Alexis played the Mountain 9 prototype. These are rules from now on (his words where possible).
+
+| # | Rule | What it means when building |
+|---|---|---|
+| L1 | **"Be a lot more generous with hills, on fairways AND greens."** Sloped greens make the player compensate: today the aim is too easy. | Rolling fairways with real side slopes; most greens tilt or break enough that aiming straight at the cup misses. Keep the cup itself on a gentle spot. |
+| L2 | **Many more trees close to the course** (a forest / mountain biome): "trees are golf's natural obstacle". Trees can be a lot bigger and taller. | Tree lines along both sides of every fairway, on rough, some big (taller than a drive's peak). Every tree in play still shows on the aim warning. |
+| L3 | **Holes a little longer overall** (about +10%; caps: par 3 ≤ 210 m, par 4 ≤ 440 m, par 5 ≤ 550 m). | Lengths go up about 10% per hole. |
+| L4 | **Fairways flow smoothly: no sharp angles, no thin strips or "notches". Think of fairways, greens and bunkers as BLOBS.** A shortcut spot should morph out of the fairway, not protrude from it (an isolated fairway "spot" is OK sometimes as a shortcut). | Wobbly, rounded edges; legs blend at wide, round joints; a shortcut is a swelling of the fairway toward the brave line. |
+| L5 | **Bunkers in the way, where real shots land**, so the player must hit softer or harder. More interesting blob shapes, not just ovals. | Bunkers at the end of the default drive and short of / beside greens on the line; multi-lobe shapes. |
+| L6 | **Rough as an obstacle sometimes:** a rough patch cutting into the fairway the way a bunker does. | Rough blobs that bite into the fairway edge or sit in it. |
+| L7 | **Not always right turns: some doglegs left.** | Mix the turns across the 9. |
+| L8 | **A creek presented as an obstacle must be big enough to be one.** Creek beds widen where they reach a lake (no "balloon"). | Creeks that are in play are 5–8 m of water; the bed widens smoothly into the lake. |
+| L9 | **The fairway approach merges smoothly into the green.** | The approach widens to the green's width and runs into its fringe, no neck. |
+
 ## 6b. Ideas for later courses (not the prototype)
 - **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:
     - **Rocky coast:** cliffs and rocky shores, in the mood of famous clifftop and seaside courses (Alexis mentioned Pebble Beach and English cliffs as mood references only; we copy no holes).
