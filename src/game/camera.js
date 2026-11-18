@@ -3,7 +3,7 @@
 import * as THREE from 'three';
 import { isAimView, isBallMoving, isFlyover } from '../core/states.js';
 import { CAM } from '../core/config.js';
-import { aimView, landingView, readView } from '../core/views.js';
+import { aimView, landingView, readView, flightHolds } from '../core/views.js';
 
 export function createCameraRig(camera, heightAt) {
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
@@ -28,6 +28,14 @@ export function createCameraRig(camera, heightAt) {
       return CAM.ease.aim;
     }
     if (isBallMoving(v.state)) {
+      // V3 (owner on #63): after a full shot the camera first stays at address and only turns to watch
+      // the ball leave (CAM_FLIGHT_HOLD s); with CAM_BEHIND_STAY a 'behind' shot stays there until it lands
+      const f0 = v.flight;
+      if (f0 && flightHolds({ putt: v.isPutt, kind: f0.kind, t: v.shotT ?? 0, landed: f0.landed })) {
+        wantPos.copy(camPos); wantLook.set(ball.x, ball.y, ball.z);
+        lookK = CAM.flightEase.look;
+        return 0;
+      }
       // V3: a standing camera (side / landing) watches the ball from its spot; the shot starts with a cut to it
       const f = v.flight;
       if (f && f.spot && !f.dropped) {
@@ -45,11 +53,24 @@ export function createCameraRig(camera, heightAt) {
     }
     return 1.5; // wait / holed / result: drift toward the last goal
   }
+  // V4: ease from where the camera is (the end of the flyover) into the view goal() gives, over `dur` s,
+  // rising `lift` m mid-way so it passes over the trees
+  let ease = null;
+  const fromPos = new THREE.Vector3(), fromLook = new THREE.Vector3();
   return {
-    snap(v) { goal(v); camPos.copy(wantPos); camLook.copy(wantLook); camera.position.copy(camPos); camera.lookAt(camLook); },
+    easeFrom(dur, lift) { ease = { t: 0, dur, lift }; fromPos.copy(camPos); fromLook.copy(camLook); },
+    snap(v) { ease = null; goal(v); camPos.copy(wantPos); camLook.copy(wantLook); camera.position.copy(camPos); camera.lookAt(camLook); },
     update(v, dt) {
       const k = goal(v);
-      if (cut) { camPos.copy(wantPos); camLook.copy(wantLook); }
+      if (ease && !isAimView(v.state)) ease = null; // the ball was hit mid-ease: follow it as usual
+      if (ease && !cut) {
+        ease.t += dt;
+        const u = Math.min(1, ease.t / ease.dur), e = u * u * (3 - 2 * u);
+        camPos.lerpVectors(fromPos, wantPos, e); camPos.y += ease.lift * Math.sin(Math.PI * u);
+        camLook.lerpVectors(fromLook, wantLook, e);
+        if (u >= 1) ease = null;
+      } else if (cut) {
+        ease = null; camPos.copy(wantPos); camLook.copy(wantLook); }
       else {
         const a = 1 - Math.exp(-k * dt), al = lookK ? 1 - Math.exp(-lookK * dt) : a;
         camPos.lerp(wantPos, a); camLook.lerp(wantLook, al);

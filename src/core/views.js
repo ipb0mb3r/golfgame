@@ -201,6 +201,16 @@ export function pickFlightView(world, rng, history, shot) {
   return behind;
 }
 
+// V3 (owner on #63: "the pause after hitting the ball where you wonder where it is going"): does the
+// camera stay at address, only turning to watch the ball? For CAM_FLIGHT_HOLD s after a full shot, and
+// with CAM_BEHIND_STAY a 'behind' shot until the ball first lands. Putts: never (they follow as before).
+//   s = { putt, kind (the flight view), t (s since the hit), landed }
+export function flightHolds({ putt, kind, t, landed }) {
+  if (putt) return false;
+  if (t < TUNE.CAM_FLIGHT_HOLD) return true;
+  return kind === 'behind' && TUNE.CAM_BEHIND_STAY >= 0.5 && !landed;
+}
+
 // --- V4: the hole flyover -------------------------------------------------------------------------
 // The hole's regular route (owner: no need to show every route): tee → the landing area → green.
 // Par 3: tee → cup. Par 4/5: the landing area is the hole's `aimTarget`, else `teeAim` (the S21 tee aim
@@ -212,14 +222,22 @@ export function flyoverRoute(hole, teeAim = null) {
   return land ? [pt(hole.tee), pt(land), pt(hole.cup)] : [pt(hole.tee), pt(hole.cup)];
 }
 
-// The flyover's camera path: the route smoothed (Catmull-Rom), run on past the cup by CAM.flyover.past
-// so the camera ends behind the green looking back at the flag. Returns { length (m), duration (s), at(t) }
-// where at(t) for t in seconds gives { pos, look } (t is clamped; smoothstep easing at both ends).
+// The flyover's camera path (owner on #63: slower, start behind the tee, no dive at the end).
+//   travel: from CAM.flyover.startBack m behind the tee (startHeight m up, so the tee box is in view) along
+//           the route smoothed (Catmull-Rom), rising to `height`, easing down to endHeight over the last
+//           `descend` m, and stopping endBack m short of the cup, looking at it. length / CAM_FLYOVER_SPEED s,
+//           clamped to [minTime, maxTime]; smoothstep easing at both ends.
+//   then:   a pause of CAM_FLYOVER_PAUSE s above the green, then a slow orbit of orbitDeg round the cup in
+//           CAM_FLYOVER_ORBIT s, still looking at the flag.
+// Returns { length (m), travel (s), duration (s, all of it), at(t) } where at(t) (seconds, clamped) gives { pos, look }.
 export function flyoverPath(heightAt, route) {
   const c = CAM.flyover;
-  const n = route.length, a = route[n - 2], b = route[n - 1];
-  const dl = Math.hypot(b.x - a.x, b.z - a.z) || 1;
-  const pts = [...route, { x: b.x + (b.x - a.x) / dl * c.past, z: b.z + (b.z - a.z) / dl * c.past }];
+  const n = route.length, a = route[n - 2], b = route[n - 1], t0 = route[0], t1 = route[1];
+  const dl = Math.hypot(b.x - a.x, b.z - a.z) || 1, d0 = Math.hypot(t1.x - t0.x, t1.z - t0.z) || 1;
+  const start = { x: t0.x - (t1.x - t0.x) / d0 * c.startBack, z: t0.z - (t1.z - t0.z) / d0 * c.startBack };
+  const endBack = Math.min(c.endBack, dl * 0.5);
+  const stop = { x: b.x - (b.x - a.x) / dl * endBack, z: b.z - (b.z - a.z) / dl * endBack };
+  const pts = [start, ...route.slice(0, -1), stop];
   // Sample the spline densely and measure it, so the camera moves at an even speed
   const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))];
   const cr = (p0, p1, p2, p3, s) => 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s);
@@ -234,8 +252,9 @@ export function flyoverPath(heightAt, route) {
   const cum = [0];
   for (let i = 1; i < samples.length; i++) cum.push(cum[i - 1] + Math.hypot(samples[i].x - samples[i - 1].x, samples[i].z - samples[i - 1].z));
   const length = cum[cum.length - 1];
-  const cupAt = (() => { let best = 0, bd = Infinity; samples.forEach((p, i) => { const d = Math.hypot(p.x - b.x, p.z - b.z); if (d < bd) { bd = d; best = i; } }); return cum[best]; })();
-  const duration = clamp(length / TUNE.CAM_FLYOVER_SPEED, c.minTime, c.maxTime);
+  const travel = clamp(length / TUNE.CAM_FLYOVER_SPEED, c.minTime, c.maxTime);
+  const pause = TUNE.CAM_FLYOVER_PAUSE, orbit = TUNE.CAM_FLYOVER_ORBIT;
+  const duration = travel + pause + orbit;
   const pointAt = d => {
     d = clamp(d, 0, length);
     let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
@@ -243,17 +262,32 @@ export function flyoverPath(heightAt, route) {
     return { x: samples[i - 1].x + (samples[i].x - samples[i - 1].x) * f, z: samples[i - 1].z + (samples[i].z - samples[i - 1].z) * f };
   };
   const cupPt = { x: b.x, y: heightAt(b.x, b.z), z: b.z };
+  const heightOver = d => {
+    const up = clamp(d / c.rise, 0, 1), down = clamp((d - (length - c.descend)) / c.descend, 0, 1);
+    const sm = u => u * u * (3 - 2 * u);
+    return c.startHeight + (c.height - c.startHeight) * sm(up) + (c.endHeight - c.height) * sm(down);
+  };
+  const lookFrom = d => {
+    if (d >= length - c.lookCup) return { ...cupPt };
+    const l = pointAt(Math.min(d + c.lookAhead, length));
+    // Near the end the look point slides onto the flag, so there is no turn at the stop
+    const k = clamp((d - (length - c.lookCup - c.lookAhead)) / c.lookAhead, 0, 1);
+    const lx = l.x + (cupPt.x - l.x) * k, lz = l.z + (cupPt.z - l.z) * k;
+    return { x: lx, y: heightAt(lx, lz), z: lz };
+  };
+  const endPos = { x: stop.x, y: heightAt(stop.x, stop.z) + c.endHeight, z: stop.z };
   function at(t) {
-    const u = clamp(t / duration, 0, 1), e = u * u * (3 - 2 * u), d = e * length;
-    const q = pointAt(d);
-    // Height: c.height over the course, down to c.endHeight over the last c.descend of the path
-    const near = clamp((d - (length - c.descend)) / c.descend, 0, 1);
-    const pos = { x: q.x, y: heightAt(q.x, q.z) + c.height + (c.endHeight - c.height) * near, z: q.z };
-    // Look ahead along the route; from c.lookCup m before the cup on, at the flag (so the end looks back at it)
-    let look;
-    if (d >= cupAt - c.lookCup) look = { ...cupPt };
-    else { const l = pointAt(Math.min(d + c.lookAhead, cupAt)); look = { x: l.x, y: heightAt(l.x, l.z), z: l.z }; }
-    return { pos, look };
+    t = clamp(t, 0, duration);
+    if (t <= travel) {
+      const u = travel > 0 ? t / travel : 1, e = u * u * (3 - 2 * u), d = e * length;
+      const q = pointAt(d);
+      return { pos: { x: q.x, y: heightAt(q.x, q.z) + heightOver(d), z: q.z }, look: lookFrom(d) };
+    }
+    // The pause, then the slow orbit round the cup (same radius and height), looking at the flag
+    const u = orbit > 0 ? clamp((t - travel - pause) / orbit, 0, 1) : 0, e = u * u * (3 - 2 * u);
+    const ang = e * c.orbitDeg * Math.PI / 180, rx = endPos.x - cupPt.x, rz = endPos.z - cupPt.z;
+    const x = cupPt.x + rx * Math.cos(ang) - rz * Math.sin(ang), z = cupPt.z + rx * Math.sin(ang) + rz * Math.cos(ang);
+    return { pos: { x, y: Math.max(endPos.y, heightAt(x, z) + c.endHeight), z }, look: { ...cupPt } };
   }
-  return { length, duration, at };
+  return { length, travel, duration, at };
 }

@@ -3,7 +3,7 @@
 // the aiming view (main's camera) always shows the ball, the 🔍 Landing view always shows the marker.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEPS, pickFlightView, flightSpot, flyoverRoute, flyoverPath, FLIGHT_VIEWS } from '../src/core/views.js';
+import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEPS, pickFlightView, flightSpot, flightHolds, flyoverRoute, flyoverPath, FLIGHT_VIEWS } from '../src/core/views.js';
 import { TUNE, CAM, setTunable, resetTunables } from '../src/core/config.js';
 import { createRng } from '../src/core/rng.js';
 import { createHolePlay } from '../src/core/play.js';
@@ -230,6 +230,25 @@ test('QA-1 (PR #64): on the tree-lined Mountain 9 the side view finds a clear sp
   } finally { resetTunables(); }
 });
 
+test('V3 (owner on #63): after a full shot the camera holds at address for CAM_FLIGHT_HOLD s; CAM_BEHIND_STAY keeps a behind shot there until it lands; putts never hold', () => {
+  const hold = TUNE.CAM_FLIGHT_HOLD;
+  assert.equal(hold, 1.2);
+  for (const kind of FLIGHT_VIEWS) {
+    assert.equal(flightHolds({ putt: false, kind, t: 0, landed: false }), true, kind);
+    assert.equal(flightHolds({ putt: false, kind, t: hold - 0.01, landed: false }), true, kind);
+    assert.equal(flightHolds({ putt: false, kind, t: hold, landed: false }), false, kind);
+    assert.equal(flightHolds({ putt: true, kind, t: 0, landed: false }), false, 'putt');
+  }
+  try {
+    setTunable('CAM_BEHIND_STAY', 1);
+    assert.equal(flightHolds({ putt: false, kind: 'behind', t: 9, landed: false }), true);
+    assert.equal(flightHolds({ putt: false, kind: 'behind', t: 9, landed: true }), false);
+    assert.equal(flightHolds({ putt: false, kind: 'side', t: 9, landed: false }), false, 'side / landing still cut away');
+    setTunable('CAM_FLIGHT_HOLD', 0);
+    assert.equal(flightHolds({ putt: false, kind: 'landing', t: 0, landed: false }), false);
+  } finally { resetTunables(); }
+});
+
 // --- V4: the flyover ----------------------------------------------------------------------------
 test('V4: the route is tee → aimTarget → green (par 3: tee → green), never the playLine corner', () => {
   for (const hole of Object.values(HOLES)) {
@@ -242,18 +261,35 @@ test('V4: the route is tee → aimTarget → green (par 3: tee → green), never
   assert.deepEqual(flyoverRoute({ par: 4, tee: { x: 0, z: 0 }, cup: { x: 0, z: -300 } }, { x: 5, z: -200 })[1], { x: 5, z: -200 }, 'no aimTarget: the tee aim point');
 });
 
-test('V4: the flyover starts at the tee, ends past the cup looking at the flag, stays above the ground and lasts 3.5-6.5 s', () => {
+test('V4 (owner on #63): the flyover starts behind and above the tee, travels slowly, stops above the green short of the cup (no dive), pauses and orbits, looking at the flag', () => {
+  const c = CAM.flyover;
   for (const hole of Object.values(HOLES)) {
     const play = createHolePlay(hole, { seed: 1 }); play.reset();
-    const h = play.terrain.heightAt, path = flyoverPath(h, flyoverRoute(hole, play.target));
-    assert.ok(path.duration >= CAM.flyover.minTime && path.duration <= CAM.flyover.maxTime, `${hole.id} ${path.duration}`);
-    const a = path.at(0), z = path.at(path.duration + 1);
-    assert.ok(Math.hypot(a.pos.x - hole.tee.x, a.pos.z - hole.tee.z) < 1, `${hole.id} starts at the tee`);
-    assert.ok(Math.hypot(z.look.x - hole.cup.x, z.look.z - hole.cup.z) < 1e-6, `${hole.id} ends on the flag`);
-    assert.ok(Math.hypot(z.pos.x - hole.cup.x, z.pos.z - hole.cup.z) > CAM.flyover.past * 0.8, `${hole.id} ends behind the green`);
-    for (let t = 0; t <= path.duration; t += 0.05) {
-      const v = path.at(t);
-      assert.ok(v.pos.y >= h(v.pos.x, v.pos.z) + CAM.flyover.endHeight - 1e-6, `${hole.id} at ${t.toFixed(2)} s`);
-    }
+    const h = play.terrain.heightAt, route = flyoverRoute(hole, play.target), path = flyoverPath(h, route);
+    const id = hole.id;
+    assert.ok(path.travel >= c.minTime && path.travel <= c.maxTime, `${id} travel ${path.travel}`);
+    assert.equal(path.duration, path.travel + TUNE.CAM_FLYOVER_PAUSE + TUNE.CAM_FLYOVER_ORBIT);
+    // Start: behind the tee (against the first leg of the route), a little above it, the tee ahead in view
+    const a = path.at(0), t0 = route[0], t1 = route[1];
+    const back = (t0.x - a.pos.x) * (t1.x - t0.x) + (t0.z - a.pos.z) * (t1.z - t0.z);
+    assert.ok(back > 0 && Math.abs(Math.hypot(a.pos.x - t0.x, a.pos.z - t0.z) - c.startBack) < 1, `${id} starts ${c.startBack} m behind the tee`);
+    assert.ok(Math.abs(a.pos.y - h(a.pos.x, a.pos.z) - c.startHeight) < 1e-6, `${id} a little above`);
+    // End of travel: short of the cup, at endHeight, looking at the flag; then still for the pause
+    const e = path.at(path.travel), cup = hole.cup;
+    const rEnd = Math.hypot(e.pos.x - cup.x, e.pos.z - cup.z);
+    assert.ok(rEnd > 5 && rEnd <= c.endBack + 1e-6, `${id} stops short of the cup (${rEnd.toFixed(1)} m)`);
+    assert.ok(Math.hypot(e.look.x - cup.x, e.look.z - cup.z) < 1e-6, `${id} looks at the flag`);
+    assert.deepEqual(path.at(path.travel + TUNE.CAM_FLYOVER_PAUSE * 0.9).pos, e.pos, `${id} pauses`);
+    // The orbit keeps its distance to the cup and keeps looking at the flag
+    const z = path.at(path.duration + 1);
+    assert.ok(Math.abs(Math.hypot(z.pos.x - cup.x, z.pos.z - cup.z) - rEnd) < 1e-6 && Math.hypot(z.look.x - cup.x, z.look.z - cup.z) < 1e-6, `${id} orbit`);
+    assert.ok(Math.hypot(z.pos.x - e.pos.x, z.pos.z - e.pos.z) > 5, `${id} the orbit moves`);
+    // Never below its lowest height over the ground, and never dives: the height above ground never drops faster than the descent
+    let minUp = Infinity;
+    for (let t = 0; t <= path.duration; t += 0.05) { const v = path.at(t); minUp = Math.min(minUp, v.pos.y - h(v.pos.x, v.pos.z)); }
+    assert.ok(minUp >= Math.min(c.startHeight, c.endHeight) - 1e-6, `${id} lowest ${minUp.toFixed(1)} m`);
   }
+  // About 2.5× the first version's time on a long hole (owner: "at least 59% slower")
+  const long = flyoverPath(flat, [{ x: 0, z: 0 }, { x: 0, z: -230 }, { x: 0, z: -420 }]);
+  assert.ok(long.travel > 10 && long.travel < 14, `travel ${long.travel}`);
 });
