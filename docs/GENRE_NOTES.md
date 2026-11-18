@@ -105,7 +105,7 @@ Alexis played the Mountain 9 prototype. These are rules from now on (his words w
 | L10 | **Creeks meander and vary in width, and widen into lakes; check the minimap by eye for lines and balloons** (PM fix pass, holes 4, 7, 9). | Gentle S-bends, width that breathes, a delta where the bed meets the lake; lakes are blobs, not circles. |
 | L11 | **"Tree rules depend on the biome. Forest and mountain courses need lots of trees: along the fairways and behind the greens. Other biomes (seaside, desert, tropical) get their own rule in their genre talk."** (owner, 2026-11-18) | Mountain kit: tree lines along every fairway plus an arc of trees on the rough behind each green (≥ 13 m beyond the fringe, a long ball is a chip), never between the approach and the green, never hiding the flag. |
 
-Note (owner, 2026-11-18, hole 5): a separate small fairway circle beside the main fairway is good when it makes you dodge trees to reach it: "I like the small circle on the side that then makes you dodge the tree." The game's small minimap can make two nearby fairways look joined; judge shapes on the big map.
+Note (owner, 2026-11-18, hole 5): a separate small circle of fairway beside the main fairway is a fun shortcut: the challenge is to land on that circle instead of the rough around it. It doesn't have to make you dodge trees (hole 5's happens to). The game's small minimap can make two nearby fairways look joined; judge shapes on the big map.
 
 ## 6b. Ideas for later courses (not the prototype)
 - **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:
