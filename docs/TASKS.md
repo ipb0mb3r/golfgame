@@ -191,12 +191,20 @@ See DESIGN §8 "Rivals".
 From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
-- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green.
+- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green. → **scheduled as V4** (Phase V).
 - [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
 - Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
+
+## Phase V: Camera (owner, 2026-11-18, after the playtest 1 pass)
+The camera matters more now that the player aims himself (S21/S22). Camera code is game layer (`src/game/camera.js`); any choice logic (which view, seeded variety) goes in core so it's tested. Never a blind shot; works on phones (portrait and landscape).
+- [ ] V1 Aiming view: a better default view behind the ball while aiming, showing the landing area, the aim marker and the hazards in the way.
+- [ ] V2 Optional view buttons while aiming (temporary: the view goes back when released / tapped again): on full shots, **zoom to the landing marker**; on putts, **a green-reading view** (from above or low down). Optional, never required to play.
+- [ ] V3 Ball-flight camera with **variety**: sometimes the flight as today (behind), sometimes **at an angle** from the side, sometimes **from the landing spot, looking back at the ball coming in**. Chosen per shot by rules + the seeded RNG (no same view many times in a row; short shots and putts stay simple). A setting to turn variety off (classic camera).
+- [ ] V4 Hole intro flyover (was D3): safe route, then hero route, then the green; tap to skip; once per hole per round.
+- [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view

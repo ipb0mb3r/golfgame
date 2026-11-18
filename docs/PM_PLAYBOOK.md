@@ -57,9 +57,11 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Time per hole** (owner question): ~3–4 min of build per hole once the shared kit exists; the time that matters is testing and owner fix rounds. Budget real courses ≈ 15 min per hole + playtest rounds.
 
 **Next (in order):**
-1. **Finish Phase C + the playtest 1 gameplay pass** (above), then the art / assets pass decision.
-2. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-3. **Phase 5: rain** (rules already in DESIGN §7).
+1. **Finish Phase C + the playtest 1 gameplay pass** (above).
+2. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover (was D3). Dev prompt below.
+3. Then the art / assets pass decision.
+4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+5. **Phase 5: rain** (rules already in DESIGN §7).
 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). The owner compares `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.
@@ -72,3 +74,16 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
 - **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
+
+### Phase V prompt (ready: send to `dev` after the playtest 1 pass merges)
+```
+Assignment: "Phase V: Camera". Branch: dev/V-camera, from main. Task IDs: V1–V5. Read docs/TASKS.md → Phase V and DESIGN (camera, states, S21/S22 aim marker) first.
+Context: the owner wants all of: a better aiming view; optional view buttons while aiming (zoom to the landing marker on full
+shots, a green-reading view on putts), temporary and never required; ball-flight camera variety (behind as today, at an angle,
+from the landing spot looking back at the incoming ball); a skippable hole intro flyover (safe route, hero route, green).
+Rules: never a blind shot; phone portrait + landscape; camera choice logic in core (pure, seeded, tested), Three.js only in
+src/game; tunables in config.js and ?tune=; a setting for classic (no-variety) flight camera; session-check passes.
+Propose the view list and the variety rules in the PR first comment before building V3. Ask before changing the swing or physics.
+PR: "Phase V: Camera". Include raw.githack links and phone screenshots of each view.
+Budget: check in after ~90 min. QA will be Full.
+```
