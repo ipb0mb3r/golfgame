@@ -17,6 +17,9 @@
 - **No blind shots** (prototype decision, 2026-11-18).
 - **Hills, not flat holes** (owner, 2026-11-18): "I don't really like when holes are flat." Every hole has real ground shape: rolling fairways, mounds, slopes that move the ball, raised or sunken greens.
 - **Hazards live in the ground, not on it** (owner): "a bunker needs to be an actual hole like in a real golf course. Sometimes the hole is deep and sometimes not." Vary bunker depth: shallow fairway bunkers you can advance from, deep greenside or pot bunkers with a steep face. Ponds and creeks sit in a dip too.
+- **Mix the terrain** (owner): "it really depends on the holes and even the course themes … sometimes we do gentle hills and sometimes big drops." Decide hole by hole with Alexis.
+- **Sloped lies are OK, but fair most of the time** (owner): the main landing zones are mostly playable lies; a sloped lie is the price of a miss or of the hero line, not the norm.
+- **Greens: a mix** (owner): "Hilly greens are interesting but if they are always with slopes it will be too hard." Some flat, some with one clear slope, a few with big breaks. Discuss each green when designing its hole.
 
 ## 3. Do
 - **Two routes on every hole** (except the first warm-up holes): a safe line (longer, forgiving, par most of the time) and a hero line (shorter or a better angle, risky, saves a stroke).
