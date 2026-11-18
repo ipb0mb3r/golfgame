@@ -16,7 +16,7 @@ The alternative offered was "the slope" (every hole plays its elevation differen
 | 3 | mtn-03 | 3 | 150 m | Downhill from a high tee, S | 2 | Tilted toward the creek |
 | 4 | mtn-04 | 5 | 450 m | Gentle dogleg left, W | 2 | Medium, flat |
 | 5 | mtn-05 | 4 | 360 m | Dogleg right, a corner to cut, N | 2 | Two-tier |
-| 6 | mtn-06 | 3 | 175 m | Uphill to a raised green, E | 3 | Raised, a bank in front |
+| 6 | mtn-06 | 3 | 160 m (was 175, C6) | Uphill to a raised green, E | 3 | Raised, a bank in front |
 | 7 | mtn-07 | 4 | 390 m | Split fairway, S | 3 | Two-tier |
 | 8 | mtn-08 | 4 | 280 m | Short, downhill, drivable, W | 3 | A ridge, hard to read |
 | 9 | mtn-09 | 5 | 490 m | Big drop from the tee, around a lake, N | 4 | Raised, with a backdrop |

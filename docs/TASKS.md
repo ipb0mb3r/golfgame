@@ -158,7 +158,7 @@ Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" sur
 ## Phase C: Mountain course prototype (9 new holes by the course designer, one hole per PR)
 See `docs/HOLE_GUIDELINES.md` and `docs/GENRE_NOTES.md`. The course designer designs all 9; the owner plays and comments on each (owner, 2026-11-18). pl-01..03 are not part of it. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
 - [x] **C0** 🅿️ Course designer proposes the 9-hole plan (par per hole, length, the course's signature idea and each hole's twist, safe and hero routes, difficulty 1–5); the owner approves; the PM checks it against the guidelines *(course designer, approved by the owner 2026-11-18: `docs/COURSE_PLAN_MTN.md`, signature idea "the creek")*
-- [ ] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`)
+- [x] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`) *(course designer, one PR by owner exception: `src/holes/mtn-course.js` (shared kit) + `mtn-01…09.js`, 27 scenarios, the `mountain9` set, `tests/mtn.test.js`, 21 v2 shots. mtn-06 is 160 m, not 175)*
 - [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
 
 ## Phase 7: Menus
