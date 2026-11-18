@@ -74,7 +74,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - From Phase T (low): 320 px "Next hole" button wraps (on main before T); 320 px scorecard personal-best line sits under the sticky buttons until you scroll; rival flavour lines during the round (owner: not now); best per difficulty (owner: not now).
 - Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
 - **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
-- **Phase B: ball control** (owner, 2026-11-18, backlog): curve, lob / low punch, top / back spin. Design the controls with the owner first (BC0 ).
+- **Phase BC: ball control** (owner, 2026-11-18, backlog): curve, lob / low punch, top / back spin. Design the controls with the owner first (BC0).
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
 
 ### Phase V prompt (ready: send to `dev` after the playtest 1 pass merges)

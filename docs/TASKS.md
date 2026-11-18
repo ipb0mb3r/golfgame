@@ -192,7 +192,7 @@ From the owner's design doc "Arcade Golf Course Design Principles", relayed by t
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
 - [ ] D3 Hole intro flyover camera. → **scheduled as V4** (Phase V): the regular route only.
-- [ ] D4 Intentional draw / fade. → **moved to Phase B, ball control (BC1 )**.
+- [ ] D4 Intentional draw / fade. → **moved to Phase BC, ball control (BC1)**.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
@@ -209,8 +209,8 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [ ] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round.
 - [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
 
-## Phase B: Ball control (owner, 2026-11-18, backlog, not scheduled)
-Shape the shot on purpose, before the swing. Physics and swing feel change, so AGENTS.md rules 8–9 apply (v2 re-record, per-shot v1 exceptions). Design the controls with the owner first (BC0 ).
+## Phase BC: Ball control (owner, 2026-11-18, backlog, not scheduled)
+Shape the shot on purpose, before the swing. Physics and swing feel change, so AGENTS.md rules 8–9 apply (v2 re-record, per-shot v1 exceptions). Design the controls with the owner first (BC0).
 - [ ] BC0 🅿️ Owner + PM: how the player picks curve / height / spin (controls on phone and desktop, how it shows on the aim line and marker)
 - [ ] BC1 Curve the ball on purpose: draw / fade (was D4). Today it only curves on a mistimed 3rd click.
 - [ ] BC2 Trajectory: a high lob or a low, straighter punch (changes carry, roll and wind effect)
