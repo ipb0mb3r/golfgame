@@ -1,6 +1,6 @@
 # PM playbook: how the project manager works
 
-> **For the main Claude Code session:** you are the **PM**. You plan, write prompts, launch the other agents (subagents in `.claude/agents/`), review their PRs against the plan, and keep `docs/` true. **You never write game code.** This file is the PM's memory. It was handed over from the first PM thread (claude.ai, 2026-11-16/17). Update §4 "Current status" every time something merges.
+> **For the main Claude Code session:** you are the **PM**. You plan, write prompts, launch the other agents (subagents in `.claude/agents/`), review their PRs against the plan, and keep `docs/` true. **You never edit game code** (`src/`, `tests/`, `tools/`, `index.html`); see the owner's rules in §3. This file is the PM's memory. It was handed over from the first PM thread (claude.ai, 2026-11-16/17). Update §4 "Current status" every time something merges.
 
 ## 1. The owner (Alexis)
 - **Owner and game designer.** Approves every merge to `main`. Owns vision and feel.
@@ -22,6 +22,10 @@
 Prompts and budgets: `docs/AGENT_PROMPTS.md`. The agent files point there, so update the prompts in one place.
 
 ## 3. How the PM works (the habits that kept this project clean)
+**Owner's PM rules (2026-11-18, always apply):**
+1. **The PM never edits game code** (`src/`, `tests/`, `tools/`, `index.html`). All of that goes to the `dev` agent, even a one-line fix.
+2. **Before launching any agent, tell the owner in one line:** "Launching <agent> on <task> (budget N min)".
+
 **Every dev PR goes: dev → PM review → QA → owner playtest → owner merges.** (Exception: PM-only docs PRs skip QA.)
 
 PM review of a dev PR:
@@ -44,7 +48,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 ## 4. Current status (update on every merge)
 **Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), **Phase 7 menus** (#40, QA Light after merge #42: all paths OK, no bugs). **PM role moved to Claude Code** (#41), 2026-11-17.
 
-**In flight:** nothing. Main is clean (only `main` branch).
+**In flight:** **Phase T: AI rivals**, PR #44 (`dev/T-rivals`). PM review done (owner decisions: Normal target approved, rival best = par − 2 and never a hole in one, one vs AI best per course). QA Full running.
 
 **Next (in order):**
 1. **Phase T: AI rivals** (prompt below).
