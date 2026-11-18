@@ -42,10 +42,9 @@ Tokens: give every agent a budget (see AGENT_PROMPTS "Budgets"). If an agent run
 Things this environment **can't** do (as of 2026-11-17): delete branches from a cloud session (the owner deletes them on GitHub; auto-delete on merge is ON), change repo settings, fetch most docs sites directly.
 
 ## 4. Current status (update on every merge)
-**Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses).
+**Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), **Phase 7 menus** (#40, QA Light after merge #42: all paths OK, no bugs). **PM role moved to Claude Code** (#41), 2026-11-17.
 
-**In flight:**
-- **PR #40, Phase 7 menus.** PM reviewed (asked for 3 small items: hole 2 intro grid text, compact card timer start, the pause row in DESIGN §3 Missed clicks). Then **QA Full** (prompt in the PR thread / ask the owner), then owner playtest and merge.
+**In flight:** nothing. Main is clean (only `main` branch).
 
 **Next (in order):**
 1. **Phase T: AI rivals** (prompt below).
@@ -59,9 +58,10 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **S14:** should putting become 2 clicks? Decide at the next swing design pass.
 - **G4:** putt grid H-key toggle, unpainted grid (half done in Phase 7).
 - Debug overlay small issues (low).
+- From Phase 7 QA (low): `window.__golf` throws while the menu shows (test tools); "Menu" on a Practice result should go back to the Practice list; quitting from a seeded link keeps `?seed=` so the next round reuses it.
 - **Later:** save a round in progress; genre study for the course designer (`docs/GENRE_NOTES.md`, the owner will teach it); **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
 
-### Phase T prompt (ready to send to `dev` when #40 is merged)
+### Phase T prompt (ready: send to `dev` next)
 ```
 Assignment: "Phase T: AI rivals". Branch: dev/T-rivals, from main. Task IDs: T1–T4 (+ enable vs AI in the menu).
 Read docs/TASKS.md → Phase T and DESIGN §8 "Rivals" first.
