@@ -87,6 +87,8 @@ const debugParam = params.get('debug') === '1';
 let session = null, round = null, game = null;
 // V4: the holes whose flyover has played in this game (a round, or one hole and its restarts)
 const flown = new Set();
+// V3 (PM on #63): the flight views of this game, so "not too many in a row" counts across the round
+const flightHistory = [];
 let paused = false;
 const extraInfo = () => [
   ...(round?.mode === 'ai' ? [`vs AI  ${round.difficulty}  ${round.leaderboard().map(r => `${r.posText} ${r.id} ${toParText(r.toPar)}`).join(' · ')}`] : []),
@@ -100,7 +102,7 @@ function loadHole(h, opts = {}) {
     renderer, input, seed: opts.seed, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
     // V4: the flyover plays the first time a hole starts from its tee in this game (not from a scenario's spot)
-    flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic',
+    flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,
   });
   if (!opts.start) flown.add(h.id);
   session.showColliders(debug.visible); // K5: collider outlines show while the debug overlay is open
@@ -143,6 +145,7 @@ window.visualViewport?.addEventListener('resize', resize);
 function startGame(launch, { fromMenu = true, notices = [] } = {}) {
   endGame();
   flown.clear(); // V4: a new game shows each hole's flyover again
+  flightHistory.length = 0; // V3: and the flight-view rules start over
   menus.hide();
   game = { launch, fromMenu };
   debug.show(settings.debug || debugParam);
@@ -275,6 +278,7 @@ function playAgain() {
   const set = round.set, g = game, opts = { mode: round.mode, difficulty: round.difficulty ?? DEFAULT_DIFFICULTY };
   endGame();
   flown.clear(); // V4: once per hole per round, and this is a new round
+  flightHistory.length = 0;
   game = g;
   startRound(set, freshSeed(), opts);
 }

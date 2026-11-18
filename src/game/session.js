@@ -31,8 +31,9 @@ const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed:
 //          what to call when the hole is over instead of showing the single-hole result card,
 //          puttGrid (Phase 7 setting, core/menu.js PUTT_GRID), links (false: hide the intro card's ?hole= links,
 //          for a hole started from the menu), flyover (V4: play the hole flyover after the card), classicCam (V3
-//          setting: the flight camera always films from behind) }
-export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true, flyover = false, classicCam = false }) {
+//          setting: the flight camera always films from behind), flightHistory (V3: the flight views of the game so
+//          far, oldest first; main.js shares one array across a round so the variety rules count over the round) }
+export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true, flyover = false, classicCam = false, flightHistory = [] }) {
   const play = createHolePlay(hole, { seed });
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
@@ -73,7 +74,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
 
-  const updateHud = () => { hud.update(state, meter.power); $view().hidden = state !== 'aim'; measureFrame(); };
+  const updateHud = () => { hud.update(state, meter.power); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover'); measureFrame(); };
   // V2: the view button while aiming (null = the aiming view, else core/views.js VIEW_STEPS)
   let view = null, viewPress = null; // viewPress = { at, opened } while the button is held
   // V1: the free band of the screen the aiming view must fit in (core/views.js `frame`), measured from the HUD
@@ -88,7 +89,6 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // V3: the flight camera of the shot in the air (core/views.js pickFlightView), on its own seeded
   // stream (the physics never draws from it, so a replay plays the same and the baselines don't move)
   const viewRng = createRng((seed ^ CAM.viewSalt) | 0);
-  const flightHistory = [];
   const flightWorld = { heightAt: terrain.heightAt, surfaceAt: terrain.surfaceAt, obstacles: play.obstacles, penalty: id => !!play.surfaces[id]?.penalty };
   let flight = null; // { kind, spot, side, cut (the rig cuts to the spot on its next frame), dropped (handed back to the chase camera) }
   // V4: the flyover (null when the hole has none or it has played)
@@ -389,7 +389,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function endFlyover() {
     if (state !== 'flyover') return;
     fly = null;
-    readyForShot(true);
+    readyForShot(true); // (its updateHud brings the bottom panel back)
   }
 
   // Pause (M3). A swing in progress is cancelled with no stroke (the meter runs on real time, so it
@@ -417,7 +417,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     clearTimers();
     $holeCard().classList.add('hidden');
     showSkip(false);
-    $view().hidden = true; $view().classList.remove('on');
+    $view().hidden = true; $view().classList.remove('on'); document.body.classList.remove('flyover');
     hud.dispose();
     disposeScene(scene);
   }

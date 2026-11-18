@@ -107,6 +107,8 @@
     background: rgba(12, 28, 20, .7); border-color: rgba(255,255,255,.45); touch-action: none; }
   #viewBtn.on { border-color: var(--accent); color: var(--accent); background: rgba(12, 28, 20, .9); }
   #viewBtn[hidden] { display: none; }
+  /* Phase V (V4, PM on #63): during the flyover only the small "tap to skip" hint shows at the bottom */
+  body.flyover #meterWrap, body.flyover #controls, body.flyover #viewBtn, body.flyover #skipBtn, body.flyover #tuned { display: none; }
   #swingBtn { flex: 0 0 auto; font-weight: 900; background: #2f8f46; border-color: #8ef0a5; padding: 8px 18px; }
 
   /* Overlays */
@@ -545,7 +547,7 @@
     <section data-screen="how" hidden>
       <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>How to Play</h1></div>
       <ol class="howList">
-        <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow ring shows where the ball lands.</li>
+        <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow triangle at the end of the aim line shows where a full-power straight shot lands (the ticks: 25, 50 and 75% power); on a putt, the ring shows where it ends.</li>
         <li><b>Pick a club</b> with ‹ › or ▲ ▼. The best club is chosen for you.</li>
         <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the bar is in quarters, like the ticks on the aim line; the ⚑ shows a putt's power), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right. <b>Putts take 2 clicks</b> (start, power) and always roll straight along your aim.</li>
         <li>Watch the <b>wind</b> (top right) and the <b>lie</b>: rough and sand cap your power (the gray part of the meter).</li>
