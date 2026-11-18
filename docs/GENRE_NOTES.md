@@ -61,11 +61,13 @@
 ## 5. The 9-hole prototype
 - It's a **test of the course designer's workflow**, not the final course. After it: an **art and assets pass**, then the real courses.
 - **Don't think too much about the mountain setting for now.**
-- **Alexis will give hole ideas** and we keep talking; sometimes he designs a hole, sometimes the course designer designs it alone.
+- **The course designer designs all 9 holes of the prototype** (owner, end of the talk: "I want you to do the entire 9 holes of the prototype course"). Alexis plays and comments on each one. On the real courses, sometimes he designs a hole, sometimes the course designer does.
+- **The 3 engine holes don't count** (owner): pl-01, pl-02 and pl-03 stay practice / test holes; the prototype is 9 new holes.
+- **One tee box per hole** is enough (owner).
 - **Lengths:** keep the HOLE_GUIDELINES ranges (par 3 110–190 m, par 4 260–400 m, par 5 420–500 m) and check them after playing the prototype.
 
 ## 6. Hole ideas for the prototype
-_To fill as Alexis and the course designer talk._
+None from Alexis yet: he didn't want to talk about specific holes in this study. The course designer proposes the 9-hole plan (TASKS C0) from these notes.
 
 ## 6a. Lessons from inspiration screenshots
 Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are not in the repo, and no hole is copied).
@@ -91,6 +93,9 @@ Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are
     - **Rocky coast:** cliffs and rocky shores, in the mood of famous clifftop and seaside courses (Alexis mentioned Pebble Beach and English cliffs as mood references only; we copy no holes).
     - **White sand beaches:** a tropical feel, with sand between the fairway and the sea.
     - Engine: the sea is the existing water surface (penalty + drop), the shore is rock or sand. No new physics; the look comes with the art pass.
+
+## 6c. Next genre talk
+Before the **real courses** (after the prototype and the art pass), have a similar talk with Alexis for each course theme: its signature idea, its surfaces, its hills, more screenshots.
 
 ## 7. Needs engine work (for the PM, not built by the course designer)
 Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist from the genre study".
@@ -119,3 +124,5 @@ Already there: the elevation change is shown (↑/↓ yards to the cup in the di
 - Guidelines §3 asks every hole to use a different signature hazard; his doc asks for **one signature idea per course**, used in different ways across holes.
 - Guidelines §1 mountain setting is set in detail; for the prototype he says not to focus on it.
 - Guidelines §3 lists OB "sparingly"; his doc agrees, and also bans fantasy hazards (not mentioned in the guidelines).
+- Guidelines §6 say every hole is co-designed with Alexis; for the prototype he now asks the course designer to design all 9 (he plays and comments).
+- Guidelines §3 list "lone trees" with no surface rule; he wants every in-play tree on a patch of rough (pl-03's lone tree has `onFairway: true`, against this rule; it's a test hole, so no change asked).
