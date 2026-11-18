@@ -60,6 +60,7 @@ DESIGN.md is the source of truth: if code disagrees with it, raise it in your PR
 Stay inside the task IDs you are given; list unrelated issues at the end of your PR instead of fixing them.
 Budget: <TIME> (see "Budgets" in docs/AGENT_PROMPTS.md). Work in priority order. If you will go over,
 stop and report what's done and what's left instead of continuing. If the same thing fails 3 times, stop and report it.
+Sign your work: end every PR description, report and PR comment with the line "— Agent: <your agent name>" (e.g. "— Agent: dev").
 ```
 
 ---
