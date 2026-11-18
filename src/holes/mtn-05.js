@@ -33,8 +33,8 @@ export default makeMtnHole({
   fairways: [
     // one flowing dogleg left (L4, L7), merging into the green (L9)
     { pts: [{ x: 0, z: -26, w: 12 }, { x: 0, z: -130, w: 19 }, { x: -2, z: -244, w: 23 }, { x: -46, z: -290, w: 19 }, { x: -84, z: -334, w: 15 }] },
-    // the shortcut: a fairway island beyond the pond (owner: OK sometimes)
-    { pts: [{ x: -42, z: -214, w: 14 }, { x: -50, z: -230, w: 14 }], blend: 0 },
+    // the shortcut landing beyond the pond, blended into the corner of the main fairway (one blob)
+    { pts: [{ x: -42, z: -214, w: 14 }, { x: -46, z: -236, w: 15 }, { x: -40, z: -262, w: 16 }], blend: 22 }, // swells into the main fairway (owner: no notch)
   ],
   bunkers: [
     // L5: on the outside of the corner, where the safe drive finishes
