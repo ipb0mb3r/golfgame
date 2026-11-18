@@ -3,6 +3,7 @@
 // S9 overpower) is added here once and nothing else can silently miss it.
 
 // Meter phases (core/swing.js, DESIGN §3 "Missed clicks"). 'aim' = waiting for click 1, 'done' = the swing ended.
+// A putt (S14, 2 clicks) goes aim → power → (grace | nopower) → done and never reaches 'accuracy'.
 export const METER_PHASES = Object.freeze(['aim', 'power', 'grace', 'nopower', 'accuracy', 'done']);
 // The phases in which the meter is running (the player is in the middle of a swing)
 export const SWING_PHASES = Object.freeze(['power', 'grace', 'nopower', 'accuracy']);

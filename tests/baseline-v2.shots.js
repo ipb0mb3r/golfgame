@@ -37,6 +37,8 @@ export const SHOTS = [
   { name: 'T2 h1 slice acc -0.15', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: -0.15, aimOff: 0 },
   { name: 'T2 h1 shank (no 3rd click)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.5, acc: -0.2, aimOff: 0, outcome: 'shank' },
   { name: 'T2 h2 topped (no power click)', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.15, acc: 0.03, aimOff: 0, outcome: 'topped' },
+  // S14: a putt ignores acc now (2 clicks, always straight), so this putt rolls along the aim and drops.
+  // Kept (name unchanged) to pin that a late acc on a putt changes nothing.
   { name: 'T2 h1 mistimed putt (late, acc -0.15)', hole: 'pl-01', seed: null, start: { x: -6, z: -146 }, strokes: 1, power: 0.7, acc: -0.15, aimOff: 0 },
   // Fix pass 2: the 12 m putt that lipped out no longer can on the faster green (S17: a full putt
   // reaches the cup below CUP_CAPTURE_SPEED), so the lip-out shot is now a firm 15 m putt.

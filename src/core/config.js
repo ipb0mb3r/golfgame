@@ -34,7 +34,6 @@ export const AUTO_CLUB_REACH = 0.95; // auto-pick: shortest club whose reach is 
 export const FRINGE_PUTT_DIST = 18;  // on the fringe closer than this, the putter is picked
 export const SPIN = { base: 1.2, loftScale: 40, min: 0.3, max: 1 }; // first-bounce keep × clamp(base − loft / loftScale, min, max)
 export const PUTT = {
-  aimErrorK: 0.25,    // a mistimed putt pushes the line by error × this (rad)
   rangeK: 1.5,        // putt range = distance (plays-like) × this ...
   rangeMin: 6,        // ... clamped to [min, max] meters
   rangeMax: 36,

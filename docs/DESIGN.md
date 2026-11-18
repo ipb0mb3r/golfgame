@@ -42,6 +42,7 @@ Today ✅ one hole per page with an intro card and a result card. ❌ No menu, n
 
 - Inside `±SWEET`: straight shot. Early (acc > 0) gives a hook, curving left. Late (acc < 0) gives a slice, curving right. Outside the sweet spot the curve error is `sign(acc) × 0.2 × (|acc| / 0.2) ^ CURVE_SHAPE` (S10): `CURVE_SHAPE = 1` is linear (error = acc; the default again since S17, so near-misses hurt), `2` makes small misses curve gently. All shapes give the same error at |acc| = 0.2 (`CURVE_SHAPE_REF`).
 - If the marker reaches `METER_MIN` without a third click, the shot is a huge slice (see "Missed clicks").
+- ✅ **Putting is 2 clicks** (S14, owner 2026-11-18: "remove the accuracy entirely when putting… slicing is not really a thing while putting"). With the **putter** the swing is click 1 start, click 2 set the power, and that click hits the putt: there is no accuracy phase. **A putt is always struck straight**: it rolls exactly along the aim, with no pull, push or curve from timing (`resolveShot` ignores `acc` and a `'shank'` outcome for the putter; `PUTT.aimErrorK` is gone). Every other club (full shots, and chips, also from the fringe or the green) keeps 3 clicks. `swingClicks(club)` (core) says which; the game arms the meter as a putt meter (`m.putt`) at click 1. **The bar for a putt** shows only the power side (0 to 1 across the whole bar), its 4 sections and the ⚑; the accuracy side, the accuracy window and its edge lines and the "◀ accuracy" label are hidden. The hints say "Putt: click to start, click again to set power". The lie line drops "easier timing" for a putt (there is no timing), e.g. "Green" or "Fringe". Space, a click or a tap all work as for a full swing.
 - Inputs: Space, a click or tap on the course, or the SWING button. Aim with ◀ ▶ / A D and change the club with ▲ ▼ / W S. ✅ Only a primary press swings (Gate A C7): a mouse needs its left button (right and middle clicks do nothing, and a right click on the course opens no menu); every finger counts on a touch screen, so two-thumb play works (hold Aim, tap SWING); Ctrl / Cmd / Alt + Space is a browser shortcut, not a swing.
 - ✅ **The meter reads the real click time** (S16, Gate A C3): each click carries the time it happened (the input event's `timeStamp`), and core moves the marker to that moment before reading it (`pressMeterAt` / `tickMeterTo` in `swing.js`; each move is still capped at `MAX_METER_DT`). The same click times give the same swing at 30, 60 or 144 fps (tests/meter-clock.test.js); before, a click read the marker where it was at the last frame (up to 0.033 meter units off at 30 fps).
 - ✅ **Default aim** (S18, designer: "the automatic aim is too strong"). Each shot starts aimed at a sensible point, not at the pin, so the player adjusts to the flag and reads the wind:
@@ -78,6 +79,16 @@ The player can still pick any club with ▲ ▼ / W S, including the Driver from
 
 Tunables (config.js): `POWER_GRACE = 0.15` s, `NO_ACC_ERR = 0.6`, `MISSED_POWER_FRACTION = 0.15`.
 The overpower zone (S9) is a separate, later idea and isn't part of S8.
+
+✅ **On a putt** (S14, 2 clicks) the same rules apply at the power click, and the rows about the 3rd click go away:
+| What the player does on a putt | Result | Stroke? |
+|---|---|---|
+| Both clicks | Normal putt, straight along the aim | Yes |
+| Power click within `POWER_GRACE` after the meter reaches the top | Power = 1 ("MAX!"), the putt goes right away | Yes |
+| Start, no power click (grace passed), then a click on the way back | **Mini putt**: power = `MISSED_POWER_FRACTION`, straight ("Topped!") | Yes |
+| Start only, the marker comes back to **0** | **Putt cancelled**, back to aim | **No** |
+
+A putt can't be shanked (there is no 3rd click). The putt meter's bottom is 0 instead of `METER_MIN` (the bar has no accuracy side), so a start-only putt cancels when the marker is back at 0 (≈ 1.74 s after the start click at `METER_SPEED` 1.15, instead of ≈ 1.91 s for a full swing).
 
 How it's built (`core/swing.js`): the meter phases are `power → grace → nopower` and `power → accuracy`. When the meter reaches 1 the marker turns back right away (it doesn't pause at the top); for `POWER_GRACE` seconds a click is still the power click (power = 1, the marker keeps going, so the accuracy timing is unchanged). After that the meter turns red with "NO POWER" and the next click is the mini shot. A swing ends with an `outcome`: `normal`, `shank` (no 3rd click), `topped` (mini shot) or `cancel` (no shot, no stroke; `play.swing()` ignores it). The HUD hint always says what the next click does.
 
@@ -125,7 +136,7 @@ Clubs: Driver 215 m / 12°, 3W 195/17, 5i 170/21, 7i 150/26, 9i 125/32, PW 105/3
 ## 4. Ball physics ✅ (one engine for both holes since Phase 0)
 
 ### Ball states
-`aim → power → (grace | nopower) → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. `grace` and `nopower` are the S8 missed-click phases (§3). Penalties go through `wait`. ✅ The lists and the predicates (`isSwinging`, `isAimingState`, `isAimView`, `isBallMoving`) live in one place, `src/core/states.js` (Gate A A3); core, HUD, camera and input use them, and a test checks every meter phase is covered.
+`aim → power → (grace | nopower) → accuracy → flight → roll → wait → (aim | holed → result)` plus `intro`. `grace` and `nopower` are the S8 missed-click phases (§3). A putt (S14, 2 clicks) skips `accuracy`: `aim → power → (grace | nopower) → roll → …`. Penalties go through `wait`. ✅ The lists and the predicates (`isSwinging`, `isAimingState`, `isAimView`, `isBallMoving`) live in one place, `src/core/states.js` (Gate A A3); core, HUD, camera and input use them, and a test checks every meter phase is covered.
 
 **Hole flow** ✅ (Gate A A1/A8, decided in core, `play.js`): `play.swing(result)` is the only way to hit the ball (null for a cancelled swing, while the ball moves, or after the hole is over). When a shot ends, core sets `play.next`: `aim` (stopped), `returnToLast` (penalty), `holed`, or `pickedUp` (strokes incl. penalties reached `maxStrokes`; holed on the last allowed stroke still counts as holed). The game waits (`TIMING`), shows it, and calls `play.proceed()`. A finished hole sets `play.finished = { holed, pickedUp, strokes, par }` for rounds (Phase 6).
 
@@ -210,13 +221,14 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 
 ### Rules
 - On the green, the club switches to the putter: lower aim speed, short aim line, putt range `puttMax`.
+- ✅ A putt is **2 clicks** (start, power) and is always struck straight along the aim (S14, §3). The line is the player's read: aim and slope break, not timing.
 - The putt power maps to distance using `v0 = √(2·decel·D)` on flat ground. The ⚑ mark adjusts for uphill or downhill.
 - Putts break toward the low side (slope gravity).
 - 🟡 A slope grid is **painted** on hole 2's green → it should become a **toggle** (G4).
 
 ### Acceptance
 - [x] On a flat green, a putt with power p stops within ±5% of `p × puttMax`. *(tests)*
-- [x] A mistimed putt changes only the line, by the curve error × `PUTT.aimErrorK` (0.25 rad): early goes left, late goes right, by the same amount (acc ±0.15 ≈ 2.1° with the linear curve of S17; 1.6° before). A shanked putt (no 3rd click) is pushed ≈ 8.6° right, under the agreed 10° ("mild"). *(tests/putt-cup.test.js, Gate A T5)*
+- [x] ✅ S14: a putt is 2 clicks and always goes exactly along the aim, whatever the click timing or the meter value (no pull, push or curve); full shots keep 3 clicks. *(tests/two-click-putt.test.js, tests/putt-cup.test.js T5)* Before S14 a mistimed putt was pushed by the curve error × `PUTT.aimErrorK` (0.25 rad, ≈ 2.1° at acc ±0.15) and a shanked putt ≈ 8.6° right.
 - [x] A ball faster than the capture speed over the cup doesn't drop (tested at 3.5–5 m/s, G8). A slower one does.
 
 ---
@@ -414,7 +426,7 @@ The physics never reads presentation fields (`scenery`, `intro`, `playLine`). **
 | 2026-11-16 | **Menus and the HUD are DOM overlays**, not 3D UI | Simpler, accessible, good on mobile | If in-world 3D UI is needed |
 | 2026-11-16 | **Ramming a putt too hard should fail** (lip-outs stay out) | Rewards speed control over aiming at the back of the cup | After playtesting rain (wet greens are slower) |
 | 2026-11-16 | **Driver is auto-picked only on the tee; sand wedge from bunkers** (S13) | Matches player expectations; manual choice is still free | |
-| 2026-11-16 | **Putting stays 3 clicks for now**; whether it becomes 2 clicks (no accuracy) is an open question (S14) | Decide together with the next 3-click system pass | Next swing design pass |
+| 2026-11-16 | **Putting stays 3 clicks for now**; whether it becomes 2 clicks (no accuracy) is an open question (S14). *Superseded on 2026-11-18, see below* | Decide together with the next 3-click system pass | Next swing design pass |
 | 2026-11-16 | **Rain and lie:** a wet bunker raises the cap (+0.10, all clubs incl. sand wedge), wet rough shrinks the window (×0.85), other surfaces keep cap and window | Firm wet sand is easier, heavy wet rough is harder; readable on the meter | After the rain playtest |
 | 2026-11-16 | **Three.js is committed in the repo** (`vendor/`) instead of loaded from unpkg | Works when the CDN is blocked or down, offline play, no agent workaround, upgrade = swap one file | |
 | 2026-11-16 | **Swing tuning 1 ("harder is much better"):** `SWEET` 0.045, old linear curve (`CURVE_SHAPE` 1), meter speed 1.15, wind ×1.5 (`WIND_K` 0.3), harder bunkers, faster greens (S17) | Designer + outside playtesters: the game was too easy, near-misses must hurt, approaches should run out on the green | Next playtest |
@@ -429,6 +441,7 @@ The physics never reads presentation fields (`scenery`, `intro`, `playLine`). **
 | 2026-11-18 | **Pausing mid-swing cancels the swing** (no stroke) | The meter runs on real time; freezing it would let a player pause just before the sweet spot | If players complain |
 | 2026-11-17 | **A ⚑ chip stops 1.5 m short** (`CHIP_FLAG_SHORT`, PM on PR #31) | No free chip-ins: holing a chip takes extra power on purpose | Owner compares 0 / 1.5 / 3 |
 | 2026-11-18 | **Every tee shot aims straight ahead along the tee's facing** (−z unless the hole sets `teeFacing`), at the club's carry (S21, owner playtest 1), not at a solved fairway spot or the green. The default tee shot may end off the fairway, never in water or OB | The default aim was still too easy; the player reads the line and the distance off the tee | After the next playtest |
+| 2026-11-18 | **Putting is 2 clicks** (start, power), with no accuracy phase, and a putt is always struck straight (S14, owner: "remove the accuracy entirely when putting… slicing is not really a thing while putting"). Full shots and chips keep 3 clicks | Putting is about reading the line and the speed; timing a slice on a putt is not golf | After the next playtest |
 | 2026-11-18 | **No ⚑ on full shots; a power bar in quarters and an aim marker with 25/50/75% ticks and a carry/ground label** (S22, owner playtest 1). Putts keep the ⚑ | The ⚑ answered the power question for the player; the sections and ticks give the information, the player decides | After the next playtest |
 
 ### Future direction (not in the prototype)
