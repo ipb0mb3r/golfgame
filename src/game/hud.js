@@ -96,6 +96,9 @@ export function fitMinimap() {
 export function createHud(play) {
   const { cup, terrain, surfaces, wind, bag } = play;
   let msgTimer = 0;
+  // S22 (owner on PR #53): the accuracy window's thin edge lines, from config
+  const rs = document.documentElement.style, af = HUD.accFrame;
+  rs.setProperty('--acc-w', `${af.widthPx}px`); rs.setProperty('--acc-op', `${af.opacity}`); rs.setProperty('--acc-over', `${af.overPx}px`);
   // S22: the power side of the bar in POWER_SECTIONS equal parts (lines at 25/50/75% for 4)
   const sections = $('sections');
   sections.replaceChildren(...Array.from({ length: POWER_SECTIONS - 1 }, (_, k) => {
@@ -108,7 +111,7 @@ export function createHud(play) {
   function drawLie({ maxPower, sweetScale }) {
     const h = sweetHalfWidth(sweetScale), sw = $('sweet').style;
     sw.left = `${meterPct(-h)}%`; sw.width = `${meterPct(h) - meterPct(-h)}%`;
-    // S22 (owner on PR #53): the same window, drawn as a frame that sticks out above and below the bar.
+    // S22 (owner on PR #53): the same window's edges, as thin lines that show above and below the bar.
     // It sits outside the bar (which clips), so it is placed inside the bar's 2 px border by hand.
     const fr = $('sweetFrame').style, a = meterPct(-h) / 100, b = meterPct(h) / 100;
     fr.left = `calc(2px + (100% - 4px) * ${a})`; fr.width = `calc((100% - 4px) * ${b - a})`;

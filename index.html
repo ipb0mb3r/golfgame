@@ -64,8 +64,12 @@
   #aimLabel[hidden] { display: none; }
   /* S22 (owner on PR #53): the accuracy window as a high-contrast frame that sticks out above and below the bar */
   #meterWrap { position: relative; }
-  #sweetFrame { position: absolute; top: -7px; height: 48px; box-sizing: border-box; pointer-events: none;
-    border: 3px solid #fff; border-radius: 4px; box-shadow: 0 0 0 1.5px #0b1a10, inset 0 0 0 1.5px #0b1a10, 0 0 8px rgba(87,224,122,.9); }
+  /* owner on PR #53 ("way too bold"): two thin, semi-transparent edge lines that show only above and below
+     the bar. They sit behind the bar (z-index), so inside it the moving marker stays the boldest thing.
+     Thickness, opacity and overhang come from config.js HUD.accFrame (hud.js sets the variables). */
+  #sweetFrame { position: absolute; top: calc(-1 * var(--acc-over, 6px)); height: calc(34px + 2 * var(--acc-over, 6px)); box-sizing: border-box;
+    pointer-events: none; z-index: 0; border-left: var(--acc-w, 1.5px) solid rgba(255,255,255,var(--acc-op, .6)); border-right: var(--acc-w, 1.5px) solid rgba(255,255,255,var(--acc-op, .6)); }
+  #meterBar { z-index: 1; }
   #powerMark { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; display: none; }
   #marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #fff; border-radius: 3px; box-shadow: 0 0 6px #000; }
   /* S8: the power click was missed, so the next click is a mini shot */
@@ -77,7 +81,7 @@
     padding: 3px 8px; border-radius: 6px; text-align: center; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
   #tuned[hidden] { display: none; }
   /* H1: a shadow like the hint line, so the labels stay readable over sand and bright grass */
-  #meterLabels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #eef5ea; padding: 11px 4px 0; /* S22: below the accuracy frame (it sticks out 7 px under the bar) */
+  #meterLabels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #eef5ea; padding: 8px 4px 0; /* S22: below the accuracy window's edge lines (they stick out under the bar) */
     text-shadow: 0 1px 2px #000, 0 0 4px rgba(0,0,0,.8); }
   #controls { display: flex; gap: 8px; align-items: stretch; }
   button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid rgba(255,255,255,.35); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
