@@ -66,5 +66,5 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - From Phase 7 QA (low): `window.__golf` throws while the menu shows (test tools); "Menu" on a Practice result should go back to the Practice list; quitting from a seeded link keeps `?seed=` so the next round reuses it.
 - From Phase T (low): 320 px "Next hole" button wraps (on main before T); 320 px scorecard personal-best line sits under the sticky buttons until you scroll; rival flavour lines during the round (owner: not now); best per difficulty (owner: not now).
 - **HOLE_GUIDELINES.md update** (PM): difficulty ramp vs "not particularly hard", the two-route rule, realistic hazards only. Do it after the genre notes PR lists the differences.
-- Engine wishlist D1–D7 (TASKS, from the genre study): owner orders it later.
+- Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).

@@ -189,7 +189,7 @@ See DESIGN §8 "Rivals".
 
 ## Engine wishlist from the genre study (owner, 2026-11-18, not scheduled)
 From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
-- [ ] D1 Several tee sets per hole (3–5, offset, flat tee boxes). Today: 1 tee per hole.
+- ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
 - [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green.
 - [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
