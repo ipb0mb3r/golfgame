@@ -66,6 +66,15 @@
 ## 6. Hole ideas for the prototype
 _To fill as Alexis and the course designer talk._
 
+## 6a. Lessons from inspiration screenshots
+Screenshots Alexis sent from games he likes. Only the idea is kept (pictures are not in the repo, and no hole is copied).
+
+| # | What he liked | The lesson |
+|---|---|---|
+| 1 | Par 4 dogleg, medium difficulty. Ponds inside the turn, bunkers on the outside around the landing zone. "It allows a brave shot on the left above the ponds. It shows the slopes in the bunker and ponds too." | **Two kinds of risk on one corner:** water on the inside is the brave shortcut (a miss costs a stroke); bunkers on the outside are the cost of the safe line (a harder next shot, no penalty). Hazards sit in visible hollows with sloped edges and a rough lip; trees stand in the rough, not the fairway. |
+
+- **Cart paths, sometimes** (owner, from screenshot 1): "while not necessary, it could sometimes be interesting." A path beside the fairway, built with the existing **rock** surface (hard bounce). Gameplay detail and scenery at once; use it on a few holes, never in the main landing zone.
+
 ## 6b. Ideas for later courses (not the prototype)
 - **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:
     - **Rocky coast:** cliffs and rocky shores, in the mood of famous clifftop and seaside courses (Alexis mentioned Pebble Beach and English cliffs as mood references only; we copy no holes).
