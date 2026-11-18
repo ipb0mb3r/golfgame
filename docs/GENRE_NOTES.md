@@ -66,6 +66,12 @@
 ## 6. Hole ideas for the prototype
 _To fill as Alexis and the course designer talk._
 
+## 6b. Ideas for later courses (not the prototype)
+- **Ocean course** (owner): the coast is lined with either **rocks** or **sand**, depending on the theme we pick together:
+    - **Rocky coast:** cliffs and rocky shores, in the mood of famous clifftop and seaside courses (Alexis mentioned Pebble Beach and English cliffs as mood references only; we copy no holes).
+    - **White sand beaches:** a tropical feel, with sand between the fairway and the sea.
+    - Engine: the sea is the existing water surface (penalty + drop), the shore is rock or sand. No new physics; the look comes with the art pass.
+
 ## 7. Needs engine work (for the PM, not built by the course designer)
 Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist from the genre study".
 
