@@ -325,7 +325,7 @@ for (const q of ['?hole=pl-02', '?scenario=h1-bunker', '?set=test9', '?seed=4', 
   ok(a.menu === null && a.playing, `${q} skips the menu`);
   if (/ai=/.test(q)) {
     const g = await ev(() => window.__golf.round);
-    ok(g?.mode === 'ai' && g.difficulty === (q.includes('hard') ? 'hard' : 'easy') && g.set === (q.includes('test9') ? 'test9' : 'prototype3'), `${q} plays a round vs AI (${g?.set} ${g?.difficulty})`);
+    ok(g?.mode === 'ai' && g.difficulty === (q.includes('hard') ? 'hard' : 'easy') && g.set === (q.includes('test9') ? 'test9' : 'mountain9'), `${q} plays a round vs AI (${g?.set} ${g?.difficulty})`);
   }
 }
 // Same ?seed= = same rival scores
