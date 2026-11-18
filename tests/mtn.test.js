@@ -29,13 +29,13 @@ export function shot(p, o = {}) {
   return end;
 }
 // A lay-up: aim at `spot` and hit the power that finishes there (straight, no wind), ×pk
-export function layup(p, spot, { club = null, pk = 1 } = {}) {
+export function layup(p, spot, { club = null, pk = 1, acc = 0 } = {}) {
   p.setAim(aimTo(p, spot));
   if (club) p.setClub(p.bag.findIndex(c => c.id === club));
   const from = { x: p.ball.pos.x, z: p.ball.pos.z }, want = Math.hypot(spot.x - from.x, spot.z - from.z);
   let lo = 0, hi = 1.2;
   for (let k = 0; k < 18; k++) { const m = (lo + hi) / 2; const r = p.restPoint(p.clubIdx, p.aim, m); if (Math.hypot(r.x - from.x, r.z - from.z) < want) lo = m; else hi = m; }
-  return shot(p, { power: hi, pk });
+  return shot(p, { power: hi, pk, acc });
 }
 export function startAt(hole, ball = null, strokes = 1) {
   const p = createHolePlay(hole, { seed: 1 });
@@ -99,8 +99,13 @@ test('mtn-02: a full drive on the shortcut lands on fairway; a weaker one drops 
 
 test('mtn-03: the safe shot finds the green; a hook at the flag finds the creek', () => {
   const h = HOLES['mtn-03'];
-  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0)).surface, 'green');
-  const hook = shot(startAt(h, { x: 0, z: 0 }, 0), { at: h.cup, acc: 0.08 });
+  // S21 (dev, PR #53): the default tee aim is straight ahead at the club's carry, no longer solved for
+  // the green: it stays dry (here short of the green), and the safe shot is the player's: to the green centre
+  const def = shot(startAt(h, { x: 0, z: 0 }, 0));
+  assert.notEqual(def.ev, 'penalty', `the default tee shot ends on ${def.surface}`);
+  const g = h.features.green;
+  assert.equal(layup(startAt(h, { x: 0, z: 0 }, 0), { x: g.cx, z: g.cz }).surface, 'green');
+  const hook = layup(startAt(h, { x: 0, z: 0 }, 0), h.cup, { acc: 0.08 }); // S21: the power that would finish at the flag
   assert.equal(hook.ev, 'penalty');
 });
 
@@ -164,7 +169,8 @@ test('mtn-06: the deep bunker is escaped with the Sand Wedge; the bank feeds a b
   }
   const bank = shot(startAt(h, { x: 0, z: 0 }, 0), { at: { x: 21, z: -170 }, acc: 0.07 });
   assert.ok(['green', 'fringe'].includes(bank.surface), `the bank shot ends on ${bank.surface}`);
-  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { pk: 1.12 }).ev, 'penalty', 'long is wet (owner: the creek behind punishes long shots)');
+  // S21 (dev, PR #53): the ⚑ now finishes at the club's carry (170 m), not the green centre, so "long" is a full swing
+  assert.equal(shot(startAt(h, { x: 0, z: 0 }, 0), { power: 1 }).ev, 'penalty', 'long is wet (owner: the creek behind punishes long shots)');
 });
 
 test('mtn-07: the shelf is a short carry and a better angle; the left fairway is the long way in', () => {

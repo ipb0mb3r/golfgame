@@ -17,6 +17,7 @@ export default makeMtnHole({
   id: 'mtn-07', number: 7, name: 'Mountain 9 · 7', par: 4, difficulty: 3,
   tee: TEE, cup: CUP,
   aimTarget: { x: -20, z: -222 },
+  teeFacing: { x: -20, z: -222 }, // S21 (dev, PR #53): the tee faces the landing area; straight down −z finds the water
   teePad: { h: 0.8, r: 4.5 },
   base: (x, z) => shelf(x, z) + 0.9 * Math.sin(x / 17) * Math.cos(z / 29) + 0.4 * Math.sin(z / 15),
   hills: [

@@ -57,6 +57,19 @@ export function createProps(scene, hole, terrain, cup) {
   const warnPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshBasicMaterial({ color: WARN_COLOR, transparent: true, opacity: 0.7 }));
   scene.add(warnPole);
   warnMark.visible = warnFoot.visible = warnPole.visible = false;
+  // S22: full shots end the line in a marker (a flat triangle pointing along the aim) where a 100%
+  // (or the lie's capped) straight shot lands, with short bars across the line at the 25/50/75% landings.
+  // Grey when the lie caps the power, red when the shot would hit an obstacle (K4).
+  const CAP_COLOR = new THREE.Color(0xb8b8b8);
+  const triGeo = new THREE.BufferGeometry();
+  triGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -1.6, -1.1, 0, 0.9, 1.1, 0, 0.9], 3)); // tip along −z (the aim at 0)
+  const markTri = new THREE.Mesh(triGeo, new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
+  scene.add(markTri);
+  const TICKS = 8; // more than POWER_SECTIONS − 1 needs
+  const ticks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 0.28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }), TICKS);
+  ticks.frustumCulled = false; ticks.count = 0; scene.add(ticks);
+  markTri.visible = false;
+  const tmpQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
   const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
   return {
@@ -77,11 +90,30 @@ export function createProps(scene, hole, terrain, cup) {
       trailCount++; trailGeo.setDrawRange(0, trailCount); trailGeo.attributes.position.needsUpdate = true;
     },
     // from = ball, dir = aim direction, len = guide length, target = ring position, putter = small guide,
-    // warn = play.aimWarning() (K4): null, or where the shot would hit a tree or a rock
-    setAimGuide(visible, from, dir, len, target, putter, warn = null) {
-      dots.visible = ring.visible = visible;
+    // warn = play.aimWarning() (K4): null, or where the shot would hit a tree or a rock,
+    // marks = play.aimMarks() (S22, full shots): the marker and the 25/50/75% ticks; putts keep the ring
+    setAimGuide(visible, from, dir, len, target, putter, warn = null, marks = null) {
+      dots.visible = visible;
+      ring.visible = visible && putter;
+      markTri.visible = ticks.visible = visible && !putter && !!marks;
       warnMark.visible = warnFoot.visible = warnPole.visible = visible && !!warn;
       if (!visible) return;
+      if (markTri.visible) {
+        const grow = 1 + len / 90; // stays readable far away
+        tmpQ.setFromAxisAngle(UP, Math.atan2(-dir.x, -dir.z));
+        markTri.quaternion.copy(tmpQ);
+        markTri.position.set(marks.x, heightAt(marks.x, marks.z) + 0.1, marks.z);
+        markTri.scale.setScalar(grow);
+        markTri.material.color.copy(warn ? WARN_COLOR : marks.capped ? CAP_COLOR : AIM_COLOR);
+        ticks.count = Math.min(marks.ticks.length, TICKS);
+        for (let k = 0; k < ticks.count; k++) {
+          const q = marks.ticks[k];
+          tmpV.set(q.x, heightAt(q.x, q.z) + 0.09, q.z);
+          tmpM.compose(tmpV, tmpQ, tmpS.setScalar(1 + q.dist / 90));
+          ticks.setMatrixAt(k, tmpM);
+        }
+        ticks.instanceMatrix.needsUpdate = true;
+      }
       const s = putter ? 0.25 : 1;
       for (let i = 0; i < DOTS; i++) {
         const f = (i + 1) / (DOTS + 1);

@@ -117,7 +117,7 @@ const SCENERY = {
 
 // ---- the hole builder ----
 // spec fields (all positions in metres, tee at the origin is the convention, holes play toward −z):
-//   id, number, name, par, difficulty, maxStrokes, tee, cup, aimTarget?, playLine?, windMax?, intro
+//   id, number, name, par, difficulty, maxStrokes, tee, cup, aimTarget?, teeFacing?, playLine?, windMax?, intro
 //   base(x, z)        overall ground profile (drops and climbs), default flat
 //   hills: [{ x, z, r, h }]        bumps and dips (terrain.bump)
 //   teePad: { h, r }  the tee box sits on a flat pad h metres above the base (raised tee), radius r
@@ -315,6 +315,7 @@ export function makeMtnHole(spec0) {
     maxStrokes: spec.maxStrokes ?? spec.par + 6,
     tee, cup: spec.cup,
     ...(spec.aimTarget ? { aimTarget: spec.aimTarget } : {}),
+    ...(spec.teeFacing ? { teeFacing: spec.teeFacing } : {}), // S21: the point a turned tee box faces
     ...(spec.playLine ? { playLine: spec.playLine } : {}),
     bag: spec.bag ?? ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
     windMax: spec.windMax ?? 4.5,

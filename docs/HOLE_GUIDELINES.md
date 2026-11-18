@@ -39,14 +39,14 @@ Follow a hard hole with a breather. Never put two big difficulty jumps in a row.
   - par 4: 285–440 m (a short, drivable par 4 may go down to 260 m)
   - par 5: 460–550 m
   - A normal player must be able to reach par with good, not perfect, shots.
-- **The default aim never points into a hazard** (`aimTarget` for par 4/5 tee shots sits on the fairway, `validateHole` checks it).
+- **The default tee shot never ends in a penalty** (S21): it aims straight along the tee's facing (down −z, or toward `teeFacing` when the tee box is turned) at the club's carry, and may end in the rough, a bunker or under trees, but never in water or OB (`validateHole` checks the shot that finishes at the aim point; a full swing may run long into trouble). Where straight down −z finds a penalty, set `teeFacing` (mtn-07). `aimTarget` (optional) sits out of penalty surfaces.
 - **A ball must never get stuck.** No pockets it can't be played out of; a deep bunker can always be escaped with the sand wedge; check rest spots on steep slopes, cliffs and against rocks.
 
 ## 5. Building a hole (technical)
 - One file: `src/holes/<hole-id>.js` (ids `mtn-01` … `mtn-09`), following the hole contract in DESIGN §9. Shared mountain scenery lives in one course file, not copied per hole.
 - Use the existing surfaces (tee, fairway, fringe, green, rough, sand, rock, water, ob) and obstacles (trees, boulders). A natural cliff is terrain (a steep `heightAt` slope + rock), not a new obstacle. A cart path is a strip of rock, never in the main landing zone. **Never change engine code.** If a hole needs a new mechanic, stop and tell Alexis and the PM (the engine wishlist is in TASKS, D2–D7).
 - One tee per hole and one cup per hole (owner).
-- Required data: `par`, `difficulty`, `maxStrokes`, `tee`, `cup`, `aimTarget` (par 4/5), `features.green`, `obstacles`, `map`, `intro` text.
+- Required data: `par`, `difficulty`, `maxStrokes`, `tee`, `cup`, `features.green`, optional `aimTarget` (par 4/5: the landing area, sets the tee auto-pick) and `teeFacing` (S21: when the tee box is not square to −z), `obstacles`, `map`, `intro` text.
 - 2–3 `?scenario=` spots per hole (the key shot, a recovery spot, a tricky putt).
 - v2 shots for the hole, recorded once when it's approved.
 

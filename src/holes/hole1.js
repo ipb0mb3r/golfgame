@@ -96,9 +96,9 @@ export default {
     subtitle: 'Par 3 · {yards} yards',
     tagline: 'A short par 3 over the water.', // Phase 6: the compact hole card (holes 2+ of a round)
     steps: [
-      '<b>Aim</b> with <kbd>◀</kbd> <kbd>▶</kbd> (arrow keys or the buttons). The yellow ring shows where a full-power shot lands.',
+      '<b>Aim</b> with <kbd>◀</kbd> <kbd>▶</kbd> (arrow keys or the buttons). The yellow marker at the end of the aim line shows where a full-power shot lands; the ticks show 25/50/75%.',
       '<b>Pick a club</b> with <kbd>▲</kbd> <kbd>▼</kbd> or the ‹ › buttons. The best club is chosen for you.',
-      '<b>Swing in three clicks</b> (mouse, tap, or <kbd>Space</kbd>):\n        <br>1st click starts the meter,\n        <br>2nd click sets <b>power</b> (the ⚑ mark is roughly the pin),\n        <br>3rd click sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> to hit it straight. Too early hooks left, too late slices right.',
+      '<b>Swing in three clicks</b> (mouse, tap, or <kbd>Space</kbd>):\n        <br>1st click starts the meter,\n        <br>2nd click sets <b>power</b> (the bar is in quarters, like the ticks on the aim line),\n        <br>3rd click sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> to hit it straight. Too early hooks left, too late slices right.',
       'Watch the <b>wind</b> arrow (top right). It pushes the ball in the air.',
     ],
     blurb: 'Sink it in as few strokes as you can. Water costs a penalty stroke.',
