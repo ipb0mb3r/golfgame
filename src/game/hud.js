@@ -65,24 +65,23 @@ export function setupHolePage(hole, round = null, { links = true, green = hole.s
 }
 
 // S22 (owner on PR #53): the bigger minimap keeps its shape and shrinks only as far as it must to end
-// above the bottom panel (meter, controls) and the ⏩ Skip button's place, where it is above them; a
-// minimap right of the panel (a wide landscape screen) may run down to the bottom edge. Called when a
+// above the bottom panel (meter, controls), where it is above it; a minimap right of the panel (a wide
+// landscape screen) may run down to the bottom edge. ⏩ Skip may sit over its corner while the ball
+// moves (PM on PR #53: Skip only shows then; a bigger minimap matters more). Called when a
 // hole loads and on every resize (session.resize). Before S22 a CSS rule capped it at 100vh − 240 px.
 export function fitMinimap() {
-  const mm = $('minimap'), bottom = $('bottom'), skip = $('skipBtn');
+  const mm = $('minimap'), bottom = $('bottom');
   if (!mm || !bottom) return;
   mm.style.width = mm.style.height = '';
   const r = mm.getBoundingClientRect(), b = bottom.getBoundingClientRect();
   if (!r.height) return;
-  const { gap, skipW, skipH, minH } = HUD.minimapFit;
-  const skipLeft = b.right - Math.max(skipW, skip && !skip.hidden ? skip.getBoundingClientRect().width : 0);
+  const { gap, minH } = HUD.minimapFit;
   const aspect = r.width / r.height, screenFloor = (window.visualViewport?.height ?? window.innerHeight) - gap;
   // The tallest it can be at a given height h: its width w = h × aspect, right edge fixed
   const fits = h => {
     const left = r.right - h * aspect;
     let floor = screenFloor;
-    if (left < b.right) floor = Math.min(floor, b.top - gap);                       // over the panel
-    if (left < b.right && r.right > skipLeft) floor = Math.min(floor, b.top - skipH - gap); // over Skip's place
+    if (left < b.right) floor = Math.min(floor, b.top - gap); // over the panel
     return r.top + h <= floor;
   };
   if (fits(r.height)) return;

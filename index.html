@@ -77,7 +77,7 @@
     padding: 3px 8px; border-radius: 6px; text-align: center; pointer-events: none; box-shadow: 0 2px 8px rgba(0,0,0,.4); }
   #tuned[hidden] { display: none; }
   /* H1: a shadow like the hint line, so the labels stay readable over sand and bright grass */
-  #meterLabels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #eef5ea; padding: 2px 4px 0;
+  #meterLabels { display: flex; justify-content: space-between; font-size: 11px; font-weight: 600; color: #eef5ea; padding: 11px 4px 0; /* S22: below the accuracy frame (it sticks out 7 px under the bar) */
     text-shadow: 0 1px 2px #000, 0 0 4px rgba(0,0,0,.8); }
   #controls { display: flex; gap: 8px; align-items: stretch; }
   button { font: inherit; color: var(--text); background: var(--panel); border: 1px solid rgba(255,255,255,.35); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
@@ -290,8 +290,7 @@
     #swingBtn { padding: 8px 8px; font-size: 14px; }
   }
   /* Short screens (phone landscape): the minimap keeps the hole's full size here and hud.js fitMinimap()
-     shrinks it, keeping its shape, only as far as it must to end above the meter, controls and the Skip
-     button's place (S22; before: a fixed cap of 100vh − 240 px, H1 PR #15). */
+     shrinks it, keeping its shape, only as far as it must to end above the meter and controls (S22; before: a fixed cap of 100vh − 240 px, H1 PR #15). */
   @media (max-height: 500px) {
     #minimap { width: var(--mm-w, auto); height: var(--mm-h, 220px); }
   }
