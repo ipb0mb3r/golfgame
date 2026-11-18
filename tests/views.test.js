@@ -1,5 +1,6 @@
 // Phase V (V1, V2, V5): the camera views are pure math in core (core/views.js); the game only eases
-// toward them. These check the "never a blind shot" rule on every hole, in phone portrait and landscape.
+// toward them. These check the "never a blind shot" rule on every hole, in phone portrait and landscape:
+// the aiming view (main's camera) always shows the ball, the 🔍 Landing view always shows the marker.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { aimView, landingView, readView, project, lineClear, nextView, VIEW_STEPS, pickFlightView, flightSpot, flyoverRoute, flyoverPath, FLIGHT_VIEWS } from '../src/core/views.js';
@@ -21,38 +22,47 @@ const frac = (view, p, f) => { const s = project(view, p, f); return { ...s, y01
 const inBand = (s, f, slack = 0.01) => s.front && Math.abs(s.x) <= 1 && s.y01 >= f.top - slack && s.y01 <= f.bottom + slack;
 const bandPos = (f, k) => f.top + k * (f.bottom - f.top);
 
-test('V1: on flat ground the ball and the marker show where the tunables put them (portrait and landscape)', () => {
-  for (const [name, f] of Object.entries(FRAMES)) {
-    for (const D of [40, 80, 150, 230, 290]) {
-      const ball = { x: 0, y: 0, z: 0 }, mark = { x: 0, y: 0, z: -D };
-      const v = aimView(flat, { ball, dir: { x: 0, z: -1 }, mark }, f);
-      const b = frac(v, ball, f), m = frac(v, mark, f);
-      assert.ok(Math.abs(b.y01 - bandPos(f, TUNE.CAM_AIM_BALL)) < 0.005, `${name} ${D} m: ball at ${b.y01}`);
-      assert.ok(Math.abs(m.y01 - bandPos(f, TUNE.CAM_AIM_MARK)) < 0.01, `${name} ${D} m: marker at ${m.y01}`);
-      assert.ok(Math.abs(b.x) < 1e-9 && Math.abs(m.x) < 1e-9, 'both on the screen\'s centre line');
-      assert.ok(v.pos.y > 0, 'above the ground');
+// main's aiming camera before Phase V (src/game/camera.js at c56d9cb), written out once here
+function mainAimView(h, ball, d, putter) {
+  const gy = h(ball.x, ball.z), [back, up, ahead, clear] = putter ? [3.5, 1.6, 5, 0.8] : [7, 2.6, 30, 1.5];
+  const pos = { x: ball.x - d.x * back, y: gy + up, z: ball.z - d.z * back };
+  pos.y = Math.max(pos.y, h(pos.x, pos.z) + clear);
+  const look = { x: ball.x + d.x * ahead, y: 0, z: ball.z + d.z * ahead }; look.y = h(look.x, look.z);
+  return { pos, look };
+}
+test('V1 (owner on #63): with CAM_AIM_HEIGHT 1 the aiming view is main\'s camera exactly (portrait, wherever main showed the ball)', () => {
+  const tilt = (x, z) => 0.03 * x + 0.02 * z; // gentle slopes (sideways, and down the line)
+  try {
+    setTunable('CAM_AIM_HEIGHT', 1);
+    for (const h of [flat, tilt]) for (const putter of [false, true]) for (const a of [-0.6, 0, 0.3]) {
+      const ball = { x: 3, y: h(3, -10), z: -10 }, d = dirFromAim(a);
+      const want = mainAimView(h, ball, d, putter);
+      assert.deepEqual(aimView(h, { ball, dir: d, putt: putter }, PORTRAIT), want);
+      assert.deepEqual(aimView(h, { ball, dir: d, putt: putter }), want, 'no frame: main\'s view');
     }
-  }
+  } finally { resetTunables(); }
 });
-
-test('V1: a longer shot puts the camera further back and higher (more of the landing area)', () => {
-  let last = null;
-  for (const D of [60, 120, 180, 240]) {
-    const v = aimView(flat, { ball: { x: 0, y: 0, z: 0 }, dir: { x: 0, z: -1 }, mark: { x: 0, y: 0, z: -D } }, PORTRAIT);
-    if (last) assert.ok(v.pos.z >= last.pos.z && v.pos.y >= last.pos.y, `${D} m`);
-    last = v;
-  }
+test('V1: by default the full-shot camera is CAM_AIM_HEIGHT (1.25) × main\'s height, at main\'s spot; putts keep main\'s', () => {
+  const ball = { x: 0, y: 0, z: 0 }, d = { x: 0, z: -1 };
+  const main = mainAimView(flat, ball, d, false), v = aimView(flat, { ball, dir: d }, PORTRAIT);
+  assert.equal(TUNE.CAM_AIM_HEIGHT, 1.25);
+  assert.ok(Math.abs(v.pos.y - 2.6 * 1.25) < 1e-12 && v.pos.x === main.pos.x && v.pos.z === main.pos.z);
+  assert.ok(inBand(frac(v, ball, PORTRAIT), PORTRAIT), 'the ball stays above the meter panel');
+  assert.deepEqual(aimView(flat, { ball, dir: d, putt: true }, PORTRAIT), mainAimView(flat, ball, d, true));
 });
-
-test('V1: a hill between the ball and the marker never hides it (the camera steps back and up)', () => {
-  // A 12 m ridge 60 m ahead, the marker 160 m out behind it
-  const ridge = (x, z) => 12 * Math.exp(-(((z + 60) / 15) ** 2));
-  const ball = { x: 0, y: 0, z: 0 }, mark = { x: 0, y: 0, z: -160 };
-  for (const f of Object.values(FRAMES)) {
-    const v = aimView(ridge, { ball, dir: { x: 0, z: -1 }, mark }, f);
-    assert.ok(lineClear(ridge, v.pos, { ...mark, y: 0.3 }), 'the marker is in sight');
-    assert.ok(inBand(frac(v, mark, f), f) && inBand(frac(v, ball, f), f), 'ball and marker on screen');
-  }
+test('V1: facing a steep upslope the camera tilts down so the ball stays above the meter panel', () => {
+  const wall = (x, z) => Math.max(0, -z - 5) * 0.6; // a 60% bank from 5 m ahead
+  const ball = { x: 0, y: 0, z: 0 }, d = { x: 0, z: -1 };
+  const v = aimView(wall, { ball, dir: d }, PORTRAIT);
+  assert.ok(inBand(frac(v, ball, PORTRAIT), PORTRAIT));
+  assert.ok(frac(mainAimView(wall, ball, d, false), ball, PORTRAIT).y01 > PORTRAIT.bottom, 'main hid it');
+});
+test('V1: in landscape the camera only tilts down so the ball is above the meter panel (same spot)', () => {
+  const ball = { x: 0, y: 0, z: 0 }, d = { x: 0, z: -1 };
+  const main = mainAimView(flat, ball, d, false), v = aimView(flat, { ball, dir: d }, LANDSCAPE);
+  assert.ok(frac(main, ball, LANDSCAPE).y01 > LANDSCAPE.bottom, 'on main the ball was under the panel');
+  assert.deepEqual({ x: v.pos.x, z: v.pos.z }, { x: main.pos.x, z: main.pos.z });
+  assert.ok(Math.abs(frac(v, ball, LANDSCAPE).y01 - bandPos(LANDSCAPE, CAM.ballMax)) < 1e-9);
 });
 
 // Every hole and every scenario: the default aim with every club the bag can reach from there
@@ -60,7 +70,7 @@ function* spots() {
   for (const hole of Object.values(HOLES)) yield { label: `${hole.id} tee`, hole, start: null };
   for (const [id, sc] of Object.entries(SCENARIOS)) yield { label: id, hole: HOLES[sc.hole], start: { id, ...sc } };
 }
-test('V1 never blind: on every hole and scenario, the ball and the aim marker are on screen and in sight, for every club', () => {
+test('V1 never blind: on every hole and scenario, with every club, the ball is on screen above the meter panel', () => {
   let checked = 0;
   for (const { label, hole, start } of spots()) {
     const play = createHolePlay(hole, { seed: 1 });
@@ -69,15 +79,10 @@ test('V1 never blind: on every hole and scenario, the ball and the aim marker ar
     for (let i = 0; i < play.bag.length; i++) {
       play.setClub(i);
       const putt = !!play.club.putter, d = dirFromAim(play.aim);
-      let mark;
-      if (putt) { const len = Math.min(play.distToCup(), play.puttMax); mark = { x: ball.x + d.x * len, z: ball.z + d.z * len }; mark.y = h(mark.x, mark.z); }
-      else mark = play.aimMarks();
       for (const [name, f] of Object.entries(FRAMES)) {
-        const v = aimView(h, { ball, dir: d, mark, putt }, f);
+        const v = aimView(h, { ball, dir: d, putt }, f);
         const why = `${label} ${play.club.name} ${name}`;
         assert.ok(inBand(frac(v, ball, f), f), `${why}: ball off screen`);
-        assert.ok(inBand(frac(v, mark, f), f), `${why}: marker off screen`);
-        assert.ok(lineClear(h, v.pos, { ...mark, y: mark.y + 0.3 }), `${why}: a hill hides the marker`);
         assert.ok(v.pos.y >= h(v.pos.x, v.pos.z), `${why}: camera under the ground`);
         checked++;
       }
@@ -94,6 +99,7 @@ test('V2: the landing view shows the marker in the free band, from behind and ab
       const v = landingView(play.terrain.heightAt, { ball, dir: d, mark: m }, f);
       const s = frac(v, m, f);
       assert.ok(inBand(s, f), `${hole.id} ${name}: marker at ${s.y01}`);
+      assert.ok(lineClear(play.terrain.heightAt, v.pos, { ...m, y: m.y + 0.3 }), `${hole.id}: the marker is in sight`);
       assert.ok(v.pos.y > m.y, `${hole.id}: above the landing`);
       assert.ok(Math.hypot(v.pos.x - m.x, v.pos.z - m.z) < Math.hypot(ball.x - m.x, ball.z - m.z), 'closer to the landing than the ball is');
     }
@@ -127,8 +133,8 @@ test('V2: a tap steps through the views of the shot and then back to the aiming 
 });
 
 test('V5: views are pure: the same inputs give the same view', () => {
-  const a = aimView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
-  const b = aimView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
+  const a = landingView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
+  const b = landingView(flat, { ball: { x: 1, y: 2, z: 3 }, dir: { x: 0.6, z: -0.8 }, mark: { x: 100, y: 0, z: -150 } }, PORTRAIT);
   assert.deepEqual(a, b);
 });
 
@@ -172,6 +178,9 @@ test('V3 never blind: a side or landing spot that cannot see the shot is not use
   // A wall all round except a corridor along the flight line: no side or landing spot can see the landing
   const walled = (x, z) => (Math.abs(x) > 3 ? 60 : 0);
   assert.ok(run(walled, createRng(11), 200).every(k => k === 'behind'));
+  // A spot out of bounds (where the scenery forest stands) is not used either
+  const obWorld = { heightAt: flat, surfaceAt: x => (Math.abs(x) > 3 ? 'ob' : 'fairway'), penalty: id => id === 'ob' };
+  assert.ok(run(obWorld, createRng(12), 200).every(k => k === 'behind'));
   // On a real hole the spots stand above the ground and see the landing
   const play = createHolePlay(HOLES['mtn-04'], { seed: 1 }); play.reset();
   const h = play.terrain.heightAt, from = { ...play.ball.pos }, land = play.landingPoint(play.clubIdx, play.aim, 1);
@@ -180,6 +189,14 @@ test('V3 never blind: a side or landing spot that cannot see the shot is not use
     const p = flightSpot(h, kind, shot, side);
     assert.ok(p.y > h(p.x, p.z), `${kind} ${side} above ground`);
   }
+  // With the hole's trees and OB line, a picked side / landing camera stands in bounds and no tree is in its way
+  const world = { heightAt: h, surfaceAt: play.terrain.surfaceAt, obstacles: play.obstacles, penalty: id => !!play.surfaces[id]?.penalty };
+  const rng = createRng(21), hist = [];
+  for (let i = 0; i < 200; i++) {
+    const f = pickFlightView(world, rng, hist, shot); hist.push(f.kind);
+    if (f.spot) assert.ok(!play.surfaces[play.terrain.surfaceAt(f.spot.x, f.spot.z)].penalty, `${f.kind} in bounds`);
+  }
+  assert.ok(hist.some(k => k !== 'behind'), 'mtn-04 still gets some variety: ' + [...new Set(hist)])
 });
 
 // --- V4: the flyover ----------------------------------------------------------------------------

@@ -89,6 +89,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // stream (the physics never draws from it, so a replay plays the same and the baselines don't move)
   const viewRng = createRng((seed ^ CAM.viewSalt) | 0);
   const flightHistory = [];
+  const flightWorld = { heightAt: terrain.heightAt, surfaceAt: terrain.surfaceAt, obstacles: play.obstacles, penalty: id => !!play.surfaces[id]?.penalty };
   let flight = null; // { kind, spot, side, cut (the rig cuts to the spot on its next frame), dropped (handed back to the chase camera) }
   // V4: the flyover (null when the hole has none or it has played)
   let fly = flyover && !start ? { path: null, t0: 0, cam: null } : null;
@@ -187,7 +188,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     state = shot.kind === 'putt' ? 'roll' : 'flight';
     shotT = 0; treeFlash = false;
     const sd = play.shotDir, carry = land ? dist2D(from, land) : 0;
-    flight = pickFlightView(terrain.heightAt, viewRng, flightHistory, {
+    flight = pickFlightView(flightWorld, viewRng, flightHistory, {
       putt: shot.kind === 'putt' || !land, classic: classicCam, from, land: land || from, carry,
       dir: { x: sd.x, z: sd.z }, apex: shot.vel ? shot.vel.y * shot.vel.y / (2 * G) : 0 });
     flight.cut = flight.kind !== 'behind'; flight.dropped = false;

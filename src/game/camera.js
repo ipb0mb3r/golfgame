@@ -9,8 +9,6 @@ export function createCameraRig(camera, heightAt) {
   const camPos = new THREE.Vector3(), camLook = new THREE.Vector3();
   const wantPos = new THREE.Vector3(), wantLook = new THREE.Vector3();
   const keepAboveGround = (p, clearance) => { p.y = Math.max(p.y, heightAt(p.x, p.z) + clearance); };
-  let memoKey = '', memoView = null; // the aiming view is solved again only when its inputs change
-  const r3 = n => n.toFixed(3);
 
   const want = w => { wantPos.set(w.pos.x, w.pos.y, w.pos.z); wantLook.set(w.look.x, w.look.y, w.look.z); };
 
@@ -26,14 +24,8 @@ export function createCameraRig(camera, heightAt) {
     if (isAimView(v.state)) { // incl. the S8 phases grace / nopower (Gate A A3: this list used to miss them)
       if (v.view === 'landing' && v.mark) { want(landingView(heightAt, { ball, dir: d, mark: v.mark }, v.frame)); return CAM.ease.view; }
       if ((v.view === 'above' || v.view === 'low') && v.cup) { want(readView(heightAt, { ball, dir: d, cup: v.cup }, v.view, v.frame)); return CAM.ease.view; }
-      if (v.mark && v.frame) {
-        const f = v.frame, m = v.mark;
-        const key = [ball.x, ball.y, ball.z, d.x, d.z, m.x, m.y, m.z, f.aspect, f.top, f.bottom, v.putter].map(x => (typeof x === 'number' ? r3(x) : x)).join('|');
-        if (key !== memoKey) { memoKey = key; memoView = aimView(heightAt, { ball, dir: d, mark: m, putt: v.putter }, f); }
-        want(memoView);
-        return CAM.ease.aim;
-      }
-      return CAM.ease.aim; // nothing to aim at yet: stay
+      want(aimView(heightAt, { ball, dir: d, putt: !!v.putter }, v.frame));
+      return CAM.ease.aim;
     }
     if (isBallMoving(v.state)) {
       // V3: a standing camera (side / landing) watches the ball from its spot; the shot starts with a cut to it

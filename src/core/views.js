@@ -7,6 +7,7 @@
 //   { aspect (width / height), fov (deg), top, bottom } — top/bottom = the free band of the 3D view as
 //   fractions of the canvas height (0 = top edge, 1 = bottom edge): below it sits the meter panel.
 import { TUNE, CAM } from './config.js';
+import { firstHit } from './obstacles.js';
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 const DEG = Math.PI / 180;
@@ -53,46 +54,27 @@ export function lineClear(heightAt, a, b, clear = 0) {
   return true;
 }
 
-// V1: the aiming view. Behind the ball on the aim line, high enough that the ball shows near the
-// bottom of the free band (CAM_AIM_BALL) and the aim marker (or a putt's end point) near its top
-// (CAM_AIM_MARK), so the whole flight, the landing area and the hazards in the way are on screen.
-//   ball = {x,y,z}, dir = {x,z} (unit, the aim), mark = {x,y,z} (the marker / the putt's end), putt
-// The camera distance behind the ball grows with the shot (CAM.aim.backK), the height is solved.
-// Never blind: if a hill hides the marker from there, the camera steps back and up until it shows.
-export function aimView(heightAt, { ball, dir, mark, putt = false }, frame) {
+// V1: the aiming view: main's camera as before Phase V (owner on PR #63: "the aiming camera was fine
+// before"; the 🔍 Landing button is how the player looks at the marker). Behind the ball on the aim
+// line: full shots CAM.aim (7 m back, 2.6 m × CAM_AIM_HEIGHT up, looking 30 m ahead), putts CAM.putt
+// (3.5 m, 1.6 m, 5 m). CAM_AIM_HEIGHT (owner on #63: "a bit too low"): 1 = main's height, default 1.25.
+// The one change: when the ball would show below the free band (landscape phones, where it hid behind
+// the hint line, or facing a steep upslope), the camera tilts down just enough that the ball sits at
+// CAM.ballMax of the band. Same spot; wherever main showed the ball, the view is exactly main's.
+//   ball = {x,y,z}, dir = {x,z} (unit, the aim), putt
+export function aimView(heightAt, { ball, dir, putt = false }, frame) {
   const c = putt ? CAM.putt : CAM.aim;
-  const D = Math.max(c.minDist, Math.hypot(mark.x - ball.x, mark.z - ball.z));
-  const rise = mark.y - ball.y;
-  const t = Math.tan(frame.fov * DEG / 2);
-  const yb = bandNdc(frame, putt ? TUNE.CAM_PUTT_BALL : TUNE.CAM_AIM_BALL);
-  const ym = bandNdc(frame, putt ? TUNE.CAM_PUTT_MARK : TUNE.CAM_AIM_MARK);
-  const need = Math.atan(ym * t) - Math.atan(yb * t); // the angle between ball and marker seen from the camera
-  let B = clamp(D * (putt ? c.backK : TUNE.CAM_AIM_BACK_K), c.backMin, c.backMax);
-  let view = null;
-  for (let tries = 0; tries <= CAM.losTries; tries++) {
-    const H = solveHeight(B, D, rise, need, c);
-    const pos = { x: ball.x - dir.x * B, y: ball.y + H, z: ball.z - dir.z * B };
-    pos.y = Math.max(pos.y, heightAt(pos.x, pos.z) + c.clear);
-    // Point the camera so the ball sits at its place in the band (the marker then lands at its own)
-    view = { pos, look: lookPlacing(pos, ball, putt ? TUNE.CAM_PUTT_BALL : TUNE.CAM_AIM_BALL, frame) };
-    const m = { x: mark.x, y: mark.y + CAM.markLift, z: mark.z };
-    if (lineClear(heightAt, pos, m)) break;
-    B *= CAM.losStepBack; // a hill is in the way: further back (and so higher)
-  }
-  return view;
-}
-
-// The camera height (above the ball) at which ball and marker are `need` radians apart, seen from B m
-// behind the ball. The gap grows with the height until about √(B·(B+D)), so the lowest height that
-// gives it is found by a scan then halving. Clamped to the view's [hMin, hMax].
-function solveHeight(B, D, rise, need, c) {
-  const gap = H => Math.atan2(H, B) - Math.atan2(H - rise, B + D);
-  let lo = c.hMin, hi = null;
-  if (gap(lo) >= need) return lo;
-  for (let H = lo; H <= c.hMax; H += CAM.hScan) { if (gap(H) >= need) { hi = H; break; } lo = H; }
-  if (hi === null) return c.hMax;
-  for (let k = 0; k < 24; k++) { const m = (lo + hi) / 2; if (gap(m) >= need) hi = m; else lo = m; }
-  return hi;
+  const gy = heightAt(ball.x, ball.z);
+  const pos = { x: ball.x - dir.x * c.back, y: gy + c.up * (putt ? 1 : TUNE.CAM_AIM_HEIGHT), z: ball.z - dir.z * c.back };
+  pos.y = Math.max(pos.y, heightAt(pos.x, pos.z) + c.clear);
+  const look = { x: ball.x + dir.x * c.ahead, y: 0, z: ball.z + dir.z * c.ahead };
+  look.y = heightAt(look.x, look.z);
+  const view = { pos, look };
+  if (!frame) return view;
+  const s = project(view, ball, frame), y01 = (1 - s.y) / 2;
+  const limit = frame.top + CAM.ballMax * (frame.bottom - frame.top);
+  if (s.front && y01 <= limit) return view;
+  return { pos, look: lookPlacing(pos, ball, CAM.ballMax, frame) };
 }
 
 // V2: the landing view (full shots, the 🔍 button). From behind and above the aim marker, looking at
@@ -166,21 +148,33 @@ export function flightSpot(heightAt, kind, shot, side) {
   return { x, y: heightAt(x, z) + up, z };
 }
 
-// Can a camera at `spot` see the shot: the landing spot and the top of the flight (never blind)?
-function seesShot(heightAt, spot, shot) {
+// Can a camera at `spot` see the shot (never blind)? It must stand in bounds (outside the OB line the
+// scenery forest is drawn) and see the landing spot, the top of the flight and the start past the
+// hills and the in-play trees and rocks (world.obstacles, core/obstacles.js colliders).
+function seesShot(world, spot, shot) {
+  const { heightAt, surfaceAt, obstacles = [], penalty = () => false } = world;
+  if (surfaceAt && penalty(surfaceAt(spot.x, spot.z))) return false;
   const top = { x: (shot.from.x + shot.land.x) / 2, y: shot.from.y + shot.apex, z: (shot.from.z + shot.land.z) / 2 };
-  return lineClear(heightAt, spot, { ...shot.land, y: shot.land.y + 1 }) && lineClear(heightAt, spot, top);
+  const land = { ...shot.land, y: shot.land.y + 1 }, from = { ...shot.from, y: shot.from.y + 1 };
+  for (const p of [land, top, from]) {
+    if (!lineClear(heightAt, spot, p)) return false;
+    if (obstacles.length && firstHit(obstacles, spot, p)) return false;
+  }
+  return true;
 }
 
-// V3 rules: which view films this shot. rng = the view stream (its own seeded RNG, never the
+// V3 rules: which view films this shot. world = { heightAt, surfaceAt?, penalty?(surfaceId), obstacles? }
+// (a bare heightAt function also works), rng = the view stream (its own seeded RNG, never the
 // physics one), history = the views of this hole's earlier shots (oldest first), shot as above plus
 // putt (true for a putt) and classic (the Settings switch: always 'behind'). Returns { kind, spot (null for 'behind'), side }.
 //   1. putts, and full shots carrying less than CAM_VARIETY_MIN, are 'behind' (and CAM_VARIETY 0 = Classic: always)
 //   2. else a weighted draw (CAM_W_BEHIND / SIDE / LANDING)
 //   3. no view more than CAM_MAX_RUN times in a row, and 'landing' never twice in a row
-//   4. a 'side' or 'landing' spot that can't see the shot is not used
+//   4. a 'side' or 'landing' spot that can't see the shot (seesShot) is not used: the other side is tried first
 // The draw always takes the same number of random numbers (2), so the stream stays in step whatever wins.
-export function pickFlightView(heightAt, rng, history, shot) {
+export function pickFlightView(world, rng, history, shot) {
+  if (typeof world === 'function') world = { heightAt: world };
+  const heightAt = world.heightAt;
   const r1 = rng(), r2 = rng();
   const behind = { kind: 'behind', spot: null, side: 0 };
   if (TUNE.CAM_VARIETY < 0.5 || shot.classic || shot.putt || shot.carry < TUNE.CAM_VARIETY_MIN) return behind;
@@ -196,8 +190,10 @@ export function pickFlightView(heightAt, rng, history, shot) {
   for (const k of order) {
     if (!allowed(k) || (k !== 'behind' && !(w[k] > 0))) continue;
     if (k === 'behind') return behind;
-    const spot = flightSpot(heightAt, k, shot, side);
-    if (seesShot(heightAt, spot, shot)) return { kind: k, spot, side };
+    for (const sd of [side, -side]) {
+      const spot = flightSpot(heightAt, k, shot, sd);
+      if (seesShot(world, spot, shot)) return { kind: k, spot, side: sd };
+    }
   }
   return behind;
 }

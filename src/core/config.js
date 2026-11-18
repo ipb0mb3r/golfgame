@@ -92,14 +92,15 @@ export const MINIMAP_TICKS = Object.freeze([0.5]);
 export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 }, puttMarkerMinPx: 8 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below); puttMarkerMinPx (S14, PM on PR #61): on a putt bar the marker's centre stays at least this far from the left edge, inside the rounded end
 
 // --- Camera (Phase V, DESIGN §4 "Camera"; core/views.js) ---
-// The aiming view (V1) is solved per shot: CAM_AIM_BACK_K × the carry behind the ball (clamped), and
-// the height at which the ball shows at CAM_AIM_BALL and the marker at CAM_AIM_MARK of the free band
-// (tunables below). hMin / hMax clamp that height (m above the ball), clear = m above the ground.
-// Never blind (losStep, losTries, losStepBack): when a hill hides the marker, step back ×1.35 and look again.
+// The aiming view (V1) is main's camera (owner on PR #63): back m behind the ball, up m above the
+// ground under it, looking at the ground `ahead` m down the aim line; clear = m above the ground at the
+// camera. ballMax: in a short landscape screen the camera tilts down so the ball shows no lower than
+// this share of the free band (else it hid behind the hint line). losStep = m between samples when
+// checking a line of sight (V3).
 export const CAM = Object.freeze({
-  aim:  Object.freeze({ minDist: 20, backMin: 6, backMax: 20, hMin: 2.5, hMax: 60, clear: 1.5 }),
-  putt: Object.freeze({ minDist: 3, backK: 0.35, backMin: 2.5, backMax: 6, hMin: 1.2, hMax: 10, clear: 0.6 }),
-  losStep: 2, losTries: 6, losStepBack: 1.35, markLift: 0.3, hScan: 0.5,
+  aim:  Object.freeze({ back: 7, up: 2.6, ahead: 30, clear: 1.5 }),
+  putt: Object.freeze({ back: 3.5, up: 1.6, ahead: 5, clear: 0.8 }),
+  ballMax: 0.97, losStep: 2,
   // V2 views (the buttons while aiming). landing: from backK × the carry behind the marker (clamped),
   // heightK × that above it; the marker shows at markAt of the free band.
   landing:   Object.freeze({ backK: 0.25, backMin: 22, backMax: 60, heightK: 0.6, markAt: 0.55, clear: 2 }),
@@ -111,7 +112,7 @@ export const CAM = Object.freeze({
   // `off` × the carry to one side, at max(minH, apexK × the apex) m; landingCam = `past` m beyond the
   // predicted landing and `off` m to one side, `height` m up. The landing camera hands over to the chase
   // camera when the ball runs more than passBy m past it.
-  side:       Object.freeze({ along: 0.45, off: 0.42, minH: 8, apexK: 0.8 }),
+  side:       Object.freeze({ along: 0.4, off: 0.17, minH: 15, apexK: 1 }),
   landingCam: Object.freeze({ past: 25, off: 9, height: 7, passBy: 40 }),
   flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
   viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)
@@ -166,13 +167,8 @@ export const TUNABLES = Object.freeze({
   RIVAL_SKILL_MAX:       { def: 0.45, min: -1,    max: 2 },    // the best rival's skill
   RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)
   RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
-  // Camera (Phase V, core/views.js): the aiming view (V1). Band fractions: 0 = top of the free 3D view, 1 = its bottom (above the meter panel)
-  CAM_AIM_BACK_K:        { def: 0.08, min: 0.01,  max: 0.2 },  // the camera stands this share of the carry behind the ball (clamped to CAM.aim backMin..backMax)
-  CAM_AIM_BALL:          { def: 0.86, min: 0.5,   max: 0.95 }, // the ball shows here in the free band ...
-  CAM_AIM_MARK:          { def: 0.16, min: 0.05,  max: 0.5 },  // ... and the aim marker here (the camera height is solved for both)
-  CAM_PUTT_BALL:         { def: 0.8,  min: 0.5,   max: 0.95 }, // the same for a putt (the marker = the end of the putt line)
-  CAM_PUTT_MARK:         { def: 0.3,  min: 0.05,  max: 0.6 },
-  // Camera (Phase V): ball-flight variety (V3) and the hole flyover (V4)
+  // Camera (Phase V): the aiming view's height (V1), ball-flight variety (V3) and the hole flyover (V4)
+  CAM_AIM_HEIGHT:        { def: 1.25, min: 0.5,   max: 3 },    // the full-shot aiming camera's height × main's 2.6 m (owner on #63: main's was "a bit too low"); putts keep main's
   CAM_VARIETY:           { def: 1,    min: 0,     max: 1 },    // 1 = varied flight camera, 0 = classic (always behind); the Settings switch sets it too
   CAM_VARIETY_MIN:       { def: 60,   min: 0,     max: 200 },  // m: shots carrying less than this (chips, pitches) are always filmed from behind
   CAM_W_BEHIND:          { def: 0.5,  min: 0,     max: 1 },    // weights of the flight views (normalised)
