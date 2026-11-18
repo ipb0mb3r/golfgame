@@ -218,7 +218,8 @@ export function createHud(play) {
   }
 
   function updateMeter(state, value, power) {
-    $('marker').style.left = `${meterPct(value)}%`;
+    // S14 (PM on PR #61): a putt bar starts at 0, so keep the marker inside its rounded left end
+    $('marker').style.left = barPutt ? `max(${meterPct(value)}%, ${HUD.puttMarkerMinPx}px)` : `${meterPct(value)}%`;
     const fillTo = state === 'power' ? value : state === 'grace' ? play.lieOf().maxPower : (state === 'aim' || state === 'nopower') ? 0 : power;
     $('meterBar').classList.toggle('nopower', state === 'nopower');
     $('meterFill').style.width = `${meterPct(fillTo) - meterPct(0)}%`;

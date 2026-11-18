@@ -26,7 +26,10 @@ test('T5 / S14: a putt goes exactly along the aim whatever acc or outcome says (
   // the speed doesn't depend on acc either; a 'shank' (only reachable through testHit) is a normal putt
   const v = s => Math.hypot(s.vel.x, s.vel.z);
   assert.ok(Math.abs(v(putt(0.15)) - v(putt(0))) < 1e-12);
-  assert.equal(putt(METER_MIN, 'shank').label, putt(0).label);
+  // no timing grade on a putt (PM on PR #61): no label, except "Topped!" for a mini putt
+  assert.equal(putt(0).label, ''); assert.equal(putt(METER_MIN, 'shank').label, '');
+  assert.equal(resolveShot({ club: CLUBS.putter, power: 1, acc: 0, aim: 0, puttMax: 10, greenDecel: 1.1 }).label, '', 'no "Perfect!"');
+  assert.equal(putt(0, 'topped').label, 'Topped!');
   assert.equal(PUTT.aimErrorK, undefined, 'the putt aim error is gone');
 });
 

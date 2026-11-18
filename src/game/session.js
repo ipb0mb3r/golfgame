@@ -112,7 +112,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       state = 'aim'; resetMeter(meter); updateHud();
       return null;
     }
-    hud.flash(shot.label);
+    if (shot.label) hud.flash(shot.label); // a putt has no label (S14)
     state = shot.kind === 'putt' ? 'roll' : 'flight';
     shotT = 0; treeFlash = false;
     updateHud();

@@ -146,7 +146,8 @@ export function resolveShot({ club, power, acc, aim, puttMax, greenDecel, outcom
   if (club.putter && outcome === 'shank') outcome = 'normal';
   const err = club.putter ? 0 : swingError(acc, outcome, lie.sweetScale);
   const p = Math.max(Math.min(power, lie.maxPower), MIN_POWER); // the cap is enforced here too
-  const label = shotLabel(power, err, outcome);
+  // A putt gets no timing grade (S14, PM on PR #61: no "Nice shot!" / "Perfect!"); a mini putt still says "Topped!"
+  const label = club.putter ? (outcome === 'topped' ? shotLabel(power, err, outcome) : '') : shotLabel(power, err, outcome);
   if (club.putter) {
     const D = p * puttMax;
     const v0 = Math.sqrt(2 * greenDecel * D);   // on flat ground this stops after D meters
