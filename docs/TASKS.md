@@ -195,6 +195,7 @@ From the owner's design doc "Arcade Golf Course Design Principles", relayed by t
 - [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
+- [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
 - Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
 
 ## Phase 8: Small polish (only if useful for testing)
