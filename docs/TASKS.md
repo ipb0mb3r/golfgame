@@ -162,7 +162,7 @@ Goal: trees and rocks that matter. See DESIGN §4 "Obstacles" and the "Rock" sur
 ## Phase C: Mountain course prototype (9 new holes by the course designer, one hole per PR)
 See `docs/HOLE_GUIDELINES.md` and `docs/GENRE_NOTES.md`. The course designer designs all 9; the owner plays and comments on each (owner, 2026-11-18). pl-01..03 are not part of it. Branch `course/<hole-id>`, one hole at a time (no parallel course PRs, so `sets.js` never conflicts). Each PR: hole file, scenarios, the hole in the "Mountain 9" set, a test that it validates, v2 shots, a tap-ready link.
 - [x] **C0** 🅿️ Course designer proposes the 9-hole plan (par per hole, length, the course's signature idea and each hole's twist, safe and hero routes, difficulty 1–5); the owner approves; the PM checks it against the guidelines *(course designer, approved by the owner 2026-11-18: `docs/COURSE_PLAN_MTN.md`, signature idea "the creek")*
-- [ ] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`)
+- [x] **C1–C9** Holes 1–9 of the mountain course (`mtn-01` … `mtn-09`) *(course designer, one PR by owner exception: `src/holes/mtn-course.js` (shared kit) + `mtn-01…09.js`, 27 scenarios, the `mountain9` set, `tests/mtn.test.js`, 21 v2 shots. mtn-06 is 160 m, not 175)*
 - [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
 
 ## Phase 7: Menus
@@ -195,12 +195,23 @@ See DESIGN §8 "Rivals".
 From the owner's design doc "Arcade Golf Course Design Principles", relayed by the course designer. Not planned yet: the owner orders these after the Phase C prototype / at Gate B. Course designers don't wait for them.
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
-- [ ] D3 Hole intro flyover camera: safe route, then hero route, then the green.
+- [ ] D3 Hole intro flyover camera. → **scheduled as V4** (Phase V): the regular route only.
 - [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
 - Already there: elevation is shown in the distance readout (`↑`/`↓` yards to the cup, `hud.js`). Rain as a difficulty lever = Phase 5. Character stats for hero carries: out of scope (DESIGN §1).
+
+## Load time (PM, 2026-11-18, before Phase V)
+- [ ] X12 Startup builds and validates every hole: `sets.js` imports all holes, each mountain module builds its grids/forest at import, and `validateHole` runs its shot simulations on every hole at load (heavier since S21). So `?hole=pl-02` pays for all 9 mountain holes (Node: ~2.2 s to import all holes, was 1.76 s; headless page load +0.7–1.4 s). Build a hole's data on first use (lazy), and keep the full `validateHole` simulations in tests (or run them only for the hole being loaded). Measure phone-size load before/after.
+
+## Phase V: Camera (owner, 2026-11-18, after the playtest 1 pass)
+The camera matters more now that the player aims himself (S21/S22). Camera code is game layer (`src/game/camera.js`); any choice logic (which view, seeded variety) goes in core so it's tested. Never a blind shot; works on phones (portrait and landscape).
+- [ ] V1 Aiming view: a better default view behind the ball while aiming, showing the landing area, the aim marker and the hazards in the way.
+- [ ] V2 Optional view buttons while aiming (temporary: the view goes back when released / tapped again): on full shots, **zoom to the landing marker**; on putts, **a green-reading view** (from above or low down). Optional, never required to play.
+- [ ] V3 Ball-flight camera with **variety**: sometimes the flight as today (behind), sometimes **at an angle** from the side, sometimes **from the landing spot, looking back at the ball coming in**. Chosen per shot by rules + the seeded RNG (no same view many times in a row; short shots and putts stay simple). A setting to turn variety off (classic camera).
+- [ ] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round.
+- [ ] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport.
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view

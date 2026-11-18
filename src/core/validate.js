@@ -124,18 +124,16 @@ export function validateHole(hole) {
     }
   }
   // S21 fairness (owner: "it's ok sometimes if the default aim ends not in the fairway, makes the
-  // player adjust it"): the default tee shot (default aim and club, no wind, straight) may finish in
-  // the rough, a bunker or under trees, but never in a penalty (water, out of bounds), at the ⚑
-  // power or at full power. It replaces the K8 "clean default tee shot" rule.
+  // player adjust it"): the default tee shot (default aim and club, no wind, straight, at the power
+  // that finishes at the default aim point, the ⚑ power) may finish in the rough, a bunker or under
+  // trees, but never in a penalty (water, out of bounds). It replaces the K8 "clean default tee shot"
+  // rule. A full swing may run past the aim point into trouble (a par 3 where long is wet, mtn-06).
   {
     const play = createHolePlay(hole, { seed: 1 });
     play.reset({ wind: { x: 0, z: 0 } });
-    const cap = play.lieOf().maxPower, pin = play.pinPower();
-    for (const [what, power] of [['⚑', Math.min(pin, cap)], ['full', cap]]) {
-      const r = play.restPoint(play.clubIdx, play.aim, power);
-      const s = hole.surfaceAt(r.x, r.z);
-      if (r.end === 'penalty' || BASE_SURFACES[s]?.penalty) bad(`the default tee shot (${play.club.name}, ${what} power, straight along the tee's facing) ends in ${s} at (${r.x.toFixed(0)}, ${r.z.toFixed(0)}): set or move teeFacing`);
-    }
+    const r = play.restPoint(play.clubIdx, play.aim, Math.min(play.pinPower(), play.lieOf().maxPower));
+    const s = hole.surfaceAt(r.x, r.z);
+    if (r.end === 'penalty' || BASE_SURFACES[s]?.penalty) bad(`the default tee shot (${play.club.name} to the aim point, straight along the tee's facing) ends in ${s} at (${r.x.toFixed(0)}, ${r.z.toFixed(0)}): set or move teeFacing`);
   }
   return hole;
 }

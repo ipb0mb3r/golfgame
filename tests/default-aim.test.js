@@ -122,8 +122,9 @@ test('S21: validateHole refuses a default tee shot that ends in water or OB, and
   const across = (s, z0, z1) => (x, z) => (z <= z0 && z >= z1 ? s : null);
   assert.doesNotThrow(() => validateHole(hole()));
   // the Driver's ⚑ shot finishes about 215 m out, a full one about 247 m out
-  assert.throws(() => validateHole(hole(across('water', -200, -230))), /default tee shot \(Driver, ⚑ power.*ends in water/);
-  assert.throws(() => validateHole(hole(across('ob', -235, -248))), /default tee shot \(Driver, full power.*ends in ob/);
+  assert.throws(() => validateHole(hole(across('water', -200, -230))), /default tee shot \(Driver to the aim point.*ends in water/);
+  assert.throws(() => validateHole(hole(across('ob', -205, -225))), /default tee shot \(Driver to the aim point.*ends in ob/);
+  assert.doesNotThrow(() => validateHole(hole(across('water', -235, -248))), 'a full swing past the aim point may find water (long is wet)');
   for (const s of ['rough', 'sand']) assert.doesNotThrow(() => validateHole(hole(across(s, -200, -300))), `${s} is fine: the player adjusts`);
   // teeFacing is checked, and can steer the line away from (or into) the water
   assert.throws(() => validateHole({ ...hole(), teeFacing: { x: 0 } }), /teeFacing must be \{ x, z \}/);

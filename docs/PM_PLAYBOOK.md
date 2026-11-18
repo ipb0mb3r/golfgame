@@ -50,12 +50,19 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 ## 4. Current status (update on every merge)
 **Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K (obstacles, rock, hole 3, polish), Phase 6 (rounds, any-length courses), Phase 7 menus (#40, QA #42). **PM role moved to Claude Code** (#41), 2026-11-17. **Phase T: AI rivals** (#44, QA Full #46: ready, no bugs), 2026-11-18. Owner's PM rules (#45).
 
-**In flight:** **Genre study done:** PR #48 `docs/GENRE_NOTES.md` (course designer session with the owner, 2026-11-18). This PR aligns HOLE_GUIDELINES and TASKS Phase C with it.
+**In flight (2026-11-18):**
+- **Phase C, Mountain 9 prototype: PR #50** (owner exception: all 9 holes in one session and one PR). Built in ~27 min of work; QA Full #51: ready, 1 tooling bug fixed. **Playtest 1** (owner): the course designer is reworking all 9 holes in #50 (lessons first in GENRE_NOTES, then every hole, then a lesson-by-lesson self-check).
+- **Playtest 1 gameplay pass (dev):** **S21** tee shots aim straight ahead (may end off the fairway, never in water/OB), PR to come on `dev/S21-tee-aim`. **S22** power bar: no ⚑ on full shots, 4 segments on the bar and the minimap, ⚑ kept for putts: **waits for the owner's example HUD**.
+- **C11** (lay-up default aim on par 5 second shots): **dropped** by the owner (2026-11-18): the player adjusts the aim himself.
+- **Time per hole** (owner question): ~3–4 min of build per hole once the shared kit exists; the time that matters is testing and owner fix rounds. Budget real courses ≈ 15 min per hole + playtest rounds.
 
 **Next (in order):**
-1. **Phase C: mountain course, prototype test run.** After #48 and this PR merge: the `course-designer` designs **all 9 new holes** (owner plays and comments on each), starting with the **C0 course plan** (designer proposes, owner approves, PM checks). It's a test run for the engine and the designer, not final content.
-2. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-3. **Phase 5: rain** (rules already in DESIGN §7).
+1. **Finish Phase C + the playtest 1 gameplay pass** (above).
+2. **X12 load time** (small dev PR: build holes lazily, keep heavy validation out of startup).
+3. **Phase V: camera** (TASKS Phase V, owner 2026-11-18): aiming view, optional view buttons (landing-marker zoom; green read on putts), flight-camera variety, the hole flyover along the regular route (was D3). Dev prompt below.
+4. Then the art / assets pass decision.
+5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+6. **Phase 5: rain** (rules already in DESIGN §7).
 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). The owner compares `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.
@@ -68,3 +75,16 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - Engine wishlist D2–D7 (TASKS, from the genre study; D1 tee sets dropped): owner orders it later.
 - **Before the real courses:** a genre talk per course theme (owner, 2026-11-18), after the prototype and the art pass.
 - **Later:** save a round in progress; **art style decision** before real courses; more settings (seaside, desert, tropical); the Three.js upgrade (X6); deciding "stay on Three.js?" at Gate B (DESIGN §11).
+
+### Phase V prompt (ready: send to `dev` after the playtest 1 pass merges)
+```
+Assignment: "Phase V: Camera". Branch: dev/V-camera, from main. Task IDs: V1–V5. Read docs/TASKS.md → Phase V and DESIGN (camera, states, S21/S22 aim marker) first.
+Context: the owner wants all of: a better aiming view; optional view buttons while aiming (zoom to the landing marker on full
+shots, a green-reading view on putts), temporary and never required; ball-flight camera variety (behind as today, at an angle,
+from the landing spot looking back at the incoming ball); a skippable hole intro flyover along the regular route to the green (not every route).
+Rules: never a blind shot; phone portrait + landscape; camera choice logic in core (pure, seeded, tested), Three.js only in
+src/game; tunables in config.js and ?tune=; a setting for classic (no-variety) flight camera; session-check passes.
+Propose the view list and the variety rules in the PR first comment before building V3. Ask before changing the swing or physics.
+PR: "Phase V: Camera". Include raw.githack links and phone screenshots of each view.
+Budget: check in after ~90 min. QA will be Full.
+```

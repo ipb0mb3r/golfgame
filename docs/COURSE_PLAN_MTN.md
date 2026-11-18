@@ -9,17 +9,19 @@ The alternative offered was "the slope" (every hole plays its elevation differen
 
 ## The plan
 
+*Updated after playtest 1 (2026-11-18): lengths about +10% (hole 4 +6%: at +10% it couldn't be reached in two), hole 5 turned into a dogleg left (L7), and greens tilt more (L1). See GENRE_NOTES §6d.*
+
 | # | Id | Par | Length | Shape, direction | Diff. | Green |
 |---|---|---|---|---|---|---|
-| 1 | mtn-01 | 4 | 340 m | Straight, gently downhill, N | 1 | Big, flat |
-| 2 | mtn-02 | 4 | 300 m | Dogleg right, gently uphill, E | 1 | One clear slope |
-| 3 | mtn-03 | 3 | 150 m | Downhill from a high tee, S | 2 | Tilted toward the creek |
-| 4 | mtn-04 | 5 | 450 m | Gentle dogleg left, W | 2 | Medium, flat |
-| 5 | mtn-05 | 4 | 360 m | Dogleg right, a corner to cut, N | 2 | Two-tier |
-| 6 | mtn-06 | 3 | 175 m | Uphill to a raised green, E | 3 | Raised, a bank in front |
-| 7 | mtn-07 | 4 | 390 m | Split fairway, S | 3 | Two-tier |
-| 8 | mtn-08 | 4 | 280 m | Short, downhill, drivable, W | 3 | A ridge, hard to read |
-| 9 | mtn-09 | 5 | 490 m | Big drop from the tee, around a lake, N | 4 | Raised, with a backdrop |
+| 1 | mtn-01 | 4 | 372 m | Straight, gently downhill, N | 1 | Big, tilted gently |
+| 2 | mtn-02 | 4 | 333 m | Dogleg right, gently uphill, E | 1 | Back to front and right to left |
+| 3 | mtn-03 | 3 | 165 m | Downhill from a high tee, S | 2 | Tilted toward the creek |
+| 4 | mtn-04 | 5 | 476 m | Gentle dogleg left, W | 2 | Medium, tilted left |
+| 5 | mtn-05 | 4 | 388 m | **Dogleg left** (was right), a corner to cut, N | 2 | Two-tier, tilted |
+| 6 | mtn-06 | 3 | 175 m | Uphill to a raised green, E | 3 | Raised, tilted toward the creek |
+| 7 | mtn-07 | 4 | 430 m | Split fairway, S | 3 | Two-tier, tilted |
+| 8 | mtn-08 | 4 | 298 m | Short, downhill, drivable, W | 3 | A ridge, hard to read |
+| 9 | mtn-09 | 5 | 533 m | Big drop from the tee, around a lake, N | 4 | Raised, tilted toward the lake |
 
 | # | Safe line | Hero line | Creek twist |
 |---|---|---|---|
@@ -56,12 +58,16 @@ The alternative offered was "the slope" (every hole plays its elevation differen
 
 **5. mtn-05 (par 4, 360 m, diff. 2).** Screenshot 1's lesson: the creek widens into a pond inside a dogleg right, with bunkers on the outside of the landing zone. Carrying the pond leaves a wedge; going around leaves a mid-iron. Two-tier green.
 
-**6. mtn-06 (par 3, 175 m, diff. 3).** Uphill to a raised green (screenshot 3). The creek runs left and behind the green; a grassy bank on the right feeds balls onto the green for the safe play. One deep greenside bunker cut into the bank.
+**6. mtn-06 (par 3, 160 m, diff. 3).** Uphill to a raised green (screenshot 3). The creek runs left and behind the green; a grassy bank on the right feeds balls onto the green for the safe play. One deep greenside bunker cut into the bank.
+*Built (C6): 160 m instead of 175 m, because at 175 m uphill the tee shot needed a 3 Wood; now it's a 5 Iron (PM OK on #50). The feeder bank is mown as fairway, because rough stopped the ball instead of feeding it.*
 
 **7. mtn-07 (par 4, 390 m, diff. 3).** The creek splits the fairway lengthwise. Left: a wide lower fairway and a longer approach over a bunker. Right: a narrow upper shelf with a clear angle into a two-tier green. The creek has a rock lip along the shelf.
+*Built (C7): about 394 m. The creek ends in a small pond between the routes, short of the green (a creek that splits a fairway has to end somewhere without crossing a route). A fairway bunker catches long drives on the left, and the shelf runs downhill, because at first the shelf saved only 6 m.*
 
 **8. mtn-08 (par 4, 280 m, diff. 3).** Short and downhill: a big hitter can drive the green, threading between a small pond on the left and deep bunkers on the right. The safe play is an iron to a flat plateau and a wedge. The green has a ridge that's hard to read; the cup sits on a gentle part.
+*Built (C8): plays about 272 m (inside the PM's ≥ 260 m), with a 12 m drop in two steps. The creek feeds the pond down the left side.*
 
 **9. mtn-09 (par 5, 490 m, diff. 4).** The finale (screenshots 4 and 7): a big drop from a high tee with a view, the hole wrapping around the lake where the creek ends. Biting off the lake on the second shot reaches in two; the safe route plays up the left in three. A raised green with a slope and tree line behind it as a backdrop.
+*Built (C9): about 489 m; the tee is about 20 m up (not 18), the lake was moved toward the green and an apron added between them, because at first the lake was easy to carry but the green was out of reach in two.*
 
 — Agent: course-designer

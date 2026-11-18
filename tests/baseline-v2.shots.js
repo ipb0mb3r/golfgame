@@ -63,6 +63,30 @@ export const SHOTS = [
   { name: 'S21 h1 default tee shot at the ⚑', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
   { name: 'S21 h2 default tee shot at the ⚑', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
   { name: 'S21 h3 default tee shot at the ⚑', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 'pin', acc: 0, aimOff: 0 },
+  // Phase C: the Mountain 9 prototype (course designer), as reworked after playtest 1. The key shots of
+  // each hole: the default drive, the brave line, a recovery and a putt. aimOff = the brave line,
+  // relative to the default aim as it was then (S21: `aimFrom` keeps that base, the old tee aim point).
+  { name: 'C mtn1 default drive in seeded wind', hole: 'mtn-01', seed: 41, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.02, aimFrom: { x: -2, z: -236 }, aimOff: 0 },
+  { name: 'C mtn1 drive down the right (creek side)', hole: 'mtn-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimFrom: { x: -2, z: -236 }, aimOff: 0.0644 },
+  { name: 'C mtn1 putt across the tilted green (13 m)', hole: 'mtn-01', seed: null, start: { x: -8, z: -366 }, strokes: 2, power: 0.75, acc: 0, aimOff: 0 },
+  { name: 'C mtn2 full Driver on the shortcut', hole: 'mtn-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: -2, z: -208 }, aimOff: 0.2452, club: 'driver' },
+  { name: 'C mtn2 85% Driver on the shortcut drops in the rough', hole: 'mtn-02', seed: 6, start: { x: 0, z: 0 }, strokes: 0, power: 0.85, acc: 0, aimFrom: { x: -2, z: -208 }, aimOff: 0.2452, club: 'driver', windless: true },
+  { name: 'C mtn2 out from under the pines to the fairway', hole: 'mtn-02', seed: null, start: { x: 33, z: -108 }, strokes: 1, power: 0.7, acc: 0, aimOff: -0.6763 },
+  { name: 'C mtn3 at the flag, hooked into the creek', hole: 'mtn-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.08, aimFrom: { x: 5, z: -166 }, aimOff: -0.0422 },
+  { name: 'C mtn3 putt toward the creek', hole: 'mtn-03', seed: null, start: { x: 14, z: -172 }, strokes: 1, power: 0.6, acc: 0, aimOff: 0 },
+  { name: 'C mtn4 3 Wood over the creek in two (95%)', hole: 'mtn-04', seed: null, start: { x: 0.5, z: -249 }, strokes: 1, power: 0.95, acc: 0, aimOff: 0, club: '3w' },
+  { name: 'C mtn4 short pitch over the creek stays dry', hole: 'mtn-04', seed: null, start: { x: -31, z: -408 }, strokes: 2, power: 0.5, acc: 0, aimOff: 0 },
+  { name: 'C mtn5 carry the pond to the island, full Driver', hole: 'mtn-05', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 2, z: -228 }, aimOff: -0.2181, club: 'driver' },
+  { name: 'C mtn5 into the pond (85%)', hole: 'mtn-05', seed: 7, start: { x: 0, z: 0 }, strokes: 0, power: 0.85, acc: 0, aimFrom: { x: 2, z: -228 }, aimOff: -0.2181, club: 'driver', windless: true },
+  { name: 'C mtn5 putt down a tier', hole: 'mtn-05', seed: null, start: { x: -106, z: -362 }, strokes: 2, power: 0.5, acc: 0, aimOff: 0 },
+  { name: 'C mtn6 the bank feeds it on (slight hook)', hole: 'mtn-06', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.07, aimFrom: { x: 0, z: -175 }, aimOff: 0.1229 },
+  { name: 'C mtn6 out of the deep bunker', hole: 'mtn-06', seed: null, start: { x: 12, z: -158 }, strokes: 1, power: 0.35, acc: 0, aimOff: 0 },
+  { name: 'C mtn7 Driver to the shelf', hole: 'mtn-07', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: -20, z: -222 }, aimOff: 0.1974, club: 'driver' },
+  { name: 'C mtn7 safe drive in seeded wind', hole: 'mtn-07', seed: 47, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: -0.02, aimFrom: { x: -20, z: -222 }, aimOff: 0 },
+  { name: 'C mtn8 drive the green (full Driver)', hole: 'mtn-08', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 0, z: -180 }, aimOff: 0, club: 'driver' },
+  { name: 'C mtn8 drive hooked into the pond', hole: 'mtn-08', seed: 8, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0.06, aimFrom: { x: 0, z: -180 }, aimOff: 0, club: 'driver', windless: true },
+  { name: 'C mtn9 95% drive down the big drop', hole: 'mtn-09', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimFrom: { x: -4, z: -278 }, aimOff: 0, club: 'driver' },
+  { name: 'C mtn9 3 Wood over the lake in two', hole: 'mtn-09', seed: null, start: { x: -4.4, z: -334.6 }, strokes: 1, power: 0.95, acc: 0, aimOff: 0, club: '3w' },
 ];
 
 // Play one shot to the end. seed null = wind forced to 0 (and the seed is 1, for lip-outs);

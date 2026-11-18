@@ -27,17 +27,17 @@ Follow a hard hole with a breather. Never put two big difficulty jumps in a row.
 - **Hills, not fields.** Every hole has real ground shape (rolling fairways, mounds, slopes that move the ball, raised or sunken greens). A flat fairway is fine if the land around it is shaped. Mix gentle hills and big drops hole by hole.
 - **Hazards sit in the ground:** bunkers are real hollows of varied depth (shallow fairway bunkers, deep greenside ones with a steep face), water sits in a dip.
 - **Surfaces make sense together:** an in-play tree stands on a patch of rough (never in the fairway); water gets a lip of rough or rock; greens get fringe.
-- **Each hole has its own twist on the course idea**; no two holes play the same. Mix shapes (straight, dogleg left and right, at least one real corner to cut) and point holes in different directions so the wind changes.
+- **Each hole has its own twist on the course idea**; no two holes play the same. Mix shapes (straight, dogleg left and right, at least one real corner to cut) and some doglegs to the left, not only right (owner, playtest 1). (Wind is random per hole today, so a hole's compass direction doesn't change the wind.)
 - **Greens, a mix:** some flat, some with one clear slope, a few with big breaks. Keep the slope gentle near the cup.
 
 ## 4. Fairness rules (MUST)
 - **No blind shots, ever.** From the tee and from any normal landing area, the player can see the target and the hazards in the way. Trees and rocks must show on the aim preview warning (K4). A steep bunker face must not hide the sand. If the camera can't show it, the hole is wrong.
 - **Two routes on every hole**, both visible from the tee: a safe line (longer, forgiving) and a hero line (shorter or a better angle, risky). On holes 1–2 the hero line can be simple.
 - **Proportional punishment:** a small miss costs a little; water and OB sit mainly on the hero line, never in the middle of the safe line. A missed hero shot leaves a recovery shot more often than a penalty drop. No hazard every player must cross unless the carry is short; island greens or forced carries at most once per course.
-- **No holes that are too long.** Guide lengths (tee to cup, along the playing line), kept until the prototype is played:
-  - par 3: 110–190 m
-  - par 4: 260–400 m
-  - par 5: 420–500 m
+- **No holes that are too long.** Guide lengths (tee to cup, along the playing line), about 10% longer since playtest 1 (owner, 2026-11-18: "a little bit longer overall, not too much"):
+  - par 3: 120–210 m
+  - par 4: 285–440 m (a short, drivable par 4 may go down to 260 m)
+  - par 5: 460–550 m
   - A normal player must be able to reach par with good, not perfect, shots.
 - **The default tee shot never ends in a penalty** (S21): it aims straight along the tee's facing (down −z, or toward `teeFacing` when the tee box is turned) at the club's carry, and may end in the rough, a bunker or under trees, but never in water or OB (`validateHole` checks it at full and ⚑ power). `aimTarget` (optional) sits out of penalty surfaces.
 - **A ball must never get stuck.** No pockets it can't be played out of; a deep bunker can always be escaped with the sand wedge; check rest spots on steep slopes, cliffs and against rocks.
