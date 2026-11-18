@@ -45,7 +45,7 @@ export default makeMtnHole({
   // the lake lies ACROSS the line to the green (rot): a carry is about 50 m of water, a short ball stays dry
   // in front of it, and its far end eats into the safe fairway's edge
   ponds: [{ cx: 76, cz: -404, rx: 42, rz: 25, rot: 0.55, wob: 0.07, seed: 4, depth: 2.6, lip: 'rock', lipW: 2.5, lobes: [{ cx: 100, cz: -380, rx: 22, rz: 20 }] }],
-  creek: { pts: [{ x: 112, z: 10, w: 2.4 }, { x: 74, z: -130, w: 2.8 }, { x: 72, z: -250, w: 3.6 }, { x: 74, z: -310, w: 5 }, { x: 82, z: -350, w: 9 }], depth: 1.4, bank: 3.5, lip: 'rough' },
+  creek: { pts: [{ x: 112, z: 10, w: 2.4 }, { x: 74, z: -130, w: 2.8 }, { x: 72, z: -250, w: 3.6 }, { x: 76, z: -310, w: 5 }, { x: 86, z: -352, w: 8 }, { x: 94, z: -372, w: 12 }], depth: 1.4, bank: 3.5, lip: 'rough' },
   ob: { x0: -64, x1: 182, z0: -528, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.2, 1.8], seed: 91, keep: 7, clear: [{ pts: [{ x: -4, z: -285 }, { x: 128, z: -492 }], w: 14 }] }, // the brave line over the lake stays open
   obstacles: [boulder(34, -312, 1.3), boulder(150, -420, 1.4)],

@@ -30,7 +30,7 @@ export default makeMtnHole({
   blend: 18,
   fairways: [
     { pts: [{ x: 0, z: -26, w: 12 }, { x: 0, z: -120, w: 20 }, { x: 3, z: -212, w: 24 }, { x: 46, z: -252, w: 20 }, { x: 80, z: -278, w: 15 }] },
-    { pts: [{ x: 12, z: -168, w: 12 }, { x: 40, z: -222, w: 16 }, { x: 70, z: -262, w: 15 }] },
+    { pts: [{ x: 18, z: -180, w: 8 }, { x: 42, z: -226, w: 13 }, { x: 70, z: -262, w: 14 }] },
   ],
   bunkers: [
     // L5: where a long safe drive finishes, through the corner
@@ -43,9 +43,9 @@ export default makeMtnHole({
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.1, 1.7], seed: 21, keep: 6, clear: [{ pts: [{ x: 0, z: 0 }, { x: 62, z: -252 }], w: 8 }] },
   obstacles: [
     // the stand of pines inside the corner, on rough (a full drive on the brave line must clear them)
-    pine(24, -90, 0.95), pine(33, -98, 1.0), pine(42, -92, 0.9), pine(50, -100, 1.0),
-    pine(28, -112, 1.0), pine(37, -118, 0.95), pine(47, -110, 0.9), pine(56, -118, 1.0),
-    pine(33, -134, 0.9), pine(44, -136, 0.85), pine(54, -140, 1.0),
+    pine(30, -90, 0.95), pine(39, -98, 1.0), pine(48, -92, 0.9), pine(56, -100, 1.0),
+    pine(34, -112, 1.0), pine(43, -118, 0.95), pine(53, -110, 0.9), pine(62, -118, 1.0),
+    pine(39, -134, 0.9), pine(50, -136, 0.85), pine(60, -140, 1.0),
   ],
   intro: mtnIntro({
     par: 4, prev: 'mtn-01', next: 'mtn-03',

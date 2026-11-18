@@ -44,6 +44,14 @@ export function smin(a, b, k) {
 // wobbling by `wob` (0..0.3). Returns a "radius" like sqrt(ell): < 1 inside, 1 on the edge.
 //   { cx, cz, rx, rz, rot?, wob?, seed?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates)
 export function blobR(x, z, b) {
+  // quick reject: far outside the blob's bounding circle (the painter calls this millions of times)
+  if (b._R === undefined) {
+    let R = Math.hypot(b.rx, b.rz);
+    for (const l of b.lobes ?? []) R = Math.max(R, Math.hypot(l.cx - b.cx, l.cz - b.cz) + Math.hypot(l.rx, l.rz));
+    Object.defineProperty(b, '_R', { value: R * (1 + (b.wob ?? 0)), enumerable: false });
+  }
+  const ddx = x - b.cx, ddz = z - b.cz;
+  if (ddx * ddx + ddz * ddz > 9 * b._R * b._R) return 3;
   const one = (e) => {
     const dx = x - e.cx, dz = z - e.cz, c = Math.cos(b.rot ?? 0), sn = Math.sin(b.rot ?? 0);
     const u = (dx * c + dz * sn) / e.rx, v = (-dx * sn + dz * c) / e.rz;
@@ -56,6 +64,21 @@ export function blobR(x, z, b) {
     r *= 1 + b.wob * (0.6 * Math.sin(3 * a + k) + 0.4 * Math.sin(5 * a + 2.3 * k));
   }
   return r;
+}
+// Chaikin corner cutting: a polyline (with optional half-widths w) becomes a smooth curve with the
+// same end points, so creeks and fairway spines bend instead of kinking (L4, L8)
+export function smoothLine(pts, rounds = 3) {
+  let a = pts;
+  for (let r = 0; r < rounds; r++) {
+    const b = [a[0]];
+    for (let i = 0; i < a.length - 1; i++) {
+      const p = a[i], q = a[i + 1], mix = (t) => ({ x: p.x + (q.x - p.x) * t, z: p.z + (q.z - p.z) * t, ...(p.w !== undefined ? { w: p.w + (q.w - p.w) * t } : {}) });
+      b.push(mix(0.25), mix(0.75));
+    }
+    b.push(a[a.length - 1]);
+    a = b;
+  }
+  return a;
 }
 // Length of a polyline (m)
 export const polyLen = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.z - pts[i].z), 0);
@@ -96,8 +119,9 @@ export function makeMtnHole(spec) {
   const G = spec.green;
   const base = spec.base ?? (() => 0);
   const hills = spec.hills ?? [], bunkers = spec.bunkers ?? [], ponds = spec.ponds ?? [], rocks = spec.rocks ?? [];
-  const fairways = spec.fairways ?? [], paths = spec.paths ?? [];
-  const creek = spec.creek ?? null;
+  const fairways = (spec.fairways ?? []).map(f => (f.pts.length > 2 ? { ...f, pts: smoothLine(f.pts) } : f));
+  const paths = spec.paths ?? [];
+  const creek = spec.creek ? { ...spec.creek, pts: smoothLine(spec.creek.pts) } : null;
   const OB = spec.ob;
   const banks = spec.banks ?? 0.03;
   const tee = spec.tee, pad = spec.teePad ?? { h: 0.4, r: 4.5 };
@@ -106,23 +130,76 @@ export function makeMtnHole(spec) {
   const gE = (x, z) => Math.sqrt(ell(x, z, G));
   const roughs = spec.roughs ?? [];
   const blend = spec.blend ?? 12; // m: how round the joints between fairway legs are
-  const fLen = fairways.map(f => polyLen(f.pts));
   // Signed distance to the fairway edge (< 0 = on the fairway). Every segment of every fairway is a
   // rounded strip; they are joined with a smooth minimum so legs flow into each other (L4), and the
   // edge wobbles a little along its length (f.wob, default 0.08) so it reads as a blob, not a ruler.
-  const fairwayGap = (x, z) => {
+  // Segments of every fairway spine, precomputed (no allocation per lookup: the painter calls this
+  // millions of times)
+  const SEG = [];
+  fairways.forEach((f, i) => {
+    let run = 0;
+    for (let k = 1; k < f.pts.length; k++) {
+      const a = f.pts[k - 1], b = f.pts[k], dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz);
+      SEG.push({ ax: a.x, az: a.z, dx, dz, L2: dx * dx + dz * dz || 1e-9, L, wa: a.w ?? 0, wb: b.w ?? 0, run, i, wob: f.wob ?? 0.08, k: f.blend ?? blend });
+      run += L;
+    }
+  });
+  function fairwayGapRaw(x, z) {
     let gap = Infinity;
-    fairways.forEach((f, i) => {
-      for (let k = 1; k < f.pts.length; k++) {
-        const p = polyDist(x, z, [f.pts[k - 1], f.pts[k]]);
-        const along = (p.t + k - 1) / (f.pts.length - 1) * fLen[i];
-        const wob = 1 + (f.wob ?? 0.08) * (0.6 * Math.sin(along / 17 + i * 1.7 + (x > 0 ? 0 : 2)) + 0.4 * Math.sin(along / 7.3 + i));
-        gap = smin(gap, p.d - p.w * wob, f.blend ?? blend);
-      }
-    });
+    for (const g of SEG) {
+      const u = Math.min(1, Math.max(0, ((x - g.ax) * g.dx + (z - g.az) * g.dz) / g.L2));
+      const px = g.ax + g.dx * u - x, pz = g.az + g.dz * u - z;
+      const d2 = px * px + pz * pz, w = g.wa + (g.wb - g.wa) * u;
+      // far from this strip: it can't change the answer (the blend reaches at most k beyond its edge)
+      if (gap < 1e8 && Math.sqrt(d2) - w * 1.3 > gap + g.k) continue;
+      const along = g.run + g.L * u;
+      const wob = 1 + g.wob * (0.6 * Math.sin(along / 17 + g.i * 1.7 + (x > 0 ? 0 : 2)) + 0.4 * Math.sin(along / 7.3 + g.i));
+      gap = smin(gap, Math.sqrt(d2) - w * wob, g.k);
+    }
     return gap;
+  }
+  // Cached on a 1 m grid over the course (bilinear in between): every lookup is a few multiplies
+  const GS = 2; // m per cell
+  const GX0 = spec.ob.x0 - 12, GZ0 = spec.ob.z0 - 12, GW = Math.ceil((spec.ob.x1 - spec.ob.x0 + 24) / GS) + 1, GH = Math.ceil((spec.ob.z1 - spec.ob.z0 + 24) / GS) + 1;
+  const GRID = new Float32Array(GW * GH);
+  const GX1 = GX0 + (GW - 1) * GS, GZ1 = GZ0 + (GH - 1) * GS;
+  const clampGrid = (x, z) => {
+    const cx = Math.min(Math.max(x, GX0), GX1), cz = Math.min(Math.max(z, GZ0), GZ1);
+    return [cx, cz, Math.hypot(x - cx, z - cz)];
   };
-  const creekAt = (x, z) => (creek ? polyDist(x, z, creek.pts) : null);
+  for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) GRID[j * GW + i] = SEG.length ? Math.min(fairwayGapRaw(GX0 + i * GS, GZ0 + j * GS), 1e4) : 1e4;
+  const fairwayGap = (x, z) => {
+    // outside the grid (scenery far beyond OB): the edge value plus the distance to the edge
+    const [cx, cz, out] = clampGrid(x, z);
+    const fx = (cx - GX0) / GS, fz = (cz - GZ0) / GS;
+    const i = Math.min(fx | 0, GW - 2), j = Math.min(fz | 0, GH - 2), tx = fx - i, tz = fz - j, o = j * GW + i;
+    return (GRID[o] * (1 - tx) + GRID[o + 1] * tx) * (1 - tz) + (GRID[o + GW] * (1 - tx) + GRID[o + GW + 1] * tx) * tz + out;
+  };
+
+  // the creek's distance and half-width, cached on the same 1 m grid as the fairway
+  const CD = creek ? new Float32Array(GW * GH) : null, CW = creek ? new Float32Array(GW * GH) : null;
+  if (creek) {
+    const P = creek.pts;
+    for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+      const x = GX0 + i * GS, z = GZ0 + j * GS;
+      let bd = Infinity, bw = 0;
+      for (let k = 1; k < P.length; k++) {
+        const a = P[k - 1], b = P[k], dx = b.x - a.x, dz = b.z - a.z;
+        const u = Math.min(1, Math.max(0, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1e-9)));
+        const px = a.x + dx * u - x, pz = a.z + dz * u - z, d2 = px * px + pz * pz;
+        if (d2 < bd) { bd = d2; bw = (a.w ?? 0) + ((b.w ?? 0) - (a.w ?? 0)) * u; }
+      }
+      CD[j * GW + i] = Math.sqrt(bd); CW[j * GW + i] = bw;
+    }
+  }
+  const creekAt = (x, z) => {
+    if (!creek) return null;
+    const [cx, cz, out] = clampGrid(x, z);
+    const fx = (cx - GX0) / GS, fz = (cz - GZ0) / GS;
+    const i = Math.min(fx | 0, GW - 2), j = Math.min(fz | 0, GH - 2), tx = fx - i, tz = fz - j, o = j * GW + i;
+    const bl = A => (A[o] * (1 - tx) + A[o + 1] * tx) * (1 - tz) + (A[o + GW] * (1 - tx) + A[o + GW + 1] * tx) * tz;
+    return { d: bl(CD) + out, w: bl(CW) };
+  };
 
   // The ground before tee and green smoothing
   function rawHeight(x, z) {
@@ -163,16 +240,17 @@ export function makeMtnHole(spec) {
   function surfaceAt(x, z) {
     if (x < OB.x0 || x > OB.x1 || z < OB.z0 || z > OB.z1) return 'ob';
     if (Math.abs(x - tee.x) < 3.5 && Math.abs(z - tee.z) < 4) return 'tee';
-    if (creek) {
-      const c = creekAt(x, z);
-      if (c.d < c.w) return 'water';
-      if (c.d < c.w + (creek.lipW ?? 2.5)) return creek.lip ?? 'rough';
-    }
-    for (const p of ponds) {
-      const e = blobR(x, z, p);
+    // water first (a creek running into a lake is one body of water), then the lips around it
+    const c = creek ? creekAt(x, z) : null;
+    let lip = null;
+    for (let i = 0; i < ponds.length; i++) {
+      const e = blobR(x, z, ponds[i]);
       if (e < 1) return 'water';
-      if (e < 1 + (p.lipW ?? 2.5) / Math.min(p.rx, p.rz)) return p.lip ?? 'rough';
+      if (!lip && e < 1 + (ponds[i].lipW ?? 2.5) / Math.min(ponds[i].rx, ponds[i].rz)) lip = ponds[i].lip ?? 'rough';
     }
+    if (c && c.d < c.w) return 'water';
+    if (c && c.d < c.w + (creek.lipW ?? 2.5)) return creek.lip ?? 'rough';
+    if (lip) return lip;
     for (const b of bunkers) if (blobR(x, z, b) < 1) return 'sand';
     if (ell(x, z, G) < 1) return 'green';
     if (ell(x, z, G, fringeW) < 1) return 'fringe';

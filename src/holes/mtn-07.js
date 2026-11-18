@@ -48,7 +48,7 @@ export default makeMtnHole({
   ponds: [{ cx: 5, cz: -312, rx: 11, rz: 28, wob: 0.08, seed: 2, depth: 2.2, lip: 'rock', lipW: 2.0 }],
   ob: { x0: -66, x1: 64, z0: -458, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.1, 1.7], seed: 71, keep: 7 },
-  obstacles: [boulder(38, -396, 1.3)],
+  obstacles: [boulder(46, -396, 1.3)],
   intro: mtnIntro({
     par: 4, prev: 'mtn-06', next: 'mtn-08',
     tagline: 'The creek splits the fairway: wide and low, or narrow and high.',
