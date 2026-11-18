@@ -285,7 +285,14 @@ await items(['settings']);
 await click('#setDebug');
 await click('#setGrid [data-value="on"]');
 const stored = await ev(() => localStorage.getItem('pocketlinks.settings.v1'));
-ok(stored === JSON.stringify({ debug: true, puttGrid: 'on' }), `settings saved (${stored})`);
+ok(stored === JSON.stringify({ debug: true, puttGrid: 'on', flightCam: 'varied', flyover: true }), `settings saved (${stored})`);
+// Phase V: the flight camera and flyover switches save too (then back to their defaults for the checks below)
+await click('#setCam [data-value="classic"]');
+await click('#setFlyover');
+const storedV = await ev(() => localStorage.getItem('pocketlinks.settings.v1'));
+ok(storedV === JSON.stringify({ debug: true, puttGrid: 'on', flightCam: 'classic', flyover: false }), `Phase V settings saved (${storedV})`);
+await click('#setCam [data-value="varied"]');
+await click('#setFlyover');
 await page.reload();
 await page.waitForFunction(() => window.__golf?.app);
 ok(await ev(() => window.__golf.app.settings.debug === true && window.__golf.app.settings.puttGrid === 'on'), 'settings survive a reload');
