@@ -99,7 +99,7 @@ Sent to the PM on 2026-11-18. Backlog IDs are in docs/TASKS.md, "Engine wishlist
 | D4 | Shaping a draw or fade on purpose | The ball curves only on a mistimed 3rd click |
 | D5 | More surfaces: deep rough, waste areas, gorse / heather | fairway, fringe, green, rough, sand, rock, water, OB |
 | D6 | Wind visible in the landing zones (flags, trees moving) | HUD arrow + mph, and the flag at the cup |
-| D7 (proposed) | Built walls (stone wall, low wall) as in-play obstacles the ball bounces off | Only trees and boulders; a natural cliff can be steep terrain today |
+| D7 | Built walls (stone wall, low wall) as in-play obstacles the ball bounces off | Only trees and boulders; a natural cliff can be steep terrain today |
 | Phase 5 | Rain as a difficulty lever | Planned (DESIGN §7), not built |
 | — | Hero carries checked against character stats | No characters (out of scope, DESIGN §1) |
 
