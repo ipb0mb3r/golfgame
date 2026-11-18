@@ -8,7 +8,7 @@
 //
 // The rules are in core: play.swing() hits the ball, play.next says what happens after a shot,
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
-import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
+import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE, CAM } from '../core/config.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
@@ -20,6 +20,7 @@ import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
 import { createHud, createMinimap, setupHolePage, fitMinimap, yd } from './hud.js';
 import { greenStyle } from '../core/menu.js';
+import { nextView } from '../core/views.js';
 
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
@@ -70,8 +71,62 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
 
-  const updateHud = () => hud.update(state, meter.power);
-  const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir });
+  const updateHud = () => { hud.update(state, meter.power); $view().hidden = state !== 'aim'; measureFrame(); };
+  // V2: the view button while aiming (null = the aiming view, else core/views.js VIEW_STEPS)
+  let view = null, viewPress = null; // viewPress = { at, opened } while the button is held
+  // V1: the free band of the screen the aiming view must fit in (core/views.js `frame`), measured from the HUD
+  let camFrame = null;
+  const putEnd = { x: 0, y: 0, z: 0 };
+  function camMark() {
+    if (!play.club.putter) return play.aimMarks();
+    const d = dirFromAim(play.aim), len = Math.min(play.distToCup(), play.puttMax);
+    putEnd.x = ball.pos.x + d.x * len; putEnd.z = ball.pos.z + d.z * len; putEnd.y = terrain.heightAt(putEnd.x, putEnd.z);
+    return putEnd;
+  }
+  const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir,
+    mark: isAimingState(state) || state === 'intro' ? camMark() : null, cup, view, frame: camFrame || measureFrame() });
+
+  // The part of the screen the 3D view really has (V1): from the lowest top panel that covers the
+  // screen's centre column (portrait: the scorecard) down to the top of the meter panel.
+  function measureFrame() {
+    const W = window.innerWidth || 1, H = window.innerHeight || 1, cx = W / 2;
+    let top = 0;
+    for (const id of ['info', 'windBox', 'minimap', 'pauseBtn']) {
+      const el = document.getElementById(id);
+      if (!el || el.hidden) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height && r.left < cx + CAM.bandProbe && r.right > cx - CAM.bandProbe) top = Math.max(top, r.bottom);
+    }
+    const b = document.getElementById('bottom')?.getBoundingClientRect();
+    const bottom = b && b.height ? b.top : H;
+    camFrame = { aspect: W / H, fov: camera.fov, top: Math.min(top / H, 0.5), bottom: Math.max(bottom / H, 0.5) };
+    return camFrame;
+  }
+  function setView(v) {
+    view = v;
+    const b = $view();
+    b.classList.toggle('on', !!v);
+    b.textContent = viewLabel();
+  }
+  // What the button does next: open the first view, step to the next, or go back
+  function viewLabel() {
+    const nxt = nextView(view, play.club.putter);
+    if (!nxt) return '↩ Back';
+    return nxt === 'landing' ? '🔍 Landing' : nxt === 'above' ? '👁 Read' : '👁 Low';
+  }
+  // pointer down / up on the view button (or the V key: a tap). A tap opens a view (and steps through
+  // a putt's two); holding it shows the view only until it is released.
+  function onViewInput(down, at = performance.now()) {
+    if (state !== 'aim') { viewPress = null; return; }
+    if (down) {
+      const opened = view === null;
+      setView(nextView(view, play.club.putter));
+      viewPress = { at, opened };
+    } else if (viewPress) {
+      if (viewPress.opened && at - viewPress.at > CAM.holdMs) setView(null);
+      viewPress = null;
+    }
+  }
 
   function clearTimers() { timers.forEach(tm => clearTimeout(tm.id)); timers = []; }
 
@@ -87,6 +142,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     state = 'aim';
     resetMeter(meter);
     props.resetTrail();
+    setView(null);
     updateHud();
     if (snapCamera) rig.snap(camView());
   }
@@ -95,7 +151,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function onSwingInput(at = performance.now() / 1000) {
     if (!isAimingState(state)) return;
     // The top of the meter is the lie's power cap for this club (S11); the putter's meter has no accuracy click (S14)
-    if (state === 'aim') { input.releaseAim(); resetMeter(meter, play.lieOf().maxPower, swingClicks(play.club) === 2); }
+    if (state === 'aim') { input.releaseAim(); setView(null); viewPress = null; resetMeter(meter, play.lieOf().maxPower, swingClicks(play.club) === 2); }
     const result = pressMeterAt(meter, at);
     if (result) endSwing(result);
     else state = meter.phase;
@@ -173,7 +229,9 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   function changeClub(step) {
     if (state !== 'aim') return;
+    const wasPutter = play.club.putter;
     play.setClub(play.clubIdx + step);
+    if (play.club.putter !== wasPutter) setView(null); // the putter's views aren't a full shot's
     updateHud();
   }
 
@@ -247,7 +305,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // K5: wireframe outlines of the colliders (the debug overlay turns them on)
   function showColliders(on) { colliderOutlines.visible = !!on; }
 
-  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); }
+  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); measureFrame(); }
 
   function debugText(fps) {
     const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
@@ -310,6 +368,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     clearTimers();
     $holeCard().classList.add('hidden');
     showSkip(false);
+    $view().hidden = true; $view().classList.remove('on');
     hud.dispose();
     disposeScene(scene);
   }
@@ -334,6 +393,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     // Hit straight away as if the meter gave this result (skips the meter, same path as a real swing)
     testHit(power, acc = 0, outcome = 'normal') { if (state !== 'aim') return null; return endSwing({ power, acc, outcome }); },
     skip, get canSkip() { return canSkip(); },
+    get view() { return view; }, viewTap() { onViewInput(true); onViewInput(false); return view; },
+    get camFrame() { return camFrame; }, cameraAt() { return { pos: camera.position.clone(), fov: camera.fov, aspect: camera.aspect }; },
     get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
   };
 
@@ -344,7 +405,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     canAim: () => state === 'aim',
     get paused() { return paused; },
     get timerCount() { return timers.length; },
-    onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
+    onSwingInput, onViewInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
     start: teeOff,
     again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
@@ -353,3 +414,4 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 const $intro = () => document.getElementById('intro');
 const $holeCard = () => document.getElementById('holeCard');
 const $skip = () => document.getElementById('skipBtn');
+const $view = () => document.getElementById('viewBtn');

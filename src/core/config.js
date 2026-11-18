@@ -91,6 +91,27 @@ export const POWER_SECTIONS = 4;
 export const MINIMAP_TICKS = Object.freeze([0.5]);
 export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 }, puttMarkerMinPx: 8 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below); puttMarkerMinPx (S14, PM on PR #61): on a putt bar the marker's centre stays at least this far from the left edge, inside the rounded end
 
+// --- Camera (Phase V, DESIGN §4 "Camera"; core/views.js) ---
+// The aiming view (V1) is solved per shot: CAM_AIM_BACK_K × the carry behind the ball (clamped), and
+// the height at which the ball shows at CAM_AIM_BALL and the marker at CAM_AIM_MARK of the free band
+// (tunables below). hMin / hMax clamp that height (m above the ball), clear = m above the ground.
+// Never blind (losStep, losTries, losStepBack): when a hill hides the marker, step back ×1.35 and look again.
+export const CAM = Object.freeze({
+  aim:  Object.freeze({ minDist: 20, backMin: 6, backMax: 20, hMin: 2.5, hMax: 60, clear: 1.5 }),
+  putt: Object.freeze({ minDist: 3, backK: 0.35, backMin: 2.5, backMax: 6, hMin: 1.2, hMax: 10, clear: 0.6 }),
+  losStep: 2, losTries: 6, losStepBack: 1.35, markLift: 0.3, hScan: 0.5,
+  // V2 views (the buttons while aiming). landing: from backK × the carry behind the marker (clamped),
+  // heightK × that above it; the marker shows at markAt of the free band.
+  landing:   Object.freeze({ backK: 0.25, backMin: 22, backMax: 60, heightK: 0.6, markAt: 0.55, clear: 2 }),
+  // readAbove: over the middle of the putt, high enough that the putt (+ margin m) fills `fill` of the free band (clamped); tilt = how far behind
+  // the middle (× the height), so the putt points up the screen. readLow: back m behind the ball, height m up. *At = where that point shows in the free band.
+  readAbove: Object.freeze({ fill: 0.7, margin: 2, hMin: 6, hMax: 60, tilt: 0.2, midAt: 0.5 }),
+  readLow:   Object.freeze({ back: 3, height: 0.45, cupAt: 0.45 }),
+  holdMs: 300,  // V2: a press on a view button longer than this is a hold (the view goes back on release); shorter is a tap (stays until tapped again)
+  ease: Object.freeze({ aim: 5, view: 4 }), // how fast the camera eases to the aiming view / a button view (1/s)
+  bandProbe: 60, // px each side of the screen's centre: a top panel inside this column pushes the free band down (portrait)
+});
+
 // --- Tunables: ?tune= overrides (X8), one entry each (Gate A A5) ---
 // The only names a tune link may change. Each entry is the whole definition: the default (`def`)
 // and the range a tuned value is clamped to. Code reads the live value from TUNE (e.g. TUNE.SWEET),
@@ -133,6 +154,12 @@ export const TUNABLES = Object.freeze({
   RIVAL_SKILL_MAX:       { def: 0.45, min: -1,    max: 2 },    // the best rival's skill
   RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)
   RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
+  // Camera (Phase V, core/views.js): the aiming view (V1). Band fractions: 0 = top of the free 3D view, 1 = its bottom (above the meter panel)
+  CAM_AIM_BACK_K:        { def: 0.08, min: 0.01,  max: 0.2 },  // the camera stands this share of the carry behind the ball (clamped to CAM.aim backMin..backMax)
+  CAM_AIM_BALL:          { def: 0.86, min: 0.5,   max: 0.95 }, // the ball shows here in the free band ...
+  CAM_AIM_MARK:          { def: 0.16, min: 0.05,  max: 0.5 },  // ... and the aim marker here (the camera height is solved for both)
+  CAM_PUTT_BALL:         { def: 0.8,  min: 0.5,   max: 0.95 }, // the same for a putt (the marker = the end of the putt line)
+  CAM_PUTT_MARK:         { def: 0.3,  min: 0.05,  max: 0.6 },
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones

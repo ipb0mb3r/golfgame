@@ -1,7 +1,8 @@
 // Keyboard, mouse and touch input. Calls the handlers; owns no game rules. Bound once for the whole
 // visit (main.js); the handlers forward to the current hole session.
 //   on = { swing(t), skip() → true if it skipped, club(step), start() → true if it teed off, again(),
-//          toggleDebug(), canAim(), active() → false while a menu or the pause menu is open, escape(), pause() }
+//          toggleDebug(), canAim(), active() → false while a menu or the pause menu is open, escape(), pause(),
+//          view(down, atMs) (Phase V: the view button pressed / released) }
 const $ = id => document.getElementById(id);
 
 // Gate A C7: only a primary press swings. A mouse needs its main (left) button: a right or middle
@@ -32,6 +33,11 @@ export function bindInput(canvas, on) {
   // X9: only the ⏩ Skip button, Space and Enter skip. A tap on the course or SWING never does, so an
   // extra swing tap can't skip a shot by accident.
   $('skipBtn').addEventListener('pointerdown', e => { e.preventDefault(); if (isSwingPress(e) && on.active()) on.skip(); });
+  // Phase V (V2): the view button while aiming. Down and up both count: a short tap opens a view,
+  // holding it shows the view until it is released (session.js onViewInput).
+  const viewBtn = $('viewBtn');
+  viewBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (isSwingPress(e) && on.active()) on.view(true, e.timeStamp || performance.now()); });
+  for (const ev of ['pointerup', 'pointercancel']) viewBtn.addEventListener(ev, e => { if (on.active()) on.view(false, e.timeStamp || performance.now()); });
   $('pauseBtn').addEventListener('click', () => on.pause());
   window.addEventListener('keydown', e => {
     if (e.code === 'Escape') { if (!e.repeat) on.escape(); return; }
@@ -48,6 +54,7 @@ export function bindInput(canvas, on) {
     if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); on.club(-1); }
     if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); on.club(1); }
     if (e.code === 'Backquote' && !e.repeat) on.toggleDebug();
+    if (e.code === 'KeyV' && !e.repeat) { const t = performance.now(); on.view(true, t); on.view(false, t); } // V: a tap on the view button
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') keysDown.delete('L');

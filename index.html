@@ -101,6 +101,12 @@
   /* X9: ⏩ Skip, above the meter on the right while the ball flies or rolls (doesn't move the layout) */
   #skipBtn { position: absolute; right: 0; bottom: calc(100% + 8px); font-weight: 800; padding: 8px 16px; background: rgba(12, 28, 20, .85); border-color: var(--accent); color: var(--accent); }
   #skipBtn[hidden] { display: none; }
+  /* Phase V (V2): the optional view button while aiming, small, above the meter on the left (⏩ Skip's
+     row; the two never show at the same time) */
+  #viewBtn { position: absolute; left: 0; bottom: calc(100% + 8px); font-size: 13px; font-weight: 700; padding: 5px 10px; min-height: 32px;
+    background: rgba(12, 28, 20, .7); border-color: rgba(255,255,255,.45); touch-action: none; }
+  #viewBtn.on { border-color: var(--accent); color: var(--accent); background: rgba(12, 28, 20, .9); }
+  #viewBtn[hidden] { display: none; }
   #swingBtn { flex: 0 0 auto; font-weight: 900; background: #2f8f46; border-color: #8ef0a5; padding: 8px 18px; }
 
   /* Overlays */
@@ -392,6 +398,7 @@
 
 <div id="bottom">
   <button id="skipBtn" hidden title="Skip to where the ball stops (Space or Enter)">⏩ Skip</button>
+  <button id="viewBtn" hidden title="Look at the landing area / read the green (V). Tap: stays until you tap again. Hold: back when you let go">🔍 Landing</button>
   <div id="tuned" hidden></div>
   <div id="hint">Click or press Space to start your swing</div>
   <div id="meterWrap">

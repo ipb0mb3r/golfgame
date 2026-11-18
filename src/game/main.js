@@ -109,6 +109,7 @@ const input = bindInput(canvas, {
   active,
   swing: t => session.onSwingInput(t),
   skip: () => session.skip(),
+  view: (down, at) => session.onViewInput(down, at),
   club: step => session.changeClub(step),
   canAim: () => active() && session.canAim(),
   start: () => !!session && session.start(),
@@ -323,6 +324,8 @@ window.__golf = {
   testHit: (pw, acc = 0, outcome = 'normal') => api().testHit(pw, acc, outcome),
   skip: () => api().skip(), get canSkip() { return api().canSkip; },
   get warn() { return api().warn; }, get collidersShown() { return api().collidersShown; },
+  // Phase V: the view button (V2) and the camera
+  get view() { return api().view; }, viewTap: () => api().viewTap(), get camFrame() { return api().camFrame; }, cameraAt: () => api().cameraAt(),
   // A2: unload the current hole and load another one in place (tools/session-check.mjs); renderer
   // memory as Three.js counts it (geometries, textures, shader programs)
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return session.hole.id; },
