@@ -162,7 +162,7 @@ See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no
 - [ ] **C10** Mountain look: sky, light, fog, rock and pine colours, distant peaks (shared scenery for the course)
 
 ## Phase 7: Menus
-*Dev, Nov 18, `dev/M-menus`: `index.html` opens on the main menu; any dev link (`?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=`) skips it as before. Menu model in `src/core/menu.js` (pure, tests/menu.test.js), screens in `src/game/menus.js`, settings in `src/game/settings.js`. Browser check: `node tools/menu-check.mjs` (152 checks).*
+*Dev, Nov 18, `dev/M-menus`: `index.html` opens on the main menu; any dev link (`?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=`) skips it as before. Menu model in `src/core/menu.js` (pure, tests/menu.test.js), screens in `src/game/menus.js`, settings in `src/game/settings.js`. Browser check: `node tools/menu-check.mjs` (154 checks).*
 - [x] **M1** Main menu (Play, How to Play, Settings) *(the landing page of `index.html`; How to Play = the 3-click swing, wind/lie, a key table incl. Skip and Pause)*
 - [x] **M0** Play menu modes: **Solo** (pick a course), **vs AI** (shown, disabled, "Coming soon" until Phase T), **Practice** (one hole, or a test spot from `scenarios.js`, grouped by hole) *(owner/PM Phase 7: any-length courses, not "9 holes"; difficulty choice comes with Phase T. Single holes started from the menu hide the old "Try Hole 2" links; the result card has Play again + Menu)*
 - [x] **M2** Hole set select built from `sets.js` (no hardcoded list). Replaces the F8 `?hole=` switcher, but keep `?hole=` as a dev shortcut *(every set is a Solo course unless its `menu` is `'practice'` (its holes = the Practice holes) or `'hidden'` (`?set=` only: `pl-1-2`, `slope-test`); `tag: 'Prototype'` on `prototype3` and `test9`; each course shows holes, par and the personal best. Quitting to the menu drops `?hole/scenario/set` from the address so a reload shows the menu)*
@@ -176,6 +176,8 @@ See `docs/HOLE_GUIDELINES.md`. Branch `course/<hole-id>`, one hole at a time (no
 - [x] The wind on a hole's first card is the wind you play (Tee off no longer re-rolls it: the hole is set up once behind the card)
 - [x] Scorecard groups: a full first group of 9 is **"Out"**, the second **"In"**; after 18 they stay "Holes 19–27"; a short round stays "Holes 1–3"
 - [x] The debug overlay stays below cards and menus (cards z 10, pause menu z 20, overlay z 5)
+- [x] (Owner on PR #40) Hole 2's intro mentions the putt grid only when its green shows one (`intro.grid` / `{grid}`); the compact hole card's 2.5 s countdown starts once the hole is on screen, not when it starts loading
+- Owner answers on PR #40: a 9-hole card shows one "Out" group ✓ · old test sets stay hidden from the menu ✓ · pausing mid-swing cancels the swing with no stroke ✓
 
 ## Phase T: AI rivals (owner, 2026-11-17)
 See DESIGN §8 "Rivals".

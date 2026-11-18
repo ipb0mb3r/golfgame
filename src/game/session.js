@@ -34,13 +34,14 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
 
-  setupHolePage(hole, round, { links });
+  const green = greenStyle(hole.scenery.paint.green, puttGrid);
+  setupHolePage(hole, round, { links, green });
   // A new hole starts behind its intro card. In a round, holes 2+ get the compact hole card instead
   // (PM on PR #38): it closes by itself after TIMING.holeCard ms, or on a tap, so the round keeps its rhythm.
   const compact = !!round && round.number > 1;
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
-  const courseCanvas = paintCourse(hole, terrain.surfaceAt, { green: greenStyle(hole.scenery.paint.green, puttGrid) });
+  const courseCanvas = paintCourse(hole, terrain.surfaceAt, { green });
   const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
   const props = createProps(scene, hole, terrain, cup);
   const rig = createCameraRig(camera, terrain.heightAt);
@@ -177,6 +178,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // One drawn frame. dt = game time (capped), now = this frame's real time in seconds (the meter's clock, S16)
   function frame(dt, now) {
     t += dt;
+    // Compact card: start its countdown on the 2nd frame, when the 1st drawn frame (the hole) is showing
+    if (cardFrames >= 0 && ++cardFrames === 2) { cardFrames = -1; if (state === 'intro') later(teeOff, TIMING.holeCard); }
     // Aiming
     if (state === 'aim') {
       const dir = input.aimDir();
@@ -299,7 +302,9 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   // Start behind the tee looking down the hole, with the intro card on top
   play.reset(start); readyForShot(true); state = 'intro'; updateHud();
-  if (compact) later(teeOff, TIMING.holeCard);
+  // The compact card's countdown starts only once the hole is on screen (owner, PR #40): building a hole
+  // can take a moment on a phone, and that time must not eat into the 2.5 s. See frame().
+  let cardFrames = compact ? 0 : -1;
 
   // Handy for testing in the browser console and for tools/ (window.__golf forwards to this)
   const windHandle = {

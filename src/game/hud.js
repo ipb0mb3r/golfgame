@@ -29,14 +29,17 @@ export function holeHref(id) { return `?hole=${encodeURIComponent(id)}`; }
 // In a round (Phase 6) `round` = { number, of }: the hole is numbered by its place in the round
 // ("Hole 4 of 9"), and the links to other holes are hidden (the round moves on by itself, A6).
 // links = false hides them too (a hole started from the menu: the menu is the way to other holes, M0).
-export function setupHolePage(hole, round = null, { links = true } = {}) {
+// green = the green style actually painted (the putt-grid setting, Phase 7): a step's {grid} is replaced by
+// the hole's `intro.grid` sentence only when the green has a grid, so the card never mentions a grid you can't see.
+export function setupHolePage(hole, round = null, { links = true, green = hole.scenery.paint.green } = {}) {
   const yards = yd(holeLength(hole)); // K12: along the play line on a dogleg
   const num = round ? round.number : hole.number;
   document.title = round ? `Pocket Links: Hole ${num} of ${round.of}` : `Pocket Links: Hole ${num}`;
   $('holeTitle').textContent = round ? `HOLE ${num}/${round.of} · PAR ${hole.par}` : `HOLE ${num} · PAR ${hole.par}`;
   const it = hole.intro;
   $('introSub').innerHTML = (round ? `Hole ${num} of ${round.of} · ` : `Hole ${num} · `) + it.subtitle.replace('{yards}', yards);
-  $('introSteps').innerHTML = it.steps.map(s => `<li>${s}</li>`).join('');
+  const gridLine = green === 'grid' ? (it.grid ?? '') : '';
+  $('introSteps').innerHTML = it.steps.map(s => `<li>${s.replaceAll('{grid}', gridLine)}</li>`).join('');
   $('introBlurb').textContent = it.blurb;
   for (const [id, link] of [['introLink', it.link], ['resultLink', it.resultLink]]) {
     const a = $(id);

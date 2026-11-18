@@ -162,17 +162,19 @@ ok((await app()).menu === 'main', 'quitting practice needs no confirmation');
 // --- 5: a whole round from the menu, to the scorecard and its Menu button ---
 await openItem(['play', 'solo'], 'prototype3');
 for (let hole = 1; hole <= 3; hole++) {
-  // Hole 2+ = the compact hole card (QA R-1). It also closes by itself after 2.5 s (counted from when
-  // the hole was built, which is slow in a headless browser), so the key is sent in the same task as
-  // the state is read, to know for sure that Space is what started it.
-  await page.waitForFunction(() => window.__golf.state === 'intro');
-  const r = await ev(() => {
-    document.activeElement?.blur();
-    const before = window.__golf.state;
-    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true }));
-    return { before, st: window.__golf.state };
-  });
-  ok(r.before === 'intro' && r.st === 'aim', `round hole ${hole}: Space starts it from its ${hole === 1 ? 'intro' : 'compact'} card (${r.before} → ${r.st})`);
+  // Hole 1: Space on the intro card. Hole 3: Space on the compact card, sent in the same task as the
+  // card appears (the card also closes by itself after 2.5 s, and frames are slow in a headless
+  // browser, so this is how we know Space is what started it). Hole 2's card checks the countdown.
+  if (hole !== 2) {
+    const r = await ev(() => {
+      if (window.__golf.state !== 'intro') document.getElementById('summaryBtn').click();
+      document.activeElement?.blur();
+      const before = window.__golf.state;
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true }));
+      return { before, st: window.__golf.state };
+    });
+    ok(r.before === 'intro' && r.st === 'aim', `round hole ${hole}: Space starts it from its ${hole === 1 ? 'intro' : 'compact'} card (${r.before} → ${r.st})`);
+  } else await page.waitForFunction(() => window.__golf.state === 'aim', null, { timeout: 10000 });
   // Put the ball next to the cup and putt until it's over (holed or picked up)
   await ev(() => { const c = window.__golf.HOLE; window.__golf.place(c.x, c.z + 0.6); });
   for (let k = 0; k < 20; k++) {
@@ -184,7 +186,14 @@ for (let hole = 1; hole <= 3; hole++) {
   }
   await page.waitForFunction(() => !document.getElementById('summary').classList.contains('hidden'), null, { timeout: 10000 });
   ok(!(await visible('pauseBtn')), `round hole ${hole}: no pause button on the summary card`);
-  await page.keyboard.press('Enter');                 // the focused Next hole / See the scorecard button
+  if (hole === 1) {
+    // Owner on PR #40: the compact card's 2.5 s countdown starts only once the next hole is on screen
+    const t0 = await ev(() => { document.getElementById('summaryBtn').click(); return window.__golf.app.timers; });
+    await frames(3);
+    const t1 = await ev(() => window.__golf.app.timers);
+    ok(t0 === 0 && t1 === 1, `round hole 2: the compact card's countdown starts after the hole is drawn (timers ${t0} → ${t1})`);
+  } else if (hole === 3) await page.keyboard.press('Enter'); // the focused See the scorecard button
+  // (after hole 2 the summary stays up: hole 3's Space check above presses Next hole itself)
 }
 await page.waitForFunction(() => !document.getElementById('scorecard').classList.contains('hidden'), null, { timeout: 5000 }).catch(() => {});
 ok(await visible('scorecard'), 'the scorecard shows after the last hole');
@@ -214,6 +223,18 @@ ok(!(await ev(() => window.__golf.app.debugOpen)), 'the debug overlay closes in 
 await items(['settings']);
 await click('#setDebug');
 await click('#setGrid [data-value="hole"]');
+// Owner on PR #40: hole 2's intro mentions the grid only when its green has one
+const gridText = async v => {
+  await items(['settings']);
+  await click(`#setGrid [data-value="${v}"]`);
+  await openItem(['play', 'practice'], 'pl-02');
+  await page.waitForFunction(() => window.__golf.state === 'intro');
+  const has = await ev(() => /grid/i.test(document.getElementById('introSteps').textContent));
+  await ev(() => window.__golf.app.toMenu());
+  return has;
+};
+ok(!(await gridText('off')), 'putt grid Off: hole 2\'s intro says nothing about a grid');
+ok(await gridText('hole'), 'putt grid Hole default: hole 2\'s intro mentions its grid');
 
 // A page where storage throws still starts on the menu
 const p2 = await ctx.newPage();
