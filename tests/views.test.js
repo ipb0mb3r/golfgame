@@ -42,13 +42,19 @@ test('V1 (owner on #63): with CAM_AIM_HEIGHT 1 the aiming view is main\'s camera
     }
   } finally { resetTunables(); }
 });
-test('V1: by default the full-shot camera is CAM_AIM_HEIGHT (1.25) × main\'s height, at main\'s spot; putts keep main\'s', () => {
+test('V1: by default (CAM_AIM_HEIGHT 1, owner on #63) the aiming view is main\'s; a raised camera keeps main\'s spot and the ball above the panel', () => {
   const ball = { x: 0, y: 0, z: 0 }, d = { x: 0, z: -1 };
-  const main = mainAimView(flat, ball, d, false), v = aimView(flat, { ball, dir: d }, PORTRAIT);
-  assert.equal(TUNE.CAM_AIM_HEIGHT, 1.25);
-  assert.ok(Math.abs(v.pos.y - 2.6 * 1.25) < 1e-12 && v.pos.x === main.pos.x && v.pos.z === main.pos.z);
-  assert.ok(inBand(frac(v, ball, PORTRAIT), PORTRAIT), 'the ball stays above the meter panel');
+  const main = mainAimView(flat, ball, d, false);
+  assert.equal(TUNE.CAM_AIM_HEIGHT, 1);
+  assert.deepEqual(aimView(flat, { ball, dir: d }, PORTRAIT), main);
   assert.deepEqual(aimView(flat, { ball, dir: d, putt: true }, PORTRAIT), mainAimView(flat, ball, d, true));
+  try {
+    setTunable('CAM_AIM_HEIGHT', 1.5);
+    const v = aimView(flat, { ball, dir: d }, PORTRAIT);
+    assert.ok(Math.abs(v.pos.y - 2.6 * 1.5) < 1e-12 && v.pos.x === main.pos.x && v.pos.z === main.pos.z);
+    assert.ok(inBand(frac(v, ball, PORTRAIT), PORTRAIT), 'the ball stays above the meter panel');
+    assert.deepEqual(aimView(flat, { ball, dir: d, putt: true }, PORTRAIT), mainAimView(flat, ball, d, true), 'putts keep main\'s');
+  } finally { resetTunables(); }
 });
 test('V1: facing a steep upslope the camera tilts down so the ball stays above the meter panel', () => {
   const wall = (x, z) => Math.max(0, -z - 5) * 0.6; // a 60% bank from 5 m ahead

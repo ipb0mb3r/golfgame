@@ -57,7 +57,7 @@ export function lineClear(heightAt, a, b, clear = 0) {
 // V1: the aiming view: main's camera as before Phase V (owner on PR #63: "the aiming camera was fine
 // before"; the 🔍 Landing button is how the player looks at the marker). Behind the ball on the aim
 // line: full shots CAM.aim (7 m back, 2.6 m × CAM_AIM_HEIGHT up, looking 30 m ahead), putts CAM.putt
-// (3.5 m, 1.6 m, 5 m). CAM_AIM_HEIGHT (owner on #63: "a bit too low"): 1 = main's height, default 1.25.
+// (3.5 m, 1.6 m, 5 m). CAM_AIM_HEIGHT: 1 = main's height, the default (owner on #63: "the today camera is the best").
 // The one change: when the ball would show below the free band (landscape phones, where it hid behind
 // the hint line, or facing a steep upslope), the camera tilts down just enough that the ball sits at
 // CAM.ballMax of the band. Same spot; wherever main showed the ball, the view is exactly main's.

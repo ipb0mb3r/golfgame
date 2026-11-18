@@ -168,7 +168,7 @@ export const TUNABLES = Object.freeze({
   RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)
   RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
   // Camera (Phase V): the aiming view's height (V1), ball-flight variety (V3) and the hole flyover (V4)
-  CAM_AIM_HEIGHT:        { def: 1.25, min: 0.5,   max: 3 },    // the full-shot aiming camera's height × main's 2.6 m (owner on #63: main's was "a bit too low"); putts keep main's
+  CAM_AIM_HEIGHT:        { def: 1,    min: 0.5,   max: 3 },    // the full-shot aiming camera's height × main's 2.6 m (owner on #63, after comparing 1 / 1.25 / 1.5: "the today camera is the best"); putts keep main's
   CAM_VARIETY:           { def: 1,    min: 0,     max: 1 },    // 1 = varied flight camera, 0 = classic (always behind); the Settings switch sets it too
   CAM_VARIETY_MIN:       { def: 60,   min: 0,     max: 200 },  // m: shots carrying less than this (chips, pitches) are always filmed from behind
   CAM_W_BEHIND:          { def: 0.5,  min: 0,     max: 1 },    // weights of the flight views (normalised)
