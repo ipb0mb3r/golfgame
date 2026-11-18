@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import { applyTune, tuneSummary } from '../core/tune.js';
 import { MAX_FRAME_DT } from '../core/config.js';
-import { HOLES, SETS, resolveHole, getHole, resolveSet } from '../holes/sets.js';
+import { HOLES, SETS, resolveHole, getHole, resolveSet, readyHole } from '../holes/sets.js';
 import { createRound, isNewBest, toParText, bestId } from '../core/round.js';
 import { resolveDifficulty, DEFAULT_DIFFICULTY } from '../core/rivals.js';
 import { SCENARIOS, resolveScenario } from '../holes/scenarios.js';
@@ -93,7 +93,8 @@ const extraInfo = () => [
 ];
 function loadHole(h, opts = {}) {
   session?.dispose();
-  session = createHoleSession(h, {
+  // X12: holes are built and checked on first use, so only the holes played are paid for
+  session = createHoleSession(readyHole(h), {
     renderer, input, seed: opts.seed, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
   });

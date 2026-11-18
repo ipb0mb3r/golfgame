@@ -12,6 +12,7 @@ import { ss, ell, bump, meshAxis } from '../core/terrain.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from '../core/config.js';
 import { createRng } from '../core/rng.js';
 import { createHolePlay } from '../core/play.js';
+import { lazyHole } from './lazy.js';
 
 // ---- geometry helpers ----
 // Distance from (x, z) to a polyline of points { x, z, w? }. Returns { d, w, t } where w is the
@@ -132,7 +133,31 @@ const SCENERY = {
 //   ob: { x0, x1, z0, z1 }   out-of-bounds box; map = the box + margin
 //   banks: k  how fast the rough rises away from the fairway (m per m beyond 8 m), default 0.03
 //   obstacles: [...]  trees and boulders
-export function makeMtnHole(spec0) {
+// X12: a hole is built on first use (src/holes/lazy.js). The light fields below are all the menus,
+// rounds and rivals read; the first read of anything else (heightAt, surfaceAt, map, obstacles, ...)
+// builds the grids and plants the forest, once.
+const MTN_HEAVY = ['map', 'features', 'obstacles', 'heightAt', 'surfaceAt', 'scenery'];
+function mtnMeta(spec) {
+  return {
+    id: spec.id, number: spec.number, name: spec.name, par: spec.par, difficulty: spec.difficulty,
+    maxStrokes: spec.maxStrokes ?? spec.par + 6,
+    tee: spec.tee, cup: spec.cup,
+    ...(spec.aimTarget ? { aimTarget: spec.aimTarget } : {}),
+    ...(spec.teeFacing ? { teeFacing: spec.teeFacing } : {}), // S21: the point a turned tee box faces
+    ...(spec.playLine ? { playLine: spec.playLine } : {}),
+    bag: spec.bag ?? ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
+    windMax: spec.windMax ?? 4.5,
+    weather: { type: 'clear', wetness: 0 },
+    surfaceOverrides: spec.surfaceOverrides ?? {},
+    intro: spec.intro,
+  };
+}
+export function makeMtnHole(spec) {
+  const meta = mtnMeta(spec);
+  return lazyHole(meta, MTN_HEAVY, () => buildMtnHole(spec, meta));
+}
+
+function buildMtnHole(spec0, meta) {
   // the OB line keeps at least 40 m of rough around the green, so the trees behind it fit in bounds
   const g0 = spec0.green, m0 = 40;
   const spec = { ...spec0, ob: {
@@ -311,16 +336,7 @@ export function makeMtnHole(spec0) {
   const lenZ = OB.z1 - OB.z0, midZ = (OB.z0 + OB.z1) / 2;
   // Water is painted on the ground (the creek follows the slope), so there is no flat water plane.
   const hole = {
-    id: spec.id, number: spec.number, name: spec.name, par: spec.par, difficulty: spec.difficulty,
-    maxStrokes: spec.maxStrokes ?? spec.par + 6,
-    tee, cup: spec.cup,
-    ...(spec.aimTarget ? { aimTarget: spec.aimTarget } : {}),
-    ...(spec.teeFacing ? { teeFacing: spec.teeFacing } : {}), // S21: the point a turned tee box faces
-    ...(spec.playLine ? { playLine: spec.playLine } : {}),
-    bag: spec.bag ?? ['driver', '3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
-    windMax: spec.windMax ?? 4.5,
-    weather: { type: 'clear', wetness: 0 },
-    surfaceOverrides: spec.surfaceOverrides ?? {},
+    ...meta,
     map,
     features: { green: G, bunkers, ponds, rocks, creek, fairways, course: 'mtn' },
     obstacles: spec.obstacles ?? [],
@@ -340,7 +356,6 @@ export function makeMtnHole(spec0) {
       minimap: minimapSize(OB),
       ...(spec.scenery ?? {}),
     },
-    intro: spec.intro,
   };
   if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways)];
   return hole;

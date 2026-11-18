@@ -16,8 +16,10 @@ import mtn09 from './mtn-09.js';
 import { validateHole } from '../core/validate.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
-// Every hole is checked when it loads (Gate A T7): a typo fails here, naming the hole and the field.
-export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN].map(h => [validateHole(h).id, h]));
+// X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
+// (src/holes/lazy.js), and a hole is checked (Gate A T7) when the page first plays it (readyHole), so
+// a page only pays for the holes it plays. node --test checks every hole in full (tests/validate.test.js).
+export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN].map(h => [h.id, h]));
 export const DEFAULT_HOLE = hole1.id;
 
 // A set (course) is a playlist of hole ids of ANY length, and the same hole may appear in several
@@ -50,6 +52,15 @@ export function resolveHole(id) {
   return Object.hasOwn(HOLES, key) ? { hole: HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
 }
 export const getHole = id => resolveHole(id).hole;
+
+// X12: a hole about to be played: built (if it was lazy) and checked once (Gate A T7, a typo fails
+// here naming the hole and the field), without the shot simulations, which node --test runs on
+// every hole. Returns the hole. The game calls it for every hole it loads (src/game/main.js).
+const ready = new WeakSet();
+export function readyHole(hole) {
+  if (!ready.has(hole)) { validateHole(hole, { shots: false }); ready.add(hole); }
+  return hole;
+}
 
 // ?set= value → set, matched case-insensitively; null when missing or unknown.
 export function resolveSet(id) {
