@@ -4,11 +4,18 @@ An original, simple 3D arcade golf game that runs in the browser, with a three-c
 
 ## Play
 
-Once GitHub Pages is switched on, the game is at **https://ipb0mb3r.github.io/golfgame/**.
+Once GitHub Pages is switched on, the game is at **https://ipb0mb3r.github.io/golfgame/**. It opens on the main menu:
+
+- **Play** → **Solo** (pick a course and play it as a round, with a scorecard and your personal best), **vs AI** (coming soon) or **Practice** (one hole, or a test spot).
+- **How to Play**: the swing, the wind and the keys.
+- **Settings**: the debug overlay and the putt grid (saved on your device).
+- While you play, the **II** button (or Esc) pauses: Resume, Restart hole, Quit to menu.
+
+The links below are shortcuts for testing: they skip the menu and start a hole straight away.
 
 | Hole | Link | What it is |
 | --- | --- | --- |
-| 1 | [`index.html?hole=pl-01`](https://ipb0mb3r.github.io/golfgame/?hole=pl-01) (also the default) | Flat par 3, 166 yards, over a pond to a green with three bunkers |
+| 1 | [`index.html?hole=pl-01`](https://ipb0mb3r.github.io/golfgame/?hole=pl-01) | Flat par 3, 166 yards, over a pond to a green with three bunkers |
 | 2 | [`index.html?hole=pl-02`](https://ipb0mb3r.github.io/golfgame/?hole=pl-02) | Hilly par 5, about 490 yards, with a two-level green (prototype) |
 | 3 | [`index.html?hole=pl-03`](https://ipb0mb3r.github.io/golfgame/?hole=pl-03) | Par 4 dogleg right with trees in play and a rock outcrop (prototype, Phase K) |
 
@@ -21,7 +28,8 @@ The intro and score cards link from one hole to the other. Old links to `hole2.h
 | Aim | ◀ ▶ arrow keys (or A / D) | Hold the ◀ ▶ buttons |
 | Change club | ▲ ▼ arrow keys (or W / S) | ‹ › buttons |
 | Swing | Space (three presses) | Click the course or the SWING button (three times) |
-| Debug overlay | ` (backtick) | add `?debug=1` to the address (works on a phone) |
+| Pause | Esc | the II button |
+| Debug overlay | ` (backtick) | Settings → Debug overlay, or add `?debug=1` to the address |
 
 **The three-click swing**
 
@@ -41,7 +49,7 @@ The game is made of JavaScript modules, and browsers only load those from a web 
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000 (hole 1) or http://localhost:8000/?hole=pl-02 (hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.160.0/`).
+Then open http://localhost:8000 (the menu) or http://localhost:8000/?hole=pl-02 (straight to hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.160.0/`).
 
 Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind every time.
 

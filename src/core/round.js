@@ -10,7 +10,7 @@
 //   round.advance()        on to the next hole; returns the new current, or null when the round is done
 //   round.restart()        back to hole 1 with an empty scorecard (same seed, so the same winds)
 //   round.totals           { played, strokes, par, toPar, penalties, pickedUp }
-//   round.groups()         the scorecard in groups of SCORECARD_GROUP (Front 9 / Back 9 / …) with subtotals
+//   round.groups()         the scorecard in groups of SCORECARD_GROUP (Out / In / Holes 19–27 …) with subtotals
 //
 // Pure: no DOM, no Three.js. The game layer (main.js) loads a hole session for round.current.
 import { createRng } from './rng.js';
@@ -76,8 +76,9 @@ export function createRound(set, { seed = 1, getHole }) {
   function restart() { index = 0; cards = []; return round.current; }
 
   // The scorecard in groups of `size` holes. Every hole of the round is listed (holes not played yet
-  // have strokes null). One group → "Holes 1–N"; otherwise the first two full groups are "Front 9"
-  // and "Back 9" (for the usual size 9), and the rest are named by their hole numbers.
+  // have strokes null). With the usual size 9, a full first group is "Out" and a full second group
+  // "In" (golf's names for the front and back nine; a 9-hole round is one "Out" group, PM Phase 7);
+  // every other group is named by its hole numbers ("Holes 1–3", "Holes 19–27").
   function groups(size = SCORECARD_GROUP) {
     const out = [];
     for (let from = 0; from < N; from += size) {
@@ -85,9 +86,8 @@ export function createRound(set, { seed = 1, getHole }) {
       const rows = [];
       for (let i = from; i < to; i++) rows.push(cards[i] ?? { number: i + 1, holeId: holes[i].id, name: holes[i].name, par: holes[i].par, strokes: null, toPar: null, pickedUp: false, penalties: 0, result: '' });
       const full = to - from === size;
-      const label = N <= size ? rangeLabel(from, to)
-        : size === 9 && full && g === 0 ? 'Front 9'
-        : size === 9 && full && g === 1 ? 'Back 9'
+      const label = size === 9 && full && g === 0 ? 'Out'
+        : size === 9 && full && g === 1 ? 'In'
         : rangeLabel(from, to);
       out.push({ label, from: from + 1, to, rows, ...subtotal(rows) });
     }

@@ -86,6 +86,9 @@
   .overlay { position: fixed; inset: 0; display: flex; align-items: flex-start; justify-content: center; background: rgba(5, 20, 12, .55); padding: 16px;
     overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; -webkit-overflow-scrolling: touch; }
   .overlay.hidden { display: none; }
+  /* Phase 7: cards and menus sit above the debug overlay (z 5) and the pause button; the pause menu above every card */
+  .overlay { z-index: 10; }
+  #pause { z-index: 20; }
   .card { background: #13291d; border: 1px solid rgba(255,255,255,.2); border-radius: 16px; padding: 22px 26px; max-width: 460px; width: 100%; margin: auto; box-shadow: 0 10px 40px rgba(0,0,0,.5); }
   .card .big { position: sticky; bottom: 0; box-shadow: 0 -6px 14px #13291d; }
   .card h1 { margin: 0 0 4px; color: var(--accent); font-size: 28px; }
@@ -141,6 +144,59 @@
     table.sc th:first-child { width: 3.1em; }
     table.sc th:last-child, table.sc td.sum { width: 2.3em; }
   }
+  /* Phase 7: menus (src/game/menus.js). An opaque sky-to-grass background: no hole is loaded behind them. */
+  #menu { background: linear-gradient(180deg, #7cc3f2 0%, #a9dcff 45%, #5fa64f 45.2%, #2f6b2c 100%); }
+  #menu .card { max-width: 440px; }
+  #menu h1.logo { text-align: center; font-size: 38px; margin: 4px 0 2px; letter-spacing: .5px; }
+  #menu .tagline { text-align: center; margin: 0 0 16px; color: var(--muted); }
+  #menu .big { position: static; box-shadow: none; min-height: 48px; }
+  .card .big.alt { background: var(--panel); border-color: rgba(255,255,255,.35); }
+  .menuHead { display: flex; align-items: center; gap: 10px; margin: 0 0 12px; }
+  .menuHead h1 { margin: 0; font-size: 24px; }
+  .backBtn { min-width: 48px; min-height: 44px; padding: 6px 12px; font-weight: 800; font-size: 16px; }
+  .item { display: block; width: 100%; text-align: left; margin: 0 0 8px; padding: 12px 14px; min-height: 56px; border-radius: 12px;
+    background: rgba(255,255,255,.06); border-color: rgba(255,255,255,.25); }
+  .item b { font-size: 17px; }
+  .item small { display: block; margin-top: 3px; color: var(--muted); font-size: 13px; line-height: 1.35; }
+  .item.small { min-height: 48px; padding: 9px 12px; }
+  .item.small b { font-size: 15px; }
+  .item:hover:not(:disabled), .item:focus-visible { border-color: var(--accent); background: rgba(255,212,71,.1); }
+  .item:disabled { opacity: .55; cursor: default; }
+  .tag { display: inline-block; vertical-align: 2px; margin-left: 4px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800;
+    letter-spacing: .3px; background: rgba(255,212,71,.18); color: var(--accent); }
+  .tag.soon { background: rgba(255,255,255,.14); color: #fff; }
+  .tag.par { background: rgba(255,255,255,.1); color: var(--text); }
+  #menu h3 { margin: 14px 0 6px; font-size: 13px; text-transform: uppercase; letter-spacing: .8px; color: var(--accent); }
+  #menu h4 { margin: 10px 0 6px; font-size: 13px; color: var(--muted); font-weight: 700; }
+  #menu .howList { padding-left: 20px; margin: 0 0 10px; font-size: 15px; line-height: 1.5; }
+  #menu .howList li { margin-bottom: 6px; }
+  table.keys { width: 100%; border-collapse: collapse; font-size: 13px; margin: 4px 0 8px; }
+  table.keys th, table.keys td { text-align: left; padding: 5px 4px; border-bottom: 1px solid rgba(255,255,255,.12); vertical-align: top; }
+  table.keys th { color: var(--muted); font-weight: 600; }
+  .setRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .setRow > div:first-child { flex: 1; }
+  .setRow small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .setRow.stack { flex-direction: column; align-items: stretch; }
+  .switch { min-width: 72px; min-height: 44px; font-weight: 800; }
+  .switch.on { background: #2f8f46; border-color: #8ef0a5; }
+  .seg { display: flex; gap: 6px; }
+  .seg button { flex: 1; min-height: 44px; padding: 6px 8px; font-size: 14px; }
+  .seg button.on { background: #2f8f46; border-color: #8ef0a5; font-weight: 800; }
+  #setSaved { font-size: 12px; margin: 10px 0 0; }
+  body.inMenu #info, body.inMenu #side, body.inMenu #bottom, body.inMenu #msg, body.inMenu #pauseBtn { display: none; }
+
+  /* Phase 7 (M3): the pause button, just under the scorecard panel (the top of a 320 px phone has no room
+     between the scorecard and the wind box), and the pause menu */
+  #pauseBtn { position: absolute; left: 0; top: calc(100% + 8px); width: 44px; height: 44px; padding: 0; font-size: 16px; font-weight: 900;
+    line-height: 1; letter-spacing: -1px; }
+  #pauseBtn[hidden] { display: none; }
+  #pause .card { max-width: 360px; text-align: center; }
+  #pause .big { position: static; box-shadow: none; min-height: 48px; }
+  #pause .row2 { position: static; box-shadow: none; }
+  .card .big.danger { background: #9b2c2c; border-color: #ff8a8a; }
+  .linkBtn { background: none; border: none; color: var(--accent); text-decoration: underline; padding: 8px; min-height: 40px; font-size: 14px; }
+  #result .row2 { margin-top: 10px; }
+
   /* Debug overlay (backtick key) */
   #debug { position: fixed; left: 12px; bottom: 150px; margin: 0; font: 12px/1.45 ui-monospace, Menlo, Consolas, monospace;
     color: #e9ffe9; background: rgba(0,0,0,.66); border-radius: 8px; padding: 8px 10px; pointer-events: none; white-space: pre-wrap; z-index: 5;
@@ -158,7 +214,24 @@
     .card p { font-size: 13px; margin: 6px 0; }
     .card .big { margin-top: 6px; padding: 9px; font-size: 16px; }
     #resultTitle { font-size: 30px; }
+    #menu .card { max-width: 560px; }
+    #menu h1.logo { font-size: 28px; }
+    #menu .tagline { margin-bottom: 8px; }
+    .item { min-height: 48px; padding: 8px 12px; margin-bottom: 6px; }
+    #pauseBtn { left: calc(100% + 8px); top: 0; } /* Phase 7: beside the scorecard; below it would sit on the hint and meter */
     #debug { top: 12px; bottom: auto; font-size: 10px; line-height: 1.3; padding: 6px 8px; white-space: pre-wrap; } /* debug.js fits it between the panels */
+  }
+
+  /* M5: very short landscape phones (568x320): the scorecard's Play again / Menu bar takes less room */
+  @media (max-height: 360px) {
+    .card .row2 { padding-top: 2px; box-shadow: 0 -4px 8px #13291d; }
+    .card .row2 .big { margin-top: 2px; padding: 6px; font-size: 14px; min-height: 40px; }
+    #scorecard h1 { font-size: 18px; margin: 0; }
+    #scorecard h2 { margin-bottom: 4px; }
+    table.sc { margin-bottom: 6px; }
+    #scoreTotal { font-size: 15px; margin: 2px 0; }
+    #scoreBest, #scoreNotes { margin: 2px 0; }
+    #menu .big, #pause .big { min-height: 44px; padding: 8px; }
   }
 
   @media (max-width: 560px) {
@@ -173,6 +246,16 @@
     #club button { padding: 6px 8px; }
     #swingBtn { padding: 8px 10px; }
     #club .name b { font-size: 14px; }
+  }
+  /* M5: the narrowest phones (320 px): the controls row fits (SWING was cut off on the right) */
+  @media (max-width: 360px) {
+    #controls { gap: 5px; }
+    .aimBtn { padding: 8px 11px; }
+    #club { padding: 4px; gap: 2px; }
+    #club button { padding: 6px 7px; }
+    #club .name b { font-size: 13px; }
+    #club .name small { font-size: 11px; }
+    #swingBtn { padding: 8px 8px; font-size: 14px; }
   }
   /* Short screens (phone landscape): the minimap shrinks, keeping its shape, so it ends above the
      meter and controls (H1, PR #15). After the narrow-screen rules so it wins on small phones too. */
@@ -253,6 +336,7 @@
   <div>Lie: <b id="lieTxt">Tee box</b></div>
   <div>Aim: <b id="aimTxt">-</b></div>
   <div id="slopeRow">Slope: <b id="slopeTxt">Flat</b></div>
+  <button id="pauseBtn" title="Pause (Esc)" aria-label="Pause" hidden>II</button>
 </div>
 
 <div id="side">
@@ -301,6 +385,7 @@
     <p id="introBlurb"></p>
     <button class="big" id="startBtn">Tee off</button>
     <p style="text-align:center;margin-bottom:0"><a id="introLink" href="#"></a></p>
+    <p style="text-align:center;margin:0"><button class="linkBtn" id="introMenuBtn">Back to menu</button></p>
   </div>
 </div>
 
@@ -308,7 +393,10 @@
   <div class="card">
     <h1 id="resultTitle">Par</h1>
     <p id="resultText"></p>
-    <button class="big" id="againBtn">Play again</button>
+    <div class="row2">
+      <button class="big" id="againBtn">Play again</button>
+      <button class="big alt" id="resultMenuBtn">Menu</button>
+    </div>
     <p style="text-align:center;margin-bottom:0"><a id="resultLink" href="#"></a></p>
   </div>
 </div>
@@ -345,9 +433,85 @@
     </div>
   </div>
 </div>
+<!-- Phase 7 (M3): the pause menu (button or Esc). Quitting a round asks first. -->
+<div id="pause" class="overlay hidden">
+  <div class="card">
+    <h1>Paused</h1>
+    <h2 id="pauseSub"></h2>
+    <div id="pauseMain">
+      <button class="big" id="resumeBtn">Resume</button>
+      <button class="big alt" id="restartBtn">Restart hole</button>
+      <button class="big alt" id="quitBtn">Quit to menu</button>
+    </div>
+    <div id="quitConfirm" hidden>
+      <p id="quitText">Quit this round? Your scores so far will be lost.</p>
+      <div class="row2">
+        <button class="big danger" id="quitYesBtn">Quit round</button>
+        <button class="big alt" id="quitNoBtn">Keep playing</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 7: the menus (src/game/menus.js). The lists are built from sets.js and scenarios.js. -->
+<div id="menu" class="overlay hidden">
+  <div class="card">
+    <section data-screen="main">
+      <h1 class="logo">Pocket Links</h1>
+      <p class="tagline">Three-click arcade golf</p>
+      <button class="big" data-go="play" id="menuPlayBtn">Play</button>
+      <button class="big alt" data-go="how">How to Play</button>
+      <button class="big alt" data-go="settings">Settings</button>
+    </section>
+    <section data-screen="play" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Play</h1></div>
+      <div id="menuModes"></div>
+    </section>
+    <section data-screen="solo" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Solo: pick a course</h1></div>
+      <div id="menuCourses"></div>
+    </section>
+    <section data-screen="practice" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Practice</h1></div>
+      <h3>A hole</h3>
+      <div id="menuPracticeHoles"></div>
+      <h3 style="margin-top:18px">A test spot</h3>
+      <div id="menuSpots"></div>
+    </section>
+    <section data-screen="how" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>How to Play</h1></div>
+      <ol class="howList">
+        <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow ring shows where the ball lands.</li>
+        <li><b>Pick a club</b> with ‹ › or ▲ ▼. The best club is chosen for you.</li>
+        <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the ⚑ mark is about the pin), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right.</li>
+        <li>Watch the <b>wind</b> (top right) and the <b>lie</b>: rough and sand cap your power (the gray part of the meter).</li>
+        <li>Water and out of bounds cost a penalty stroke. Sink it in as few strokes as you can.</li>
+      </ol>
+      <table class="keys">
+        <tr><th>Swing</th><td>Space, a tap on the course, or SWING</td></tr>
+        <tr><th>Aim</th><td>◀ ▶ or A / D</td></tr>
+        <tr><th>Club</th><td>▲ ▼ or W / S</td></tr>
+        <tr><th>Skip</th><td>⏩ Skip, Space or Enter while the ball rolls</td></tr>
+        <tr><th>Pause</th><td>the II button or Esc</td></tr>
+      </table>
+    </section>
+    <section data-screen="settings" hidden>
+      <div class="menuHead"><button class="backBtn" data-back aria-label="Back">‹</button><h1>Settings</h1></div>
+      <div class="setRow">
+        <div><b>Debug overlay</b><small>Ball, wind and meter numbers while you play (also the ` key).</small></div>
+        <button class="switch" id="setDebug" role="switch" aria-checked="false" data-setting="debug">Off</button>
+      </div>
+      <div class="setRow stack">
+        <div><b>Putt grid</b><small>Grid lines on the green help you read the slope.</small></div>
+        <div class="seg" id="setGrid"></div>
+      </div>
+      <p id="setSaved"></p>
+    </section>
+  </div>
+</div>
 <pre id="debug" class="hidden"></pre>
 
-<!-- The game: src/game/main.js plays a round from ?set=<id>, or one hole from ?hole=<id> (default pl-01) -->
+<!-- The game: src/game/main.js opens the menu (Phase 7); dev links skip it: ?set=<id> plays a round, ?hole=<id> / ?scenario=<id> one hole -->
 <script type="module" src="src/game/main.js"></script>
 </body>
 </html>

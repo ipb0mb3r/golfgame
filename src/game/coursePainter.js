@@ -16,8 +16,10 @@ const GREEN_STYLES = {
   },
 };
 
-export function paintCourse(hole, surfaceAt) {
-  const { map } = hole, { res, stripe, green, border } = hole.scenery.paint;
+// `green` (optional) replaces the hole's own green style: the putt-grid setting (M4, core/menu.js greenStyle)
+export function paintCourse(hole, surfaceAt, { green: greenOverride = null } = {}) {
+  const { map } = hole, { res, stripe, border } = hole.scenery.paint;
+  const green = greenOverride ?? hole.scenery.paint.green;
   const W = Math.round((map.x1 - map.x0) * res), H = Math.round((map.z1 - map.z0) * res);
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;

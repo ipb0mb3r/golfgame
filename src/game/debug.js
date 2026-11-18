@@ -14,6 +14,7 @@ const SHORT_SCREEN = '(max-height: 500px)'; // same as the media query in index.
 // last resort the bottom lines are cut off (debug only, never over the HUD).
 const FONT_STEPS = [10, 9, 8, 7]; // px, short screens only (the first is the CSS size)
 const MIN_W = 180;                 // px: narrower than this isn't worth trying
+const PAUSE_W = 44;                // px: the pause button (index.html #pauseBtn), beside the scorecard on short screens
 let skipSize = { w: 110, h: 38 };  // px, measured whenever Skip is shown (it is hidden between shots)
 
 function skipBox(bottom) {
@@ -38,7 +39,9 @@ function place(el) {
   s.bottom = '';
   const info = document.getElementById('info').getBoundingClientRect();
   const side = document.getElementById('side').getBoundingClientRect();
-  const left = info.right + GAP;
+  // Phase 7: the pause button sits right of the scorecard here; its place is kept free even while it is hidden
+  const pause = document.getElementById('pauseBtn');
+  const left = Math.max(info.right, pause ? info.right + GAP + PAUSE_W : 0) + GAP;
   // Two ways to fit: the whole gap between the scorecard and the minimap, ending above Skip where
   // they overlap sideways; or narrower, ending left of Skip, down to the bottom panel. The one that
   // keeps the bigger font wins (the wide one on a tie).
@@ -77,6 +80,8 @@ export function createDebug(el) {
   return {
     get visible() { return on; },
     toggle() { on = !on; el.classList.toggle('hidden', !on); if (on) place(el); },
+    // Phase 7: the Settings value when a game starts, closed in the menus
+    show(v) { if (!!v !== on) this.toggle(); },
     // rawDt = real frame time; info() builds the lines only when the overlay is shown
     frame(rawDt, info) {
       frames++; acc += rawDt;

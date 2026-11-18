@@ -29,11 +29,12 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 ## Commands
 | What | Command |
 |---|---|
-| Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (hole 1), http://localhost:8000/?hole=pl-02 (one hole) or http://localhost:8000/?set=test9 (a round, Phase 6) (ES modules don't load from `file://`) |
+| Run locally | `python3 -m http.server 8000`, then open http://localhost:8000 (the main menu, Phase 7), http://localhost:8000/?hole=pl-02 (one hole) or http://localhost:8000/?set=test9 (a round, Phase 6) (ES modules don't load from `file://`) |
 | Run tests | `node --test` (from the repo root; finds every `tests/*.test.js`) |
 | Check the old-pages baseline in a browser | `node tools/baseline.mjs check` (dev/QA only, needs Playwright, see Tools) |
 | Re-record baseline v2 | `node tools/record-baseline-v2.mjs` (only for an intentional feel change, see coding rule 8; `--dry` shows what would move) |
 | Check hole load/unload | `node tools/session-check.mjs` (dev/QA only, needs Playwright) |
+| Check the menus (every path, pause, quit, play again) | `node tools/menu-check.mjs` (dev/QA only, needs Playwright) |
 
 ## Current state (Nov 2026)
 - One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`. Since Gate A Fix pass 1, `main.js` is the long-lived app and each hole is a disposable session (`src/game/session.js`); the hole flow (what happens after each shot) is decided in core (`play.swing` / `play.next` / `play.proceed`).
@@ -41,6 +42,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
 - Since Fix pass 2: the meter reads the real click time (`pressMeterAt`), rolls always end (`stopped.reason`), ⏩ Skip (`play.skip()`), default aim (`play.target`, hole `aimTarget`), designer tuning S17. v1 exceptions for intentional physics changes live in `tests/baseline-exceptions.js`.
 - Since Phase 6: `?set=<id>` plays a round (`src/core/round.js` + `src/game/roundUi.js`): a course is a playlist of hole ids of **any length**, never assume 9. Test sets `prototype3`, `test9`.
+- Since Phase 7: `index.html` opens on the main menu (`src/game/menus.js`, lists from `src/core/menu.js`): Solo (courses from `sets.js`), Practice (holes and test spots), pause menu, settings. Any dev link (`?hole=`, `?scenario=`, `?set=`, `?seed=`, `?tune=`, `?debug=`) skips the menu.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
 
 ## Tools (dev and QA only, never part of the game)

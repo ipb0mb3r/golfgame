@@ -19,25 +19,29 @@ import { buildScene, disposeScene } from './scene.js';
 import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
 import { createHud, createMinimap, setupHolePage, yd } from './hud.js';
+import { greenStyle } from '../core/menu.js';
 
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
 
 // opts = { renderer, input (from bindInput), seed, start (scenario start or null), info (extra debug lines),
 //          round (Phase 6, or null): { number, of, onDone(finished) } — the hole's place in the round, and
-//          what to call when the hole is over instead of showing the single-hole result card }
-export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null }) {
+//          what to call when the hole is over instead of showing the single-hole result card,
+//          puttGrid (Phase 7 setting, core/menu.js PUTT_GRID), links (false: hide the intro card's ?hole= links,
+//          for a hole started from the menu) }
+export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true }) {
   const play = createHolePlay(hole, { seed });
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
 
-  setupHolePage(hole, round);
+  const green = greenStyle(hole.scenery.paint.green, puttGrid);
+  setupHolePage(hole, round, { links, green });
   // A new hole starts behind its intro card. In a round, holes 2+ get the compact hole card instead
   // (PM on PR #38): it closes by itself after TIMING.holeCard ms, or on a tap, so the round keeps its rhythm.
   const compact = !!round && round.number > 1;
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
-  const courseCanvas = paintCourse(hole, terrain.surfaceAt);
+  const courseCanvas = paintCourse(hole, terrain.surfaceAt, { green });
   const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
   const props = createProps(scene, hole, terrain, cup);
   const rig = createCameraRig(camera, terrain.heightAt);
@@ -46,9 +50,17 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   // Game state (core/states.js GAME_STATES): intro | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
+  // The hole's timers (what happens after a shot, the compact card closing). They stop while the
+  // game is paused (M3) and carry on with the time they had left.
   let timers = [];
-  let disposed = false;
-  const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+  let disposed = false, paused = false;
+  function later(fn, ms) {
+    const tm = { fn, due: performance.now() + ms, left: ms, id: 0 };
+    const run = () => { timers = timers.filter(x => x !== tm); fn(); };
+    tm.run = run;
+    if (!paused) tm.id = setTimeout(run, ms);
+    timers.push(tm);
+  }
   const shown = { x: 0, y: 0, z: 0 }; // where the ball is drawn (differs from the ball only while it drops in the cup)
   let holedT = 0, t = 0, lastAimKey = '';
   let shotT = 0, skipShown = false; // X9: game time since the hit, and whether ⏩ Skip is showing
@@ -59,7 +71,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const updateHud = () => hud.update(state, meter.power);
   const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir });
 
-  function clearTimers() { timers.forEach(clearTimeout); timers = []; }
+  function clearTimers() { timers.forEach(tm => clearTimeout(tm.id)); timers = []; }
 
   function resetGame() {
     clearTimers();
@@ -166,6 +178,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // One drawn frame. dt = game time (capped), now = this frame's real time in seconds (the meter's clock, S16)
   function frame(dt, now) {
     t += dt;
+    // Compact card: start its countdown on the 2nd frame, when the 1st drawn frame (the hole) is showing
+    if (cardFrames >= 0 && ++cardFrames === 2) { cardFrames = -1; if (state === 'intro') later(teeOff, TIMING.holeCard); }
     // Aiming
     if (state === 'aim') {
       const dir = input.aimDir();
@@ -243,10 +257,36 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   }
 
   // Tee off: leave the intro (or compact hole card). Only once: a tap and the card's own timer can both ask.
+  // The wind shown behind the card is the wind you play (PM Phase 7: hole 1's card showed one wind and
+  // Tee off re-rolled it). The hole still resets here as before, so the seeded random numbers after
+  // tee off (lip-outs, leaves) are the same as before this fix and the v1 baseline (shot #9, a slice
+  // into the trees) doesn't move; only the wind is put back to the one on the card.
   function teeOff() {
-    if (state !== 'intro' || disposed) return;
+    if (state !== 'intro' || disposed || paused) return false;
     $intro().classList.add('hidden'); $holeCard().classList.add('hidden');
+    const cardWind = { x: wind.x, y: wind.y, z: wind.z };
     resetGame();
+    Object.assign(wind, cardWind);
+    updateHud();
+    return true;
+  }
+
+  // Pause (M3). A swing in progress is cancelled with no stroke (the meter runs on real time, so it
+  // can't be frozen fairly); the timers stop and keep the time they had left. main.js stops sending
+  // frames and input while paused.
+  function pause() {
+    if (paused || disposed) return;
+    paused = true;
+    input.releaseAll();
+    if (isSwinging(state)) { state = 'aim'; resetMeter(meter); updateHud(); }
+    const now = performance.now();
+    for (const tm of timers) { clearTimeout(tm.id); tm.left = Math.max(0, tm.due - now); }
+  }
+  function resume() {
+    if (!paused || disposed) return;
+    paused = false;
+    const now = performance.now();
+    for (const tm of timers) { tm.due = now + tm.left; tm.id = setTimeout(tm.run, tm.left); }
   }
 
   // Free everything this hole made. The session can't be used afterwards.
@@ -262,7 +302,9 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   // Start behind the tee looking down the hole, with the intro card on top
   play.reset(start); readyForShot(true); state = 'intro'; updateHud();
-  if (compact) later(teeOff, TIMING.holeCard);
+  // The compact card's countdown starts only once the hole is on screen (owner, PR #40): building a hole
+  // can take a moment on a phone, and that time must not eat into the 2.5 s. See frame().
+  let cardFrames = compact ? 0 : -1;
 
   // Handy for testing in the browser console and for tools/ (window.__golf forwards to this)
   const windHandle = {
@@ -286,7 +328,9 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     get state() { return state; },
     get disposed() { return disposed; },
     canAim: () => state === 'aim',
-    onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders,
+    get paused() { return paused; },
+    get timerCount() { return timers.length; },
+    onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
     start: teeOff,
     again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
