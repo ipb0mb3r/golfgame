@@ -3,6 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
+import { aimAt } from '../src/core/vec.js';
 
 const v1 = JSON.parse(readFileSync(new URL('./fixtures/baseline.json', import.meta.url), 'utf8'));
 
@@ -23,7 +24,8 @@ export const SHOTS = [
   // Gate A T2 (Fix pass 1): the swing feel itself. Lies with a cap below 1, curves off the window
   // edge, every meter outcome, a lip-out and a sloped bunker. Optional fields: `club` (club id,
   // instead of the auto-pick) and `outcome` (from the meter: 'shank', 'topped'; default 'normal').
-  // `power: 'pin'` (S21) hits at the ⚑ power for the default aim (at most the lie's cap).
+  // `power: 'pin'` (S21) hits at the ⚑ power for the default aim (at most the lie's cap); `aimFrom`
+  // { x, z } (S21): aimOff is from the line to this point instead of from the default aim.
   { name: 'T2 h1 from the rough (cap 85%, narrow window)', hole: 'pl-01', seed: null, start: { x: -28, z: -50 }, strokes: 1, power: 0.85, acc: -0.06, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, sand wedge', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.4, acc: 0, aimOff: 0 },
   { name: 'T2 h1 greenside bunker, 9 iron (no SW)', hole: 'pl-01', seed: null, start: { x: -15, z: -147 }, strokes: 1, power: 0.3, acc: 0, aimOff: 0, club: '9i' },
@@ -47,12 +49,13 @@ export const SHOTS = [
   { name: 'T2 h2 approach lands in the sloped cross bunker (10%)', hole: 'pl-02', seed: null, start: { x: 18, z: -330 }, strokes: 1, power: 0.45, acc: 0, aimOff: -0.1 },
   // Phase K (K7): hole 3, trees, boulders and rock. aimOff 0.2637 = the cut line over the corner trees
   // (toward (65, −207)), −0.0572 = straight through the corner onto the rock (toward (−4, −240)).
+  // S21: those offsets were from the old tee aim at (9, −222); `aimFrom` keeps that base, so the lines stay.
   { name: 'K h3 default drive in seeded wind', hole: 'pl-03', seed: 31, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
-  { name: 'K h3 cut the corner, full Driver clears the trees', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0.2637 },
-  { name: 'K h3 cut the corner too weak: into the leaves', hole: 'pl-03', seed: 3, start: { x: 0, z: 0 }, strokes: 0, power: 0.85, acc: 0, aimOff: 0.2637, windless: true },
-  { name: 'K h3 cut the corner sliced: into the leaves', hole: 'pl-03', seed: 4, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: -0.15, aimOff: 0.2637, windless: true },
+  { name: 'K h3 cut the corner, full Driver clears the trees', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 9, z: -222 }, aimOff: 0.2637 },
+  { name: 'K h3 cut the corner too weak: into the leaves', hole: 'pl-03', seed: 3, start: { x: 0, z: 0 }, strokes: 0, power: 0.85, acc: 0, aimFrom: { x: 9, z: -222 }, aimOff: 0.2637, windless: true },
+  { name: 'K h3 cut the corner sliced: into the leaves', hole: 'pl-03', seed: 4, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: -0.15, aimFrom: { x: 9, z: -222 }, aimOff: 0.2637, windless: true },
   { name: 'K h3 behind the lone tree: into its leaves', hole: 'pl-03', seed: 5, start: { x: -26, z: -203 }, strokes: 1, power: 1, acc: 0, aimOff: 0, windless: true },
-  { name: 'K h3 drive through the corner onto the rock', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: -0.0572 },
+  { name: 'K h3 drive through the corner onto the rock', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 9, z: -222 }, aimOff: -0.0572 },
   { name: 'K h3 from the rock (cap 90%)', hole: 'pl-03', seed: null, start: { x: -4, z: -254 }, strokes: 1, power: 0.9, acc: 0.03, aimOff: 0 },
   { name: 'K h3 putt off the rock into a boulder', hole: 'pl-03', seed: null, start: { x: -2, z: -260 }, strokes: 1, power: 0.6, acc: 0, aimOff: -1.1779, club: 'putter' },
   // S21: the default tee shot as the game offers it (straight along the tee's facing, auto club, at
@@ -71,6 +74,7 @@ export function playShot(s) {
   play.ball.pos.x = s.start.x; play.ball.pos.z = s.start.z;
   play.prepare();
   play.strokes = s.strokes;
+  if (s.aimFrom) play.setAim(aimAt(play.ball.pos, s.aimFrom)); // S21: offsets from a fixed point, not the default aim
   play.aim += s.aimOff;
   if (s.club) play.setClub(play.bag.findIndex(c => c.id === s.club));
   const club = play.club.id;

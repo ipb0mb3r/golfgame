@@ -62,7 +62,7 @@ export const SCENARIOS = {
   // high three times and runs off the far side. Compare ?tune=rock.rest:0.4,rock.keep:0.7.
   'h3-rock-bounce': {
     hole: 'pl-03', ball: { x: -5, z: -150 }, aimAt: { x: -4, z: -262 }, strokes: 1, seed: 304, wind: { x: 0, z: 0 }, lie: 'fairway',
-    name: 'Hole 3: rock bounce', text: 'Aimed at the rock outcrop: hit the ⚑ and watch the ball bounce high and run on the hard rock.',
+    name: 'Hole 3: rock bounce', text: 'Aimed at the rock outcrop: land it on the rock (use the ticks on the aim line) and watch the ball bounce high and run on the hard rock.',
   },
 };
 

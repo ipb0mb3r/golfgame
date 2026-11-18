@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, M2Y,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -24,6 +24,14 @@ import { createBall } from './ball.js';
 import { makeColliders, firstHit } from './obstacles.js';
 import { isShotEnd } from './states.js';
 
+
+// S22: the label at the aim marker: the full-power (or capped) carry in yards and the ground there,
+// e.g. "164 yd · Flat", "152 yd · ▲ 5 yd", "98 yd · ▼ 3 yd · max 85%". Pure, so tests read it too.
+export function aimMarkLabel(m) {
+  if (!m) return '';
+  const ground = m.ground === 'flat' ? 'Flat' : `${m.ground === 'up' ? '▲' : '▼'} ${Math.max(1, Math.round(Math.abs(m.rise) * M2Y))} yd`;
+  return `${Math.round(m.dist * M2Y)} yd · ${ground}${m.capped ? ` · max ${Math.round(m.power * 100)}%` : ''}`;
+}
 
 export function createHolePlay(hole, { seed = 1 } = {}) {
   const terrain = makeTerrain(hole);
@@ -49,7 +57,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, shotWarning, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
+    restPoint, aimWarning, shotWarning, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
   function newWind() {
@@ -94,16 +102,18 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     if (greenCentre) return { kind: 'green', ...greenCentre };
     return { kind: 'cup', x: cup.x, z: cup.z };
   }
-  // S21: the way the tee box faces, the general line of the hole. The point it faces is the hole's
-  // `teeFacing` { x, z } when the designer sets one, else the par 4/5 fairway target (`aimTarget`),
-  // else the green centre (else the cup), so every hole made before S21 keeps working unchanged.
-  // Returns { x, z, dist (m from the tee to that point), dx, dz (unit direction) }.
-  const facePt = hole.teeFacing ?? (hole.par >= 4 ? hole.aimTarget : null) ?? greenCentre ?? hole.cup;
+  // S21: the way the tee box faces. Straight down the hole's −z axis (every tee box is drawn square
+  // to it, AGENTS "Axes"; PM on PR #53: the owner's "straight away"), unless the hole's `teeFacing`
+  // { x, z } names the point a turned tee box faces. Returns { dx, dz } (unit direction).
   const facing = (() => {
-    const dx = facePt.x - hole.tee.x, dz = facePt.z - hole.tee.z, dist = Math.hypot(dx, dz) || 1;
-    return Object.freeze({ x: facePt.x, z: facePt.z, dist, dx: dx / dist, dz: dz / dist });
+    if (!hole.teeFacing) return Object.freeze({ dx: 0, dz: -1 });
+    const dx = hole.teeFacing.x - hole.tee.x, dz = hole.teeFacing.z - hole.tee.z, d = Math.hypot(dx, dz) || 1;
+    return Object.freeze({ dx: dx / d, dz: dz / d });
   })();
   function teeFacing() { return facing; }
+  // How far the tee shot should go, for the auto-pick only (it never steers the aim): a par 4/5's
+  // optional `aimTarget` (the landing area), a par 3's green centre, else the cup.
+  const teeReachPt = (hole.par >= 4 ? hole.aimTarget : greenCentre) ?? hole.cup;
   // The tee shot's default aim point: straight ahead from the ball along the facing, at club i's
   // normal distance (its carry, scaled by TEE_AIM_CARRY). Not a solved spot: it may end in the rough,
   // a bunker or under trees (the player adjusts); validateHole only makes sure it is never a penalty.
@@ -179,6 +189,36 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     if (!full && !pin) return null;
     const near = !full ? pin : !pin ? full : pin.dist <= full.dist ? pin : full;
     return { ...near, at: full && pin ? 'both' : pin ? 'pin' : 'full' };
+  }
+  // S22 (owner, playtest 1): the aim line's marker and ticks. The marker is where a straight, no-wind
+  // shot at full power LANDS (the carry, hills included), or at the lie's cap when the lie caps the
+  // power (rough, sand: PM on PR #53, "where the ball can actually go"; then `capped` is true).
+  // The ticks are where 1/4, 2/4, 3/4 power land (POWER_SECTIONS), the same fractions as the bar's
+  // sections, only those below the cap. Carry is linear in power (swing.js), so on flat ground a tick
+  // sits at that fraction of the full carry. Returns null for a putt, else
+  // { x, y, z, power, capped, dist (m, flat), rise (m, landing minus ball), ground: 'flat' | 'up' | 'down',
+  //   ticks: [{ frac, x, y, z, dist }] }. Memoised per club, aim and ball spot (the HUD asks every frame).
+  let marksMemo = null;
+  function aimMarks(i = p.clubIdx, a = p.aim) {
+    if (i === PUTTER) return null;
+    const cap = lieOf(i).maxPower;
+    const key = `${i}|${a}|${ball.pos.x}|${ball.pos.z}|${cap}|${TUNE.AIM_FLAT_RISE}`;
+    if (marksMemo?.key === key) return marksMemo.value;
+    const power = Math.min(cap, 1), end = landingPoint(i, a, power), rise = end.y - ball.pos.y;
+    const ticks = [];
+    for (let k = 1; k < POWER_SECTIONS; k++) {
+      const frac = k / POWER_SECTIONS;
+      if (frac >= power - 1e-9) break;
+      const q = landingPoint(i, a, frac);
+      ticks.push({ frac, x: q.x, y: q.y, z: q.z, dist: dist2D(ball.pos, q) });
+    }
+    const flat = TUNE.AIM_FLAT_RISE;
+    const value = {
+      x: end.x, y: end.y, z: end.z, power, capped: power < 1, dist: dist2D(ball.pos, end), rise,
+      ground: rise >= flat ? 'up' : rise <= -flat ? 'down' : 'flat', ticks,
+    };
+    marksMemo = { key, value };
+    return value;
   }
   function clubReach(i = p.clubIdx, a = p.aim) { return i === PUTTER ? p.puttMax : dist2D(ball.pos, landingPoint(i, a)); }
 
@@ -259,7 +299,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // shot: the aim, the ⚑ and the auto-pick all use it (kind 'spot').
   function prepare(spot = null) {
     p.next = null;
-    pinMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
+    pinMemo = null; marksMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);
@@ -272,11 +312,11 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
       // The auto-pick (S13) for the default aim's distance (S18): see clubs.pickClub
       p.clubIdx = pickClub(bag, { lie: p.lie, dist: targetDist(), cupDist: d, reach: i => clubReach(i) });
     } else {
-      // S21 tee shot: aim straight along the facing. The auto-pick reaches the point the tee faces
-      // (the general line: the fairway target or, on a par 3, the green), then the aim point sits at
-      // that club's normal distance on the line (and moves with the club the player picks, setClub).
+      // S21 tee shot: aim straight along the facing. The auto-pick reaches the landing area (aimTarget)
+      // or, on a par 3, the green; then the aim point sits at that club's carry on the line (and
+      // moves with the club the player picks, setClub).
       p.aim = aimAt({ x: 0, z: 0 }, { x: facing.dx, z: facing.dz });
-      const far = dist2D(ball.pos, facing);
+      const far = dist2D(ball.pos, teeReachPt);
       p.clubIdx = pickClub(bag, { lie: p.lie, dist: far, cupDist: d, reach: i => clubReach(i) });
       setTarget(defaultTarget());
     }

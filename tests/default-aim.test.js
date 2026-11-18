@@ -22,7 +22,8 @@ const aimsAt = (play, pt) => Math.abs(play.aim - aimAt(play.ball.pos, pt)) < 1e-
 
 // S21 (owner playtest 2026-11-18: "on the tee box, the aiming should just be straight away instead of
 // on the green"): every tee shot aims straight along the tee's facing, at the club's carry.
-const facingOf = id => { const h = getHole(id); return h.teeFacing ?? (h.par >= 4 ? h.aimTarget : greenOf(id)); };
+// The tee box faces straight down −z unless the hole sets teeFacing (PM on PR #53)
+const facingOf = id => { const h = getHole(id); return h.teeFacing ?? { x: h.tee.x, z: h.tee.z - 100 }; };
 const carryOut = play => play.club.carry * TUNE.TEE_AIM_CARRY;
 
 test('S21: every tee shot (par 3, 4, 5) aims straight ahead along the facing, at the club\'s carry', () => {
@@ -35,9 +36,11 @@ test('S21: every tee shot (par 3, 4, 5) aims straight ahead along the facing, at
     assert.ok(Math.abs(aimAt(play.ball.pos, play.target) - play.aim) < 1e-9, `${id}: the aim point is on the line`);
     assert.ok(Math.abs(play.targetDist() - carryOut(play)) < 1e-9, `${id}: ${play.targetDist().toFixed(1)} m = the club's carry`);
   }
-  // hole 2: the aim point is no longer the solved dogleg corner (270 m out), it is the Driver's 215 m
+  // straight down the hole, not at the solved dogleg corner (hole 2) or the green centre (hole 1)
   const h2 = at('pl-02', 0, 0);
+  assert.equal(h2.aim, 0);
   assert.ok(dist2D(h2.target, getHole('pl-02').aimTarget) > 40);
+  assert.ok(!aimsAt(at('pl-01', 0, 0), greenOf('pl-01')));
 });
 
 test('S21: the ⚑ finishes at the tee aim point, and follows the club the player picks', () => {
@@ -60,24 +63,25 @@ test('S21: the ⚑ finishes at the tee aim point, and follows the club the playe
   assert.ok(Math.abs(turned - play.targetDist()) < 2.5, `turned: ${turned.toFixed(1)} of ${play.targetDist().toFixed(1)} m`);
 });
 
-test('S21: the facing is the hole\'s teeFacing, else aimTarget (par 4/5), else the green centre (par 3)', () => {
+test('S21: the facing is the hole\'s teeFacing, else straight down −z; aimTarget / the green only set the auto-pick distance', () => {
   // flat, all fairway, a 4 m tee box; green centre straight ahead 140 m, the cup a little right
   const base = {
     par: 3, cup: { x: 6, z: -142 }, features: { green: { cx: 0, cz: -140 } },
     surfaceAt: (x, z) => (Math.abs(x) < 4 && Math.abs(z) < 4 ? 'tee' : z < -130 ? 'green' : 'fairway'),
   };
   const make = extra => { const p = createHolePlay(testHole({ ...base, ...extra }), { seed: 1 }); p.reset(); return p; };
-  const par3 = make({});
+  const par3 = make({ cup: { x: 30, z: -142 }, features: { green: { cx: 25, cz: -140 } } });
   assert.equal(par3.targetKind, 'tee');
-  assert.ok(aimsAt(par3, { x: 0, z: -140 }), 'par 3: toward the green centre, not the cup');
-  const par4 = make({ par: 4, aimTarget: { x: -30, z: -200 } });
-  assert.ok(aimsAt(par4, { x: -30, z: -200 }), 'par 4: toward aimTarget');
-  const faced = make({ par: 4, aimTarget: { x: -30, z: -200 }, teeFacing: { x: 20, z: -400 } });
-  assert.ok(aimsAt(faced, { x: 20, z: -400 }), 'teeFacing wins');
-  assert.deepEqual([faced.teeFacing().x, faced.teeFacing().z], [20, -400]);
-  // the auto-pick reaches the faced point: 400 m out is out of 3 Wood reach, so the Driver
-  assert.equal(faced.club.id, 'driver');
-  assert.equal(make({ teeFacing: { x: 0, z: -100 } }).club.id, 'pw', '100 m out: the P Wedge');
+  assert.equal(par3.aim, 0, 'par 3: straight down −z, not at the green');
+  assert.equal(par3.club.id, '7i', 'the auto-pick still reaches the green (142 m)');
+  const par4 = make({ par: 4, aimTarget: { x: -30, z: -120 } });
+  assert.equal(par4.aim, 0, 'par 4: straight down −z, not at aimTarget');
+  assert.equal(par4.club.id, '9i', 'aimTarget (124 m) sets the auto-pick distance');
+  const faced = make({ par: 4, aimTarget: { x: -30, z: -250 }, teeFacing: { x: 20, z: -400 } });
+  assert.ok(aimsAt(faced, { x: 20, z: -400 }), 'teeFacing turns the tee box');
+  assert.equal(faced.club.id, 'driver', 'aimTarget 252 m out: the 3 Wood does not reach');
+  const noTarget = make({ par: 5, cup: { x: 0, z: -480 } });
+  assert.equal(noTarget.club.id, 'driver', 'no aimTarget: the cup distance');
   // a ball that stays on the tee box (topped) aims along the same facing from where it is
   faced.ball.pos.x = 2; faced.ball.pos.z = -2; faced.prepare();
   assert.equal(faced.targetKind, 'tee');
@@ -102,7 +106,7 @@ test('S21: TEE_AIM_CARRY scales the tee aim distance; a penalty from the tee com
   play.proceed();
   assert.equal(play.lie, 'tee');
   assert.equal(play.targetKind, 'tee');
-  assert.ok(aimsAt(play, greenOf('pl-01')));
+  assert.equal(play.aim, 0);
 });
 
 // S21 fairness: the default tee shot may finish off the fairway, never in a penalty
@@ -127,10 +131,13 @@ test('S21: validateHole refuses a default tee shot that ends in water or OB, and
   const pond = (x, z) => (x < -15 && z < -150 && z > -320 ? 'water' : null);
   assert.doesNotThrow(() => validateHole(hole(pond)));
   assert.throws(() => validateHole({ ...hole(pond), teeFacing: { x: -60, z: -300 } }), /ends in water/);
-  // a par 4/5 needs aimTarget or teeFacing
+  // a pond straight down −z: a teeFacing that turns the tee box away from it fixes the hole
+  const ahead = (x, z) => (Math.abs(x) < 20 && z < -190 && z > -260 ? 'water' : null);
+  assert.throws(() => validateHole(hole(ahead)), /ends in water.*set or move teeFacing/);
+  assert.doesNotThrow(() => validateHole({ ...hole(ahead), teeFacing: { x: 60, z: -300 } }));
+  // aimTarget is optional since PM on PR #53
   const { aimTarget, ...noTarget } = hole();
-  assert.throws(() => validateHole(noTarget), /needs aimTarget/);
-  assert.doesNotThrow(() => validateHole({ ...noTarget, teeFacing: { x: 0, z: -300 } }));
+  assert.doesNotThrow(() => validateHole(noTarget));
 });
 
 test('S21: every real hole passes the new tee rule (validated at load) and its default tee shot avoids penalties', () => {

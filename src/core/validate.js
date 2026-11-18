@@ -64,9 +64,8 @@ export function validateHole(hole) {
   const g = hole.features?.green;
   if (!g || !isNum(g.cx) || !isNum(g.cz)) bad('features.green must be { cx, cz, ... } (the default aim for approaches, S18)');
   if (at(g.cx, g.cz) !== 'green') bad(`the centre of features.green (${g.cx}, ${g.cz}) is not on the "green" surface`);
-  // S21: the tee shot aims straight along the tee's facing: toward `teeFacing` when set, else toward
-  // aimTarget (par 4/5), else the green centre. aimTarget also sets how far the auto-pick reaches.
-  if (hole.par >= 4 && hole.aimTarget === undefined && hole.teeFacing === undefined) bad('a par 4 or 5 needs aimTarget: { x, z } (or teeFacing), the general line of the tee shot (S18, S21)');
+  // S21: the tee shot aims straight along the tee's facing: down −z, or toward `teeFacing` when set.
+  // aimTarget (optional, par 4/5) only tells the auto-pick how far the tee shot should go.
   if (hole.aimTarget !== undefined) {
     if (!isPoint(hole.aimTarget)) bad('aimTarget must be { x, z } with finite numbers');
     const s = at(hole.aimTarget.x, hole.aimTarget.z);
@@ -135,7 +134,7 @@ export function validateHole(hole) {
     for (const [what, power] of [['⚑', Math.min(pin, cap)], ['full', cap]]) {
       const r = play.restPoint(play.clubIdx, play.aim, power);
       const s = hole.surfaceAt(r.x, r.z);
-      if (r.end === 'penalty' || BASE_SURFACES[s]?.penalty) bad(`the default tee shot (${play.club.name}, ${what} power, straight along the tee's facing) ends in ${s} at (${r.x.toFixed(0)}, ${r.z.toFixed(0)}): move teeFacing or aimTarget`);
+      if (r.end === 'penalty' || BASE_SURFACES[s]?.penalty) bad(`the default tee shot (${play.club.name}, ${what} power, straight along the tee's facing) ends in ${s} at (${r.x.toFixed(0)}, ${r.z.toFixed(0)}): set or move teeFacing`);
     }
   }
   return hole;

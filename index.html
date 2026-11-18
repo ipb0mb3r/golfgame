@@ -53,6 +53,15 @@
   #pinTick::after { content: "⚑"; position: absolute; top: 3px; left: 5px; font-size: 13px; color: #fff; text-shadow: 0 0 3px #000; }
   /* H1: near the right end the flag goes on the left of its line, so the rounded end doesn't cut it off */
   #pinTick.flip::after { left: auto; right: 5px; }
+  /* S22: the power side in 4 equal sections (lines at 25/50/75%, matching the ticks on the aim line) */
+  #sections > div { position: absolute; top: 3px; bottom: 3px; width: 2px; margin-left: -1px; background: rgba(255,255,255,.55); pointer-events: none; }
+  /* S22: the label at the aim marker (full-power carry and the ground there); grey when the lie caps the power */
+  #aimLabel { position: fixed; transform: translate(-50%, calc(-100% - 14px)); pointer-events: none; white-space: nowrap;
+    font: 700 12px/1.2 system-ui, sans-serif; color: #1b1b1b; background: rgba(255, 212, 71, .92); padding: 2px 6px; border-radius: 6px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.5); }
+  #aimLabel.capped { background: rgba(200, 200, 200, .92); }
+  #aimLabel.warn { background: rgba(255, 120, 105, .95); }
+  #aimLabel[hidden] { display: none; }
   #powerMark { position: absolute; top: 0; bottom: 0; width: 3px; background: #fff; display: none; }
   #marker { position: absolute; top: -2px; bottom: -2px; width: 6px; margin-left: -3px; background: #fff; border-radius: 3px; box-shadow: 0 0 6px #000; }
   /* S8: the power click was missed, so the next click is a mini shot */
@@ -347,6 +356,7 @@
 </head>
 <body>
 <canvas id="game"></canvas>
+<div id="aimLabel" hidden></div>
 
 <div id="info" class="panel">
   <div class="title" id="holeTitle">HOLE</div>
@@ -377,6 +387,7 @@
       <div id="meterFill"></div>
       <div id="sweet"></div>
       <div id="capShade"></div>
+      <div id="sections"></div>
       <div id="pinTick"></div>
       <div id="powerMark"></div>
       <div id="marker"></div>
@@ -516,7 +527,7 @@
       <ol class="howList">
         <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow ring shows where the ball lands.</li>
         <li><b>Pick a club</b> with ‹ › or ▲ ▼. The best club is chosen for you.</li>
-        <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the ⚑ mark is about the pin), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right.</li>
+        <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the bar is in quarters, like the ticks on the aim line; the ⚑ shows a putt's power), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right.</li>
         <li>Watch the <b>wind</b> (top right) and the <b>lie</b>: rough and sand cap your power (the gray part of the meter).</li>
         <li>Water and out of bounds cost a penalty stroke. Sink it in as few strokes as you can.</li>
       </ol>

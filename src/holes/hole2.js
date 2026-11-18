@@ -223,7 +223,7 @@ export default {
       '<b>Same swing as Hole 1:</b> aim with <kbd>◀</kbd> <kbd>▶</kbd>, change club with <kbd>▲</kbd> <kbd>▼</kbd>, and swing in three clicks (start, <b>power</b>, <b>accuracy</b>).',
       '<b>Hills matter here.</b> The ball runs on downhill slopes, stalls going uphill, kicks off the side of mounds, and putts curl toward the low side.',
       'The <b>Slope</b> readout (top left) tells you if you are hitting uphill or downhill and which way a putt will break.{grid}',
-      'The yellow ring already allows for the hills: it shows where a full-power shot comes down.',
+      'The aim marker already allows for the hills: it shows where a full-power shot comes down, and its label says whether that spot is above or below you.',
     ],
     grid: ' The grid on the green helps you read it too.', // Phase 7: only shown when the green has a grid (putt-grid setting)
     blurb: 'A long, rolling par 5 with a pond on the left, a two-level green, and a Driver in the bag. Reach it in two for an eagle chance!',

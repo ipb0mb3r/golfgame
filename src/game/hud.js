@@ -1,5 +1,5 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
-import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE } from '../core/config.js';
+import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE, POWER_SECTIONS } from '../core/config.js';
 import { sweetHalfWidth } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
@@ -62,6 +62,13 @@ export function setupHolePage(hole, round = null, { links = true, green = hole.s
 export function createHud(play) {
   const { cup, terrain, surfaces, wind, bag } = play;
   let msgTimer = 0;
+  // S22: the power side of the bar in POWER_SECTIONS equal parts (lines at 25/50/75% for 4)
+  const sections = $('sections');
+  sections.replaceChildren(...Array.from({ length: POWER_SECTIONS - 1 }, (_, k) => {
+    const d = document.createElement('div');
+    d.style.left = `${meterPct((k + 1) / POWER_SECTIONS)}%`;
+    return d;
+  }));
   // The lie on the meter (S11): the green impact zone at its real width (SWEET × sweetScale) and the
   // grayed-out part above the power cap.
   function drawLie({ maxPower, sweetScale }) {
@@ -134,7 +141,9 @@ export function createHud(play) {
     $('clubName').textContent = club.name;
     const reach = play.clubReach();
     $('clubDist').textContent = `max ${yd(reach)} yd`;
-    const need = play.pinPower();
+    // S22 (owner, playtest 1): the ⚑ only for putts; full shots and chips read the aim marker and
+    // the bar's sections instead
+    const need = club.putter ? play.pinPower() : Infinity;
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
@@ -165,15 +174,26 @@ export function createHud(play) {
   }
   const hideResult = () => $('result').classList.add('hidden');
 
+  // S22: the label at the aim marker. text null = hidden; fx, fy = where on the screen (0..1)
+  function setAimLabel(text, fx = 0, fy = 0, capped = false, warn = false) {
+    const el = $('aimLabel');
+    if (!text) { el.hidden = true; return; }
+    el.hidden = false;
+    if (el.textContent !== text) el.textContent = text;
+    el.style.left = `${(fx * 100).toFixed(2)}%`; el.style.top = `${(fy * 100).toFixed(2)}%`;
+    el.classList.toggle('capped', capped); el.classList.toggle('warn', warn);
+  }
+
   const setDistance = state => { $('distTxt').textContent = distText(state); };
   // The hole is being unloaded (Gate A A2): stop the flash timer and hide what this hole showed
   function dispose() {
     clearTimeout(msgTimer);
     $('msg').classList.remove('show');
     hideResult();
+    setAimLabel(null);
   }
 
-  return { flash, update, updateMeter, slopeText, distText, setDistance, showResult, hideResult, dispose };
+  return { flash, update, updateMeter, slopeText, distText, setDistance, showResult, hideResult, setAimLabel, dispose };
 }
 
 // Minimap: the painted course, shrunk once, plus the flag, the ball and the aim line.
@@ -193,16 +213,28 @@ export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
     bctx.fillStyle = o.type === 'tree' ? 'rgba(28, 74, 32, 0.9)' : 'rgba(120, 118, 112, 0.95)';
     bctx.beginPath(); bctx.arc(px, pz, r, 0, 7); bctx.fill();
   }
-  return function draw(ball, target, warn = null) {
+  // marks = play.aimMarks() (S22): for a full shot the line ends in a triangle, with ticks at 25/50/75%
+  return function draw(ball, target, warn = null, marks = null) {
     ctx.drawImage(base, 0, 0, mm.width, mm.height);
     const [hx, hz] = xy(cup.x, cup.z);
     ctx.fillStyle = flagCss; ctx.fillRect(hx - 1, hz - 7, 2, 7); ctx.fillRect(hx, hz - 7, 5, 3);
     const [bx, bz] = xy(ball.x, ball.z);
     if (target) {
       const [tx, tz] = xy(target.x, target.z);
-      ctx.strokeStyle = '#ffd447'; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
+      const color = marks?.capped ? '#c8c8c8' : '#ffd447';
+      ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
       ctx.beginPath(); ctx.moveTo(bx, bz); ctx.lineTo(tx, tz); ctx.stroke(); ctx.setLineDash([]);
-      ctx.beginPath(); ctx.arc(tx, tz, 3, 0, 7); ctx.stroke();
+      if (!marks) { ctx.beginPath(); ctx.arc(tx, tz, 3, 0, 7); ctx.stroke(); }
+      else {
+        const len = Math.hypot(tx - bx, tz - bz) || 1, ux = (tx - bx) / len, uz = (tz - bz) / len; // along the line, on the map
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(tx + ux * 4, tz + uz * 4); ctx.lineTo(tx - ux * 2 - uz * 3, tz - uz * 2 + ux * 3); ctx.lineTo(tx - ux * 2 + uz * 3, tz - uz * 2 - ux * 3); ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1;
+        for (const q of marks.ticks) {
+          const [qx, qz] = xy(q.x, q.z);
+          ctx.beginPath(); ctx.moveTo(qx - uz * 2.5, qz + ux * 2.5); ctx.lineTo(qx + uz * 2.5, qz - ux * 2.5); ctx.stroke();
+        }
+      }
     }
     if (warn) {
       const [wx, wz] = xy(warn.x, warn.z);

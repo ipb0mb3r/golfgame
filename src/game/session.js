@@ -9,7 +9,7 @@
 // The rules are in core: play.swing() hits the ball, play.next says what happens after a shot,
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
 import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
-import { createHolePlay } from '../core/play.js';
+import { createHolePlay, aimMarkLabel } from '../core/play.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
@@ -67,6 +67,8 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let warn = null;     // K4: where the aimed shot would hit an obstacle (play.aimWarning), or null
   let treeFlash = false; // one obstacle flash per shot is enough (a ball can rattle through branches)
   const target = { x: 0, y: 0, z: 0 };
+  let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
+  const markPt = camera.position.clone(); // reused for the label's screen position
 
   const updateHud = () => hud.update(state, meter.power);
   const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir });
@@ -218,16 +220,28 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       if (play.club.putter) { len = Math.min(play.distToCup(), play.puttMax); Object.assign(target, { x: ball.pos.x + d.x * len, y: 0, z: ball.pos.z + d.z * len }); }
       else { Object.assign(target, play.landingPoint(play.clubIdx)); len = dist2D(ball.pos, target); }
       warn = play.shotWarning(); // K4 (memoized in core: only works it out again when the aim or club changes)
-      props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn);
+      marks = play.aimMarks(); // S22 (memoized in core too); null for a putt
+      if (marks) { Object.assign(target, { x: marks.x, y: marks.y, z: marks.z }); len = dist2D(ball.pos, target); }
+      props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn, marks);
       // Keep the slope readout and club distance in step with the aim
       const key = play.aim.toFixed(3) + play.clubIdx;
       if (key !== lastAimKey) { lastAimKey = key; updateHud(); }
-    } else { warn = null; props.setAimGuide(false); }
+    } else { warn = null; marks = null; props.setAimGuide(false); }
 
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
-    drawMinimap(ball.pos, isAim ? target : null, warn);
+    drawMinimap(ball.pos, isAim ? target : null, warn, marks);
+    aimLabel();
+  }
+
+  // S22: the label at the aim marker ("164 yd · Flat"), placed on the screen where the marker is drawn
+  function aimLabel() {
+    if (!marks) { hud.setAimLabel(null); return; }
+    camera.updateMatrixWorld();
+    const v = markPt.set(marks.x, terrain.heightAt(marks.x, marks.z) + 0.1, marks.z).project(camera);
+    const onScreen = v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
+    hud.setAimLabel(onScreen ? aimMarkLabel(marks) : null, (v.x + 1) / 2, (1 - v.y) / 2, marks.capped, !!warn);
   }
 
   // K5: wireframe outlines of the colliders (the debug overlay turns them on)
