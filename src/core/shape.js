@@ -19,7 +19,7 @@
 //   speed and the wind pushes it (1 − y × `wind`) as hard (bottom: more wind, top: less).
 // The lie limits it: every effect × the surface's `shape` (1 on the tee and fairway, less in the rough
 // and the sand, surfaces.js). Corners combine both.
-import { G, BC, TUNE } from './config.js';
+import { G, BC, TUNE, IMPACT_UI } from './config.js';
 import { clamp, degToRad } from './vec.js';
 import { clubShape } from './clubs.js';
 
@@ -56,4 +56,32 @@ export function shapeOf(club, impact, { lieShape = 1, handed = 'right' } = {}) {
   // a T² / 2 = −BACK × v cos(loft) sin(start) T, i.e. a = −BACK × G sin(start) / tan(loft) (no v).
   const push = -TUNE.BC_BACK * G * Math.sin(start) / Math.tan(t);
   return { x, y, start, loft, push, windK: 1 - y * s.wind, keepK: 1 + y * s.roll };
+}
+
+// --- BC5: the ball icon (the game draws it; these are the rules, so they are tested) ---
+// A press on the icon at (dx, dy) px from its centre (screen y down), radius r px: the impact point
+// it means. Within `snap` of the centre (share of r) it is the centre, so the centre is easy to hit.
+export function impactFromOffset(dx, dy, r, snap = IMPACT_UI.snap) {
+  if (!(r > 0)) return CENTRE;
+  const x = dx / r, y = -dy / r;
+  return Math.hypot(x, y) < snap ? CENTRE : clampImpact({ x, y });
+}
+// Shift + an arrow key: move the dot by IMPACT_UI.keyStep (dx, dy = −1 / 0 / +1; up = the top of the ball).
+// Rounded to the step grid so a few presses always come back to the exact centre.
+export function stepImpact(pt, dx, dy, step = IMPACT_UI.keyStep) {
+  const grid = v => Math.round(v / step) * step;
+  const q = clampImpact({ x: grid((pt?.x ?? 0) + dx * step), y: grid((pt?.y ?? 0) + dy * step) });
+  return Math.hypot(q.x, q.y) < 1e-9 ? CENTRE : q;
+}
+// Two presses on the icon less than IMPACT_UI.doubleTapMs apart: the second one resets the dot.
+export const isDoubleTap = (prevMs, nowMs) => Number.isFinite(prevMs) && nowMs - prevMs >= 0 && nowMs - prevMs < IMPACT_UI.doubleTapMs;
+// The caption next to the icon: what the dot does, e.g. "High · starts ◀ curves ▶" ('' at the centre).
+// Right-handed: a left impact starts left and curves right; `handed` 'left' mirrors it.
+export function impactCaption(pt, handed = 'right') {
+  if (isCentre(pt)) return '';
+  const dead = IMPACT_UI.snap / 2, parts = [];
+  if (pt.y < -dead) parts.push('High'); else if (pt.y > dead) parts.push('Low');
+  const x = pt.x * (handed === 'left' ? -1 : 1);
+  if (x < -dead) parts.push('starts ◀ curves ▶'); else if (x > dead) parts.push('starts ▶ curves ◀');
+  return parts.join(' · ');
 }

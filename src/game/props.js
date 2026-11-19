@@ -76,6 +76,25 @@ export function createProps(scene, hole, terrain, cup) {
   const ticks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 0.28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }), TICKS);
   ticks.frustumCulled = false; ticks.count = 0; scene.add(ticks);
   markTri.visible = markDot.visible = false;
+  // BC4: a shaped shot (impact point off the centre) also shows its run-out: smaller white dots from
+  // the landing to where it stops, and a small white ring there (the yellow dots follow the curve)
+  const ROLL_DOTS = 18;
+  const rollDots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.16, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 }), ROLL_DOTS);
+  rollDots.frustumCulled = false; rollDots.count = 0; scene.add(rollDots);
+  const restRing = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.8, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  scene.add(restRing); restRing.visible = rollDots.visible = false;
+  // The point a share f (0..1) of the way along a polyline [{ x, z }], by length
+  function along(pts, f, out) {
+    let total = 0;
+    for (let k = 1; k < pts.length; k++) total += Math.hypot(pts[k].x - pts[k - 1].x, pts[k].z - pts[k - 1].z);
+    let want = total * f;
+    for (let k = 1; k < pts.length; k++) {
+      const a = pts[k - 1], b = pts[k], l = Math.hypot(b.x - a.x, b.z - a.z);
+      if (want <= l || k === pts.length - 1) { const t = l > 0 ? Math.min(1, want / l) : 0; out.x = a.x + (b.x - a.x) * t; out.z = a.z + (b.z - a.z) * t; return out; }
+      want -= l;
+    }
+    out.x = pts[0].x; out.z = pts[0].z; return out;
+  }
   const tmpQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
   const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
@@ -115,6 +134,8 @@ export function createProps(scene, hole, terrain, cup) {
       ring.visible = visible && !!putter; // !!: club.putter is undefined on other clubs, and Three.js draws anything not === false (the S22 ring showed on full shots, PR #63)
       markTri.visible = markDot.visible = ticks.visible = visible && !putter && !!marks;
       warnMark.visible = warnFoot.visible = warnPole.visible = visible && !!warn;
+      const shape = visible && !putter ? marks?.shape : null; // BC4: the shaped flight's ground track and roll
+      rollDots.visible = restRing.visible = !!shape;
       if (!visible) return;
       if (markTri.visible) {
         tmpQ.setFromAxisAngle(UP, Math.atan2(-dir.x, -dir.z)); // (the ticks' orientation)
@@ -134,14 +155,29 @@ export function createProps(scene, hole, terrain, cup) {
       const s = putter ? 0.25 : 1;
       for (let i = 0; i < DOTS; i++) {
         const f = (i + 1) / (DOTS + 1);
-        tmpV.set(from.x + dir.x * len * f, 0, from.z + dir.z * len * f); tmpV.y = heightAt(tmpV.x, tmpV.z) + 0.06;
+        if (shape) along(shape.path, f, tmpV); // BC4: out and back along the shaped flight
+        else tmpV.set(from.x + dir.x * len * f, 0, from.z + dir.z * len * f);
+        tmpV.y = heightAt(tmpV.x, tmpV.z) + 0.06;
         tmpM.makeRotationX(-Math.PI / 2).setPosition(tmpV);
         tmpM.scale(tmpS.set(s, s, s));
         dots.setMatrixAt(i, tmpM);
-        dots.setColorAt(i, warn && len * f >= warn.dist ? WARN_COLOR : AIM_COLOR);
+        const past = shape ? Math.hypot(tmpV.x - from.x, tmpV.z - from.z) >= warn?.dist : len * f >= warn?.dist;
+        dots.setColorAt(i, warn && past ? WARN_COLOR : AIM_COLOR);
       }
       dots.instanceMatrix.needsUpdate = true;
       dots.instanceColor.needsUpdate = true;
+      if (shape) {
+        const r = shape.rest, run = Math.hypot(r.x - marks.x, r.z - marks.z);
+        rollDots.count = Math.min(ROLL_DOTS, Math.max(0, Math.floor(run / 2.5)));
+        for (let i = 0; i < rollDots.count; i++) {
+          along(shape.roll, (i + 1) / (rollDots.count + 1), tmpV); tmpV.y = heightAt(tmpV.x, tmpV.z) + 0.07;
+          tmpM.makeRotationX(-Math.PI / 2).setPosition(tmpV);
+          rollDots.setMatrixAt(i, tmpM);
+        }
+        rollDots.instanceMatrix.needsUpdate = true;
+        restRing.position.set(r.x, heightAt(r.x, r.z) + 0.08, r.z);
+        restRing.scale.setScalar(1 + Math.hypot(r.x - from.x, r.z - from.z) / 120);
+      }
       ring.position.set(target.x, heightAt(target.x, target.z) + 0.08, target.z);
       ring.scale.setScalar(putter ? 0.15 : 1 + len / 80);
       ring.material.color.copy(warn ? WARN_COLOR : AIM_COLOR);

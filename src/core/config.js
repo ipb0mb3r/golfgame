@@ -64,6 +64,11 @@ export const SHAPE_RANGES = Object.freeze({
   wind:   Object.freeze({ min: 0, max: 0.9 }), // the wind pushes it × (1 ∓ wind)
 });
 export const BC = Object.freeze({ loftMin: 4, loftMax: 60 }); // deg: a shaped launch loft stays in this range
+// BC4: the shaped aim line samples the predicted ground track every `every` physics steps (1/20 s)
+export const SHAPE_PREVIEW = Object.freeze({ every: 12 });
+// BC5: the ball icon. A keyboard press (Shift + arrows) moves the dot `keyStep`; a tap within `snap` of
+// the centre (share of the radius) is the centre; two taps within `doubleTapMs` reset it.
+export const IMPACT_UI = Object.freeze({ keyStep: 0.25, snap: 0.12, doubleTapMs: 320 });
 
 // --- Ball (§4) ---
 export const BALL_R = 0.09;          // drawn a bit bigger than real so you can see it

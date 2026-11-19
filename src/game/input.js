@@ -2,7 +2,9 @@
 // visit (main.js); the handlers forward to the current hole session.
 //   on = { swing(t), skip() → true if it skipped, club(step), start() → true if it teed off, again(),
 //          toggleDebug(), canAim(), active() → false while a menu or the pause menu is open, escape(), pause(),
-//          view(down, atMs) (Phase V: the view button pressed / released) }
+//          view(down, atMs) (Phase V: the view button pressed / released),
+//          impactPress(dx, dy, r, atMs) / impactDrag(dx, dy, r) (BC5: the ball icon, px from its centre, r = its radius),
+//          impactStep(dx, dy) (BC5: Shift + arrows) }
 const $ = id => document.getElementById(id);
 
 // Gate A C7: only a primary press swings. A mouse needs its main (left) button: a right or middle
@@ -38,6 +40,20 @@ export function bindInput(canvas, on) {
   const viewBtn = $('viewBtn');
   viewBtn.addEventListener('pointerdown', e => { e.preventDefault(); if (isSwingPress(e) && on.active()) on.view(true, e.timeStamp || performance.now()); });
   for (const ev of ['pointerup', 'pointercancel']) viewBtn.addEventListener(ev, e => { if (on.active()) on.view(false, e.timeStamp || performance.now()); });
+  // BC5: the ball icon. A press places the impact dot (a second press soon after resets it, session.js);
+  // dragging moves it. The icon is not the course canvas, so a tap on it never swings.
+  const ball = $('impactBall');
+  const offset = e => { const r = ball.getBoundingClientRect(); return [e.clientX - (r.left + r.width / 2), e.clientY - (r.top + r.height / 2), r.width / 2]; };
+  let dragging = null;
+  ball.addEventListener('pointerdown', e => {
+    e.preventDefault();
+    if (!isSwingPress(e) || !on.active()) return;
+    dragging = e.pointerId;
+    try { ball.setPointerCapture?.(e.pointerId); } catch { /* not an active pointer (a synthetic event): dragging still works over the icon */ }
+    on.impactPress(...offset(e), e.timeStamp || performance.now());
+  });
+  ball.addEventListener('pointermove', e => { if (dragging === e.pointerId && on.active()) on.impactDrag(...offset(e)); });
+  for (const ev of ['pointerup', 'pointercancel']) ball.addEventListener(ev, e => { if (dragging === e.pointerId) dragging = null; });
   $('pauseBtn').addEventListener('click', () => on.pause());
   window.addEventListener('keydown', e => {
     if (e.code === 'Escape') { if (!e.repeat) on.escape(); return; }
@@ -49,9 +65,14 @@ export function bindInput(canvas, on) {
     // QA R-1: Space and Enter also start the hole from the intro card or the compact hole card
     if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e) && !on.start() && !on.skip()) on.swing(eventSeconds(e)); }
     if (isEnter && !e.repeat && !document.activeElement?.closest?.('button, a')) { if (!on.start()) on.skip(); }
-    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keysDown.add('fine'); // X14: Shift + ◀ ▶ = fine aim
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keysDown.add('L'); e.preventDefault(); }
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') { keysDown.add('R'); e.preventDefault(); }
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keysDown.add('fine'); // X14 + BC5: Shift + A / D = fine aim
+    // BC5 (PM on #68): Shift + the arrow keys move the impact dot; they don't aim or change club then
+    const arrow = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[e.code];
+    if (arrow && e.shiftKey) { e.preventDefault(); on.impactStep(...arrow); return; }
+    if (e.code === 'ArrowLeft') { keysDown.add('L'); e.preventDefault(); }
+    if (e.code === 'ArrowRight') { keysDown.add('R'); e.preventDefault(); }
+    if (e.code === 'KeyA') { keysDown.add('LA'); e.preventDefault(); }
+    if (e.code === 'KeyD') { keysDown.add('RD'); e.preventDefault(); }
     if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); on.club(-1); }
     if (e.code === 'ArrowDown' || e.code === 'KeyS') { e.preventDefault(); on.club(1); }
     if (e.code === 'Backquote' && !e.repeat) on.toggleDebug();
@@ -59,8 +80,10 @@ export function bindInput(canvas, on) {
   });
   window.addEventListener('keyup', e => {
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keysDown.delete('fine');
-    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keysDown.delete('L');
-    if (e.code === 'ArrowRight' || e.code === 'KeyD') keysDown.delete('R');
+    if (e.code === 'ArrowLeft') keysDown.delete('L');
+    if (e.code === 'ArrowRight') keysDown.delete('R');
+    if (e.code === 'KeyA') keysDown.delete('LA');
+    if (e.code === 'KeyD') keysDown.delete('RD');
   });
   window.addEventListener('blur', () => { keysDown.clear(); aimHold = 0; });
   $('startBtn').addEventListener('click', on.start);
@@ -69,8 +92,12 @@ export function bindInput(canvas, on) {
   return {
     // −1 / 0 / +1 from the arrow keys and the hold-to-aim buttons. X14: the session turns the aim
     // every frame while one is held (core/aim.js aimTurn), never on the OS key repeat
-    aimDir() { return Math.sign((keysDown.has('R') ? 1 : 0) - (keysDown.has('L') ? 1 : 0) + aimHold); },
-    aimFine() { return keysDown.has('fine'); }, // X14: Shift held
+    aimDir() {
+      const r = keysDown.has('R') || keysDown.has('RD'), l = keysDown.has('L') || keysDown.has('LA');
+      return Math.sign((r ? 1 : 0) - (l ? 1 : 0) + aimHold);
+    },
+    // X14 fine aim, since BC5 (PM on #68) Shift + A / D only: the arrow keys with Shift move the impact dot
+    aimFine() { return keysDown.has('fine') && (keysDown.has('LA') || keysDown.has('RD')) && !keysDown.has('L') && !keysDown.has('R'); },
     releaseAim() { aimHold = 0; },
     // Pause / menu (Phase 7): forget held keys and buttons, so nothing keeps aiming afterwards
     releaseAll() { aimHold = 0; keysDown.clear(); },

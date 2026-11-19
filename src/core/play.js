@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, MIN_POWER, BALL_R, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, BALL_R, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y, SHAPE_PREVIEW,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -134,6 +134,8 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   }
   // The lie for club i from where the ball is (S11): { maxPower, sweetScale }
   function lieOf(i = p.clubIdx) { return lieFor(bag[i], p.lie, surfaces); }
+  // Phase BC: how much of the impact point's shaping the ball's lie allows (the surface's `shape`, 0..1)
+  function lieShape() { return surfaces[p.lie]?.shape ?? 1; }
 
   // Where a dead-straight shot at `power` comes down, allowing for the hills (no wind).
   // Default power = the lie's cap, i.e. the strongest shot possible from here.
@@ -165,41 +167,87 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   // where dist = meters from the ball (flat) to where it would hit. Putts: null (they roll).
   // The ⚑ and the auto-pick ignore obstacles on purpose: the warning is the information.
   const warnMemo = new Map(); // key → result, emptied by prepare()
-  function aimWarning(i = p.clubIdx, a = p.aim, power = lieOf(i).maxPower) {
+  // BC4: `impact` (default: the player's impact point) shapes the flight like the real shot (start out,
+  // curve back, the shaped loft); the centre is the straight flight, exactly as before Phase BC.
+  function aimWarning(i = p.clubIdx, a = p.aim, power = lieOf(i).maxPower, impact = p.impact) {
     if (i === PUTTER || !obstacles.length) return null;
-    const key = `${i}|${a}|${power}|${ball.pos.x}|${ball.pos.z}`;
+    const sh = shapedShot(i, a, power, impact);
+    const key = `${i}|${a}|${power}|${ball.pos.x}|${ball.pos.z}${sh ? `|${impact.x}|${impact.y}|${p.handed}|${p.lie}` : ''}`;
     if (warnMemo.has(key)) return warnMemo.get(key);
     let value = null;
     // K11: the warning flies the ball exactly like the real one (ball.js flight: the same PHYSICS_DT
     // steps and the same update), not the ring's bigger steps, so a step can't jump over the thin
     // edge of the leaves. Until the first obstacle or the ground. About 1 ms; memoised below.
-    const { vel } = launchVelocity(bag[i], Math.max(power, MIN_POWER), a); // as resolveShot
-    const near = nearLine(vel); // X14: only what the flight passes over can be hit (same answer, ~4× faster)
     const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 }, h = PHYSICS_DT;
-    for (let k = 0, n = LANDING_SIM.maxSteps * LANDING_SIM.dt / h; k < n; k++) {
-      copy(q0, q);
-      vel.y -= G * h;
-      q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
-      const hit = firstHit(near, q0, q);
-      if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
-      if (q.y <= terrain.heightAt(q.x, q.z)) break;
+    const n = LANDING_SIM.maxSteps * LANDING_SIM.dt / h;
+    if (!sh) {
+      const { vel } = launchVelocity(bag[i], Math.max(power, MIN_POWER), a); // as resolveShot
+      const near = nearLine(vel); // X14: only what the flight passes over can be hit (same answer, ~4× faster)
+      for (let k = 0; k < n; k++) {
+        copy(q0, q);
+        vel.y -= G * h;
+        q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
+        const hit = firstHit(near, q0, q);
+        if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
+        if (q.y <= terrain.heightAt(q.x, q.z)) break;
+      }
+    } else {
+      // A shaped flight bends: the obstacles near the aim line, widened by how far it strays from it
+      const { dir: d } = sh, flight = shapedFlight(sh, n);
+      let wide = 0;
+      for (const pt of flight.path) wide = Math.max(wide, Math.abs((pt.x - ball.pos.x) * d.z - (pt.z - ball.pos.z) * d.x));
+      const near = nearLine(d, wide), vel = { ...sh.vel }, c = sh.curve;
+      for (let k = 0; k < n; k++) {
+        copy(q0, q);
+        vel.y -= G * h; vel.x += c.x * h; vel.z += c.z * h; // ball.js flight with no wind
+        q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
+        const hit = firstHit(near, q0, q);
+        if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
+        if (q.y <= terrain.heightAt(q.x, q.z)) break;
+      }
     }
     if (warnMemo.size > 64) warnMemo.clear();
     warnMemo.set(key, value);
     return value;
+  }
+  // BC4: the shot a shaped impact gives (resolveShot with a perfect timing), or null when it is not
+  // shaped (the centre, a putt, a lie that removes the shaping): then everything is as before Phase BC.
+  function shapedShot(i, a, power, impact = p.impact) {
+    if (i === PUTTER || !impact || (impact.x === 0 && impact.y === 0)) return null;
+    const shot = resolveShot({
+      club: bag[i], power, acc: 0, aim: a, lie: lieOf(i), puttMax: p.puttMax, greenDecel: surfaces.green.decel,
+      impact, lieShape: lieShape(), handed: p.handed,
+    });
+    return shot.shape ? shot : null;
+  }
+  // BC4: the real ball's flight (ball.js: the same PHYSICS_DT steps, no wind, no obstacles) of a shaped
+  // shot until it first touches the ground. Returns { land: { x, y, z }, path: [{ x, z }] } (the ground
+  // track every SHAPE_PREVIEW.every steps, from the ball to the landing).
+  function shapedFlight(shot, n = LANDING_SIM.maxSteps * LANDING_SIM.dt / PHYSICS_DT) {
+    const vel = { ...shot.vel }, c = shot.curve, q = { ...ball.pos }, h = PHYSICS_DT, path = [{ x: q.x, z: q.z }];
+    for (let k = 0; k < n; k++) {
+      vel.y -= G * h; vel.x += c.x * h; vel.z += c.z * h;
+      q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
+      const gh = terrain.heightAt(q.x, q.z);
+      if (q.y <= gh) { q.y = gh; break; }
+      if (k % SHAPE_PREVIEW.every === 0) path.push({ x: q.x, z: q.z });
+    }
+    path.push({ x: q.x, z: q.z });
+    return { land: q, path };
   }
   // X14: the obstacles a straight, windless flight with this launch velocity can touch. Seen from above it
   // is a ray from the ball, so an obstacle whose footprint (trunk + ball, leaves, boulder + ball) is
   // farther than that from the ray, or behind the ball, can't be hit. A safety margin (NEAR_MARGIN)
   // keeps it conservative; the list keeps the obstacles' order, so firstHit picks the same one.
   const NEAR_MARGIN = 1;
-  function nearLine(vel) {
+  // BC4: `extra` widens the band (m) for a shaped flight, which strays up to that far from the ray.
+  function nearLine(vel, extra = 0) {
     const len = Math.hypot(vel.x, vel.z);
     if (!(len > 0)) return obstacles;
     const ux = vel.x / len, uz = vel.z / len, bx = ball.pos.x, bz = ball.pos.z;
     const close = (x, z, r) => {
       const ex = x - bx, ez = z - bz, along = ex * ux + ez * uz;
-      const R = r + BALL_R + NEAR_MARGIN;
+      const R = r + BALL_R + NEAR_MARGIN + extra;
       return along >= -R && Math.abs(ex * uz - ez * ux) <= R;
     };
     return obstacles.filter(o => o.type === 'tree'
@@ -240,18 +288,25 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   // S23: `hazard` = { id, name } when the marker lands on a penalty surface (water, out of bounds; the
   // hole's own surface table, so an override counts), else null. Where it LANDS, like the marker: a
   // ball that lands short and runs in is not flagged (the player reads the roll). Memoised per club, aim and ball spot (the HUD asks every frame).
+  // BC4 (owner: "no surprises"): with an impact point off the centre the marker and the ticks are where
+  // the SHAPED shot lands (the real ball's flight, no wind), and the value also has `shape`: the
+  // full-power shot's ground track { path: [{ x, z }] from the ball to the landing, roll: [{ x, z }]
+  // from the landing to where it stops, rest: { x, y, z, end } }, so the aim line shows the curve out
+  // and back and the run-out. A centre hit gives exactly the S22 value (no `shape`).
   let marksMemo = null;
-  function aimMarks(i = p.clubIdx, a = p.aim) {
+  function aimMarks(i = p.clubIdx, a = p.aim, impact = p.impact) {
     if (i === PUTTER) return null;
     const cap = lieOf(i).maxPower;
-    const key = `${i}|${a}|${ball.pos.x}|${ball.pos.z}|${cap}|${TUNE.AIM_FLAT_RISE}`;
+    const power = Math.min(cap, 1), sh = shapedShot(i, a, power, impact);
+    const key = `${i}|${a}|${ball.pos.x}|${ball.pos.z}|${cap}|${TUNE.AIM_FLAT_RISE}${sh ? `|${impact.x}|${impact.y}|${p.handed}|${p.lie}` : ''}`;
     if (marksMemo?.key === key) return marksMemo.value;
-    const power = Math.min(cap, 1), end = landingPoint(i, a, power), rise = end.y - ball.pos.y;
+    const shape = sh ? shapeRun(sh) : null;
+    const end = shape ? shape.land : landingPoint(i, a, power), rise = end.y - ball.pos.y;
     const ticks = [];
     for (let k = 1; k < POWER_SECTIONS; k++) {
       const frac = k / POWER_SECTIONS;
       if (frac >= power - 1e-9) break;
-      const q = landingPoint(i, a, frac);
+      const q = sh ? shapedFlight(shapedShot(i, a, frac, impact)).land : landingPoint(i, a, frac);
       ticks.push({ frac, x: q.x, y: q.y, z: q.z, dist: dist2D(ball.pos, q) });
     }
     const flat = TUNE.AIM_FLAT_RISE;
@@ -259,8 +314,28 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
       x: end.x, y: end.y, z: end.z, power, capped: power < 1, dist: dist2D(ball.pos, end), rise,
       ground: rise >= flat ? 'up' : rise <= -flat ? 'down' : 'flat', hazard: penaltyAt(end), ticks,
     };
+    if (shape) value.shape = { path: shape.path, roll: shape.roll, rest: shape.rest };
     marksMemo = { key, value };
     return value;
+  }
+  // BC4: a shaped shot played out on the second ball (restPoint's: no wind, no obstacles, its own
+  // random numbers restarted), recording the ground track. Returns { land, path, roll, rest }.
+  function shapeRun(shot) {
+    simRng.reseed(LANDING_SIM.restSeed);
+    copy(simBall.pos, ball.pos);
+    simBall.launch(shot);
+    const path = [{ x: ball.pos.x, z: ball.pos.z }], roll = [];
+    let land = null, end = null;
+    for (let k = 0; simBall.moving; k++) {
+      const ev = simBall.step(PHYSICS_DT), q = simBall.pos;
+      if (isShotEnd(ev)) end = ev;
+      if (!land && (ev?.type === 'landed' || !simBall.moving)) {
+        land = { x: q.x, y: q.y, z: q.z }; path.push({ x: q.x, z: q.z }); roll.push({ x: q.x, z: q.z }); k = 0;
+      } else if (k % SHAPE_PREVIEW.every === 0) (land ? roll : path).push({ x: q.x, z: q.z });
+    }
+    const q = simBall.pos;
+    roll.push({ x: q.x, z: q.z });
+    return { land, path, roll, rest: { x: q.x, y: q.y, z: q.z, end: end?.type ?? null } };
   }
   function penaltyAt(q) {
     const sf = surfaces[terrain.surfaceAt(q.x, q.z)];
@@ -384,8 +459,6 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   // Phase BC: where the club will hit the ball, { x, y } kept inside the unit disc (core/shape.js).
   // A putt ignores it (S14: putts stay straight); the game hides the ball icon then.
   function setImpact(pt) { p.impact = Object.freeze(clampImpact(pt)); return p.impact; }
-  // How much of the impact point's shaping the ball's lie allows (the surface's `shape`, 0..1)
-  const lieShape = () => surfaces[p.lie]?.shape ?? 1;
 
   // A finished swing from the meter { power, acc, outcome }: hit it. This is the only way to hit the
   // ball (Gate A A8). A cancelled swing does nothing (no stroke), and nothing happens while the ball
