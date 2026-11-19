@@ -45,7 +45,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
   // Far-away flat ground under everything. K13: it sits below the lowest point of the terrain mesh
   // (validateHole checks it), so it never pokes through a hollow and hides the course or the ball.
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(sc.ground.size, sc.ground.size), new THREE.MeshLambertMaterial({ color: 0x3d7a30 }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = sc.ground.y;
+  ground.rotation.x = -Math.PI / 2; ground.position.y = sc.ground.y; ground.name = 'far ground';
   scene.add(ground);
 
   // The terrain: a grid whose heights come from heightAt, with the painted course on it
@@ -74,21 +74,23 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
     const tex = new THREE.CanvasTexture(courseCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
-    scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex })));
+    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
+    mesh.name = 'terrain'; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
+    scene.add(mesh);
   }
 
   // Water surface (holes whose pond sits in a bowl)
   if (sc.water) {
     const w = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshLambertMaterial({ color: 0x3f8fd8, transparent: true, opacity: 0.88 }));
     w.rotation.x = -Math.PI / 2; w.scale.set(sc.water.rx * sc.water.scale, sc.water.rz * sc.water.scale, 1);
-    w.position.set(sc.water.cx, sc.water.y, sc.water.cz);
+    w.position.set(sc.water.cx, sc.water.y, sc.water.cz); w.name = 'water';
     scene.add(w);
   }
 
   // Tee markers
   for (const sx of [-2.6, 2.6]) {
     const m = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshLambertMaterial({ color: sc.teeColor }));
-    m.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + 0.14, hole.tee.z - 1.2); scene.add(m);
+    m.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + 0.14, hole.tee.z - 1.2); m.name = 'tee marker'; scene.add(m);
   }
   // White out-of-bounds stakes
   {
@@ -96,7 +98,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
     const stakeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
     const st = sc.stakes;
     for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of st.xs ?? [-st.x, st.x]) {
-      const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, heightAt(sx, z) + 0.5, z); scene.add(s);
+      const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, heightAt(sx, z) + 0.5, z); s.name = 'OB stake'; scene.add(s);
     }
   }
   addTrees(scene, sc.trees, heightAt, terrain.surfaceAt);
@@ -132,19 +134,20 @@ function addObstacles(scene, obstacles) {
       const leafM = leafMat.clone(); leafM.color.copy(col.setHSL(0.3 + r() * 0.06, 0.45, 0.24 + r() * 0.08));
       const l = new THREE.Mesh(leafGeo, leafM); l.scale.set(c.rx, c.ry, c.rx); l.position.set(c.x, c.y, c.z);
       l.rotation.y = r() * 6.28;
+      t.name = 'tree trunk (in play)'; l.name = 'tree canopy (in play)';
       scene.add(t, l);
       const tw = new THREE.LineSegments(wireCyl, trunkLine); tw.scale.set(o.r, o.top - o.y0, o.r); tw.position.set(o.x, o.y0, o.z);
       const lw = new THREE.LineSegments(wireBall, leafLine); lw.scale.set(c.rx, c.ry, c.rx); lw.position.set(c.x, c.y, c.z);
       outlines.add(tw, lw);
     } else {
       const b = new THREE.Mesh(rockGeo, rockMat); b.scale.setScalar(o.r); b.position.set(o.x, o.y, o.z);
-      b.rotation.set(r() * 6.28, r() * 6.28, 0);
+      b.rotation.set(r() * 6.28, r() * 6.28, 0); b.name = 'boulder';
       scene.add(b);
       const bw = new THREE.LineSegments(wireBall, rockLine); bw.scale.setScalar(o.r); bw.position.set(o.x, o.y, o.z);
       outlines.add(bw);
     }
   }
-  for (const o of outlines.children) o.renderOrder = 10;
+  for (const o of outlines.children) { o.renderOrder = 10; o.name = 'collider outline (debug)'; }
   scene.add(outlines);
   return outlines;
 }
@@ -173,6 +176,7 @@ function addTrees(scene, t, heightAt, surfaceAt) {
     trunks.setMatrixAt(i, m); leaves.setMatrixAt(i, m);
     leaves.setColorAt(i, col.setHSL(0.3 + r() * 0.06, 0.45, 0.25 + r() * 0.1));
   });
+  trunks.name = 'scenery trees: trunks (instanced)'; leaves.name = 'scenery trees: leaves (instanced)';
   scene.add(trunks, leaves);
 }
 
@@ -185,7 +189,7 @@ function addBackdrop(scene, sc) {
     const a = (i / hl.count) * Math.PI * 2, d = hl.dist[0] + r() * hl.dist[1];
     const h = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), hillMat);
     h.scale.set(hl.xz[0] + r() * hl.xz[1], hl.y[0] + r() * hl.y[1], hl.xz[0] + r() * hl.xz[1]);
-    h.position.set(Math.sin(a) * d, hl.posY, hl.cz + Math.cos(a) * d);
+    h.position.set(Math.sin(a) * d, hl.posY, hl.cz + Math.cos(a) * d); h.name = 'hill';
     scene.add(h);
   }
   const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
@@ -193,7 +197,7 @@ function addBackdrop(scene, sc) {
     const g = new THREE.Group();
     for (let k = 0; k < 4; k++) {
       const p = new THREE.Mesh(new THREE.SphereGeometry(6 + r() * 6, 12, 8), cloudMat);
-      p.position.set(k * 9 - 13, r() * 3, r() * 6); p.scale.y = 0.55; g.add(p);
+      p.position.set(k * 9 - 13, r() * 3, r() * 6); p.scale.y = 0.55; p.name = 'cloud puff'; g.add(p);
     }
     g.position.set((r() - 0.5) * cl.xSpan, cl.y[0] + r() * cl.y[1], cl.cz - (r() - cl.zOff) * cl.zSpan);
     scene.add(g);

@@ -402,7 +402,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); measureFrame(); }
 
-  function debugText(fps) {
+  function debugText() {
     const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
     const f = (n, k = 2) => n.toFixed(k);
     return [
@@ -419,7 +419,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       `meter  ${meter.phase}  value ${f(meter.value, 3)}  power ${f(meter.power, 3)}`,
       `render dpr ${f(renderer.getPixelRatio(), 2)} (cap ${TUNE.DPR_CAP})  aa ${TUNE.ANTIALIAS >= 0.5 ? 'on' : 'off'}`,
       ...info(),
-      `fps    ${f(fps, 0)}`,
+      // AP0: fps and the budget lines follow (src/game/perf.js)
     ].join('\n');
   }
 

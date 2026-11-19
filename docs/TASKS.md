@@ -253,7 +253,7 @@ Today's menu (Phase 7): Play → Solo / vs AI / Practice, course list from `sets
 - [x] **A0** 🅿️ Owner + tech lead: feasibility report and follow-up (2026-11-19). Stay on Three.js + no build step.
 - [ ] **ART0a** 🅿️ Owner + artist: the **biome set concept** (DESIGN §8b), round 1: structure, how pieces are shared, rough mock-ups only, no assets. First biomes: grassland, mountain, beach (Hawaii-like).
 - [ ] **ART0b** 🅿️ Owner + artist: the **general art style** (shapes, textures, colours, the chibi golfer look, the standard golfer skeleton rule), with the owner's examples → `docs/ART_STYLE.md`. **No asset work before this.**
-- [ ] **AP0** (S) Phone budget + measuring: draw calls, triangles, texture memory in the debug overlay and `window.__golf`; `tools/perf-check.mjs` fails a hole over budget; one fps check on the owner's phone. Budget in DESIGN.
+- [x] **AP0** (S) Phone budget + measuring: draw calls, triangles, texture memory in the debug overlay and `window.__golf`; `tools/perf-check.mjs` fails a hole over budget; one fps check on the owner's phone. Budget in DESIGN.
 - [ ] **AP1** (S–M) Fewer draw calls now: instance / merge trees (2 meshes + a copied material each today), OB stakes and cloud puffs; share materials. Also helps X13.
 - [ ] **AP8** (S–M, moved up) Post-processing hook replacing `renderSession()`; **pixel effect first** (render at ½–¼ resolution, scale up; optional palette / dither); presets from the kit later; a Settings switch. Owner compares clean vs PS1 on the real game with it.
 - [ ] **AP2** (S) Three.js upgrade (X6) + vendored add-ons (glTF loader, Meshopt decoder; KTX2 optional), a `three/addons/` import-map entry.

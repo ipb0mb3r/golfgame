@@ -1,5 +1,6 @@
 // Debug overlay (backtick key, or ?debug=1 on a phone, Gate A C5): state, speed, surface, slope,
-// wind, wetness, meter values, render quality, fps.
+// wind, wetness, meter values, render quality, and (AP0) fps, draw calls, triangles and memory
+// coloured against the phone budget.
 const REFRESH = 0.1; // seconds between redraws of the text
 const GAP = 8;       // px between the overlay and the HUD panels next to it
 const SHORT_SCREEN = '(max-height: 500px)'; // same as the media query in index.html
@@ -74,8 +75,11 @@ function fit(el, left, right, floor) {
   return { px: 0, fits: false };
 }
 
-export function createDebug(el) {
-  let on = false, acc = 0, frames = 0, fps = 0;
+// AP0: `perf` (src/game/perf.js) adds the coloured fps / draw calls / triangles / memory lines
+export function createDebug(el, perf) {
+  let on = false, acc = 0;
+  const text = document.createTextNode(''), perfEl = document.createElement('span');
+  el.replaceChildren(text, perfEl);
   window.addEventListener('resize', () => { if (on) place(el); });
   return {
     get visible() { return on; },
@@ -84,10 +88,10 @@ export function createDebug(el) {
     show(v) { if (!!v !== on) this.toggle(); },
     // rawDt = real frame time; info() builds the lines only when the overlay is shown
     frame(rawDt, info) {
-      frames++; acc += rawDt;
+      acc += rawDt;
       if (acc < REFRESH) return;
-      fps = frames / acc; frames = 0; acc = 0;
-      if (on) { el.textContent = info(fps); place(el); }
+      acc = 0;
+      if (on) { text.data = `${info()}\n`; perf.renderInto(perfEl); place(el); }
     },
   };
 }

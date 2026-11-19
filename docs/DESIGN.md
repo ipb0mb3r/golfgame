@@ -362,6 +362,22 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 The exact file format is built by the dev as AP5, from the artist's draft (`docs/art/biome-sets/`, PR #73).
 
+### Phone performance budget ✅ (AP0, from `reviews/art-tech-lead-followup.md` + owner decisions 2026-11-19)
+Target: a **mid-range phone** (iPhone 12 / Pixel 6 class) at **60 fps**, never below **30 fps** on an XR-class phone. The owner's S25 Ultra checks the high setting. The numbers live in `PERF_BUDGET` (`src/core/config.js`); the debug overlay, `window.__golf.perf()` and `tools/perf-check.mjs` read them from there.
+
+| Item | Budget |
+|---|---|
+| Draw calls per frame | ≤ 150 (the real limit on phones) |
+| Triangles on screen | ≤ 300k, of which terrain ≤ 200k (coarser far away, 1 m cells near the course) |
+| One tree / rock model | ≤ 300–500 triangles |
+| Golfer | ≤ 3k triangles (PS1) / ≤ 8k (clean) |
+| Textures | **small stylised textures** (owner: "flat colour with texture"), ≤ 512² each (≤ 256² for the PS1 look), never photo textures |
+| Graphics memory per hole | ≤ 64 MB (geometry + textures) |
+| Download per course | ≤ 8 MB |
+| Shadows | a soft round shadow under the golfer and the ball, no real-time shadows |
+
+**Measuring:** the debug overlay (backtick, or `?debug=1`) shows fps (smoothed over ~0.5 s), draw calls, triangles, the highest draw calls / triangles since the hole loaded, geometries, textures, the largest texture and an estimate of the graphics memory (geometry + textures, RGBA8 + mipmaps), each green (ok) or red (over budget). While the overlay is open the debug collider outlines are drawn too, so draw calls include them (the overlay says how many at most); **`?debug=perf`** opens the overlay without them, so fps and draw calls are the game's own (use it for phone checks). `tools/perf-check.mjs` checks every hole from the tee and over its flyover. Today's painted course map (one canvas of ~1500–2048 px per hole) is over the texture line until AP6 replaces it; the tool shows it but doesn't fail on it.
+
 ---
 
 ## 9. Architecture (✅ = exists, ⏳ = planned)
@@ -378,6 +394,7 @@ src/
     validate.js            ✅ validateHole / validateScenario (Gate A T7): the page checks a hole when it first plays it, without the shot simulations (`shots: false`); node --test checks every hole and scenario in full (X12)
     vec.js                 ✅ small vector helpers ({x,y,z} objects)
     rng.js                 ✅ seeded RNG (mulberry32) + parseSeed
+    perf.js                ✅ phone budget check (AP0): rate(numbers) → ok / over per item against PERF_BUDGET (tests/perf.test.js)
     clubs.js               ✅ club table, bag, lieFor (cap + window), pickClub (auto-pick)
     surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather) + the lie-tune layer
     terrain.js             ✅ ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
@@ -409,6 +426,7 @@ src/
     input.js               ✅ keyboard, mouse, touch (primary press only, Gate A C7)
     roundUi.js             ✅ summary card between holes, final scorecard (groups of 9), personal best in localStorage (Phase 6); leaderboard and final standings (Phase T)
     debug.js               ✅ debug overlay (backtick, or ?debug=1 on phones, Gate A C5)
+    perf.js                ✅ fps, draw calls, triangles, memory from renderer.info, no per-frame allocation (AP0; overlay, window.__golf.perf())
     menus.js               ✅ main menu, Play, Solo, vs AI (course, difficulty), Practice, How to Play, Settings screens (Phase 7, Phase T)
     settings.js            ✅ settings in localStorage, try/catch (Phase 7)
     weatherFx.js           ⏳ Phase 5
@@ -421,6 +439,7 @@ tools/
   baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
   record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
   session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2)
+  perf-check.mjs           ✅ every hole at 390x844: tee view + flyover peak vs PERF_BUDGET, time to Tee off; --strict fails over budget (AP0)
   menu-check.mjs           ✅ clicks through every menu path, pause, quit and play again in a headless browser (Phase 7, M6)
 ```
 
