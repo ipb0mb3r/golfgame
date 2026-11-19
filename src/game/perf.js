@@ -127,8 +127,8 @@ export function createPerfMeter(renderer, view) {
       add('draws  ', 'drawCalls', ` / ${B.drawCalls}`); add('  ', 'outlines', '\n');
       add('tris   ', 'triangles', ` / ${B.triangles / 1000}k`); add('  peak ', 'peak', '\n');
       add('mem    ', 'geometries', ' geo  '); add('', 'textures', ' tex  ');
-      add('', 'textureSize', ' px max  '); add('', 'mapSize', '\n');
-      add('gpu    ~', 'gpuMB', ` / ${B.gpuMB} MB`); add('', 'memParts', '\n');
+      add('', 'textureSize', ' px max'); add('', 'mapSize');
+      add('\ngpu    ~', 'gpuMB', ` / ${B.gpuMB} MB`); add('', 'memParts', '\n');
       add('screen ≈ ', 'screenMB', ' MB');
     }
     const n = numbers(), r = n.rating;
@@ -144,7 +144,7 @@ export function createPerfMeter(renderer, view) {
     set('peak', `${n.peakDrawCalls} draws ${(n.peakTriangles / 1000).toFixed(0)}k tris`);
     set('geometries', String(n.geometries)); set('textures', String(n.textures));
     set('textureSize', String(n.textureSize));
-    set('mapSize', n.mapSize ? `map (AP6) ${n.mapSize} px` : ''); spans.mapSize.className = 'perf-na';
+    set('mapSize', n.mapSize ? `\nmap (AP6) ${n.mapSize} px` : ''); spans.mapSize.className = 'perf-na'; // grey, unrated until AP6
     set('screenMB', n.screenMB.toFixed(1));
     set('gpuMB', n.gpuMB.toFixed(1)); set('memParts', `  (geo ${n.geoMB.toFixed(1)}, tex ${n.texMB.toFixed(1)})`);
   }
