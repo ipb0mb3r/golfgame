@@ -17,8 +17,8 @@ export function createProps(scene, hole, terrain, cup) {
   scene.add(cupRim);
   // FL1: the flagstick is drawn from the same TUNE.FLAG_R / FLAG_H the ball hits (read once per hole,
   // so ?tune= changes both); FLAG_H 0 = no pole and no cloth. The pole and the cloth hang in one group
-  // standing on the cup, so a hit can wobble them around the base (hitPin). setPin(false) takes the
-  // stick out for putts (they never hit it).
+  // standing on the cup, so a hit can wobble them around the base (hitPin). setPin(false) hides the
+  // stick (core obstacles.pinShown: only on a putt near the cup).
   const stickH = TUNE.FLAG_H, hasStick = stickH > 0;
   const stick = new THREE.Group();
   stick.position.set(cup.x, cup.y, cup.z);

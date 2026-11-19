@@ -147,3 +147,18 @@ for (const [id, inPower, outPower] of [['h1-pin-chip', 0.27, 0.30], ['h1-pin-app
     }
   });
 }
+
+// PM on PR #72: on putts the drawn stick stays shown, and is hidden only within FLAG_PUTT_HIDE m of the cup.
+test('FL1: the drawn stick hides only on a putt within FLAG_PUTT_HIDE of the cup (0 = never)', async () => {
+  const { pinShown } = await import('../src/core/obstacles.js');
+  const cup = { x: 2, y: 5, z: -100 };
+  assert.equal(TUNE.FLAG_PUTT_HIDE, 3);
+  assert.equal(pinShown(true, { x: 2, y: 5, z: -110 }, cup), true, 'a 10 m putt: shown');
+  assert.equal(pinShown(true, { x: 2, y: 9, z: -103.5 }, cup), true, '3.5 m away (flat distance): shown');
+  assert.equal(pinShown(true, { x: 4, y: 5, z: -101 }, cup), false, '2.2 m putt: hidden');
+  assert.equal(pinShown(false, { x: 2, y: 5, z: -100.5 }, cup), true, 'a chip near the cup: shown');
+  applyTune('FLAG_PUTT_HIDE:0');
+  assert.equal(pinShown(true, { x: 2, y: 5, z: -100.5 }, cup), true, '0 = never hide');
+  applyTune('FLAG_PUTT_HIDE:6');
+  assert.equal(pinShown(true, { x: 2, y: 5, z: -105 }, cup), false, 'tunable');
+});

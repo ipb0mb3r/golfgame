@@ -204,6 +204,7 @@ export const TUNABLES = Object.freeze({
   FLAG_H:                { def: 2.6,  min: 0,     max: 4 },    // m: the pole's height above the cup (the drawn pole is 2.6); 0 = no pole
   FLAG_REST:             { def: 0.15, min: 0,     max: 1 },    // share of the speed INTO the pole that bounces back (soft: the ball drops dead)
   FLAG_KEEP:             { def: 0.2,  min: 0,     max: 1 },    // share of the speed ALONG the pole's side (a glancing hit) that is kept
+  FLAG_PUTT_HIDE:        { def: 3,    min: 0,     max: 30 },   // m: on a putt the drawn pole and flag are hidden while the ball is this close to the cup (0 = never hide). Looks only
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)
