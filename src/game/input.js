@@ -49,6 +49,7 @@ export function bindInput(canvas, on) {
     // QA R-1: Space and Enter also start the hole from the intro card or the compact hole card
     if (e.code === 'Space') { e.preventDefault(); if (isSwingKey(e) && !on.start() && !on.skip()) on.swing(eventSeconds(e)); }
     if (isEnter && !e.repeat && !document.activeElement?.closest?.('button, a')) { if (!on.start()) on.skip(); }
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keysDown.add('fine'); // X14: Shift + ◀ ▶ = fine aim
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') { keysDown.add('L'); e.preventDefault(); }
     if (e.code === 'ArrowRight' || e.code === 'KeyD') { keysDown.add('R'); e.preventDefault(); }
     if (e.code === 'ArrowUp' || e.code === 'KeyW') { e.preventDefault(); on.club(-1); }
@@ -57,6 +58,7 @@ export function bindInput(canvas, on) {
     if (e.code === 'KeyV' && !e.repeat) { const t = performance.now(); on.view(true, t); on.view(false, t); } // V: a tap on the view button
   });
   window.addEventListener('keyup', e => {
+    if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') keysDown.delete('fine');
     if (e.code === 'ArrowLeft' || e.code === 'KeyA') keysDown.delete('L');
     if (e.code === 'ArrowRight' || e.code === 'KeyD') keysDown.delete('R');
   });
@@ -65,8 +67,10 @@ export function bindInput(canvas, on) {
   $('holeCard').addEventListener('pointerdown', e => { e.preventDefault(); if (on.active()) on.start(); }); // Phase 6: tap the compact hole card to start
   $('againBtn').addEventListener('click', on.again);
   return {
-    // −1 / 0 / +1 from the arrow keys and the hold-to-aim buttons
+    // −1 / 0 / +1 from the arrow keys and the hold-to-aim buttons. X14: the session turns the aim
+    // every frame while one is held (core/aimPreview.js aimTurn), never on the OS key repeat
     aimDir() { return Math.sign((keysDown.has('R') ? 1 : 0) - (keysDown.has('L') ? 1 : 0) + aimHold); },
+    aimFine() { return keysDown.has('fine'); }, // X14: Shift held
     releaseAim() { aimHold = 0; },
     // Pause / menu (Phase 7): forget held keys and buttons, so nothing keeps aiming afterwards
     releaseAll() { aimHold = 0; keysDown.clear(); },

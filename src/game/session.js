@@ -8,9 +8,10 @@
 //
 // The rules are in core: play.swing() hits the ball, play.next says what happens after a shot,
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
-import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE, CAM, G } from '../core/config.js';
+import { TIMING, MPS_TO_MPH, TUNE, CAM, G } from '../core/config.js';
 import { createRng } from '../core/rng.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
+import { aimTurn, createAimPreview } from '../core/aimPreview.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
@@ -69,12 +70,15 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let holedT = 0, t = 0, lastAimKey = '';
   let shotT = 0, skipShown = false; // X9: game time since the hit, and whether ⏩ Skip is showing
   let warn = null;     // K4: where the aimed shot would hit an obstacle (play.aimWarning), or null
+  // X14: the warning without blocking a frame (the ⚑ arc's search runs a few ms per frame, exact once the aim stops)
+  const preview = createAimPreview(play, { clock: () => performance.now() });
+  let aimHeld = 0, aimHeldDir = 0; // X14: how long (game s) the aim has been held in this direction
   let treeFlash = false; // one obstacle flash per shot is enough (a ball can rattle through branches)
   const target = { x: 0, y: 0, z: 0 };
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
 
-  const updateHud = () => { hud.update(state, meter.power); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover'); measureFrame(); };
+  const updateHud = () => { hud.update(state, meter.power, warn); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover'); measureFrame(); };
   // V2: the view button while aiming (null = the aiming view, else core/views.js VIEW_STEPS)
   let view = null, viewPress = null; // viewPress = { at, opened } while the button is held
   // V1: the free band of the screen the aiming view must fit in (core/views.js `frame`), measured from the HUD
@@ -154,6 +158,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     resetMeter(meter);
     props.resetTrail();
     setView(null);
+    warn = null; // a new shot: the frame works the warning out (X14)
     updateHud();
     if (snapCamera) rig.snap(camView());
   }
@@ -277,8 +282,10 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     if (cardFrames >= 0 && ++cardFrames === 2) { cardFrames = -1; if (state === 'intro') later(teeOff, TIMING.holeCard); }
     // Aiming
     if (state === 'aim') {
+      // X14: every frame while held, by game time (any frame rate), slow at first, Shift = fine
       const dir = input.aimDir();
-      if (dir) play.setAim(play.aim + dir * dt * (play.club.putter ? AIM_SPEED_PUTT : AIM_SPEED));
+      if (dir !== aimHeldDir) { aimHeld = 0; aimHeldDir = dir; }
+      if (dir) { play.setAim(play.aim + dir * aimTurn(aimHeld, dt, { putter: play.club.putter, fine: input.aimFine() })); aimHeld += dt; }
     }
     // Swing meter
     if (isSwinging(state)) {
@@ -312,12 +319,12 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       let len;
       if (play.club.putter) { len = Math.min(play.distToCup(), play.puttMax); Object.assign(target, { x: ball.pos.x + d.x * len, y: 0, z: ball.pos.z + d.z * len }); }
       else { Object.assign(target, play.landingPoint(play.clubIdx)); len = dist2D(ball.pos, target); }
-      warn = play.shotWarning(); // K4 (memoized in core: only works it out again when the aim or club changes)
+      warn = preview.update(); // K4, X14: play.shotWarning() once the aim is still; never blocks a frame
       marks = play.aimMarks(); // S22 (memoized in core too); null for a putt
       if (marks) { Object.assign(target, { x: marks.x, y: marks.y, z: marks.z }); len = dist2D(ball.pos, target); }
       props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn, marks);
       // Keep the slope readout and club distance in step with the aim
-      const key = play.aim.toFixed(3) + play.clubIdx;
+      const key = `${play.aim.toFixed(3)}|${play.clubIdx}|${warn ? `${warn.kind}|${warn.at}|${Math.round(warn.dist)}` : ''}`;
       if (key !== lastAimKey) { lastAimKey = key; updateHud(); }
     } else { warn = null; marks = null; props.setAimGuide(false); }
 

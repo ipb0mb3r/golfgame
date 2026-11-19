@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, BALL_R, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -65,7 +65,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, shotWarning, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
+    restPoint, aimWarning, shotWarning, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, pinPowerKnown, pinPowerJob, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
   function newWind() {
@@ -171,12 +171,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     // steps and the same update), not the ring's bigger steps, so a step can't jump over the thin
     // edge of the leaves. Until the first obstacle or the ground. About 1 ms; memoised below.
     const { vel } = launchVelocity(bag[i], Math.max(power, MIN_POWER), a); // as resolveShot
+    const near = nearLine(vel); // X14: only what the flight passes over can be hit (same answer, ~4× faster)
     const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 }, h = PHYSICS_DT;
     for (let k = 0, n = LANDING_SIM.maxSteps * LANDING_SIM.dt / h; k < n; k++) {
       copy(q0, q);
       vel.y -= G * h;
       q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
-      const hit = firstHit(obstacles, q0, q);
+      const hit = firstHit(near, q0, q);
       if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
       if (q.y <= terrain.heightAt(q.x, q.z)) break;
     }
@@ -184,19 +185,39 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     warnMemo.set(key, value);
     return value;
   }
+  // X14: the obstacles a straight, windless flight with this launch velocity can touch. Seen from above it
+  // is a ray from the ball, so an obstacle whose footprint (trunk + ball, leaves, boulder + ball) is
+  // farther than that from the ray, or behind the ball, can't be hit. A safety margin (NEAR_MARGIN)
+  // keeps it conservative; the list keeps the obstacles' order, so firstHit picks the same one.
+  const NEAR_MARGIN = 1;
+  function nearLine(vel) {
+    const len = Math.hypot(vel.x, vel.z);
+    if (!(len > 0)) return obstacles;
+    const ux = vel.x / len, uz = vel.z / len, bx = ball.pos.x, bz = ball.pos.z;
+    const close = (x, z, r) => {
+      const ex = x - bx, ez = z - bz, along = ex * ux + ez * uz;
+      const R = r + BALL_R + NEAR_MARGIN;
+      return along >= -R && Math.abs(ex * uz - ez * ux) <= R;
+    };
+    return obstacles.filter(o => o.type === 'tree'
+      ? close(o.x, o.z, o.r) || close(o.canopy.x, o.canopy.z, o.canopy.rx)
+      : close(o.x, o.z, o.r));
+  }
   // The warning the player sees (PM on PR #33): the full-power arc (the ring) AND the ⚑ arc (the
   // shot we suggest, when the ⚑ is on the meter, at most the lie's cap). The ⚑ must never lead into
   // the leaves without a warning. Returns null, or the nearer hit with `at`: 'pin' (only the ⚑
   // shot hits), 'full' (only the full-power shot) or 'both'.
-  function shotWarning(i = p.clubIdx, a = p.aim) {
+  // X14: `pin` = the ⚑ power to check instead of working it out (the aim preview passes the last one it
+  // knows while the aim moves, see core/aimPreview.js); left out, it is the exact ⚑ for this aim.
+  function shotWarning(i = p.clubIdx, a = p.aim, pin = undefined) {
     if (i === PUTTER || !obstacles.length) return null;
     const cap = lieOf(i).maxPower;
     const full = aimWarning(i, a, cap);
-    const pp = a === p.aim ? pinPower(i) : Infinity; // the ⚑ is only known for the current aim
-    const pin = pp <= HUD.pinTickMax ? aimWarning(i, a, Math.min(pp, cap)) : null;
-    if (!full && !pin) return null;
-    const near = !full ? pin : !pin ? full : pin.dist <= full.dist ? pin : full;
-    return { ...near, at: full && pin ? 'both' : pin ? 'pin' : 'full' };
+    const pp = pin !== undefined ? pin : a === p.aim ? pinPower(i) : Infinity; // the ⚑ is only known for the current aim
+    const atPin = pp <= HUD.pinTickMax ? aimWarning(i, a, Math.min(pp, cap)) : null;
+    if (!full && !atPin) return null;
+    const near = !full ? atPin : !atPin ? full : atPin.dist <= full.dist ? atPin : full;
+    return { ...near, at: full && atPin ? 'both' : atPin ? 'pin' : 'full' };
   }
   // S22 (owner, playtest 1): the aim line's marker and ticks. The marker is where a straight, no-wind
   // shot at full power LANDS (the carry, hills included), or at the lie's cap when the lie caps the
@@ -259,9 +280,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // S15: it simulates the whole shot to where the ball comes to rest (restPoint), so a long club's run
   // out is included (before, it aimed the landing 95% of the way and a 3 Wood ran 7–11 m past).
   // It is on the meter's 0..1 scale: above the lie's cap it sits in the grayed-out part (= out of reach
-  // with this club from here). Found by bisection. The HUD asks for it on every aim change, so the
-  // answer is kept for the same club, aim, ball and target, until the next prepare().
-  let pinMemo = null;
+  // with this club from here). Found by bisection. The answer is kept per club, aim, ball and target,
+  // until the next prepare().
+  // X14: this search is the heaviest preview (up to ~40 ms on a long fairway: each step rolls a whole
+  // shot out; out of bounds the roll ends at once, hence the owner's "no stutter OB"). The K4 warning
+  // needs it on every aim change, so it is also offered as a job that can run a little per frame
+  // (pinPowerJob): the same search, step by step, the same answer.
+  const pinMemo = new Map(); // key → ⚑ power, emptied by prepare()
   // PM on PR #31 ("harder is much better", no free chip-ins): a chip or pitch at the cup from within
   // CHIP_AIM_RANGE has its ⚑ CHIP_FLAG_SHORT meters short of the cup, so a perfect ⚑ chip leaves a
   // short putt and holing it means adding power on purpose. Putts and everything else: 0.
@@ -269,27 +294,67 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     const atCup = p.targetKind === 'chip' || p.targetKind === 'cup';
     return atCup && distToCup() <= TUNE.CHIP_AIM_RANGE ? TUNE.CHIP_FLAG_SHORT : 0;
   }
+  const pinKey = i => `${i}|${p.aim}|${ball.pos.x}|${ball.pos.z}|${p.target.x}|${p.target.z}|${chipShort()}`;
   function pinPower(i = p.clubIdx) {
     if (i === PUTTER) return (puttPlaysLike() + PUTT.pinTickExtra) / p.puttMax;
-    const key = `${i}|${p.aim}|${ball.pos.x}|${ball.pos.z}|${p.target.x}|${p.target.z}|${chipShort()}`;
-    if (pinMemo?.key === key) return pinMemo.value;
-    const want = Math.max(0, targetDist() - chipShort());
-    const restAt = pw => dist2D(ball.pos, restPoint(i, p.aim, pw));
+    const key = pinKey(i);
+    if (pinMemo.has(key)) return pinMemo.get(key);
+    const search = pinSearch(i, p.aim, Math.max(0, targetDist() - chipShort()));
+    let r;
+    do r = search.next(); while (!r.done);
+    return remember(key, r.value);
+  }
+  function remember(key, value) {
+    if (pinMemo.size > 64) pinMemo.clear();
+    pinMemo.set(key, value);
+    return value;
+  }
+  // X14: the ⚑ power for club i at the CURRENT aim if it is already known, else undefined (never searches)
+  function pinPowerKnown(i = p.clubIdx) {
+    if (i === PUTTER) return pinPower(i);
+    return pinMemo.get(pinKey(i));
+  }
+  // X14: the same search as pinPower(i) for the current aim, as a job: job.step(outOfTime) works until
+  // the answer is found (returns true, job.value is set and pinPower() knows it from then on) or until
+  // outOfTime() says stop (returns false; call step again on a later frame). It keeps the aim, ball and
+  // target it started with, so a job that finishes after the aim moved on still gives that aim's answer.
+  function pinPowerJob(i = p.clubIdx) {
+    const key = pinKey(i), known = pinPowerKnown(i);
+    const search = known === undefined ? pinSearch(i, p.aim, Math.max(0, targetDist() - chipShort())) : null;
+    const job = {
+      key, club: i, aim: p.aim, done: known !== undefined, value: known,
+      step(outOfTime = () => false) {
+        while (!job.done) {
+          const r = search.next();
+          if (r.done) { job.done = true; job.value = remember(key, r.value); break; }
+          if (outOfTime()) break;
+        }
+        return job.done;
+      },
+    };
+    return job;
+  }
+  // The bisection itself. It yields after each simulation (a pause point for pinPowerJob) and returns the power.
+  function* pinSearch(i, aim, want) {
+    const restAt = pw => dist2D(ball.pos, restPoint(i, aim, pw));
     // Bracket first with the cheap landing simulation: the power that only CARRIES all the way is
     // (almost always) enough to finish there, because the ball runs on after it lands. Only when it
     // isn't (it rolls back off a slope) does the search look up to pinMaxPower.
-    const carryAt = pw => dist2D(ball.pos, landingPoint(i, p.aim, pw));
-    let lo = 0, hi = LANDING_SIM.pinMaxPower, value;
+    const carryAt = pw => dist2D(ball.pos, landingPoint(i, aim, pw));
+    let lo = 0, hi = LANDING_SIM.pinMaxPower, value, d;
     if (carryAt(hi) >= want) {
-      for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (lo + hi) / 2; if (carryAt(mid) < want) lo = mid; else hi = mid; }
+      for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (lo + hi) / 2; if (carryAt(mid) < want) lo = mid; else hi = mid; yield; }
       lo = 0;
-      if (restAt(hi) < want) hi = LANDING_SIM.pinMaxPower;
+      d = restAt(hi); yield;
+      if (d < want) hi = LANDING_SIM.pinMaxPower;
     }
-    if (restAt(hi) < want) value = hi; // far out of reach: the HUD hides the mark
+    d = restAt(hi); yield;
+    if (d < want) value = hi; // far out of reach: the HUD hides the mark
     else {
       for (let k = 0; k < LANDING_SIM.restIters; k++) {
         const mid = (lo + hi) / 2;
-        if (restAt(mid) < want) lo = mid; else hi = mid;
+        d = restAt(mid); yield;
+        if (d < want) lo = mid; else hi = mid;
       }
       value = hi;
       // Where the finish jumps over the target (a ball that lands on a bank rolls back, a little more
@@ -297,13 +362,16 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
       // just short of the jump, just past it, and the landing rule from before S15 (land
       // AUTO_CLUB_REACH of the way).
       const miss = pw => Math.abs(restAt(pw) - want);
-      if (miss(value) > LANDING_SIM.restTol) {
+      let mv = miss(value); yield;
+      if (mv > LANDING_SIM.restTol) {
         let a = 0, b = LANDING_SIM.pinMaxPower;
-        for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (a + b) / 2; if (carryAt(mid) < want * AUTO_CLUB_REACH) a = mid; else b = mid; }
-        for (const pw of [lo, b]) if (miss(pw) < miss(value)) value = pw;
+        for (let k = 0; k < LANDING_SIM.pinIters; k++) { const mid = (a + b) / 2; if (carryAt(mid) < want * AUTO_CLUB_REACH) a = mid; else b = mid; yield; }
+        for (const pw of [lo, b]) {
+          const m = miss(pw); yield;
+          if (m < mv) { value = pw; mv = m; }
+        }
       }
     }
-    pinMemo = { key, value };
     return value;
   }
   // Putts: a slope adds or removes "distance" (uphill plays longer)
@@ -314,7 +382,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // shot: the aim, the ⚑ and the auto-pick all use it (kind 'spot').
   function prepare(spot = null) {
     p.next = null;
-    pinMemo = null; marksMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
+    pinMemo.clear(); marksMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
     p.lie = terrain.surfaceAt(ball.pos.x, ball.pos.z);

@@ -28,6 +28,22 @@ export const PERFECT_POWER = 0.97;   // a straight shot above this power says "P
 export const SLIGHT_ERROR = 0.07;    // |error| below this is a "slight" hook/slice
 export const AIM_SPEED = 0.45;       // rad/s while holding aim
 export const AIM_SPEED_PUTT = 0.3;   // rad/s with the putter
+// X14: holding aim turns every frame (not on the OS key repeat), by game time, so the speed is the same
+// at any frame rate. It starts slow (a tap is a fine nudge), reaches AIM_SPEED, then speeds up gently
+// on a long hold. Shift (keyboard) turns at `fineK` × that for fine adjusting. Multipliers of AIM_SPEED
+// (AIM_SPEED_PUTT with the putter), s = seconds the aim has been held.
+export const AIM_TURN = {
+  startK: 0.4,    // speed at the first moment of a hold
+  rampS: 0.3,     // ...up to 1× over this many seconds
+  fastAfterS: 1.2, // held this long, it starts to speed up again
+  fastRampS: 0.8, // ...up to fastK over this many seconds
+  fastK: 1.6,
+  fineK: 0.25,    // Shift held
+};
+// X14: the heavy aim previews (the K4 warning's ⚑ arc needs the ⚑ power, a search over whole rolled-out
+// shots) work at most this long per frame, and while the aim moves a new search starts at most every
+// gapMs. When the aim stops the exact search for the final aim runs (over a few frames) at once.
+export const AIM_PREVIEW = { budgetMs: 2.5, gapMs: 120 };
 
 // --- Clubs and shots ---
 export const AUTO_CLUB_REACH = 0.95; // auto-pick: shortest club whose reach is ≥ 95% of the distance

@@ -188,7 +188,8 @@ export function createHud(play) {
   }
 
   // state = game state, power = locked power (for the white mark)
-  function update(state, power) {
+  // warnNow = the K4 warning the session shows (X14: core/aimPreview.js, so the HUD never runs the search itself)
+  function update(state, power, warnNow = null) {
     const aiming = isAimingState(state);
     const club = bag[play.clubIdx];
     const putt = swingClicks(club) === 2;
@@ -209,7 +210,7 @@ export function createHud(play) {
     $('pinTick').style.left = `calc(${meterPct(Math.min(Math.max(need, 0), 1))}% - 1px)`;
     $('pinTick').style.display = need <= HUD.pinTickMax ? 'block' : 'none';
     $('pinTick').classList.toggle('flip', need > HUD.pinFlagFlip);
-    const warn = state === 'aim' ? play.shotWarning() : null;
+    const warn = state === 'aim' ? warnNow : null;
     $('hint').textContent = warn ? warnHint(warn) : (putt ? PUTT_HINTS : HINTS)[state] || '';
     $('hint').classList.toggle('warn', !!warn);
     const pm = $('powerMark');
