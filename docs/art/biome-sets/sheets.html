@@ -73,7 +73,7 @@ function checks(P) {
 if (mode === 'palette') {
   const P = PALETTES[q.get('p') || 'alpine-day'];
   const biome = Object.values(BIOMES).find(b => b.palettes.includes(P.id));
-  h(`<h1>${P.label}</h1><p class="sub">Palette <code>${P.id}</code>${P.base ? ` · a variant of <code>${P.base}</code> (time of day)` : ''} · biome: ${biome?.name ?? '-'}</p>`);
+  h(`<h1>${P.label}</h1><p class="sub"><b>Example palette (rough, to show recolouring; not a style proposal)</b><br>Palette <code>${P.id}</code>${P.base ? ` · a variant of <code>${P.base}</code> (time of day)` : ''} · biome: ${biome?.name ?? '-'}</p>`);
   h(`<div class="sky" style="background:linear-gradient(${P.skyTop}, ${P.skyHorizon} 70%, ${P.fog})"><div style="position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(transparent, ${P.backFar} 0)">
      <svg viewBox="0 0 358 30" width="100%" height="30" style="position:absolute;bottom:0"><polygon points="0,30 40,8 70,20 110,2 150,22 190,6 230,24 280,4 320,18 358,10 358,30" fill="${P.backNear}"/><polygon points="102,6 110,2 118,7" fill="${P.backCap}"/><polygon points="272,8 280,4 288,9" fill="${P.backCap}"/></svg></div></div>`);
   h(`<h2>Surfaces (course textures are recoloured by these)</h2><div class="grid">${[['tee'], ['fairwayA', 'fairway A'], ['fairwayB', 'fairway B'], ['fringe'], ['greenA', 'green A'], ['greenB', 'green B'], ['rough'], ['deepRough', 'deep rough'], ['sand'], ['water'], ['waterDeep', 'deep water'], ['rock'], ['path']].map(([k, n]) => sw(P, k, n)).join('')}</div>`);

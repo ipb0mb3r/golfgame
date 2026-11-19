@@ -1,6 +1,8 @@
 # Pocket Links: art style guide (living document)
 
-Owner: the Artist, with Alexis (owner / game designer). Status: **ART0 round 1 proposal**, nothing below is decided unless marked **(owner)**. Images: `docs/art/biome-sets/`.
+Owner: the Artist, with Alexis (owner / game designer). Status: **ART0 round 1: the biome-set CONCEPT only.** Nothing below is decided unless marked **(owner)**. Images: `docs/art/biome-sets/`.
+
+> **All images in this round are rough mock-ups to explain the structure, not a style proposal.** The look (shapes, textures, colours) is a separate talk with the owner in round 2, with his examples, before any asset work. No real assets are made or downloaded, nothing is added under `assets/`.
 
 — Agent: artist
 
@@ -10,7 +12,7 @@ Owner: the Artist, with Alexis (owner / game designer). Status: **ART0 round 1 p
 - **Chibi 3D golfers** later (rigged, standard Mixamo-compatible skeleton for all golfers; rivals are never shown).
 - The **pixel / PS1 effect is a player setting**, not the base look. Every asset must read well both clean and pixelated.
 
-### Do / don't
+### Do / don't (provisional, to settle in the style talk)
 | Do | Don't |
 |---|---|
 | Big simple shapes, 5-8 sided cones and low icosahedrons, flat shading | Photo textures, normal maps, realistic bark or leaves |
@@ -53,7 +55,7 @@ Both options keep **one shared library** (`assets/`, one copy of each model, tex
 - **Sky / fog / light:** `skyTop`, `skyHorizon`, `cloud`, `fog`, `sun` (sun tint), `ambient` (sky light), `shadow` (shadow tint, the hemisphere ground colour: never black).
 - **Backdrop tint:** `backFar`, `backNear`, `backCap` (snow / tops), `backCapShade`.
 - **Trees and props tint:** `pine`, `trunk`, `leaf`, `leafAlt`, `trunkAlt`, `wood`, `roof`, `propSnow` (light parts), `propA`/`propB` (flowers), `glass`.
-- Hex values for the four palettes are in `docs/art/biome-sets/draft-data.js` and on the palette sheets (images 30-34).
+- The five **example** palettes (to show the recolouring idea, not final colours) are in `docs/art/biome-sets/draft-data.js` and on the sheets (images 30-34). Final palettes come after the style talk.
 
 ### 4.2 Time of day = a palette variant
 No lighting engine: a "sunset" palette changes the sky gradient, fog, sun and ambient tint, the shadow tint, the backdrop tint (pink caps) and shifts the surfaces warmer. It must still pass every readability rule below. A biome lists the palettes it offers (`alpine-day`, `alpine-sunset`), and the hole (or later the playlist) chooses one.
@@ -99,7 +101,7 @@ Also: the course is always lighter and more saturated than the backdrop; no surf
 
 Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same library: mostly a new palette plus 1-3 new pieces each (image 03).
 
-## 7. Asset list (round 1, nothing made yet)
+## 7. Asset list (round 1, rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
 |---|---|---|---|
 | 10 greyscale ground textures | all | - | 256², stylised, made by the artist (procedural in the mock-up) |
@@ -115,12 +117,7 @@ Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same 
 | Beach hut | Island | ~200 | |
 | Backdrops: round hills, snowy peaks, sea + volcano | one each | ≤ 2k each | tint zones |
 
-**CC0 sources that could fit the light cartoony style** (all CC0 1.0, free for commercial use, no attribution required; to be checked asset by asset and recorded in `assets/CREDITS.md` when a file is added):
-- Kenney (kenney.nl): Nature Kit, Platformer Kit, Minigolf Kit. CC0.
-- Quaternius (quaternius.com): Ultimate Nature, Stylized Nature, Farm and buildings packs. CC0.
-- Poly Pizza (poly.pizza): many Quaternius and Kenney models; **check each model**, some are CC-BY (attribution needed).
-- ambientCG / Poly Haven: CC0 textures, but photo-based, so only as a starting point to repaint, never as is.
-Our own models in Blender remain the default for the hero pieces (pine, lodge), so the look stays ours.
+Triangle counts are rough targets for the budget, not designs. **CC0 / licensed sources: to do after the style talk** (every file added later is recorded in `assets/CREDITS.md`).
 
 ## 8. Mock-up tools (artist only)
 `docs/art/biome-sets/mockup.html` renders one hole shaped like `mtn-02` from the draft data (`?biome=grassland|mountain|beach|mountain-warm`, `&palette=`, `&view=approach`, `&hud=0`). `sheets.html` draws the palette sheets and diagrams (`?mode=palette&p=…|textures|structure|options|matrix`). Both are stand-alone pages that use only the vendored Three.js; they are not part of the game.

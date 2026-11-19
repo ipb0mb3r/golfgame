@@ -41,7 +41,7 @@ const raw = BIOMES[biomeId];
 const B = raw.base ? { ...BIOMES[raw.base], ...raw } : raw;      // option B: a variant borrows from its base
 const P = PALETTES[q.get('palette') || B.palette];
 if (q.get('hud') === '0') document.body.classList.add('nohud');
-document.getElementById('tag').textContent = `${B.name.split(' (')[0]} · ${P.label.split(' · ')[1]} (mock-up)`;
+document.getElementById('tag').textContent = `${B.name.split(' (')[0]} · ${P.label.split(' · ')[1]} (rough mock-up, not a style)`;
 document.body.style.background = P.skyHorizon;
 const SEA = B.backdrop === 'seaHorizon'; // beach: beyond the left OB the ground drops to a beach and the sea
 
