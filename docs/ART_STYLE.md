@@ -84,6 +84,7 @@ Both options keep **one shared library** (`assets/`, one copy of each model, tex
 - **Surfaces:** `tee`, `fairwayA`/`fairwayB` (mowing stripes), `edge` (the darker edge line, round 2), `fringe`, `greenA`/`greenB`, `rough`, `deepRough`, `sand`, `lip` (bunker rim, round 2), `water`, `waterDeep`, `bank` (water bank, round 2), `rock`, `path`.
 - **Sky / fog / light:** `skyTop`, `skyHorizon`, `cloud`, `fog`, `sun` (sun tint), `ambient` (sky light), `shadow` (shadow tint, the hemisphere ground colour: never black).
 - **Backdrop tint:** `backFar`, `backNear`, `backCap` (snow / tops), `backCapShade`, `backTrees` (the wall of treetops, round 2).
+- **Accents (owner, 2026-11-19):** `accent` (the **flag** and the biome's main signature touch) and `subAccent` (tee markers, flower beds, prop trims, signs). Small things only, never a surface. The biome's signature colours.
 - **Trees and props tint:** `pine`, `trunk`, `leafTop`/`leaf`/`leafLow` (light top, mid, dark bottom: round 2), `leafAlt`, `trunkAlt`, `wood`, `roof`, `propSnow` (light parts), `propA`/`propB` (flowers), `glass`.
 - The **round 2 palettes** (§4.5) replace the round 1 examples (`docs/art/biome-sets/draft-data.js`, kept for history).
 
@@ -109,7 +110,9 @@ Checked automatically on every palette sheet (CIE76 ΔE = colour difference, ΔL
 | aim yellow `#FFD447` on fairway | 20 | |
 | warning red `#FF4A3A` on rough | 30 | |
 | white aim dots on fairway | 15 | |
-| flag red `#FF5A36` on green | 30 | |
+| flag `accent` on green (both shades), rough, fairway, sky top and horizon | 30 | |
+| `accent` vs HUD warning red `#FF4A3A` and aim yellow `#FFD447` | 15 | (a flag must never look like a warning) |
+| `subAccent` on green, rough and sky horizon | 30 | |
 
 Also: the course is always lighter and more saturated than the backdrop; no surface may use the HUD's yellow or red; the putting grid (when shown) must stay visible on both green shades. All four palettes in this round pass. Known weak spot: warning red vs rough has almost no lightness difference (ΔL 1-5), so red/green colour-blind players need the warning's **shape** too (ask: UI designer).
 
@@ -160,6 +163,17 @@ Data: `docs/art/style-r2/palettes.js` · sheet: `docs/art/style-r2/06-palettes.j
 | `propB` | `#FFD83A` | `#FFE04A` | `#FFD45A` | `#FFD02E` |
 | `glass` | `#BFE6FF` | `#CBE9FF` | `#FFD6A0` | `#CFF4FA` |
 
+**Accents (owner: "good for now", 2026-11-19)** · image `07-accents.jpg`. All pass the accent rules in §4.4 (flag vs green ≥ 114, vs sky ≥ 54, vs HUD red ≥ 33).
+
+| Biome set | `accent` (flag) | `subAccent` | Why |
+|---|---|---|---|
+| Meadow | `#D91E5B` poppy pink-red | `#FF9A1F` marigold | wildflower field |
+| Alpine | `#B8143C` deep mountain red | `#3550D8` gentian blue | red roofs, blue mountain flowers; darker than the HUD warning red |
+| Alpine sunset | `#B0207E` magenta | `#FFB21E` golden | reads on the orange sky, golden hour |
+| Island coast | `#FF2E8A` hibiscus pink | `#FF7A1A` mango orange | tropical flowers and fruit |
+
+All palettes (accents included) are **starting values**: every biome gets a full pass with the per-biome process (§6.2) once biome-set support (AP5) is on main (owner).
+
 ## 5. Phone budget for art (from `reviews/art-tech-lead-followup.md`)
 - Tree / rock model **≤ 300-500 triangles** (our models: 100-250), far trees ≤ 50, ≤ 8 tree/rock types per biome.
 - Big prop ≤ 1,500 triangles; small prop ≤ 50 (or a flat sprite).
@@ -185,6 +199,14 @@ Rule: the **fairway stays the lightest green in every biome** (gameplay), so the
 **Why Alpine for the mountain:** the snowy peaks are the strongest contrast with the Meadow (a different silhouette, not just another green), the existing mountain course already uses pines, and its sunset set shows the palette-only time of day best. **Ridge country** (Rockies-like: warm palette, aspens, long ridges, far city) stays a *later idea*: it would reuse everything of Alpine except the palette, one tree, the backdrop and one big prop (image 14), which is exactly the owner's mix-and-match example.
 
 Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same library: mostly a new palette plus 1-3 new pieces each (image 03).
+
+### 6.2 How each biome set is made (owner, round 2)
+One biome set per artist session, always in this order:
+1. **Mood board (owner):** Alexis shares pictures and a few words for this biome (places, games, photos, colours, props).
+2. **Notes + library check (artist):** the artist sums up what he takes from it and lists, piece by piece (palette, ground textures, on-course trees, off-course trees, sky, backdrop, small props, big props), what **reuses the shared library** and what is **new** (with a rough triangle / size cost against the budget in §5).
+3. **Proposals (artist):** palette sheet + phone-size mock-ups on a test hole, 2-3 options where there is a real choice, with a recommendation. Every palette passes §4.4.
+4. **Approval (owner):** Alexis approves each element (palette, trees, backdrop, props, gameplay notes) or asks for changes. Nothing is final without his yes.
+5. **Record + build:** the approved set is written down (its pick list, palette, notes) and only then are the new assets made, each recorded in `assets/CREDITS.md`.
 
 ## 7. Asset list (rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
@@ -217,3 +239,4 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 | `04-round1-vs-B.jpg` | round 1 mock-up vs direction B, same tee |
 | `05-approach.jpg` | approach views, Alpine and Island coast |
 | `06-palettes.jpg` | the four palettes |
+| `07-accents.jpg` | accent / sub-accent per biome, flag on the green |
