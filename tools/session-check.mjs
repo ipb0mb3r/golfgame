@@ -6,7 +6,9 @@
 // loads holes 10 times in place (window.__golf.loadHole) and checks that:
 //   1. renderer.info.memory (geometries, textures) and the shader program count don't grow,
 //   2. one click still moves the meter one step (input is bound once, not once per hole),
-//   3. a timer from the old hole (a shot in progress) never fires on the new one.
+//   3. a timer from the old hole (a shot in progress) never fires on the new one,
+//   4. the model loaders (AP2) work: the test models in tests/fixtures/models/ load through the import
+//      map (three/addons/ GLTFLoader, the Meshopt decoder for cube-meshopt.glb), draw, and are freed.
 // Exit code 1 on a problem.
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
@@ -76,7 +78,43 @@ await page.waitForTimeout(2500);
 const st = await page.evaluate(() => [window.__golf.state, window.__golf.strokes]);
 if (st[0] !== 'aim' || st[1] !== 0) fail(`a timer from the old hole changed the new one (state ${st[0]}, strokes ${st[1]})`);
 
+// 4. The loaders (AP2): no game feature loads models yet (AP3 / AP7), so this is the only place they run.
+// Each model is drawn once by its own small renderer, then freed: its geometries must go back to 0.
+const models = await page.evaluate(async () => {
+  const THREE = await import('three');
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+  const { MeshoptDecoder } = await import('three/addons/libs/meshopt_decoder.module.js');
+  const renderer = new THREE.WebGLRenderer({ canvas: document.createElement('canvas') });
+  renderer.setSize(64, 64);
+  const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+  const out = { revision: THREE.REVISION, models: [] };
+  for (const name of ['cube.glb', 'cube-meshopt.glb']) {
+    const gltf = await loader.loadAsync(`tests/fixtures/models/${name}`);
+    const meshes = [];
+    gltf.scene.traverse(o => { if (o.isMesh) meshes.push(o); });
+    const scene = new THREE.Scene(), cam = new THREE.PerspectiveCamera(50, 1, 0.1, 10);
+    cam.position.set(1.5, 1.5, 1.5); cam.lookAt(0, 0, 0);
+    scene.add(new THREE.AmbientLight(0xffffff, 1), gltf.scene);
+    renderer.render(scene, cam);
+    const drawn = { geometries: renderer.info.memory.geometries, calls: renderer.info.render.calls };
+    for (const m of meshes) { m.geometry.dispose(); m.material.dispose(); }
+    renderer.renderLists.dispose();
+    out.models.push({ name, meshes: meshes.length, vertices: meshes[0]?.geometry.attributes.position.count,
+      indices: Array.from(meshes[0]?.geometry.index.array ?? []).join(','), drawn, freed: renderer.info.memory.geometries });
+  }
+  renderer.dispose();
+  renderer.forceContextLoss();
+  return out;
+});
+const [plain, packed] = models.models;
+console.log(`loaders: three r${models.revision}; ${models.models.map(m => `${m.name}: ${m.meshes} mesh, ${m.vertices} vertices, ${m.indices.split(',').length / 3} triangles, drawn (${m.drawn.calls} draw call, ${m.drawn.geometries} geometry), ${m.freed} geometries after freeing`).join('; ')}`);
+for (const m of models.models) {
+  if (m.meshes !== 1 || m.vertices !== 24 || m.drawn.calls !== 1) fail(`loaders: ${m.name} did not load as one 24-vertex mesh drawn in one call`);
+  if (m.freed !== 0) fail(`loaders: ${m.name} left ${m.freed} geometries after freeing`);
+}
+if (packed.indices !== plain.indices) fail('loaders: cube-meshopt.glb decoded to other indices than cube.glb (Meshopt decoder)');
+
 if (errors.length) fail(`page errors: ${errors.join(' | ')}`);
 await browser.close();
-console.log(bad ? `${bad} problem(s)` : `ok: ${CYCLES} load/dispose cycles, no growth in renderer memory, input bound once, no stray timers`);
+console.log(bad ? `${bad} problem(s)` : `ok: ${CYCLES} load/dispose cycles, no growth in renderer memory, input bound once, no stray timers, model loaders ok`);
 process.exitCode = bad ? 1 : 0;

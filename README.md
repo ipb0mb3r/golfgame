@@ -49,7 +49,7 @@ The game is made of JavaScript modules, and browsers only load those from a web 
 python3 -m http.server 8000
 ```
 
-Then open http://localhost:8000 (the menu) or http://localhost:8000/?hole=pl-02 (straight to hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.160.0/`).
+Then open http://localhost:8000 (the menu) or http://localhost:8000/?hole=pl-02 (straight to hole 2). No internet connection is needed: Three.js is included in the repo (`vendor/three-0.187.0/`).
 
 Useful extras in the address bar: `?hole=pl-02&seed=42` replays the same wind every time.
 
@@ -105,7 +105,7 @@ src/core/             the game rules in plain JavaScript (no Three.js, no page c
   rng.js, vec.js, scoring.js
 src/holes/            one file per hole (layout, hills, surfaces, scenery) and sets.js
 src/game/             the Three.js scene, camera, HUD, input and debug overlay; session.js = one hole, loaded and unloaded
-vendor/three-0.160.0/ Three.js itself (unmodified, MIT license)
+vendor/three-0.187.0/ Three.js itself and its model loader add-ons (unmodified, MIT license)
 tests/                node --test files and the baseline shots
 tools/                baseline.mjs checks the old-pages baseline in a browser; record-baseline-v2.mjs re-records v2; session-check.mjs checks hole unloading
 ```

@@ -388,7 +388,8 @@ Target: a **mid-range phone** (iPhone 12 / Pixel 6 class) at **60 fps**, never b
 ```
 index.html                 ✅ the only page: canvas + HUD + cards; loads src/game/main.js; a classic start-up check shows a plain message when the game can't start (Gate A C2)
 hole2.html                 ✅ redirect to index.html?hole=pl-02 (keeps query + hash)
-vendor/three-0.160.0/      ✅ Three.js committed in the repo (Gate A C1, unmodified build + LICENSE), the import map points here
+vendor/three-0.187.0/      ✅ Three.js r187 committed in the repo (Gate A C1, upgraded in AP2 / X6; unmodified npm files + LICENSE, sha256 in its README and tests/vendor.test.js): three.module.js + three.core.js, the import map's "three"
+  addons/                  ✅ add-ons from the same release, the import map's "three/addons/" (AP2): loaders/GLTFLoader.js (+ utils/BufferGeometryUtils.js, utils/SkeletonUtils.js), libs/meshopt_decoder.module.js; not used by the game yet (AP3 / AP7). KTX2 + Basis later if needed
 src/
   core/                    ← PURE JS. No Three.js, no DOM. Tested in Node.
     config.js              ✅ every tunable; TUNABLES = one entry per ?tune= name { def, min, max }, live values in TUNE (Gate A A5)
@@ -439,10 +440,12 @@ tests/
   baseline-v2.shots.js     ✅ the v2 shot list
   fixtures/baseline.json   ✅ v1: golden shots from the pre-refactor pages (physics only, frozen)
   fixtures/baseline-v2.json ✅ v2: recorded from the engine (swing feel, 0.01 m; 48 shots since Phase K)
+  fixtures/models/         ✅ the loader test models (AP2, made by tools/make-test-glb.mjs)
 tools/
   baseline.mjs             ✅ v1 record/check in a headless browser (dev/QA only, needs Playwright)
   record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
-  session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2)
+  session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2); loads, draws and frees the test models (AP2)
+  make-test-glb.mjs        ✅ writes the loader test models tests/fixtures/models/cube.glb and cube-meshopt.glb (AP2)
   perf-check.mjs           ✅ every hole at 390x844: tee view + flyover peak vs PERF_BUDGET, time to Tee off; --strict fails over budget (AP0)
   aim-cost.mjs             ✅ JS time of one aim step (tree warning, aim marks, landing) per hole, plain Node (AP1 / X15)
   menu-check.mjs           ✅ clicks through every menu path, pause, quit and play again in a headless browser (Phase 7, M6)
@@ -532,6 +535,6 @@ The owner plans richer graphics, sound, more beautiful courses and characters. W
 ## 12. Supported browsers (Gate A C9)
 The game needs **ES modules, import maps and WebGL**. That sets the floor:
 - Chrome / Edge **89+**, Firefox **108+**, Safari and iOS Safari **16.4+** (every browser on iOS uses Safari's engine)
-- WebGL 1 or 2 must be available. If it isn't, the page says so in plain words ✅ (Gate A C2, also for a too-old browser, `file://` and a file that didn't load)
+- **WebGL 2** must be available (Three.js dropped WebGL 1 in r163; every browser above has it, AP2). If it isn't, the page says so in plain words ✅ (Gate A C2, also for a too-old browser, `file://` and a file that didn't load)
 - Run from a web server (GitHub Pages or `python3 -m http.server`), not from `file://`
 

@@ -311,9 +311,12 @@ if (skipsMenu(params)) {
 // =====================================================================
 // Main loop: physics in fixed 1/240 s steps (core/play.js advance), drawing every frame
 // =====================================================================
-const clock = new THREE.Clock();
+// THREE.Timer (Clock is deprecated since r183, AP2). update() with no timestamp reads performance.now(),
+// as Clock did. (tools/baseline.mjs replaces Timer.getDelta with a fixed frame time.)
+const timer = new THREE.Timer();
 function frame() {
-  const rawDt = clock.getDelta();
+  timer.update();
+  const rawDt = timer.getDelta();
   const dt = Math.min(rawDt, MAX_FRAME_DT);        // game time (capped so a hiccup can't teleport the ball)
   // The meter runs on real time (S16): this frame's time, on the same clock as the input events' timeStamp.
   // Paused (M3): nothing moves, the hole is still drawn under the pause menu. In the menus: no hole at all.
