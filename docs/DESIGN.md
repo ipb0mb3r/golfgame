@@ -327,6 +327,43 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
+## 8b. Art direction and biome sets ⏳ (owner, 2026-11-19; Phase A)
+**Art direction:** 3D, cartoony, light colours, low-poly, **flat colours with stylised texture** (never photo-realistic; no realistic trees). Reference: Everybody's Golf (learn the idea, copy no look). **Chibi 3D golfers** (rigged, later; rivals are never shown). The **pixel / PS1 effect is a player setting**. Target: a mid-range phone (budget: `reviews/art-tech-lead-followup.md`, confirmed in AP0).
+
+**What a biome set is (owner):** a **file that defines a biome for the game**, which the **course designer applies to a hole**. The goal is to make creating courses simpler: with biomes such as "mountain" already defined, the PM can tell the course designer "use this biome set for the next holes". The **artist** builds the biome sets and makes their assets (textures, trees, backdrops…).
+
+**What a biome set contains:**
+- A **short description** of the set.
+- The **colour palette** of everything on the course: the surfaces, water, trees… **Time of day is done through the palette** (no lighting engine): a sunset version is a separate biome set with a sunset palette.
+- **Course textures** (fairway, green, rough, sand…) are **always the same textures in every biome, only recoloured by the palette**.
+- **On-course trees** (in play, like today's): chosen from **2–3 models**, recolourable by the palette. Their collisions stay as today (obstacles in the hole data); the biome picks only the look.
+- **Off-course trees** (like today's, simpler): chosen from **2–3 models**, recolourable by the palette.
+- The **skybox**, recoloured by the palette.
+- A list of **small props** spread around the rough (grass tufts, flowers, fences); flat sprites or simple models; **no effect on ball physics**.
+- A list of **big props**, mostly in the out-of-bounds area (buildings: windmills, city blocks); **no effect on ball physics**.
+- The **backdrop** (far scenery, e.g. mountains), recoloured by the palette where the asset allows it.
+- **Gameplay notes for the course designer**, which he can follow or ignore (e.g. "a beach course has a big body of water, often along the side of the course"); may suggest a weather.
+
+**Not in a biome set:**
+- **Weather** is applied to the **playlist**, not the holes (the course designer chooses it); the gameplay notes may suggest one.
+- **Time of day** as a separate system: done through the palette instead.
+- Physics: surfaces keep their rules in `surfaces.js` and the hole data; a biome changes only the look.
+
+**Mix and match (owner):** biomes **share assets**, so each new biome is cheaper once a few exist. Example: two mountain biomes share the pines but differ in backdrop and palette. *Alpine*: snowy peaks, cooler surface colours, log lodges as big props out of the course. *Rockies-like*: warmer colours, other mountains in the backdrop, maybe city blocks in the far background.
+
+**First biomes to build (owner, 2026-11-19): grassland, mountain, beach (Hawaii-like).** Other ideas, **examples only, not the plan:** grass forest · mountain (Rockies, pines) · mountain (alpine, snow in the back, other colours) · beach side Hawaii · beach side Miami (city) · beach side cliffs (Scotland) · Arizona desert (Grand Canyon) · city central park · a classic Georgia pines course (tall pines, many flower bushes and beds). Real places are **inspirations only**: in-game names are invented, and no real course's layout or branding is copied.
+
+**Decisions (owner on #73, 2026-11-19):**
+- **Sharing = a pick list (option A):** every piece (textures, trees, props, backdrops, sky) lives once in a shared library, and each biome set **names all the pieces it uses**. No "based on" inheritance, so a biome can use more or fewer assets freely.
+- **Time of day = its own biome set.** *Alpine* and *Alpine sunset* are two biome sets (same pieces, another palette). **The hole chooses the biome set; the playlist chooses the holes.** (Weather stays per playlist.)
+- **Backdrops are tint-only** for now (one backdrop asset, recoloured by each palette).
+- **Big props are placed by hand per hole** by the course designer; **small props are scattered by a rule** from the biome set.
+- Biome names (Meadow, Alpine, Island coast) are **internal** for now.
+
+The exact file format is built by the dev as AP5, from the artist's draft (`docs/art/biome-sets/`, PR #73).
+
+---
+
 ## 9. Architecture (✅ = exists, ⏳ = planned)
 
 ```

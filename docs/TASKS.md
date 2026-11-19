@@ -248,16 +248,33 @@ Today's menu (Phase 7): Play → Solo / vs AI / Practice, course list from `sets
 - [ ] **MP4** Round options before tee-off, from data: today wind (on/off or strength?) and vs AI difficulty; **weather** once Phase 5 rain exists. Owner decides the first list in MP0.
 - [ ] **MP5** Tests: the new menu model in core (pure), menu-check paths for the new screens, playlists saved/loaded/broken data ignored.
 
-## Phase A: Art pipeline (owner, 2026-11-19; scope from the tech lead's art report)
-Owner goals: richer textures and models, an animated golfer who hits the ball, menu sprites, a "retro" post-processing look, and **modular biome kits** (mix and match palette, ground, trees, props, sky). The tech lead's feasibility report (`reviews/art-tech-lead.md`) proposes the engine tasks and a phone performance budget; the PM adds them here as A1… once the owner has talked it through.
-- [ ] **A0** 🅿️ Owner + tech lead: talk through the report; owner picks what to build first.
-- [ ] **ART0** 🅿️ Owner + artist: art style, palette, what a biome kit contains → `docs/ART_STYLE.md`.
+## Phase A: Art pipeline (owner, 2026-11-19; scope from the tech lead)
+**Owner decisions (2026-11-19):** **3D cartoony, flat colours but with texture** (stylised, hand-painted / simple textures, never photo-realistic; reference: Everybody's Golf, no realistic trees), light colours, low-poly; **chibi (big-head) 3D golfers**, rigged, not sprites; the **pixel / PS1 effect is a player setting** (AP8), not the fixed look. Owner goals, an animated golfer later (more than one, later; rivals never shown), menu sprites, **modular biome kits**. Target: a **mid-range phone** (iPhone 12 / Pixel 6 class at 60 fps, ≥ 30 fps on an XR class); the owner's S25 Ultra checks the high setting. Sources: `reviews/art-tech-lead.md` (#70) and `reviews/art-tech-lead-followup.md` (owner answers, golfers, app, revised budget and order). Engine tasks in **build order**:
+- [x] **A0** 🅿️ Owner + tech lead: feasibility report and follow-up (2026-11-19). Stay on Three.js + no build step.
+- [ ] **ART0a** 🅿️ Owner + artist: the **biome set concept** (DESIGN §8b), round 1: structure, how pieces are shared, rough mock-ups only, no assets. First biomes: grassland, mountain, beach (Hawaii-like).
+- [ ] **ART0b** 🅿️ Owner + artist: the **general art style** (shapes, textures, colours, the chibi golfer look, the standard golfer skeleton rule), with the owner's examples → `docs/ART_STYLE.md`. **No asset work before this.**
+- [ ] **AP0** (S) Phone budget + measuring: draw calls, triangles, texture memory in the debug overlay and `window.__golf`; `tools/perf-check.mjs` fails a hole over budget; one fps check on the owner's phone. Budget in DESIGN.
+- [ ] **AP1** (S–M) Fewer draw calls now: instance / merge trees (2 meshes + a copied material each today), OB stakes and cloud puffs; share materials. Also helps X13.
+- [ ] **AP8** (S–M, moved up) Post-processing hook replacing `renderSession()`; **pixel effect first** (render at ½–¼ resolution, scale up; optional palette / dither); presets from the kit later; a Settings switch. Owner compares clean vs PS1 on the real game with it.
+- [ ] **AP2** (S) Three.js upgrade (X6) + vendored add-ons (glTF loader, Meshopt decoder; KTX2 optional), a `three/addons/` import-map entry.
+- [ ] **AP5** (M) Biome kit format + `validateKit` (palette, ground, trees, props, sky, post), mixable per course and per hole. Today's mountain look becomes kit `mtn-default` with no visual change. Physics stays in `surfaces.js` / hole data.
+- [ ] **AP3** (M) Asset loader + loading screen: background loading with progress, cache across a round's holes, freed at the end (session-check passes), a clear message for a missing file.
+- [ ] **AP7** (M) Kit models for obstacles and scenery, scaled to their colliders, instanced, a cheap far version for the forest.
+- [ ] **AP6** (M) Ground material: flat / gradient colour per surface with a **stylised tiling texture** (small, ≤ 512², owner: "flat colour but with texture") and soft noise; mowing stripes and the putting grid drawn by the shader; crisp surface edges; a low-quality level. No photo textures.
+- [ ] **AP4** (S) Offline asset prep tool in `tools/`: GLB compression, size checks against the budget (KTX2 later if needed).
+- [ ] **AP9a** (S) Golfer hooks: the ball can leave at an animation's contact frame (game layer; physics and baselines unchanged; Skip / test hits bypass), a grey mannequin by the ball in the aiming view (camera and "never blind" checks include it), stance data per club / putter mirrored by handedness. Before the camera / UI work settles.
+- [ ] **AP9** (M, later) The golfer: **chibi**, rigged low-poly GLB on a standard skeleton, AnimationMixer, ~10 animations, contact-frame launch, camera offset, handedness mirror. Extra golfers = new models on the same skeleton.
+- [ ] **AP10** (S, with Phase U) Self-hosted WOFF2 fonts, SVG icons, a sprite-sheet CSS helper.
+- App later (not scheduled): a PWA install is S; a store wrapper (Capacitor-like) is M. Keep saves in one module, safe areas, pause when hidden, store-safe licences.
 
 ## Backlog after the playtest 1 pass (PM, 2026-11-19)
 - [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
 - [ ] X15 The real ball tests every obstacle on every physics step (`firstHit` in ball.js): a coarse grid would speed up ⏩ Skip and flights on tree-heavy holes (also the warning flight, ~1–3 ms per aim step on mtn-04).
 - [ ] X16 (to confirm on the owner's phone) A very quick tap on the ▶/◀ touch buttons may not nudge the aim (QA N2 on PR #66; Playwright releases within one frame).
 - [ ] Drag aiming on touch → Phase U.
+- [ ] **X17** (QA B1 on #72, Low) The `h1-pin-chip` spot's 27% shot holes **without** touching the pole (main ends at the same spot), so the "hits the pole and drops in" text is wrong and no "Off the pin!" shows. Re-pick a power (or the spot) where the pole really causes the drop-in, fix the text, and test that the shot hits the pole.
+- [ ] **X18** (QA B2 on #72, Low) At 320x568 a 2-line flash ("Off the pin!") overlaps the top-left stroke panel. The shared flash layout → Phase U.
+- [ ] **X19** (artist on #73) Colour-blind players: the red tree warning (`#FF4A3A`) is about as light as every rough, so red/green colour-blind players may miss it. Warnings need a shape cue as well as a colour → ui-designer, Phase U.
 
 ## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
 A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.

@@ -20,7 +20,7 @@
 | `tech-lead` | No (report only) | inherit | gate B, last, after the fix pass; also one-off consults (e.g. the art feasibility report, 2026-11-19) |
 | `course-designer` | Hole data only (`course/*` branches) | inherit | one hole per session, **co-designs with Alexis** (he talks to it directly) |
 | `artist` | No game code: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (`art/*` branches) | inherit | art style, palettes, **modular biome kits**; co-designs with Alexis (added 2026-11-19) |
-| `ui-designer` | No game code: `docs/UI.md`, `docs/ui/` specs + clickable mock-ups (`ui/*` branches) | inherit | menus and HUD, function **and** look; co-designs with Alexis; the dev builds it (added 2026-11-19) |
+| `ui-designer` | No game code: `docs/UI.md`, `docs/ui/` specs + clickable mock-ups (`ui/*` branches) | inherit | menus and HUD, function **and** look; co-designs with Alexis; **never writes game code, the dev builds it** (owner decision A, 2026-11-19) |
 
 Prompts and budgets: `docs/AGENT_PROMPTS.md`. The agent files point there, so update the prompts in one place.
 
@@ -62,11 +62,12 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Phase BC: ball control** (#68, QA #69; 2026-11-19, second Claude Code PM session). Built by 4 fresh devs: core (BC1–2) → aim line + icon (BC4–5) → flight camera on the shaped landing → owner tune. Owner picks: `BC_BACK` 1 (option A, lands on the aim line), high/low as proposed ("perfect"), **curve +15%** (`start` Driver 11.5 … SW 4.6; full left Driver 10.7 m off the line). Shift + arrows = impact dot, fine aim = Shift + A / D, double tap = centre. QA Full passed with no bugs; the Light re-check of the +15% was partial (script trouble), covered by the BC4 every-hole test.
 
 **In flight:**
-- **Tech lead: art and engine feasibility** (one-off consult for the owner, report `reviews/art-tech-lead.md`, PR "Tech lead: art and engine feasibility"). Questions: richer assets/textures, an animated golfer, menu sprites, retro post-processing, modular biomes, stay on Three.js + no build? Plus proposed A-tasks (art pipeline) and a phone performance budget. The owner wants to talk it through: relay his follow-ups to the same tech lead.
-- This docs PR: `artist` + `ui-designer` agents, FL1 flagpole, Phase MP menu pass.
+- **FL1 flagpole** (`dev/FL1-flagpole`, fresh dev, 60 min; core + tests first, then a stop for the PM review). QA Full after.
+- Art decided (owner, 2026-11-19): **chibi 3D golfers**, **3D cartoony flat colours with stylised texture**, light, low-poly; **pixel effect = a setting**. Phase A in TASKS. Next: ART0 with the artist (owner brings examples); AP0 → AP1 → AP8 for the dev after FL1.
+- Done since the last status: **tech lead art and engine feasibility** (#70, `reviews/art-tech-lead.md`): everything is possible on Three.js + no build step; stay on it; AP0–AP10 proposed (perf first: the mountain holes are near the phone limit); phone budget proposed. #70 also carried the PM docs commit (new `artist` + `ui-designer` agents, FL1, Phase MP, Phase A).
 
 **Next (in order):**
-1. **Owner + tech lead chat on art** → PM turns the A-tasks into TASKS ("Phase A: Art pipeline") and puts the performance budget in DESIGN.
+1. **Art:** ART0 (`artist` + owner, with his examples) and AP0 → AP1 → AP8 (dev) can start in parallel; the pixel switch (AP8) lets the owner pick clean vs PS1 on the real game.
 2. **Art style session** (`artist` + owner: style, palette, biome-kit idea) and **U0 scope** (`ui-designer` + owner). The dev builds the A-tasks the artist needs.
 3. **FL1 flagpole** (small dev PR; can run while the art talks happen, the engine is free).
 4. **Phase MP: main menu pass** (`ui-designer` designs MP1–MP5 → dev builds), then Phase U for the HUD.
@@ -83,6 +84,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - QA tends to overrun its budget: give a short MUST list, a hard stop, and run the slow menu-check yourself.
 - If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
 - **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
+- **Give every agent `isolation: worktree`, including read-only ones.** The tech lead ran in the PM's folder, switched its branch, and the PM's docs commit landed on the report branch (#70 carried both; fixing it would have needed a force push).
 - Agent worktrees live in `.claude/worktrees/` (excluded locally in `.git/info/exclude`, never committed).
 
 **Open owner decisions / backlog to remember:**
