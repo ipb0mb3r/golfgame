@@ -68,7 +68,7 @@ export function bindInput(canvas, on) {
   $('againBtn').addEventListener('click', on.again);
   return {
     // −1 / 0 / +1 from the arrow keys and the hold-to-aim buttons. X14: the session turns the aim
-    // every frame while one is held (core/aimPreview.js aimTurn), never on the OS key repeat
+    // every frame while one is held (core/aim.js aimTurn), never on the OS key repeat
     aimDir() { return Math.sign((keysDown.has('R') ? 1 : 0) - (keysDown.has('L') ? 1 : 0) + aimHold); },
     aimFine() { return keysDown.has('fine'); }, // X14: Shift held
     releaseAim() { aimHold = 0; },

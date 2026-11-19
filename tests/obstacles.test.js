@@ -335,16 +335,19 @@ test('K6: the safe route: second shots from the landing area left of the corner 
 });
 
 // ---- PM on PR #33: warning at ⚑ power too, K8 trees in play on holes 1–2, K9 rock bounce ----
-test('PR #33 item 1: the warning also checks the ⚑ shot and says which (pin / full / both)', () => {
+test('PR #33 item 1: treeCheck also checks the ⚑ shot and says which (pin / full / both); X14: the player only sees the full-power arc', () => {
   // a tight cut line: a full Driver just clears the corner trees, the ⚑ Driver (96% power) doesn't
   const p = h3(); p.setAim(aimAt(p.ball.pos, { x: 55, z: -207 })); p.setClub(0);
   assert.equal(p.aimWarning(), null, 'full power: clear');
-  const w = p.shotWarning();
+  const w = p.treeCheck();
   assert.equal(w?.at, 'pin', 'the ⚑ shot hits the leaves');
   assert.equal(w.kind, 'leaves');
+  // X14 (PM on PR #65): the ⚑ only shows on putts since S22, so the player's warning is the full-power arc only
+  assert.equal(p.shotWarning(), null, 'no "at ⚑ power" warning on a full shot');
   // behind the lone tree every power hits it
   const b = createHolePlay(getHole('pl-03'), { seed: 1 }); b.reset(SCENARIOS['h3-behind-tree']);
-  assert.equal(b.shotWarning()?.at, 'both');
+  assert.equal(b.treeCheck()?.at, 'both');
+  assert.deepEqual(b.shotWarning(), { ...b.aimWarning(), at: 'full' });
   // and the ⚑ warning is what the ball does at ⚑ power
   const q = h3(); q.setAim(aimAt(q.ball.pos, { x: 55, z: -207 })); q.setClub(0);
   q.hit(Math.min(q.pinPower(), q.lieOf().maxPower), 0);
@@ -368,7 +371,7 @@ test('K8: every tree inside OB on holes 1–2 is an obstacle; none on the tee, f
 test('K8: the default tee shot is never blocked, on every hole', () => {
   for (const hole of Object.values(HOLES)) {
     const p = createHolePlay(hole, { seed: 1 }); p.reset({ wind: { x: 0, z: 0 } });
-    assert.equal(p.shotWarning(), null, hole.id);
+    assert.equal(p.treeCheck(), null, hole.id); // both arcs (full power and the ⚑)
   }
 });
 

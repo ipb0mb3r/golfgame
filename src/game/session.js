@@ -11,7 +11,7 @@
 import { TIMING, MPS_TO_MPH, TUNE, CAM, G } from '../core/config.js';
 import { createRng } from '../core/rng.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
-import { aimTurn, createAimPreview } from '../core/aimPreview.js';
+import { aimTurn } from '../core/aim.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
@@ -70,15 +70,23 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let holedT = 0, t = 0, lastAimKey = '';
   let shotT = 0, skipShown = false; // X9: game time since the hit, and whether ⏩ Skip is showing
   let warn = null;     // K4: where the aimed shot would hit an obstacle (play.aimWarning), or null
-  // X14: the warning without blocking a frame (the ⚑ arc's search runs a few ms per frame, exact once the aim stops)
-  const preview = createAimPreview(play, { clock: () => performance.now() });
   let aimHeld = 0, aimHeldDir = 0; // X14: how long (game s) the aim has been held in this direction
   let treeFlash = false; // one obstacle flash per shot is enough (a ball can rattle through branches)
   const target = { x: 0, y: 0, z: 0 };
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
 
-  const updateHud = () => { hud.update(state, meter.power, warn); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover'); measureFrame(); };
+  // X14 (PM on PR #65): measureFrame() forces a page layout, so it no longer runs on every aim step: only
+  // when the state changes (panels show and hide), when a measured panel changes size (a ResizeObserver:
+  // a hint that wraps to another line, the putt bar) and on a resize (resize()).
+  let layoutState = null;
+  const updateHud = () => {
+    hud.update(state, meter.power, warn); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover');
+    if (state !== layoutState) { layoutState = state; measureFrame(); }
+  };
+  const FRAME_PANELS = ['info', 'windBox', 'minimap', 'pauseBtn', 'bottom'];
+  const panelWatch = typeof ResizeObserver === 'function' ? new ResizeObserver(() => { if (!disposed) measureFrame(); }) : null;
+  for (const id of FRAME_PANELS) { const el = document.getElementById(id); if (el) panelWatch?.observe(el); }
   // V2: the view button while aiming (null = the aiming view, else core/views.js VIEW_STEPS)
   let view = null, viewPress = null; // viewPress = { at, opened } while the button is held
   // V1: the free band of the screen the aiming view must fit in (core/views.js `frame`), measured from the HUD
@@ -158,7 +166,6 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     resetMeter(meter);
     props.resetTrail();
     setView(null);
-    warn = null; // a new shot: the frame works the warning out (X14)
     updateHud();
     if (snapCamera) rig.snap(camView());
   }
@@ -319,12 +326,12 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       let len;
       if (play.club.putter) { len = Math.min(play.distToCup(), play.puttMax); Object.assign(target, { x: ball.pos.x + d.x * len, y: 0, z: ball.pos.z + d.z * len }); }
       else { Object.assign(target, play.landingPoint(play.clubIdx)); len = dist2D(ball.pos, target); }
-      warn = preview.update(); // K4, X14: play.shotWarning() once the aim is still; never blocks a frame
+      warn = play.shotWarning(); // K4: the full-power arc (X14: no ⚑ search any more), memoized in core
       marks = play.aimMarks(); // S22 (memoized in core too); null for a putt
       if (marks) { Object.assign(target, { x: marks.x, y: marks.y, z: marks.z }); len = dist2D(ball.pos, target); }
       props.setAimGuide(true, ball.pos, d, len, target, play.club.putter, warn, marks);
       // Keep the slope readout and club distance in step with the aim
-      const key = `${play.aim.toFixed(3)}|${play.clubIdx}|${warn ? `${warn.kind}|${warn.at}|${Math.round(warn.dist)}` : ''}`;
+      const key = play.aim.toFixed(3) + play.clubIdx;
       if (key !== lastAimKey) { lastAimKey = key; updateHud(); }
     } else { warn = null; marks = null; props.setAimGuide(false); }
 
@@ -424,6 +431,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function dispose() {
     if (disposed) return;
     disposed = true;
+    panelWatch?.disconnect(); // X14
     clearTimers();
     $holeCard().classList.add('hidden');
     showSkip(false);

@@ -188,7 +188,7 @@ export function createHud(play) {
   }
 
   // state = game state, power = locked power (for the white mark)
-  // warnNow = the K4 warning the session shows (X14: core/aimPreview.js, so the HUD never runs the search itself)
+  // warnNow = the K4 warning the session already worked out this frame (X14: not worked out twice)
   function update(state, power, warnNow = null) {
     const aiming = isAimingState(state);
     const club = bag[play.clubIdx];

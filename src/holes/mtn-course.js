@@ -428,7 +428,7 @@ function plantForest(hole, spec, fairways) {
     const probe = { ...hole, obstacles: [...hole.obstacles, ...trees] };
     const play = createHolePlay(probe, { seed: 1 });
     play.reset({ wind: { x: 0, z: 0 } });
-    const w = play.shotWarning();
+    const w = play.treeCheck(); // both arcs (X14: shotWarning is the full-power arc only now)
     if (!w) break;
     const i = w.index - hole.obstacles.length;
     if (i < 0) break; // a hand-placed obstacle: validateHole will name it
