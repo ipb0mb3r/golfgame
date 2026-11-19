@@ -62,8 +62,9 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Phase BC: ball control** (#68, QA #69; 2026-11-19, second Claude Code PM session). Built by 4 fresh devs: core (BC1–2) → aim line + icon (BC4–5) → flight camera on the shaped landing → owner tune. Owner picks: `BC_BACK` 1 (option A, lands on the aim line), high/low as proposed ("perfect"), **curve +15%** (`start` Driver 11.5 … SW 4.6; full left Driver 10.7 m off the line). Shift + arrows = impact dot, fine aim = Shift + A / D, double tap = centre. QA Full passed with no bugs; the Light re-check of the +15% was partial (script trouble), covered by the BC4 every-hole test.
 
 **In flight:**
-- **Tech lead: art and engine feasibility** (one-off consult for the owner, report `reviews/art-tech-lead.md`, PR "Tech lead: art and engine feasibility"). Questions: richer assets/textures, an animated golfer, menu sprites, retro post-processing, modular biomes, stay on Three.js + no build? Plus proposed A-tasks (art pipeline) and a phone performance budget. The owner wants to talk it through: relay his follow-ups to the same tech lead.
-- This docs PR: `artist` + `ui-designer` agents, FL1 flagpole, Phase MP menu pass.
+- **FL1 flagpole** (`dev/FL1-flagpole`, fresh dev, 60 min; core + tests first, then a stop for the PM review). QA Full after.
+- **Owner is writing answers to the tech lead's 5 questions** (art direction, his phone, one or more golfers, browser vs app later, CC0/Mixamo placeholders). Then: AP tasks into TASKS (Phase A), the performance budget into DESIGN.
+- Done since the last status: **tech lead art and engine feasibility** (#70, `reviews/art-tech-lead.md`): everything is possible on Three.js + no build step; stay on it; AP0–AP10 proposed (perf first: the mountain holes are near the phone limit); phone budget proposed. #70 also carried the PM docs commit (new `artist` + `ui-designer` agents, FL1, Phase MP, Phase A).
 
 **Next (in order):**
 1. **Owner + tech lead chat on art** → PM turns the A-tasks into TASKS ("Phase A: Art pipeline") and puts the performance budget in DESIGN.
@@ -83,6 +84,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - QA tends to overrun its budget: give a short MUST list, a hard stop, and run the slow menu-check yourself.
 - If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
 - **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
+- **Give every agent `isolation: worktree`, including read-only ones.** The tech lead ran in the PM's folder, switched its branch, and the PM's docs commit landed on the report branch (#70 carried both; fixing it would have needed a force push).
 - Agent worktrees live in `.claude/worktrees/` (excluded locally in `.git/info/exclude`, never committed).
 
 **Open owner decisions / backlog to remember:**
