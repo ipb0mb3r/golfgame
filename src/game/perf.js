@@ -7,14 +7,14 @@
 // perf()) and only again when Three.js' geometry / texture counts change.
 import * as THREE from 'three';
 import { PERF_BUDGET } from '../core/config.js';
-import { rate, textureBytes, MB } from '../core/perf.js';
+import { rate, textureBytes, screenBytes, MB } from '../core/perf.js';
 
 const FPS_SMOOTH_S = 0.5; // s: time constant of the smoothed frame time (fps shown = 1 / that)
 
 export function createPerfMeter(renderer, view) {
   const info = renderer.info;
   let frameS = 0, calls = 0, triangles = 0, peakCalls = 0, peakTriangles = 0;
-  let memKey = '', mem = { geoMB: 0, texMB: 0, gpuMB: 0, textureSize: 0, textures: 0 };
+  let memKey = '', mem = { geoMB: 0, texMB: 0, gpuMB: 0, textureSize: 0, mapSize: 0, textures: 0 };
 
   // Called once per frame right after renderer.render (renderer.info.render holds that frame)
   function frame(rawDt) {
@@ -43,13 +43,16 @@ export function createPerfMeter(renderer, view) {
       for (const m of [].concat(o.material ?? [])) for (const t of Object.values(m)) if (t?.isTexture) texs.add(t);
     });
     if (v?.scene.background?.isTexture) texs.add(v.scene.background);
-    let tex = 0, size = 0;
+    let tex = 0, size = 0, mapSize = 0;
     for (const t of texs) {
       const img = t.image, w = img?.width ?? 0, h = img?.height ?? 0;
       tex += textureBytes(w, h, t.generateMipmaps && t.minFilter !== THREE.LinearFilter && t.minFilter !== THREE.NearestFilter);
-      size = Math.max(size, w, h);
+      // PM on #75: the painted course map (scene.js) is an exception until AP6: its size is shown
+      // apart, unrated (its memory still counts in gpuMB)
+      if (t.userData?.courseMap) mapSize = Math.max(mapSize, w, h);
+      else size = Math.max(size, w, h);
     }
-    mem = { geoMB: geo / MB, texMB: tex / MB, gpuMB: (geo + tex) / MB, textureSize: size, textures: texs.size };
+    mem = { geoMB: geo / MB, texMB: tex / MB, gpuMB: (geo + tex) / MB, textureSize: size, mapSize, textures: texs.size };
     return mem;
   }
 
@@ -61,6 +64,14 @@ export function createPerfMeter(renderer, view) {
     return n;
   }
 
+  // The screen buffers (drawing buffer size × colour + depth, × MSAA samples), estimated
+  let samples = null;
+  function screenMB() {
+    if (samples === null) { try { const gl = renderer.getContext(); samples = gl.getParameter(gl.SAMPLES) | 0; } catch { samples = 0; } }
+    const c = renderer.domElement;
+    return screenBytes(c.width, c.height, samples) / MB;
+  }
+
   // Everything, as plain numbers (allocates; on demand only)
   function numbers() {
     const m = memory();
@@ -68,7 +79,8 @@ export function createPerfMeter(renderer, view) {
       fps: frameS > 0 ? 1 / frameS : 0, frameMs: frameS * 1000,
       drawCalls: calls, triangles, peakDrawCalls: peakCalls, peakTriangles,
       geometries: info.memory.geometries, textures: info.memory.textures, programs: info.programs?.length ?? 0,
-      gpuMB: m.gpuMB, geoMB: m.geoMB, texMB: m.texMB, textureSize: m.textureSize, outlineCalls: outlineCalls(),
+      gpuMB: m.gpuMB, geoMB: m.geoMB, texMB: m.texMB, textureSize: m.textureSize, mapSize: m.mapSize, outlineCalls: outlineCalls(),
+      screenMB: screenMB(), // PM on #75: unrated, not part of the per-hole budget
     };
     n.rating = rate(n);
     return n;
@@ -98,7 +110,8 @@ export function createPerfMeter(renderer, view) {
     return [...rows.values()].map(r => ({ ...r, materials: r.materials.size })).sort((a, b) => b.inView - a.inView);
   }
 
-  // The overlay block: three lines whose values are coloured ok / over against the budget. Built
+  // The overlay block: a few lines whose values are coloured ok / warn (fps only) / over against the
+  // budget; the course map and the screen buffers are shown unrated (grey / plain). Built
   // once into `el`, then only the texts and classes change.
   let spans = null;
   function renderInto(el) {
@@ -114,8 +127,9 @@ export function createPerfMeter(renderer, view) {
       add('draws  ', 'drawCalls', ` / ${B.drawCalls}`); add('  ', 'outlines', '\n');
       add('tris   ', 'triangles', ` / ${B.triangles / 1000}k`); add('  peak ', 'peak', '\n');
       add('mem    ', 'geometries', ' geo  '); add('', 'textures', ' tex  ');
-      add('', 'textureSize', ' px max\n');
-      add('gpu    ~', 'gpuMB', ` / ${B.gpuMB} MB`); add('', 'memParts');
+      add('', 'textureSize', ' px max  '); add('', 'mapSize', '\n');
+      add('gpu    ~', 'gpuMB', ` / ${B.gpuMB} MB`); add('', 'memParts', '\n');
+      add('screen ≈ ', 'screenMB', ' MB');
     }
     const n = numbers(), r = n.rating;
     const set = (key, text) => {
@@ -130,6 +144,8 @@ export function createPerfMeter(renderer, view) {
     set('peak', `${n.peakDrawCalls} draws ${(n.peakTriangles / 1000).toFixed(0)}k tris`);
     set('geometries', String(n.geometries)); set('textures', String(n.textures));
     set('textureSize', String(n.textureSize));
+    set('mapSize', n.mapSize ? `map (AP6) ${n.mapSize} px` : ''); spans.mapSize.className = 'perf-na';
+    set('screenMB', n.screenMB.toFixed(1));
     set('gpuMB', n.gpuMB.toFixed(1)); set('memParts', `  (geo ${n.geoMB.toFixed(1)}, tex ${n.texMB.toFixed(1)})`);
   }
 

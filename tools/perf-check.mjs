@@ -12,7 +12,8 @@
 //     (the whole hole in view: the "mid-hole" worst case),
 //   - "tee": the aiming view from the tee.
 // Every number is checked against PERF_BUDGET (src/core/config.js) by src/core/perf.js. Headless
-// fps (software WebGL) says nothing about a phone, so fps is printed but never rated here.
+// fps (software WebGL) says nothing about a phone, so fps is printed but never rated here. The painted
+// course map (AP6 replaces it) and the screen buffers are printed apart, never rated (PM on #75).
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -28,9 +29,10 @@ const args = process.argv.slice(2);
 const strict = args.includes('--strict'), showBreakdown = args.includes('--breakdown');
 const only = args.flatMap((a, i) => (a === '--hole' ? [args[i + 1]] : []));
 const ids = only.length ? only : Object.keys(HOLES);
-// Not rated here: headless fps is not a phone's, and today's only texture is the painted course map
-// (one big canvas per hole, ~1500-2048 px), which AP6 replaces by small tiling textures. Both are printed.
-const SKIP = ['fps', 'textureSize'];
+// Not rated here: headless fps is not a phone's. (The painted course map, one big canvas per hole of
+// ~1500-2048 px that AP6 replaces by small tiling textures, is not in "max tex px" any more: it has its
+// own unrated "map (AP6)" column, AP1.)
+const SKIP = ['fps'];
 const FLYOVER_MAX_MS = 20000; // a flyover that hasn't ended by then is skipped
 
 const { chromium } = require('playwright');
@@ -85,8 +87,8 @@ await browser.close();
 const B = PERF_BUDGET, mark = (v, lim) => (v > lim ? '!' : ' ');
 const k = n => `${(n / 1000).toFixed(0)}k`;
 console.log(`Budget (PERF_BUDGET): draw calls ≤ ${B.drawCalls}, triangles ≤ ${k(B.triangles)}, graphics memory ≤ ${B.gpuMB} MB, textures ≤ ${B.textureSize} px. "!" = over.`);
-console.log('hole    | tee off | tee draws | tee tris | flyover peak draws | flyover peak tris | geo | tex | max tex px | gpu MB (geo+tex) | headless fps | over budget');
-console.log('--------|---------|-----------|----------|--------------------|-------------------|-----|-----|------------|------------------|--------------|------------');
+console.log('hole    | tee off | tee draws | tee tris | flyover peak draws | flyover peak tris | geo | tex | max tex px | map (AP6) px | gpu MB (geo+tex) | screen MB | headless fps | over budget');
+console.log('--------|---------|-----------|----------|--------------------|-------------------|-----|-----|------------|--------------|------------------|-----------|--------------|------------');
 let anyOver = false;
 for (const r of rows) {
   const t = r.tee, f = r.flyover;
@@ -100,7 +102,9 @@ for (const r of rows) {
     `${t.drawCalls}${mark(t.drawCalls, B.drawCalls)}`.padStart(9), `${k(t.triangles)}${mark(t.triangles, B.triangles)}`.padStart(8),
     (f ? `${f.peakDrawCalls}${mark(f.peakDrawCalls, B.drawCalls)}` : 'none').padStart(18), (f ? `${k(f.peakTriangles)}${mark(f.peakTriangles, B.triangles)}` : 'none').padStart(17),
     String(t.geometries).padStart(3), String(t.textures).padStart(3), `${t.textureSize}${mark(t.textureSize, B.textureSize)}`.padStart(10),
+    String(t.mapSize).padStart(12),
     `${t.gpuMB.toFixed(1)} (${t.geoMB.toFixed(1)}+${t.texMB.toFixed(1)})${mark(t.gpuMB, B.gpuMB)}`.padStart(16),
+    t.screenMB.toFixed(1).padStart(9),
     t.fps.toFixed(0).padStart(12), over.join(', ') || 'ok',
   ].join(' | '));
 }

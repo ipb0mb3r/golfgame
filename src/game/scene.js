@@ -74,6 +74,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
     const tex = new THREE.CanvasTexture(courseCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+    tex.userData.courseMap = true; // AP1: the perf overlay shows this one apart ("map (AP6)"), unrated until AP6
     const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
     mesh.name = 'terrain'; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
     scene.add(mesh);
@@ -87,19 +88,20 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
     scene.add(w);
   }
 
-  // Tee markers
-  for (const sx of [-2.6, 2.6]) {
-    const m = new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshLambertMaterial({ color: sc.teeColor }));
-    m.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + 0.14, hole.tee.z - 1.2); m.name = 'tee marker'; scene.add(m);
-  }
-  // White out-of-bounds stakes
+  // Tee markers and the white out-of-bounds stakes: one instanced draw call each (AP1)
   {
-    const stakeGeo = new THREE.CylinderGeometry(0.05, 0.05, 1, 6);
-    const stakeMat = new THREE.MeshLambertMaterial({ color: 0xffffff });
-    const st = sc.stakes;
-    for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of st.xs ?? [-st.x, st.x]) {
-      const s = new THREE.Mesh(stakeGeo, stakeMat); s.position.set(sx, heightAt(sx, z) + 0.5, z); s.name = 'OB stake'; scene.add(s);
+    const pose = new THREE.Object3D(), tees = [];
+    for (const sx of [-2.6, 2.6]) {
+      pose.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + 0.14, hole.tee.z - 1.2);
+      tees.push(matrixOf(pose));
     }
+    scene.add(instanced(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshLambertMaterial({ color: sc.teeColor }), tees, 'tee markers (instanced)'));
+    const st = sc.stakes, stakes = [];
+    for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of st.xs ?? [-st.x, st.x]) {
+      pose.position.set(sx, heightAt(sx, z) + 0.5, z);
+      stakes.push(matrixOf(pose));
+    }
+    scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: 0xffffff }), stakes, 'OB stakes (instanced)'));
   }
   addTrees(scene, sc.trees, heightAt, terrain.surfaceAt);
   const colliderOutlines = addObstacles(scene, obstacles);
@@ -107,47 +109,77 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
   return { scene, camera, colliderOutlines };
 }
 
+// AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
+// with one geometry and one material. `matrices` = the instances' local matrices (matrixOf below),
+// `colors` (optional) = a THREE.Color per instance, multiplied with the material's colour.
+function instanced(geo, mat, matrices, name, colors = null) {
+  const m = new THREE.InstancedMesh(geo, mat, matrices.length);
+  matrices.forEach((x, i) => m.setMatrixAt(i, x));
+  if (colors) colors.forEach((c, i) => m.setColorAt(i, c));
+  m.name = name; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
+  return m;
+}
+// The matrix a mesh with this position / rotation / scale would have (so an instance sits exactly
+// where the separate mesh used to)
+const matrixOf = o => { o.updateMatrix(); return o.matrix.clone(); };
+// AP1: many copies of one line geometry, each moved by its matrix, baked into ONE LineSegments
+// (debug collider outlines: one draw call per kind instead of one per collider)
+function bakedLines(geo, matrices, mat, name) {
+  const src = geo.attributes.position, n = src.count, out = new Float32Array(n * 3 * matrices.length), v = new THREE.Vector3();
+  matrices.forEach((m, k) => {
+    for (let i = 0; i < n; i++) v.fromBufferAttribute(src, i).applyMatrix4(m).toArray(out, (k * n + i) * 3);
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(out, 3));
+  const l = new THREE.LineSegments(g, mat);
+  l.renderOrder = 10; l.name = name;
+  return l;
+}
+
 // K5: the trees and boulders in play, from the same colliders the physics uses. A trunk mesh is the
 // trunk cylinder (plus a bit below the ground), the leaves are the canopy ellipsoid, a boulder is its
 // sphere. Returns a group of wireframe outlines of the colliders themselves (grown by nothing: the
 // shapes as the data gives them), hidden until the debug overlay shows them.
+// AP1: all trunks are one instanced draw call, all canopies another (each tree keeps its own shade of
+// green as an instance colour), all boulders a third; the outlines are one draw call per kind.
 function addObstacles(scene, obstacles) {
   const outlines = new THREE.Group();
   outlines.visible = false;
   if (!obstacles.length) { scene.add(outlines); return outlines; }
-  const trunkMat = new THREE.MeshLambertMaterial({ color: 0x6b4a2b });
-  const leafMat = new THREE.MeshLambertMaterial({ color: 0x2f6b34, flatShading: true });
-  const rockMat = new THREE.MeshLambertMaterial({ color: 0x8d8a82, flatShading: true });
   const trunkGeo = new THREE.CylinderGeometry(1, 1, 1, 10); trunkGeo.translate(0, 0.5, 0);
-  const leafGeo = new THREE.IcosahedronGeometry(1, 2);
-  const rockGeo = new THREE.IcosahedronGeometry(1, 2);
   const line = c => new THREE.LineBasicMaterial({ color: c, depthTest: false, transparent: true, opacity: 0.9 });
-  const wireCyl = new THREE.WireframeGeometry(trunkGeo), wireBall = new THREE.WireframeGeometry(new THREE.SphereGeometry(1, 16, 10));
-  const trunkLine = line(0xff4040), leafLine = line(0xffe040), rockLine = line(0x40e0ff);
-  const col = new THREE.Color(), r = createRng(77);
+  const pose = new THREE.Object3D(), r = createRng(77);
+  const trunks = [], leaves = [], leafColors = [], rocks = [], trunkLines = [], leafLines = [], rockLines = [];
   const SINK = 0.5; // m of trunk drawn below the ground, so it never floats on a slope
-  for (const o of obstacles) {
+  // One pose: position, rotation, scale → its matrix (rotation reset each time)
+  const at = (x, y, z, sx, sy, sz, rx = 0, ry = 0) => {
+    pose.position.set(x, y, z); pose.rotation.set(rx, ry, 0); pose.scale.set(sx, sy, sz);
+    return matrixOf(pose);
+  };
+  for (const o of obstacles) { // in the data's order, so the random shades and turns are the same as before
     if (o.type === 'tree') {
-      const h = o.top - o.y0 + SINK;
-      const t = new THREE.Mesh(trunkGeo, trunkMat); t.scale.set(o.r, h, o.r); t.position.set(o.x, o.y0 - SINK, o.z);
-      const c = o.canopy;
-      const leafM = leafMat.clone(); leafM.color.copy(col.setHSL(0.3 + r() * 0.06, 0.45, 0.24 + r() * 0.08));
-      const l = new THREE.Mesh(leafGeo, leafM); l.scale.set(c.rx, c.ry, c.rx); l.position.set(c.x, c.y, c.z);
-      l.rotation.y = r() * 6.28;
-      t.name = 'tree trunk (in play)'; l.name = 'tree canopy (in play)';
-      scene.add(t, l);
-      const tw = new THREE.LineSegments(wireCyl, trunkLine); tw.scale.set(o.r, o.top - o.y0, o.r); tw.position.set(o.x, o.y0, o.z);
-      const lw = new THREE.LineSegments(wireBall, leafLine); lw.scale.set(c.rx, c.ry, c.rx); lw.position.set(c.x, c.y, c.z);
-      outlines.add(tw, lw);
+      const h = o.top - o.y0 + SINK, c = o.canopy;
+      trunks.push(at(o.x, o.y0 - SINK, o.z, o.r, h, o.r));
+      leafColors.push(new THREE.Color().setHSL(0.3 + r() * 0.06, 0.45, 0.24 + r() * 0.08));
+      leaves.push(at(c.x, c.y, c.z, c.rx, c.ry, c.rx, 0, r() * 6.28));
+      trunkLines.push(at(o.x, o.y0, o.z, o.r, o.top - o.y0, o.r));
+      leafLines.push(at(c.x, c.y, c.z, c.rx, c.ry, c.rx));
     } else {
-      const b = new THREE.Mesh(rockGeo, rockMat); b.scale.setScalar(o.r); b.position.set(o.x, o.y, o.z);
-      b.rotation.set(r() * 6.28, r() * 6.28, 0); b.name = 'boulder';
-      scene.add(b);
-      const bw = new THREE.LineSegments(wireBall, rockLine); bw.scale.setScalar(o.r); bw.position.set(o.x, o.y, o.z);
-      outlines.add(bw);
+      rocks.push(at(o.x, o.y, o.z, o.r, o.r, o.r, r() * 6.28, r() * 6.28));
+      rockLines.push(at(o.x, o.y, o.z, o.r, o.r, o.r));
     }
   }
-  for (const o of outlines.children) { o.renderOrder = 10; o.name = 'collider outline (debug)'; }
+  if (trunks.length) {
+    // the canopy material is white: each instance's colour is its shade of green
+    scene.add(instanced(trunkGeo, new THREE.MeshLambertMaterial({ color: 0x6b4a2b }), trunks, 'tree trunks (in play, instanced)'));
+    scene.add(instanced(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshLambertMaterial({ color: 0xffffff, flatShading: true }), leaves, 'tree canopies (in play, instanced)', leafColors));
+  }
+  if (rocks.length) scene.add(instanced(new THREE.IcosahedronGeometry(1, 2), new THREE.MeshLambertMaterial({ color: 0x8d8a82, flatShading: true }), rocks, 'boulders (instanced)'));
+  const wireCyl = new THREE.WireframeGeometry(trunkGeo), ball = new THREE.SphereGeometry(1, 16, 10), wireBall = new THREE.WireframeGeometry(ball);
+  if (trunkLines.length) outlines.add(bakedLines(wireCyl, trunkLines, line(0xff4040), 'collider outlines: trunks (debug)'), bakedLines(wireBall, leafLines, line(0xffe040), 'collider outlines: leaves (debug)'));
+  if (rockLines.length) outlines.add(bakedLines(wireBall, rockLines, line(0x40e0ff), 'collider outlines: boulders (debug)'));
+  if (!trunks.length) trunkGeo.dispose();
+  wireCyl.dispose(); ball.dispose(); wireBall.dispose(); // only copied from, never drawn
   scene.add(outlines);
   return outlines;
 }
@@ -180,26 +212,31 @@ function addTrees(scene, t, heightAt, surfaceAt) {
   scene.add(trunks, leaves);
 }
 
-// Distant hills and clouds
+// Distant hills and clouds. AP1: all hills are one instanced draw call, all cloud puffs another
+// (a puff is the unit sphere scaled to its radius, flattened as before).
 function addBackdrop(scene, sc) {
   const hl = sc.hills, cl = sc.clouds;
-  const hillMat = new THREE.MeshLambertMaterial({ color: 0x4f8a45 });
-  const r = createRng(9);
+  const r = createRng(9), pose = new THREE.Object3D();
+  const hills = [];
   for (let i = 0; i < hl.count; i++) {
     const a = (i / hl.count) * Math.PI * 2, d = hl.dist[0] + r() * hl.dist[1];
-    const h = new THREE.Mesh(new THREE.SphereGeometry(1, 20, 12), hillMat);
-    h.scale.set(hl.xz[0] + r() * hl.xz[1], hl.y[0] + r() * hl.y[1], hl.xz[0] + r() * hl.xz[1]);
-    h.position.set(Math.sin(a) * d, hl.posY, hl.cz + Math.cos(a) * d); h.name = 'hill';
-    scene.add(h);
+    pose.scale.set(hl.xz[0] + r() * hl.xz[1], hl.y[0] + r() * hl.y[1], hl.xz[0] + r() * hl.xz[1]);
+    pose.position.set(Math.sin(a) * d, hl.posY, hl.cz + Math.cos(a) * d);
+    hills.push(matrixOf(pose));
   }
-  const cloudMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+  if (hills.length) scene.add(instanced(new THREE.SphereGeometry(1, 20, 12), new THREE.MeshLambertMaterial({ color: 0x4f8a45 }), hills, 'hills (instanced)'));
+  const puffs = [];
   for (let i = 0; i < cl.count; i++) {
-    const g = new THREE.Group();
+    const cloud = [];
     for (let k = 0; k < 4; k++) {
-      const p = new THREE.Mesh(new THREE.SphereGeometry(6 + r() * 6, 12, 8), cloudMat);
-      p.position.set(k * 9 - 13, r() * 3, r() * 6); p.scale.y = 0.55; p.name = 'cloud puff'; g.add(p);
+      const rad = 6 + r() * 6;
+      cloud.push({ rad, x: k * 9 - 13, y: r() * 3, z: r() * 6 });
     }
-    g.position.set((r() - 0.5) * cl.xSpan, cl.y[0] + r() * cl.y[1], cl.cz - (r() - cl.zOff) * cl.zSpan);
-    scene.add(g);
+    const gx = (r() - 0.5) * cl.xSpan, gy = cl.y[0] + r() * cl.y[1], gz = cl.cz - (r() - cl.zOff) * cl.zSpan;
+    for (const p of cloud) {
+      pose.position.set(gx + p.x, gy + p.y, gz + p.z); pose.scale.set(p.rad, p.rad * 0.55, p.rad);
+      puffs.push(matrixOf(pose));
+    }
   }
+  if (puffs.length) scene.add(instanced(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false }), puffs, 'cloud puffs (instanced)'));
 }
