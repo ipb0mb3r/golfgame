@@ -58,7 +58,13 @@ Target unchanged: iPhone 12 / Pixel 6 class at 60 fps, never below 30 fps on an 
 ## New AP order
 AP0 → AP1 → **AP8** (pixel switch, moved up: the tool to choose the direction) → AP2 (glTF loader; KTX2 optional) → AP5 (biome kit format) → AP3 (loader) → AP7 (models) → AP6 (simplified ground: flat / gradient colours, shader stripes and grid) → AP4 (small) → **AP9a** (golfer hooks) → AP9 (golfer).
 
-## Open owner decisions
+## Owner decisions (2026-11-19, after this follow-up)
+- **Chibi** (big-head) golfers.
+- **3D cartoony, flat colours but with texture**: stylised textures are fine (small, ≤ 256–512², never photo), so the "mostly no textures" budget line becomes "small stylised textures"; KTX2 may come back if texture memory grows.
+- **3D rigged golfers**, not sprites.
+- The pixel effect is **a player setting**.
+
+## Open owner decisions (as asked)
 1. Golfer shape: cartoony big-head ("chibi") or normal proportions?
 2. Agree the shared base (low-poly, flat colours, cartoony, light); pick PS1 or clean after trying the AP8 switch.
 3. 3D golfer instead of sprites (AP9a assumes it; can be confirmed later).

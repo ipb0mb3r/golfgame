@@ -63,7 +63,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **In flight:**
 - **FL1 flagpole** (`dev/FL1-flagpole`, fresh dev, 60 min; core + tests first, then a stop for the PM review). QA Full after.
-- **Owner decisions on art (from the tech lead follow-up, `reviews/art-tech-lead-followup.md`):** golfer shape (chibi or normal), agree the shared base (low-poly flat colours; PS1 vs clean after the AP8 switch), 3D golfer vs sprites, pixel effect fixed or a setting. Phase A (AP0 → AP1 → AP8 → …) is in TASKS.
+- Art decided (owner, 2026-11-19): **chibi 3D golfers**, **3D cartoony flat colours with stylised texture**, light, low-poly; **pixel effect = a setting**. Phase A in TASKS. Next: ART0 with the artist (owner brings examples); AP0 → AP1 → AP8 for the dev after FL1.
 - Done since the last status: **tech lead art and engine feasibility** (#70, `reviews/art-tech-lead.md`): everything is possible on Three.js + no build step; stay on it; AP0–AP10 proposed (perf first: the mountain holes are near the phone limit); phone budget proposed. #70 also carried the PM docs commit (new `artist` + `ui-designer` agents, FL1, Phase MP, Phase A).
 
 **Next (in order):**
