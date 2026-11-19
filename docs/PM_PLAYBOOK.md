@@ -68,15 +68,18 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Biome sets** (DESIGN §8b, #71) + artist round 1 (#73, ART0a): a biome set = a pick list from a shared library, applied per hole; time of day = its own biome set (alpine vs alpine sunset); tint-only backdrops; big props by hand, small props by rule. First biomes: Meadow, Alpine, Island coast (internal names).
 
 **In flight:**
-- **AP0: phone budget and measuring** (`dev/AP0-perf-budget`, fresh dev, 60 min): budget in DESIGN + config, debug-overlay numbers, `tools/perf-check.mjs`, owner fps links for his S25 Ultra. QA Light after.
+- **AP1 fewer draw calls** (#77): every hole 83–222 → 20–25 draw calls, no visible change; QA Full running. Owner phone (S25 Ultra): 60 fps everywhere (pl-01 ~11k tris, mtn-07 ~350k, mtn-09 ~540k); mountain aiming "a bit less smooth"; centre vs off-centre impact "pretty similar" → X21 backlog idea only.
+- **Artist style talk ART0b** in its **own session**, which the owner chats with directly ("Pocket Links: Artist (style talk ART0b)", created by the PM via create_session). It ends with a PR "Art: style round 2"; the PM reviews it.
 
-**Next (in order):**
-1. **Dev:** AP0 → AP1 (fewer draw calls) → AP8 (pixel switch) → AP2 → AP5 (biome set format, from the artist's draft in `docs/art/biome-sets/`) …
-2. **ART0b style talk** (`artist` + owner, **when he sends his examples**; first update ART_STYLE.md for "time of day = its own biome set"). No assets before it. **U0 scope** (`ui-designer` + owner).
-3. Small fixes when convenient: X17 (pin chip spot).
-4. **Phase MP: main menu pass** (`ui-designer` designs MP1–MP5 → dev builds), then Phase U for the HUD.
-5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-6. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (rules in DESIGN §7; then a weather option in MP).
+**After #77 merges, PM docs:** TASKS: AP8 moved after AP6/AP7 (owner: pixel effect not a priority), X20 (faster mountain `heightAt`, identical results), X21 (lighter preview roll while aim is held, idea only); AGENTS.md: `tools/aim-cost.mjs`.
+
+**Next (owner order, 2026-11-19: A → B → C):**
+1. **A: finish performance:** AP1b (terrain detail by distance) + X20, one dev PR.
+2. **B: ready for the art:** AP2 (Three.js upgrade + glTF loader) → AP5 (biome set format, from `docs/art/biome-sets/` and the ART0b style guide) → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
+3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
+4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
+6. Small, whenever: X17 (pin chip spot text).
 
 **Lessons from the 2026-11-18/19 session (keep doing this):**
 - **Fresh agent per task.** Don't keep resuming one dev for many tweaks: its history grows (one reached ~440k tokens) and every resume reloads it, which is slow and burns the 5-hour usage limit. My prompts stand alone; small follow-ups can go to a fresh dev too.
@@ -89,6 +92,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
 - **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
 - **Give every agent `isolation: worktree`, including read-only ones.** The tech lead ran in the PM's folder, switched its branch, and the PM's docs commit landed on the report branch (#70 carried both; fixing it would have needed a force push).
+- **The owner can chat with an agent directly** in its own session: `create_session` with `append_system_prompt` = a role override ("you are NOT the PM, you are the artist…") and a standalone first prompt. Its output comes back as a PR.
 - Agent worktrees live in `.claude/worktrees/` (excluded locally in `.git/info/exclude`, never committed).
 
 **Open owner decisions / backlog to remember:**
