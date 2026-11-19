@@ -117,6 +117,9 @@ const input = bindInput(canvas, {
   swing: t => session.onSwingInput(t),
   skip: () => session.skip(),
   view: (down, at) => session.onViewInput(down, at),
+  impactPress: (dx, dy, r, at) => session.onImpactPress(dx, dy, r, at), // BC5: the ball icon
+  impactDrag: (dx, dy, r) => session.onImpactDrag(dx, dy, r),
+  impactStep: (dx, dy) => session.onImpactStep(dx, dy),
   club: step => session.changeClub(step),
   canAim: () => active() && session.canAim(),
   start: () => !!session && session.start(),
@@ -335,6 +338,8 @@ window.__golf = {
   testHit: (pw, acc = 0, outcome = 'normal') => api().testHit(pw, acc, outcome),
   skip: () => api().skip(), get canSkip() { return api().canSkip; },
   get warn() { return api().warn; }, get collidersShown() { return api().collidersShown; },
+  // Phase BC (BC5): the impact point (the ball icon shows it on the next frame)
+  get impact() { return api().play.impact; }, setImpact: pt => api().play.setImpact(pt), get marks() { return api().play.aimMarks(); },
   // Phase V: the view button (V2) and the camera
   get flight() { return api().flight; }, get flightHistory() { return api().flightHistory; }, get flyover() { return api().flyover; },
   get view() { return api().view; }, viewTap: () => api().viewTap(), get camFrame() { return api().camFrame; }, cameraAt: () => api().cameraAt(),

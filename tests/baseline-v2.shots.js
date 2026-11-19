@@ -89,6 +89,17 @@ export const SHOTS = [
   { name: 'C mtn8 drive hooked into the pond', hole: 'mtn-08', seed: 8, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0.06, aimFrom: { x: 0, z: -180 }, aimOff: 0, club: 'driver', windless: true },
   { name: 'C mtn9 95% drive down the big drop', hole: 'mtn-09', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimFrom: { x: -4, z: -278 }, aimOff: 0, club: 'driver' },
   { name: 'C mtn9 3 Wood over the lake in two', hole: 'mtn-09', seed: null, start: { x: -4.4, z: -334.6 }, strokes: 1, power: 0.95, acc: 0, aimOff: 0, club: '3w' },
+  // Phase BC (BC1/BC2): shaped shots. `impact` { x, y } = where the club hits the ball (core/shape.js;
+  // left/right = start out then curve back, bottom/top = higher/lower). Every shot above is a centre hit.
+  { name: 'BC h1 tee, left impact (starts left, curves right)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
+  { name: 'BC h1 tee, right impact (starts right, curves left)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: 1, y: 0 } },
+  { name: 'BC h2 Driver, bottom impact (high, short roll)', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: 0, y: -1 } },
+  { name: 'BC h2 Driver, top impact (low, long roll)', hole: 'pl-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: 0, y: 1 } },
+  { name: 'BC h2 approach, low-left corner in seeded wind', hole: 'pl-02', seed: 37, start: { x: 18, z: -330 }, strokes: 1, power: 0.9, acc: 0, aimOff: 0, impact: { x: -0.7, y: -0.7 } },
+  { name: 'BC h2 approach, top-right + slight slice in seeded wind', hole: 'pl-02', seed: 37, start: { x: 18, z: -330 }, strokes: 1, power: 0.9, acc: -0.08, aimOff: 0, impact: { x: 0.6, y: 0.5 } },
+  { name: 'BC h1 from the rough, left impact (rough halves it)', hole: 'pl-01', seed: null, start: { x: -28, z: -50 }, strokes: 1, power: 0.85, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
+  { name: 'BC h3 Driver on the cut-the-corner line, left impact', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 9, z: -222 }, aimOff: 0.2637, impact: { x: -1, y: 0 } },
+  { name: 'BC mtn6 bunker shot, bottom impact (sand limits it)', hole: 'mtn-06', seed: null, start: { x: 12, z: -158 }, strokes: 1, power: 0.35, acc: 0, aimOff: 0, impact: { x: 0, y: -1 } },
 ];
 
 // Play one shot to the end. seed null = wind forced to 0 (and the seed is 1, for lip-outs);
@@ -103,6 +114,7 @@ export function playShot(s) {
   if (s.aimFrom) play.setAim(aimAt(play.ball.pos, s.aimFrom)); // S21: offsets from a fixed point, not the default aim
   play.aim += s.aimOff;
   if (s.club) play.setClub(play.bag.findIndex(c => c.id === s.club));
+  if (s.impact) play.setImpact(s.impact); // Phase BC
   const club = play.club.id;
   const power = s.power === 'pin' ? Math.min(play.pinPower(), play.lieOf().maxPower) : s.power; // S21: 'pin' = the ⚑ power
   play.hit(power, s.acc, s.outcome ?? 'normal');

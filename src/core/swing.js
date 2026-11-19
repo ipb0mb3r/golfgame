@@ -4,6 +4,7 @@ import {
   G, MAX_METER_DT, METER_MIN, CURVE_SHAPE_REF, CURVE_REF_SPEED, MIN_POWER, PERFECT_POWER, SLIGHT_ERROR, SPIN, TUNE,
 } from './config.js';
 import { dirFromAim, rightFromAim, clamp, degToRad } from './vec.js';
+import { shapeOf } from './shape.js';
 
 // Meter phases (DESIGN §3 "Missed clicks"; the list is METER_PHASES in core/states.js):
 //   'aim'       waiting for click 1
@@ -142,7 +143,10 @@ export function launchVelocity(club, p, aim) {
 //   outcome (from the meter, default 'normal'), lie ({ maxPower, sweetScale }, default no limits)
 // S14 (owner, 2026-11-18: "slicing is not really a thing while putting"): a putt ignores acc and a
 // 'shank' outcome. It goes exactly along the aim, whatever the timing; only its power can be missed.
-export function resolveShot({ club, power, acc, aim, puttMax, greenDecel, outcome = 'normal', lie = { maxPower: 1, sweetScale: 1 } }) {
+// Phase BC: `impact` = the impact point { x, y } (core/shape.js), `lieShape` = the lie's share of it
+// (the surface's `shape`), `handed` = 'right' | 'left'. The centre (the default) is exactly the shot
+// before Phase BC: the same code path, the same numbers.
+export function resolveShot({ club, power, acc, aim, puttMax, greenDecel, outcome = 'normal', lie = { maxPower: 1, sweetScale: 1 }, impact = null, lieShape = 1, handed = 'right' }) {
   if (club.putter && outcome === 'shank') outcome = 'normal';
   const err = club.putter ? 0 : swingError(acc, outcome, lie.sweetScale);
   const p = Math.max(Math.min(power, lie.maxPower), MIN_POWER); // the cap is enforced here too
@@ -154,8 +158,20 @@ export function resolveShot({ club, power, acc, aim, puttMax, greenDecel, outcom
     const dir = { x: Math.sin(aim), y: 0, z: -Math.cos(aim) };
     return { kind: 'putt', err, label, vel: { x: dir.x * v0, y: 0, z: dir.z * v0 }, curve: { x: 0, y: 0, z: 0 }, spinFactor: 1, dir };
   }
-  const { vel, speed } = launchVelocity(club, p, aim);
-  const r = rightFromAim(aim), c = -err * TUNE.CURVE_K * (speed / CURVE_REF_SPEED);
-  const spinFactor = clamp(SPIN.base - club.loft / SPIN.loftScale, SPIN.min, SPIN.max);
-  return { kind: 'full', err, label, vel, curve: { x: r.x * c, y: r.y * c, z: r.z * c }, spinFactor, dir: dirFromAim(aim) };
+  const sh = shapeOf(club, impact, { lieShape, handed });
+  if (!sh) {
+    const { vel, speed } = launchVelocity(club, p, aim);
+    const r = rightFromAim(aim), c = -err * TUNE.CURVE_K * (speed / CURVE_REF_SPEED);
+    const spinFactor = clamp(SPIN.base - club.loft / SPIN.loftScale, SPIN.min, SPIN.max);
+    return { kind: 'full', err, label, vel, curve: { x: r.x * c, y: r.y * c, z: r.z * c }, spinFactor, dir: dirFromAim(aim) };
+  }
+  // Phase BC, a shaped shot: launched sh.start to the side at the shaped loft (same carry), the timing
+  // curve plus the shape's push back across the aim line, and its wind and roll factors (ball.js).
+  const { vel, speed } = launchVelocity({ loft: sh.loft, carry: club.carry }, p, aim + sh.start);
+  const r = rightFromAim(aim), c = -err * TUNE.CURVE_K * (speed / CURVE_REF_SPEED) + sh.push;
+  const spinFactor = clamp(SPIN.base - sh.loft / SPIN.loftScale, SPIN.min, SPIN.max);
+  return {
+    kind: 'full', err, label, vel, curve: { x: r.x * c, y: r.y * c, z: r.z * c }, spinFactor, dir: dirFromAim(aim),
+    windK: sh.windK, keepK: sh.keepK, shape: sh,
+  };
 }

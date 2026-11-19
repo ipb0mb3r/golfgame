@@ -1,16 +1,23 @@
-import { AUTO_CLUB_REACH, FRINGE_PUTT_DIST } from './config.js';
+import { AUTO_CLUB_REACH, FRINGE_PUTT_DIST, SHAPE_RANGES } from './config.js';
 import { lieTune, deepFreeze } from './surfaces.js';
 
 // Club table (DESIGN.md §3). carry = meters a full, straight shot carries on flat ground.
 // Frozen (Gate A A5): a ?tune= link changes club lie values through the lie-tune layer, not here.
+// Phase BC (core/shape.js): `shape` = how much the impact point shapes a full shot with this club
+// (the dev's proposal; the owner tunes them with ?tune=driver.start:8 etc., ranges in config SHAPE_RANGES):
+//   start   deg the ball starts out to the side at a full left / right impact (the curve back follows)
+//   height  deg the loft changes at a full bottom (higher) / top (lower) impact
+//   roll    the first bounce keeps × (1 ± roll) of its speed (top +, bottom −)
+//   wind    the wind pushes it × (1 ∓ wind) in the air (bottom +, top −)
+// The Driver curves most, the wedges change height most.
 export const CLUBS = deepFreeze({
-  driver: { id: 'driver', name: 'Driver',  carry: 215, loft: 12 },
-  '3w':   { id: '3w',     name: '3 Wood',  carry: 195, loft: 17 },
-  '5i':   { id: '5i',     name: '5 Iron',  carry: 170, loft: 21 },
-  '7i':   { id: '7i',     name: '7 Iron',  carry: 150, loft: 26 },
-  '9i':   { id: '9i',     name: '9 Iron',  carry: 125, loft: 32 },
-  pw:     { id: 'pw',     name: 'P Wedge', carry: 105, loft: 38 },
-  sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46,
+  driver: { id: 'driver', name: 'Driver',  carry: 215, loft: 12, shape: { start: 11.5, height: 2,   roll: 0.25, wind: 0.2 } },
+  '3w':   { id: '3w',     name: '3 Wood',  carry: 195, loft: 17, shape: { start: 10.35, height: 3.5, roll: 0.3, wind: 0.2 } },
+  '5i':   { id: '5i',     name: '5 Iron',  carry: 170, loft: 21, shape: { start: 9.2, height: 4,   roll: 0.3, wind: 0.2 } },
+  '7i':   { id: '7i',     name: '7 Iron',  carry: 150, loft: 26, shape: { start: 8.05, height: 5,   roll: 0.3, wind: 0.2 } },
+  '9i':   { id: '9i',     name: '9 Iron',  carry: 125, loft: 32, shape: { start: 6.9, height: 6,   roll: 0.3, wind: 0.2 } },
+  pw:     { id: 'pw',     name: 'P Wedge', carry: 105, loft: 38, shape: { start: 5.75, height: 7,   roll: 0.3, wind: 0.2 } },
+  sw:     { id: 'sw',     name: 'S Wedge', carry: 75,  loft: 46, shape: { start: 4.6, height: 8,   roll: 0.3, wind: 0.2 },
             lieOverrides: { sand: { maxPower: 0.75, sweetScale: 0.6 } } }, // the sand wedge is made for bunkers (S17: .85/.7 → .75/.6)
   putter: { id: 'putter', name: 'Putter',  carry: 0,   loft: 0,  putter: true,
             // no power cap where you putt; the surface's sweetScale still applies (PM, PR #12)
@@ -24,6 +31,14 @@ export function makeBag(ids = FULL_BAG) {
   const bag = FULL_BAG.filter(id => ids.includes(id)).map(id => CLUBS[id]);
   if (!bag.length || !bag[bag.length - 1].putter) throw new Error('a bag must end with the putter');
   return bag;
+}
+
+// Phase BC: the club's shaping amounts { start, height, roll, wind }; a ?tune= value (e.g.
+// driver.start) wins over the table. A club without a `shape` (the putter) shapes nothing.
+export function clubShape(club) {
+  const out = {};
+  for (const key of Object.keys(SHAPE_RANGES)) out[key] = lieTune(`${club.id}.${key}`) ?? club.shape?.[key] ?? 0;
+  return out;
 }
 
 // The lie for hitting this club from this surface (S11): { maxPower, sweetScale }.

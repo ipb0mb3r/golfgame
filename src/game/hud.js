@@ -288,7 +288,14 @@ export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
       const [tx, tz] = xy(target.x, target.z);
       const color = marks?.hazard && !warn ? '#46b4ff' : marks?.capped ? '#c8c8c8' : '#ffd447'; // S23: blue = lands in water / OB
       ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
-      ctx.beginPath(); ctx.moveTo(bx, bz); ctx.lineTo(tx, tz); ctx.stroke(); ctx.setLineDash([]);
+      ctx.beginPath(); ctx.moveTo(bx, bz);
+      if (marks?.shape) for (const q of marks.shape.path) ctx.lineTo(...xy(q.x, q.z)); // BC4: the shaped flight
+      ctx.lineTo(tx, tz); ctx.stroke(); ctx.setLineDash([]);
+      if (marks?.shape) { // BC4: the run-out to where it stops
+        ctx.strokeStyle = '#fff'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(tx, tz);
+        for (const q of marks.shape.roll) ctx.lineTo(...xy(q.x, q.z));
+        ctx.stroke(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+      }
       if (!marks) { ctx.beginPath(); ctx.arc(tx, tz, 3, 0, 7); ctx.stroke(); }
       else {
         const len = Math.hypot(tx - bx, tz - bz) || 1, ux = (tx - bx) / len, uz = (tz - bz) / len; // along the line, on the map

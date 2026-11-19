@@ -54,6 +54,22 @@ export const LANDING_SIM = {          // aim-ring / reach / ⚑ prediction (no w
   restSeed: 1,                       // S15: the roll prediction's own random numbers (lip-outs), restarted every time
 };
 
+// --- Ball control (Phase BC, core/shape.js) ---
+// The per-club amounts are in clubs.js (`shape`); a ?tune= link changes one as <club>.<key>
+// (e.g. driver.start:8, pw.height:9), clamped to these ranges. BC_BACK and BC_LEFTY are TUNABLES.
+export const SHAPE_RANGES = Object.freeze({
+  start:  Object.freeze({ min: 0, max: 25 }),  // deg the ball starts out to the side at a full left / right impact
+  height: Object.freeze({ min: 0, max: 15 }),  // deg of loft added (bottom) / removed (top)
+  roll:   Object.freeze({ min: 0, max: 0.9 }), // first bounce keeps × (1 ± roll)
+  wind:   Object.freeze({ min: 0, max: 0.9 }), // the wind pushes it × (1 ∓ wind)
+});
+export const BC = Object.freeze({ loftMin: 4, loftMax: 60 }); // deg: a shaped launch loft stays in this range
+// BC4: the shaped aim line samples the predicted ground track every `every` physics steps (1/20 s)
+export const SHAPE_PREVIEW = Object.freeze({ every: 12 });
+// BC5: the ball icon. A keyboard press (Shift + arrows) moves the dot `keyStep`; a tap within `snap` of
+// the centre (share of the radius) is the centre; two taps within `doubleTapMs` reset it.
+export const IMPACT_UI = Object.freeze({ keyStep: 0.25, snap: 0.12, doubleTapMs: 320 });
+
 // --- Ball (§4) ---
 export const BALL_R = 0.09;          // drawn a bit bigger than real so you can see it
 export const BOUNCE_TO_ROLL = 1.2;   // a bounce slower than this (m/s, off the ground) becomes a roll
@@ -165,6 +181,9 @@ export const TUNABLES = Object.freeze({
   POWER_GRACE:           { def: 0.15, min: 0,     max: 0.5 },  // s after the meter reaches the top in which the power click still counts as full power
   NO_ACC_ERR:            { def: 0.6,  min: 0.2,   max: 1.5 },  // no 3rd click: a huge slice with this curve error (3× the old forced slice of 0.2)
   MISSED_POWER_FRACTION: { def: 0.15, min: 0.02,  max: 0.5 },  // no power click: the click on the way back hits a mini shot with this power
+  // Ball control (Phase BC, core/shape.js; per-club amounts in clubs.js)
+  BC_BACK:               { def: 1,    min: 0,     max: 2 },    // how far a shaped shot curves back by the time it lands (flat, no wind): 1 = onto the aim line, 0 = no curve, >1 = across it
+  BC_LEFTY:              { def: 0,    min: 0,     max: 1 },    // 1 = a left-handed player (the impact point's left / right is mirrored); 0 = right-handed
   // Ball, cup, wind, clock (§4, §7)
   CUP_CAPTURE_SPEED:     { def: 3.2,  min: 1,     max: 6 },    // m/s: slower than this over the cup = holed; faster = lip-out
   WIND_K:                { def: 0.3,  min: 0,     max: 0.6 },  // how strongly wind pushes the ball in the air (S17: 0.2 → 0.3)

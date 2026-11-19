@@ -23,6 +23,7 @@ import { createCameraRig } from './camera.js';
 import { createHud, createMinimap, setupHolePage, fitMinimap, yd } from './hud.js';
 import { greenStyle } from '../core/menu.js';
 import { nextView, pickFlightView, flyoverRoute, flyoverPath } from '../core/views.js';
+import { CENTRE, impactFromOffset, stepImpact, isDoubleTap, impactCaption } from '../core/shape.js';
 
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
@@ -81,7 +82,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // a hint that wraps to another line, the putt bar) and on a resize (resize()).
   let layoutState = null;
   const updateHud = () => {
-    hud.update(state, meter.power, warn); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover');
+    hud.update(state, meter.power, warn); $view().hidden = state !== 'aim'; showImpact(); document.body.classList.toggle('flyover', state === 'flyover');
     if (state !== layoutState) { layoutState = state; measureFrame(); }
   };
   const FRAME_PANELS = ['info', 'windBox', 'minimap', 'pauseBtn', 'bottom'];
@@ -151,6 +152,38 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     }
   }
 
+  // BC5: the ball icon (bottom right, only while aiming a full shot). Core keeps the impact point and
+  // play.prepare() puts it back to the centre every shot; the icon only shows it and changes it.
+  let impactTapAt = -Infinity, impactDrag = false, shownImpact = '';
+  const canShape = () => state === 'aim' && !play.club.putter && !play.finished;
+  function onImpactPress(dx, dy, r, at = performance.now()) {
+    if (!canShape()) return;
+    if (isDoubleTap(impactTapAt, at)) { impactTapAt = -Infinity; impactDrag = false; play.setImpact(CENTRE); } // double tap = centre
+    else { impactTapAt = at; impactDrag = true; play.setImpact(impactFromOffset(dx, dy, r)); }
+    showImpact();
+  }
+  function onImpactDrag(dx, dy, r) {
+    if (!canShape() || !impactDrag) return;
+    play.setImpact(impactFromOffset(dx, dy, r)); showImpact();
+  }
+  function onImpactStep(dx, dy) { // Shift + arrows
+    if (!canShape()) return;
+    play.setImpact(stepImpact(play.impact, dx, dy)); showImpact();
+  }
+  function showImpact() {
+    const box = $impact();
+    if (!box) return;
+    const on = canShape(), pt = play.impact, key = `${on}|${pt.x}|${pt.y}`;
+    if (key === shownImpact) return;
+    shownImpact = key;
+    box.hidden = !on;
+    if (!on) return;
+    const dot = document.getElementById('impactDot'), k = IMPACT_DOT_TRAVEL;
+    dot.style.left = `${50 + pt.x * k}%`; dot.style.top = `${50 - pt.y * k}%`;
+    document.getElementById('impactCap').textContent = impactCaption(pt, play.handed);
+    document.getElementById('impactBall').setAttribute('aria-valuetext', impactCaption(pt, play.handed) || 'Centre');
+  }
+
   function clearTimers() { timers.forEach(tm => clearTimeout(tm.id)); timers = []; }
 
   function resetGame() {
@@ -186,9 +219,10 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // a cancelled swing: back to aim, no stroke.
   function endSwing(result) {
     meter.power = result.power;
-    // V3: where a straight, no-wind shot at this power would land (before the hit: the ball is still here)
+    // V3: where a no-wind shot at this power would land (before the hit: the ball and the impact point are
+    // still set). BC4: shaped when the impact is off the centre, else the straight landing as before.
     const putt = !!play.club.putter;
-    const land = !putt && result.outcome !== 'cancel' && play.canSwing ? play.landingPoint(play.clubIdx, play.aim, result.power) : null;
+    const land = !putt && result.outcome !== 'cancel' && play.canSwing ? play.flightLanding(play.clubIdx, play.aim, result.power) : null;
     const from = { ...ball.pos };
     const shot = play.swing(result);
     if (!shot) {
@@ -321,6 +355,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
     // Aim guide
     const isAim = isAimingState(state);
+    showImpact(); // BC5 (cheap: only touches the page when the dot or its visibility changes)
     if (isAim) {
       const d = dirFromAim(play.aim);
       let len;
@@ -435,7 +470,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     clearTimers();
     $holeCard().classList.add('hidden');
     showSkip(false);
-    $view().hidden = true; $view().classList.remove('on'); document.body.classList.remove('flyover');
+    $view().hidden = true; $view().classList.remove('on'); if ($impact()) $impact().hidden = true; document.body.classList.remove('flyover');
     hud.dispose();
     disposeScene(scene);
   }
@@ -474,7 +509,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     canAim: () => state === 'aim',
     get paused() { return paused; },
     get timerCount() { return timers.length; },
-    onSwingInput, onViewInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
+    onSwingInput, onViewInput, onImpactPress, onImpactDrag, onImpactStep, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
     start: teeOff,
     again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
@@ -484,3 +519,5 @@ const $intro = () => document.getElementById('intro');
 const $holeCard = () => document.getElementById('holeCard');
 const $skip = () => document.getElementById('skipBtn');
 const $view = () => document.getElementById('viewBtn');
+const $impact = () => document.getElementById('impactBox');
+const IMPACT_DOT_TRAVEL = 40; // % of the icon's size from the centre to the dot at the rim (inside the ball's edge)

@@ -109,6 +109,25 @@
   #viewBtn[hidden] { display: none; }
   /* Phase V (V4, PM on #63): during the flyover only the small "tap to skip" hint shows at the bottom */
   body.flyover #meterWrap, body.flyover #controls, body.flyover #viewBtn, body.flyover #skipBtn, body.flyover #tuned { display: none; }
+  /* Phase BC (BC5): the ball icon, bottom right in ⏩ Skip's row (it shows only while aiming, Skip only
+     while the ball moves). Tap or drag on the ball to place the red impact dot, double tap = centre. */
+  #impactBox { position: absolute; right: 0; bottom: calc(100% + 8px); display: flex; flex-direction: column; align-items: flex-end; gap: 4px; pointer-events: none; }
+  /* the caption pill sits above the ball, so on a 320 px phone it never reaches the 🔍 view button on the left */
+  #impactBox[hidden] { display: none; }
+  #impactBall { position: relative; width: 64px; height: 64px; border-radius: 50%; pointer-events: auto; touch-action: none; cursor: crosshair;
+    background: radial-gradient(circle at 38% 32%, #ffffff 0%, #eef0ea 45%, #c5cbc0 100%); border: 2px solid rgba(12, 28, 20, .7);
+    box-shadow: 0 2px 8px rgba(0,0,0,.45); box-sizing: border-box; -webkit-user-select: none; user-select: none; }
+  #impactBall::before, #impactBall::after { content: ""; position: absolute; background: rgba(40, 60, 50, .22); pointer-events: none; }
+  #impactBall::before { left: 50%; top: 8%; bottom: 8%; width: 1px; }
+  #impactBall::after { top: 50%; left: 8%; right: 8%; height: 1px; }
+  #impactRing { position: absolute; left: 50%; top: 50%; width: 24%; height: 24%; transform: translate(-50%, -50%); border-radius: 50%;
+    border: 1px dashed rgba(40, 60, 50, .4); pointer-events: none; }
+  #impactDot { position: absolute; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #e2372b;
+    border: 1.5px solid #fff; box-shadow: 0 0 3px rgba(0,0,0,.6); pointer-events: none; left: 50%; top: 50%; }
+  #impactCap { font: 700 11px/1.2 system-ui, sans-serif; color: #fff; background: rgba(12, 28, 20, .82); border: 1px solid rgba(255,255,255,.35);
+    padding: 3px 8px; border-radius: 999px; white-space: nowrap; pointer-events: none; }
+  #impactCap:empty { display: none; }
+  body.flyover #impactBox { display: none; }
   #swingBtn { flex: 0 0 auto; font-weight: 900; background: #2f8f46; border-color: #8ef0a5; padding: 8px 18px; }
 
   /* Overlays */
@@ -400,6 +419,7 @@
 
 <div id="bottom">
   <button id="skipBtn" hidden title="Skip to where the ball stops (Space or Enter)">⏩ Skip</button>
+  <div id="impactBox" hidden><span id="impactCap"></span><div id="impactBall" role="slider" aria-label="Impact point: where the club hits the ball (Shift + arrow keys)" title="Where the club hits the ball. Tap or drag; double tap = centre. Keys: Shift + arrows"><div id="impactRing"></div><div id="impactDot"></div></div></div>
   <button id="viewBtn" hidden title="Look at the landing area / read the green (V). Tap: stays until you tap again. Hold: back when you let go">🔍 Landing</button>
   <div id="tuned" hidden></div>
   <div id="hint">Click or press Space to start your swing</div>
@@ -550,12 +570,14 @@
         <li><b>Aim</b> with the ◀ ▶ buttons or arrow keys. The yellow triangle at the end of the aim line shows where a full-power straight shot lands (the ticks: 25, 50 and 75% power); on a putt, the ring shows where it ends.</li>
         <li><b>Pick a club</b> with ‹ › or ▲ ▼. The best club is chosen for you.</li>
         <li><b>Swing in three clicks</b> (tap, click or <kbd>Space</kbd>): the 1st starts the meter, the 2nd sets <b>power</b> (the bar is in quarters, like the ticks on the aim line; the ⚑ shows a putt's power), the 3rd sets <b>accuracy</b>: stop on the <span style="color:var(--good)">green line</span> for a straight shot. Early hooks left, late slices right. <b>Putts take 2 clicks</b> (start, power) and always roll straight along your aim.</li>
+        <li><b>Shape the shot</b> (optional) with the ball icon at the bottom right: the red dot is where the club hits the ball. Left of centre starts the ball left, then it curves back right (right of centre: the opposite); low on the ball flies higher and stops sooner, high on the ball flies lower and runs on. The aim line shows the curve and the roll. Double tap the ball for the centre.</li>
         <li>Watch the <b>wind</b> (top right) and the <b>lie</b>: rough and sand cap your power (the gray part of the meter).</li>
         <li>Water and out of bounds cost a penalty stroke. Sink it in as few strokes as you can.</li>
       </ol>
       <table class="keys">
         <tr><th>Swing</th><td>Space, a tap on the course, or SWING</td></tr>
-        <tr><th>Aim</th><td>◀ ▶ or A / D (hold Shift for fine aim)</td></tr>
+        <tr><th>Aim</th><td>◀ ▶ or A / D (Shift + A / D for fine aim)</td></tr>
+        <tr><th>Ball control</th><td>the ball icon (bottom right) while aiming: tap or drag, double tap = centre; or Shift + arrow keys. Not on putts</td></tr>
         <tr><th>Club</th><td>▲ ▼ or W / S</td></tr>
         <tr><th>Skip</th><td>⏩ Skip, Space or Enter while the ball rolls</td></tr>
         <tr><th>View</th><td>🔍 / 👁 above the meter, or V, while aiming: a look at the landing area, or at the green on a putt (tap: stays, hold: back when you let go)</td></tr>

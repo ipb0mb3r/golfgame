@@ -229,11 +229,11 @@ Shape the shot on purpose, before the swing, by **choosing where the club hits t
 - **Fairness:** the lie limits the effect (rough and sand reduce curve and height change; capped lies as today). Strength per club: propose it in the PR (e.g. wedges change height most, the Driver curves most).
 - **Spin is NOT decided** (owner): maybe later. If it is added, it is a **separate control**, not part of the impact point.
 - [ ] BC0 ✅ Design above (owner, 2026-11-19). The dev proposes the exact curve/height/roll/wind amounts per club as tunables; the owner tunes them on the phone.
-- [ ] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch)
-- [ ] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind)
+- [x] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch) *(Dev, Nov 19, `dev/BC-ball-control`, PR #68: `core/shape.js`, tests/shape.test.js, 9 new v2 shots; amounts accepted by the PM as the starting point, `BC_BACK` 1)*
+- [x] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind) *(Dev, Nov 19, PR #68: same carry for top and bottom)*
 - [ ] BC3 Spin: **undecided**; only if the owner asks, as a separate control
-- [ ] BC4 The aim line and marker show the shaped flight; tests on every hole that a shaped default shot is never blind
-- [ ] BC5 The impact-point control: ball icon (tap/drag), Shift + arrows on PC, reset each shot, hidden on putts; tests; How to Play line
+- [x] BC4 The aim line and marker show the shaped flight; tests on every hole that a shaped default shot is never blind *(Dev, Nov 19, PR #68: `aimMarks().shape` (path, roll, rest), curved yellow dots + white run-out dots and ring, minimap curve, shaped K4 warning and S23 hazard; tests/shape-preview.test.js)*
+- [x] BC5 The impact-point control: ball icon (tap/drag), Shift + arrows on PC, reset each shot, hidden on putts; tests; How to Play line *(Dev, Nov 19, PR #68: + double tap = centre, caption pill above the icon, fine aim moved to Shift + A / D; tests/shape-preview.test.js)*
 
 ## Backlog after the playtest 1 pass (PM, 2026-11-19)
 - [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
