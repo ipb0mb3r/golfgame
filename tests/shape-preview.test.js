@@ -130,9 +130,9 @@ test('BC4: the shaped line goes out and back (left impact: out left, lands near 
 });
 
 test('BC4: the warning follows the curve (a tree beside the line is hit only by the shot that bends into it)', () => {
-  // a tall thin tree half way, 4.5 m left of the aim line: a straight 7 iron passes it, a left-impact
-  // one bulges out left into it (≈ 4.6 m at the middle of its flight)
-  const tree = { type: 'tree', x: -4.5, z: -75, trunkR: 0.4, trunkH: 40, canopyR: 0.5, canopyH: 1 };
+  // a tall thin tree half way, 5.2 m left of the aim line: a straight 7 iron passes it, a left-impact
+  // one bulges out left into it (≈ 5.2 m at the middle of its flight, owner curve +15%)
+  const tree = { type: 'tree', x: -5.2, z: -75, trunkR: 0.4, trunkH: 40, canopyR: 0.5, canopyH: 1 };
   const hole = testHole({ surfaceAt: () => 'fairway', cup: { x: 0, z: -5000 }, obstacles: [tree] });
   const p = createHolePlay(hole, { seed: 1 }); p.reset(); p.setAim(0);
   p.setClub(p.bag.findIndex(c => c.id === '7i')); p.setAim(0);

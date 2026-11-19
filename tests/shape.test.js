@@ -148,7 +148,7 @@ test('BC: the per-club amounts are ?tune= names (driver.start, pw.height, …)',
   assert.deepEqual(r.rejected, []);
   assert.equal(clubShape(CLUBS.driver).start, 25, 'clamped to SHAPE_RANGES');
   assert.equal(clubShape(CLUBS.pw).height, 9);
-  assert.ok(Math.abs(shapeOf(CLUBS.driver, { x: -1, y: 0 }).start - before * 2.5) < 1e-12, 'the tuned value is used');
+  assert.ok(Math.abs(shapeOf(CLUBS.driver, { x: -1, y: 0 }).start - before * 25 / CLUBS.driver.shape.start) < 1e-12, 'the tuned value is used');
   resetAllTunables();
   assert.equal(clubShape(CLUBS.driver).start, CLUBS.driver.shape.start);
   assert.deepEqual(clubShape(CLUBS.putter), { start: 0, height: 0, roll: 0, wind: 0 });
