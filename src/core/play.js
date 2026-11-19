@@ -20,6 +20,7 @@ import { makeTerrain } from './terrain.js';
 import { makeSurfaceTable } from './surfaces.js';
 import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
+import { CENTRE, clampImpact } from './shape.js';
 import { createBall } from './ball.js';
 import { makeColliders, firstHit } from './obstacles.js';
 import { isShotEnd } from './states.js';
@@ -41,7 +42,8 @@ export function aimMarkLabel(m) {
 // S22 (owner on PR #53): the ticks the minimap draws: only the 50% one (MINIMAP_TICKS), the 3D line has all
 export const minimapTicks = m => m?.ticks.filter(t => MINIMAP_TICKS.includes(t.frac)) ?? [];
 
-export function createHolePlay(hole, { seed = 1 } = {}) {
+// handed (Phase BC): 'right' (default) or 'left', mirrors the impact point's left / right (BC_LEFTY:1 = left).
+export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ? 'left' : 'right' } = {}) {
   const terrain = makeTerrain(hole);
   const surfaces = makeSurfaceTable(hole);
   const bag = makeBag(hole.bag);
@@ -58,13 +60,14 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   const p = {
     hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles,
     strokes: 0, penalties: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
+    impact: CENTRE, handed, // Phase BC: where the club hits the ball (core/shape.js), back to the centre every shot
     target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'tee' | 'green' | 'spot')
     next: null,      // what happens after the shot that just ended (see the top of this file), until proceed()
     finished: null,  // when the hole is over: { holed, pickedUp, strokes, penalties, par } (round.js records it)
     get club() { return bag[p.clubIdx]; },
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
-    reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
+    reset, newWind, prepare, hit, swing, setClub, setAim, setImpact, advance, skip, step, proceed, returnToLastPos, landingPoint,
     restPoint, aimWarning, shotWarning, treeCheck, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
@@ -342,6 +345,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
   // shot: the aim, the ⚑ and the auto-pick all use it (kind 'spot').
   function prepare(spot = null) {
     p.next = null;
+    p.impact = CENTRE; // Phase BC: the impact point resets to the centre every shot
     pinMemo = null; marksMemo = null; warnMemo.clear(); // a new shot (or new tunables): work the ⚑ and the K4 warning out again
     set(ball.vel, 0, 0, 0); ball.phase = 'rest';
     ball.pos.y = terrain.heightAt(ball.pos.x, ball.pos.z);
@@ -377,6 +381,11 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     return p.clubIdx;
   }
   function setAim(a) { if (Number.isFinite(a)) p.aim = a; return p.aim; }
+  // Phase BC: where the club will hit the ball, { x, y } kept inside the unit disc (core/shape.js).
+  // A putt ignores it (S14: putts stay straight); the game hides the ball icon then.
+  function setImpact(pt) { p.impact = Object.freeze(clampImpact(pt)); return p.impact; }
+  // How much of the impact point's shaping the ball's lie allows (the surface's `shape`, 0..1)
+  const lieShape = () => surfaces[p.lie]?.shape ?? 1;
 
   // A finished swing from the meter { power, acc, outcome }: hit it. This is the only way to hit the
   // ball (Gate A A8). A cancelled swing does nothing (no stroke), and nothing happens while the ball
@@ -395,6 +404,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     const shot = resolveShot({
       club: p.club, power, acc: accuracy, aim: p.aim, lie: lieOf(),
       puttMax: p.puttMax, greenDecel: surfaces.green.decel, outcome,
+      impact: p.impact, lieShape: lieShape(), handed: p.handed,
     });
     p.isPutt = shot.kind === 'putt';
     copy(p.shotDir, shot.dir);

@@ -9,7 +9,7 @@ import { meshAxis } from './terrain.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
-const SURFACE_FIELDS = new Set(['name', 'rest', 'keep', 'decel', 'maxPower', 'sweetScale', 'penalty']);
+const SURFACE_FIELDS = new Set(['name', 'rest', 'keep', 'decel', 'maxPower', 'sweetScale', 'shape', 'penalty']);
 const WEATHER_TYPES = new Set(['clear', 'rain']);
 const SAMPLES = 20; // surfaceAt / heightAt are checked on a SAMPLES × SAMPLES grid over the map
 

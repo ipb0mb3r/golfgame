@@ -2,19 +2,20 @@
 // rest = bounce height kept, keep = speed kept on a bounce, decel = rolling friction (m/s²).
 // The lie (S11, DESIGN §3 "Lie"): maxPower = power cap for a shot from here (the top of the meter),
 // sweetScale = multiplies SWEET (the accuracy window). Clubs may override both (clubs.js lieOverrides).
+// shape (Phase BC) = how much of the impact point's shaping (curve, height) this lie allows, 0..1.
 // Water and OB are penalties.
 // These base values are hole 1's. A hole changes them through `surfaceOverrides`.
 // Frozen: nothing changes the base table at run time (Gate A A5). A hole changes values through
 // `surfaceOverrides`, a ?tune= link through the lie-tune layer below.
 export const BASE_SURFACES = deepFreeze({
-  tee:     { name: 'Tee box', rest: .30, keep: .40, decel: 2.4, maxPower: 1,    sweetScale: 1.2 },
-  fairway: { name: 'Fairway', rest: .30, keep: .42, decel: 2.4, maxPower: 1,    sweetScale: 1 },
-  fringe:  { name: 'Fringe',  rest: .25, keep: .36, decel: 3.2, maxPower: .95,  sweetScale: 1 },
-  green:   { name: 'Green',   rest: .22, keep: .32, decel: 0.7, maxPower: 1,    sweetScale: 1.5 }, // S17: faster green, decel 1.1 → 0.7
-  rough:   { name: 'Rough',   rest: .15, keep: .22, decel: 5.5, maxPower: .85,  sweetScale: .7 },
-  sand:    { name: 'Bunker',  rest: .02, keep: .06, decel: 18,  maxPower: .5,   sweetScale: .4 },  // S17: harder, .6/.5 → .5/.4
+  tee:     { name: 'Tee box', rest: .30, keep: .40, decel: 2.4, maxPower: 1,    sweetScale: 1.2, shape: 1 },
+  fairway: { name: 'Fairway', rest: .30, keep: .42, decel: 2.4, maxPower: 1,    sweetScale: 1,   shape: 1 },
+  fringe:  { name: 'Fringe',  rest: .25, keep: .36, decel: 3.2, maxPower: .95,  sweetScale: 1,   shape: 1 },
+  green:   { name: 'Green',   rest: .22, keep: .32, decel: 0.7, maxPower: 1,    sweetScale: 1.5, shape: 1 }, // S17: faster green, decel 1.1 → 0.7
+  rough:   { name: 'Rough',   rest: .15, keep: .22, decel: 5.5, maxPower: .85,  sweetScale: .7,  shape: .5 },
+  sand:    { name: 'Bunker',  rest: .02, keep: .06, decel: 18,  maxPower: .5,   sweetScale: .4,  shape: .3 },  // S17: harder, .6/.5 → .5/.4
   // K1: hard ground (a rock outcrop, scree or a cart path): big bounce and a long roll, and a "thin" lie
-  rock:    { name: 'Rock',    rest: .55, keep: .75, decel: 1.8, maxPower: .9,  sweetScale: .8 },
+  rock:    { name: 'Rock',    rest: .55, keep: .75, decel: 1.8, maxPower: .9,  sweetScale: .8,  shape: .7 },
   water:   { name: 'Water', penalty: true },
   ob:      { name: 'Out of bounds', penalty: true },
 });
@@ -45,7 +46,8 @@ export function makeSurfaceTable(hole = {}, weather = hole.weather) {
 
 // The lie values a ?tune= link may change (X8), with their ranges: <surface>.maxPower, <surface>.sweetScale
 // and <club>.<surface>.<value> for a club override (e.g. sw.sand.maxPower).
-export const LIE_RANGES = Object.freeze({ maxPower: Object.freeze({ min: 0.1, max: 1 }), sweetScale: Object.freeze({ min: 0.2, max: 3 }) });
+export const LIE_RANGES = Object.freeze({ maxPower: Object.freeze({ min: 0.1, max: 1 }), sweetScale: Object.freeze({ min: 0.2, max: 3 }),
+  shape: Object.freeze({ min: 0, max: 1 }) }); // Phase BC: share of the impact point's shaping this lie allows (core/shape.js)
 // S17: a surface's physics values may be tuned too (<surface>.decel, .keep, .rest; e.g. green.decel:0.6),
 // with these ranges. Like a lie value, a tuned value wins over a hole's surfaceOverrides.
 export const PHYSICS_RANGES = Object.freeze({

@@ -229,8 +229,8 @@ Shape the shot on purpose, before the swing, by **choosing where the club hits t
 - **Fairness:** the lie limits the effect (rough and sand reduce curve and height change; capped lies as today). Strength per club: propose it in the PR (e.g. wedges change height most, the Driver curves most).
 - **Spin is NOT decided** (owner): maybe later. If it is added, it is a **separate control**, not part of the impact point.
 - [ ] BC0 ✅ Design above (owner, 2026-11-19). The dev proposes the exact curve/height/roll/wind amounts per club as tunables; the owner tunes them on the phone.
-- [ ] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch)
-- [ ] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind)
+- [ ] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch) *(Dev, Nov 19, `dev/BC-ball-control`: core done (`core/shape.js`, tests/shape.test.js, 9 new v2 shots); amounts proposed on the PR, waiting for the PM/owner)*
+- [ ] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind) *(Dev, Nov 19: core done, same PR)*
 - [ ] BC3 Spin: **undecided**; only if the owner asks, as a separate control
 - [ ] BC4 The aim line and marker show the shaped flight; tests on every hole that a shaped default shot is never blind
 - [ ] BC5 The impact-point control: ball icon (tap/drag), Shift + arrows on PC, reset each shot, hidden on putts; tests; How to Play line

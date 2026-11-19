@@ -1955,6 +1955,280 @@
           "z": 0
         }
       }
+    },
+    {
+      "name": "BC h1 tee, left impact (starts left, curves right)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": -1,
+        "y": 0
+      },
+      "end": {
+        "x": 3.171333321250857,
+        "y": 0,
+        "z": -158.17924919512828,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC h1 tee, right impact (starts right, curves left)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": 1,
+        "y": 0
+      },
+      "end": {
+        "x": -3.171333321250857,
+        "y": 0,
+        "z": -158.17924919512828,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "7i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC h2 Driver, bottom impact (high, short roll)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": 0,
+        "y": -1
+      },
+      "end": {
+        "x": 0.8306051223064473,
+        "y": -1.483881302419213,
+        "z": -259.2870801060718,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC h2 Driver, top impact (low, long roll)",
+      "hole": "pl-02",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": 0,
+        "y": 1
+      },
+      "end": {
+        "x": -0.5715669862051556,
+        "y": -0.40556739628687377,
+        "z": -311.65938365079313,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC h2 approach, low-left corner in seeded wind",
+      "hole": "pl-02",
+      "seed": 37,
+      "start": {
+        "x": 18,
+        "z": -330
+      },
+      "strokes": 1,
+      "power": 0.9,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": -0.7,
+        "y": -0.7
+      },
+      "end": {
+        "x": 20.777464047427046,
+        "y": 2.7377880252143756,
+        "z": -425.384791890991,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": -0.561043778558118,
+          "z": 5.455230346321126
+        }
+      }
+    },
+    {
+      "name": "BC h2 approach, top-right + slight slice in seeded wind",
+      "hole": "pl-02",
+      "seed": 37,
+      "start": {
+        "x": 18,
+        "z": -330
+      },
+      "strokes": 1,
+      "power": 0.9,
+      "acc": -0.08,
+      "aimOff": 0,
+      "impact": {
+        "x": 0.6,
+        "y": 0.5
+      },
+      "end": {
+        "x": 33.51556274130644,
+        "y": 3.0628035988308677,
+        "z": -433.4216884759106,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": -0.561043778558118,
+          "z": 5.455230346321126
+        }
+      }
+    },
+    {
+      "name": "BC h1 from the rough, left impact (rough halves it)",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": -28,
+        "z": -50
+      },
+      "strokes": 1,
+      "power": 0.85,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": -1,
+        "y": 0
+      },
+      "end": {
+        "x": 5.216387888997788,
+        "y": 0,
+        "z": -154.88999837528104,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "9i",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC h3 Driver on the cut-the-corner line, left impact",
+      "hole": "pl-03",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimFrom": {
+        "x": 9,
+        "z": -222
+      },
+      "aimOff": 0.2637,
+      "impact": {
+        "x": -1,
+        "y": 0
+      },
+      "end": {
+        "x": 75.29278947521136,
+        "y": 0.4873423484965084,
+        "z": -217.59055052145703,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "BC mtn6 bunker shot, bottom impact (sand limits it)",
+      "hole": "mtn-06",
+      "seed": null,
+      "start": {
+        "x": 12,
+        "z": -158
+      },
+      "strokes": 1,
+      "power": 0.35,
+      "acc": 0,
+      "aimOff": 0,
+      "impact": {
+        "x": 0,
+        "y": -1
+      },
+      "end": {
+        "x": -5.3245963744874745,
+        "y": 4.156917712416213,
+        "z": -176.3658879258622,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "sw",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
     }
   ]
 }

@@ -25,6 +25,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
     pos: v3(), vel: v3(), curve: v3(),
     phase: 'rest',          // 'rest' | 'flight' | 'roll'
     firstBounce: true, spinFactor: 1, lipped: false, rollT: 0, slowT: 0, crawlT: 0,
+    windK: 1, keepK: 1,     // Phase BC: this shot's share of the wind's push, and × the first bounce's keep (core/shape.js)
     leavesHit: new Set(),   // K3: trees whose leaves this shot already went through (once per tree per shot)
     get moving() { return b.phase === 'flight' || b.phase === 'roll'; },
     launch, step,
@@ -33,6 +34,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
   function launch(shot) {
     copy(b.vel, shot.vel); copy(b.curve, shot.curve);
     b.spinFactor = shot.spinFactor;
+    b.windK = shot.windK ?? 1; b.keepK = shot.keepK ?? 1;
     b.firstBounce = true; b.lipped = false; b.rollT = 0; b.slowT = 0; b.crawlT = 0;
     b.leavesHit.clear();
     b.phase = shot.kind === 'putt' ? 'roll' : 'flight';
@@ -52,8 +54,8 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
   function flight(dt) {
     const { pos, vel, curve } = b;
     vel.y -= G * dt;
-    vel.x += (wind.x * TUNE.WIND_K + curve.x) * dt;
-    vel.z += (wind.z * TUNE.WIND_K + curve.z) * dt;
+    vel.x += (wind.x * TUNE.WIND_K * b.windK + curve.x) * dt;
+    vel.z += (wind.z * TUNE.WIND_K * b.windK + curve.z) * dt;
     copy(from, pos);
     pos.x += vel.x * dt; pos.y += vel.y * dt; pos.z += vel.z * dt;
     if (obstacles.length) {
@@ -129,7 +131,10 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
     if (vn >= 0) return null; // already moving away from the ground
     let keep = S.keep;
     const first = b.firstBounce;
-    if (first) { keep *= b.spinFactor; b.firstBounce = false; }
+    if (first) {
+      keep *= b.spinFactor; b.firstBounce = false;
+      if (b.keepK !== 1) keep = Math.min(1, keep * b.keepK); // Phase BC: a top hit runs on, a bottom hit stops sooner
+    }
     const up = -vn * S.rest;
     // along-the-ground part × keep, plus the bounce back along the normal
     const tx = (vel.x + n.x * -vn) * keep, ty = (vel.y + n.y * -vn) * keep, tz = (vel.z + n.z * -vn) * keep;
