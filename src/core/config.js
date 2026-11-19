@@ -18,6 +18,24 @@ export const PHYSICS_DT = 1 / 240;   // every physics step is exactly this long
 export const MAX_FRAME_DT = 0.05;    // a frame hiccup never advances the game more than this
 export const MAX_METER_DT = 0.1;     // the meter follows real time, capped, so slow devices don't make it easier
 
+// --- Phone performance budget (AP0, DESIGN §8b "Phone performance budget") ---
+// One source for the debug overlay, window.__golf.perf() and tools/perf-check.mjs. Target: a mid-range
+// phone (iPhone 12 / Pixel 6 class) at 60 fps, never below 30 fps on an XR-class phone.
+export const PERF_BUDGET = Object.freeze({
+  fpsTarget: 60,            // mid-range phone
+  fpsOk: 55,                // the overlay shows fps as ok at or above this (60 fps with vsync jitter)
+  fpsFloor: 30,             // never below this on an XR-class phone
+  drawCalls: 150,           // per frame (the real limit on phones; AP1)
+  triangles: 300000,        // on screen per frame
+  terrainTriangles: 200000, // of which the terrain (coarser far away, 1 m cells near the course)
+  modelTriangles: 500,      // one tree / rock model (300–500)
+  golferTriangles: Object.freeze({ ps1: 3000, clean: 8000 }),
+  textureSize: 512,         // px, the longest side of one small stylised texture (owner: flat colour with texture)
+  textureSizePs1: 256,      // px, the same for the PS1 look
+  gpuMB: 64,                // graphics memory per hole (geometry + textures, estimated)
+  downloadMB: 8,            // per course
+});
+
 // --- Swing meter (§3) ---
 // METER_SPEED, SWEET, CURVE_SHAPE, CURVE_K, POWER_GRACE, NO_ACC_ERR, MISSED_POWER_FRACTION: tunables, see TUNABLES
 export const METER_MIN = -0.2;       // left end of the meter (accuracy zone)

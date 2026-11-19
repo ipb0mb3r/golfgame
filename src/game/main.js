@@ -5,7 +5,7 @@
 // menu (button or Esc) resumes, restarts the hole or quits to the menu.
 // Dev and designer links skip the menu (core/menu.js DEV_PARAMS): ?set=<id> plays a round, ?hole=<id>
 // or ?scenario=<id> one hole (X8), ?tune=NAME:value overrides tunables, ?seed=<n> fixes the wind,
-// ?debug=1 opens the debug overlay (Gate A C5, for phones). Any of them alone plays hole 1 as before.
+// ?debug=1 opens the debug overlay (Gate A C5, for phones; ?debug=perf without the collider outlines, AP0). Any of them alone plays hole 1 as before.
 // Phase T: vs AI (Play → vs AI → course → difficulty) plays a round against 5 rivals; ?ai=easy|normal|hard
 // plays the ?set= round (or the first Solo course) vs AI.
 import * as THREE from 'three';
@@ -20,6 +20,7 @@ import { skipsMenu, PLAY_PARAMS, soloCourses } from '../core/menu.js';
 import { createRenderer } from './scene.js';
 import { bindInput, nowSeconds } from './input.js';
 import { createDebug } from './debug.js';
+import { createPerfMeter } from './perf.js';
 import { createHoleSession } from './session.js';
 import { createRoundUi, readBest, writeBest } from './roundUi.js';
 import { createMenus } from './menus.js';
@@ -79,8 +80,14 @@ try { renderer = createRenderer(canvas); } catch (e) {
   window.__golfFail?.("Your browser can't show 3D graphics (WebGL is off or not supported), so the game can't start. Try another browser, or turn on hardware acceleration in the browser settings.", e);
   throw e;
 }
-const debug = createDebug($('debug'));
-const debugParam = params.get('debug') === '1';
+// AP0: fps, draw calls, triangles and memory against the phone budget (debug overlay, __golf.perf())
+const perf = createPerfMeter(renderer, () => session && { scene: session.scene, camera: session.camera });
+const debug = createDebug($('debug'), perf);
+// AP0: ?debug=perf opens the overlay without the collider outlines (K5), so fps and draw calls are
+// the game's own (the owner's phone check); ?debug=1 as before
+const perfOnly = params.get('debug') === 'perf';
+const debugParam = params.get('debug') === '1' || perfOnly;
+const outlinesOn = () => debug.visible && !perfOnly;
 
 // The game being played: null in the menus. `game` = { launch, hole, seed, start, fromMenu } for a
 // single hole (restart replays it), and `round` for a round.
@@ -105,7 +112,8 @@ function loadHole(h, opts = {}) {
     flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,
   });
   if (!opts.start) flown.add(h.id);
-  session.showColliders(debug.visible); // K5: collider outlines show while the debug overlay is open
+  perf.resetPeak();
+  session.showColliders(outlinesOn()); // K5: collider outlines show while the debug overlay is open
   resize();
   return session;
 }
@@ -124,7 +132,7 @@ const input = bindInput(canvas, {
   canAim: () => active() && session.canAim(),
   start: () => !!session && session.start(),
   again: () => session?.again(),
-  toggleDebug: () => { debug.toggle(); session.showColliders(debug.visible); },
+  toggleDebug: () => { debug.toggle(); session.showColliders(outlinesOn()); },
   pause: () => pauseGame(),
   escape,
 });
@@ -315,6 +323,7 @@ function frame() {
     const showPause = canPause() && session.state !== 'intro';
     if ($('pauseBtn').hidden === showPause) $('pauseBtn').hidden = !showPause;
     renderSession();
+    perf.frame(rawDt);
   }
   requestAnimationFrame(frame);
 }
@@ -354,6 +363,9 @@ window.__golf = {
   nextHole: () => nextHole(),
   playAgain: () => playAgain(),
   renderInfo: () => ({ ...renderer.info.memory, programs: renderer.info.programs?.length ?? 0 }),
+  // AP0 (tools/perf-check.mjs): fps, draw calls, triangles, memory and their rating against
+  // PERF_BUDGET; perfBreakdown() = draw calls by kind of object in the current view (for AP1)
+  perf: () => perf.numbers(), perfBreakdown: () => perf.breakdown(), perfResetPeak: () => perf.resetPeak(),
   // Phase 7 (M6, tools/menu-check.mjs): the menus and the pause menu
   app: {
     get menu() { return menus.visible ? menus.screen : null; },
