@@ -329,22 +329,30 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 ## 8b. Art direction and biome sets ⏳ (owner, 2026-11-19; Phase A)
 **Art direction:** 3D, cartoony, light colours, low-poly, **flat colours with stylised texture** (never photo-realistic; no realistic trees). Reference: Everybody's Golf (learn the idea, copy no look). **Chibi 3D golfers** (rigged, later; rivals are never shown). The **pixel / PS1 effect is a player setting**. Target: a mid-range phone (budget: `reviews/art-tech-lead-followup.md`, confirmed in AP0).
 
-**Biome set: what it is for.** A biome set is a ready-made "look" for courses, so making a course gets simpler: the PM tells the course designer "use the *alpine* biome set for the next holes". The **artist** builds the biome sets and makes their assets (textures, trees, props, backdrops). Biome sets **share assets** (mix and match), so each new biome is cheaper once a few assets exist.
+**What a biome set is (owner):** a **file that defines a biome for the game**, which the **course designer applies to a hole**. The goal is to make creating courses simpler: with biomes such as "mountain" already defined, the PM can tell the course designer "use this biome set for the next holes". The **artist** builds the biome sets and makes their assets (textures, trees, backdrops…).
 
 **What a biome set contains:**
-- **Colour palette** for the surfaces (fairway, rough, green, sand, water, rock…), the sky and the scenery. **Time of day is done through the palette** (no lighting engine: a "sunset" palette gives a sunset feel).
-- **Ground textures** (stylised) for each surface.
-- **Trees and plants**, **props** (in play or out of the course, e.g. log lodges, city blocks in the distance).
-- **Backdrop** (far scenery, e.g. mountains), **recoloured by the palette** where the asset allows it.
-- **Gameplay notes for the course designer** (optional advice he can follow or ignore), e.g. "a beach course has a big body of water, often along the side of the course"; may suggest a weather.
+- A **short description** of the set.
+- The **colour palette** of everything on the course: the surfaces, water, trees… **Time of day is done through the palette** (no lighting engine: a "sunset" palette gives a similar effect).
+- **Course textures** (fairway, green, rough, sand…) are **always the same textures in every biome, only recoloured by the palette**.
+- **On-course trees** (in play, like today's): chosen from **2–3 models**, recolourable by the palette. Their collisions stay as today (obstacles in the hole data); the biome picks only the look.
+- **Off-course trees** (like today's, simpler): chosen from **2–3 models**, recolourable by the palette.
+- The **skybox**, recoloured by the palette.
+- A list of **small props** spread around the rough (grass tufts, flowers, fences); flat sprites or simple models; **no effect on ball physics**.
+- A list of **big props**, mostly in the out-of-bounds area (buildings: windmills, city blocks); **no effect on ball physics**.
+- The **backdrop** (far scenery, e.g. mountains), recoloured by the palette where the asset allows it.
+- **Gameplay notes for the course designer**, which he can follow or ignore (e.g. "a beach course has a big body of water, often along the side of the course"); may suggest a weather.
 
 **Not in a biome set:**
-- **Weather** belongs to the **playlist / round**, not the hole or the biome (the course designer chooses it; MP4 round options later). The biome's gameplay notes may suggest one.
+- **Weather** is applied to the **playlist**, not the holes (the course designer chooses it); the gameplay notes may suggest one.
+- **Time of day** as a separate system: done through the palette instead.
 - Physics: surfaces keep their rules in `surfaces.js` and the hole data; a biome changes only the look.
 
-**Mix-and-match example (owner):** two mountain biomes share the pines but differ in backdrop and palette. *Alpine*: snowy peaks, cooler surface colours, log lodges as big props out of the course. *Rockies-like*: warmer colours, other mountains in the backdrop, maybe city blocks in the far background.
+**Mix and match (owner):** biomes **share assets**, so each new biome is cheaper once a few exist. Example: two mountain biomes share the pines but differ in backdrop and palette. *Alpine*: snowy peaks, cooler surface colours, log lodges as big props out of the course. *Rockies-like*: warmer colours, other mountains in the backdrop, maybe city blocks in the far background.
 
-The exact format (which parts are separate pieces, what is shared, per course or per hole) is set by ART0 (owner + artist) and built by the dev as AP5.
+**Planned biomes (owner's list):** grass forest · mountain (Rockies, pines) · mountain (alpine, snow in the back, other colours) · beach side Hawaii · beach side Miami (city) · beach side cliffs (Scotland) · Arizona desert (Grand Canyon) · city central park · a classic Georgia pines course (tall pines, many flower bushes and beds). Real places are **inspirations only**: in-game names are invented, and no real course's layout or branding is copied.
+
+The exact format (how pieces are shared between biomes) is set by ART0 (owner + artist) and built by the dev as AP5.
 
 ---
 
