@@ -185,3 +185,27 @@ test('BC5: the impact point resets to the centre for every shot, and a putt igno
   p.hit(1, 0); p.simulate(); p.proceed();
   assert.deepEqual(p.impact, CENTRE);
 });
+
+test('BC4 (PR #68): the flight camera\'s landing is the shaped one off the centre, and exactly landingPoint at the centre', () => {
+  for (const hole of Object.values(HOLES)) {
+    const p = createHolePlay(hole, { seed: 1 }); p.reset({ wind: NO_WIND });
+    p.setClub(0);
+    for (const pw of [0.5, 1]) {
+      assert.deepEqual(p.flightLanding(0, p.aim, pw), p.landingPoint(0, p.aim, pw), hole.id);
+      for (const imp of [{ x: -1, y: 0 }, { x: 1, y: 0 }]) {
+        p.setImpact(imp);
+        const real = realShot(hole, { wind: NO_WIND }, 0, imp), q = p.flightLanding(0, p.aim, p.lieOf().maxPower);
+        if (pw === 1) assert.ok(dist2D(q, real.land) < 0.5 || real.hitFirst, `${hole.id} ${imp.x}`);
+        p.setImpact(CENTRE);
+      }
+    }
+    // BC_BACK:1 brings a shaped shot back onto the aim line; with less curve back (0.88) the left and
+    // right shaped landings sit on opposite sides of the straight one, and the camera follows them
+    applyTune('BC_BACK:0.88');
+    const s = p.landingPoint(0), d = dirFromAim(p.aim), side = q => (q.x - s.x) * d.z - (q.z - s.z) * d.x;
+    p.setImpact({ x: -1, y: 0 }); const l = side(p.flightLanding(0));
+    p.setImpact({ x: 1, y: 0 }); const r = side(p.flightLanding(0));
+    assert.ok(Math.sign(l) !== Math.sign(r) && Math.abs(l) > 1 && Math.abs(r) > 1, `${hole.id} ${l} ${r}`);
+    p.setImpact(CENTRE); resetAllTunables();
+  }
+});

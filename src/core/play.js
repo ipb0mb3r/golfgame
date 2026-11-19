@@ -68,7 +68,7 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, setImpact, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, shotWarning, treeCheck, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
+    restPoint, aimWarning, shotWarning, treeCheck, aimMarks, flightLanding, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
   function newWind() {
@@ -317,6 +317,12 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
     if (shape) value.shape = { path: shape.path, roll: shape.roll, rest: shape.rest };
     marksMemo = { key, value };
     return value;
+  }
+  // BC4 (PM on PR #68): where this shot first comes down with no wind, for the flight camera: the SHAPED
+  // landing (the real ball's flight) when the impact is off the centre, else exactly landingPoint.
+  function flightLanding(i = p.clubIdx, a = p.aim, power = lieOf(i).maxPower, impact = p.impact) {
+    const sh = shapedShot(i, a, power, impact);
+    return sh ? shapedFlight(sh).land : landingPoint(i, a, power);
   }
   // BC4: a shaped shot played out on the second ball (restPoint's: no wind, no obstacles, its own
   // random numbers restarted), recording the ground track. Returns { land, path, roll, rest }.

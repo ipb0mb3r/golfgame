@@ -219,9 +219,10 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // a cancelled swing: back to aim, no stroke.
   function endSwing(result) {
     meter.power = result.power;
-    // V3: where a straight, no-wind shot at this power would land (before the hit: the ball is still here)
+    // V3: where a no-wind shot at this power would land (before the hit: the ball and the impact point are
+    // still set). BC4: shaped when the impact is off the centre, else the straight landing as before.
     const putt = !!play.club.putter;
-    const land = !putt && result.outcome !== 'cancel' && play.canSwing ? play.landingPoint(play.clubIdx, play.aim, result.power) : null;
+    const land = !putt && result.outcome !== 'cancel' && play.canSwing ? play.flightLanding(play.clubIdx, play.aim, result.power) : null;
     const from = { ...ball.pos };
     const shot = play.swing(result);
     if (!shot) {
