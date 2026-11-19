@@ -12,7 +12,7 @@
 // The ball is a sphere of radius BALL_R whose lowest point is ball.pos, so the tests below use its
 // centre (pos.y + BALL_R) and grow solid shapes by BALL_R. The leaves are not grown: the ball is in
 // the leaves when its centre is.
-import { BALL_R, BOULDER_SINK } from './config.js';
+import { BALL_R, BOULDER_SINK, TUNE } from './config.js';
 
 export function makeColliders(hole, heightAt) {
   return (hole.obstacles ?? []).map((o, i) => {
@@ -104,4 +104,19 @@ export function solidGap(o, p) {
   if (onTop(o, p)) return Math.max(p.y - o.top, Math.hypot(p.x - o.x, p.z - o.z) - (o.r + BALL_R)); // on the top: nothing to push out
   if (o.type === 'tree') return Math.hypot(p.x - o.x, p.z - o.z) - (o.r + BALL_R);
   return Math.hypot(p.x - o.x, p.y + BALL_R - o.y, p.z - o.z) - (o.r + BALL_R);
+}
+
+// FL1: the flagstick, a thin vertical cylinder standing in the cup (x, z, from the ground y0), radius
+// TUNE.FLAG_R and height TUNE.FLAG_H (read live, so ?tune= works). It is NOT one of the hole's
+// colliders: the aim warning (K4) never sees it, only the real ball does (ball.js).
+export const makePole = cup => ({ x: cup.x, z: cup.z, y0: cup.y });
+// The moment the ball moving from a to b (lowest points) in one step touches the pole's side: its
+// lowest point below the top of the pole there. Returns null or { t, x, y, z }. A ball dropping onto
+// the 2.5 cm top is not a case worth a cap (unlike a trunk's, K10).
+export function poleHit(pole, a, b) {
+  if (!(TUNE.FLAG_H > 0)) return null;
+  const dx = b.x - a.x, dy = b.y - a.y, dz = b.z - a.z;
+  const t = segCircle(a.x, a.z, dx, dz, pole.x, pole.z, TUNE.FLAG_R + BALL_R);
+  if (t === null || a.y + dy * t > pole.y0 + TUNE.FLAG_H) return null;
+  return { t, x: a.x + dx * t, y: a.y + dy * t, z: a.z + dz * t };
 }

@@ -100,6 +100,10 @@ export const SHOTS = [
   { name: 'BC h1 from the rough, left impact (rough halves it)', hole: 'pl-01', seed: null, start: { x: -28, z: -50 }, strokes: 1, power: 0.85, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
   { name: 'BC h3 Driver on the cut-the-corner line, left impact', hole: 'pl-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 9, z: -222 }, aimOff: 0.2637, impact: { x: -1, y: 0 } },
   { name: 'BC mtn6 bunker shot, bottom impact (sand limits it)', hole: 'mtn-06', seed: null, start: { x: 12, z: -158 }, strokes: 1, power: 0.35, acc: 0, aimOff: 0, impact: { x: 0, y: -1 } },
+  // FL1: the flagstick. A 20 m chip at the pin (default aim: the cup): low on the pole it drops in,
+  // high on the pole it drops dead 0.6 m away.
+  { name: 'FL1 h1 chip hits the pole low and drops in', hole: 'pl-01', seed: null, start: { x: 4, z: -132 }, strokes: 1, power: 0.27, acc: 0, aimOff: 0 },
+  { name: 'FL1 h1 chip hits the pole high and stops by it', hole: 'pl-01', seed: null, start: { x: 4, z: -132 }, strokes: 1, power: 0.30, acc: 0, aimOff: 0 },
 ];
 
 // Play one shot to the end. seed null = wind forced to 0 (and the seed is 1, for lip-outs);

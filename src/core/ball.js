@@ -11,22 +11,25 @@
 //   { type: 'penalty', surface }          water or out of bounds
 //   { type: 'hitObstacle', kind, index }  K2: bounced off a tree trunk (kind 'trunk') or a boulder ('boulder')
 //   { type: 'hitLeaves', index }          K3: flew into a tree's leaves: slowed down and turned a little
+//   { type: 'hitFlag', rolling }          FL1: hit the flagstick (in the air, or rolling): it drops dead by the pole
 // After holed / stopped / penalty the ball is at rest (phase 'rest').
 import {
   G, ROLL_G, TUNE, STATIC, CREEP, STOP_SPEED, ROLL_TIMEOUT, BOUNCE_TO_ROLL, BOUNCE_LIFT,
-  CUP_R, CUP_FLY_IN, LIP_OUT, STOP_TIME, CRAWL_TIME, OBSTACLE_SLIDE, OBSTACLE_EVENT_SPEED,
+  CUP_R, CUP_FLY_IN, LIP_OUT, STOP_TIME, CRAWL_TIME, OBSTACLE_SLIDE, OBSTACLE_EVENT_SPEED, BALL_R,
 } from './config.js';
 import { v3, copy, set, dot, dist2D, degToRad } from './vec.js';
-import { firstHit, solidNormal, solidGap } from './obstacles.js';
+import { firstHit, solidNormal, solidGap, poleHit } from './obstacles.js';
 
 // obstacles = colliders from obstacles.makeColliders (K2/K3); none = the ball never checks
-export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }) {
+// pole = obstacles.makePole(cup) (FL1): the flagstick; null = no pole (the ⚑'s second ball). Putts never touch it.
+export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [], pole = null }) {
   const b = {
     pos: v3(), vel: v3(), curve: v3(),
     phase: 'rest',          // 'rest' | 'flight' | 'roll'
     firstBounce: true, spinFactor: 1, lipped: false, rollT: 0, slowT: 0, crawlT: 0,
     windK: 1, keepK: 1,     // Phase BC: this shot's share of the wind's push, and × the first bounce's keep (core/shape.js)
     leavesHit: new Set(),   // K3: trees whose leaves this shot already went through (once per tree per shot)
+    usePole: false,         // FL1: this shot can hit the flagstick (there is a pole and it is not a putt)
     get moving() { return b.phase === 'flight' || b.phase === 'roll'; },
     launch, step,
   };
@@ -37,6 +40,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
     b.windK = shot.windK ?? 1; b.keepK = shot.keepK ?? 1;
     b.firstBounce = true; b.lipped = false; b.rollT = 0; b.slowT = 0; b.crawlT = 0;
     b.leavesHit.clear();
+    b.usePole = !!pole && shot.kind !== 'putt';
     b.phase = shot.kind === 'putt' ? 'roll' : 'flight';
   }
 
@@ -67,6 +71,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
         if (ev) return ev;
       }
     }
+    if (b.usePole) { const hp = poleHit(pole, from, pos); if (hp) { const ev = flag(hp, false); if (ev) return ev; } }
     const gh = terrain.heightAt(pos.x, pos.z);
     if (pos.y <= gh) { pos.y = gh; return land(); }
     return null;
@@ -115,6 +120,30 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
       }
     }
     return -vn >= OBSTACLE_EVENT_SPEED ? { type: 'hitObstacle', kind: hit.kind, index: o.i } : null;
+  }
+
+  // FL1: off the flagstick. Like a trunk (K2), but soft: the speed into the pole comes back
+  // × FLAG_REST and the speed along it (a glancing hit) is kept × FLAG_KEEP, both small, so the ball
+  // drops dead by the pole. The pole is vertical, so a falling ball keeps falling (a ball still
+  // rising loses that too, × FLAG_KEEP). Where it then lands or rolls, the normal cup rules apply
+  // (a fly-in within CUP_R × CUP_FLY_IN, a slow roll over the cup, a ball at rest over it): no auto-hole.
+  function flag(hit, rolling) {
+    const { pos, vel } = b;
+    if (hit.t > 0) set(pos, hit.x, hit.y, hit.z);
+    let nx = pos.x - pole.x, nz = pos.z - pole.z, len = Math.hypot(nx, nz);
+    if (len < 1e-9) { nx = -vel.x; nz = -vel.z; len = Math.hypot(nx, nz); } // dead centre: straight back
+    if (len < 1e-9) { nx = 1; nz = 0; len = 1; }
+    nx /= len; nz /= len;
+    const gap = Math.hypot(pos.x - pole.x, pos.z - pole.z) - (TUNE.FLAG_R + BALL_R);
+    if (gap < 0) { pos.x -= nx * gap; pos.z -= nz * gap; } // started inside: push out
+    if (rolling) pos.y = terrain.heightAt(pos.x, pos.z);
+    const vn = vel.x * nx + vel.z * nz;
+    if (vn >= 0) return null; // already moving away
+    const keep = TUNE.FLAG_KEEP, back = -vn * TUNE.FLAG_REST;
+    vel.x = (vel.x - nx * vn) * keep + nx * back;
+    vel.z = (vel.z - nz * vn) * keep + nz * back;
+    if (vel.y > 0) vel.y *= keep;
+    return -vn >= OBSTACLE_EVENT_SPEED ? { type: 'hitFlag', rolling } : null;
   }
 
   // Bounce off a sloped surface: split the speed into "into the ground" and "along the ground".
@@ -181,6 +210,7 @@ export function createBall({ terrain, surfaces, cup, wind, rng, obstacles = [] }
       const hit = firstHit(obstacles, from, pos, { leaves: false });
       if (hit) { const ev = solid(hit, true); if (ev) return ev; }
     }
+    if (b.usePole) { const hp = poleHit(pole, from, pos); if (hp) { const ev = flag(hp, true); if (ev) return ev; } }
     b.rollT += dt;
     if (b.rollT > ROLL_TIMEOUT) return rest({ type: 'stopped', surface: terrain.surfaceAt(pos.x, pos.z), reason: 'timeout' }); // safety net
     const dh = dist2D(pos, cup);

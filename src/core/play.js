@@ -22,7 +22,7 @@ import { makeBag, lieFor, pickClub } from './clubs.js';
 import { resolveShot, launchVelocity } from './swing.js';
 import { CENTRE, clampImpact } from './shape.js';
 import { createBall } from './ball.js';
-import { makeColliders, firstHit } from './obstacles.js';
+import { makeColliders, firstHit, makePole } from './obstacles.js';
 import { isShotEnd } from './states.js';
 
 
@@ -53,12 +53,13 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   const rng = createRng(seed);
   const wind = v3();
   const obstacles = makeColliders(hole, terrain.heightAt); // K2/K3: trunks, leaves, boulders (none on holes 1–2)
-  const ball = createBall({ terrain, surfaces, cup, wind, rng, obstacles });
+  const pole = makePole(cup); // FL1: the flagstick. Only the balls see it, never the K4 warning (it is not a tree)
+  const ball = createBall({ terrain, surfaces, cup, wind, rng, obstacles, pole });
   const lastPos = v3();
   let acc = 0; // fixed-step accumulator (seconds of simulation time not yet stepped)
 
   const p = {
-    hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles,
+    hole, terrain, surfaces, bag, PUTTER, tee, cup, wind, ball, lastPos, obstacles, pole,
     strokes: 0, penalties: 0, lie: 'tee', aim: 0, clubIdx: 0, puttMax: 10, isPutt: false, shotDir: v3(0, 0, -1),
     impact: CENTRE, handed, // Phase BC: where the club hits the ball (core/shape.js), back to the centre every shot
     target: v3(), targetKind: 'cup', // S18: the default aim point for this shot and what it is ('cup' | 'chip' | 'tee' | 'green' | 'spot')
@@ -355,7 +356,7 @@ export function createHolePlay(hole, { seed = 1, handed = TUNE.BC_LEFTY >= 0.5 ?
   // `power` may be above the lie's cap (the ⚑ search looks past it). Water or out of bounds: where the
   // ball went in. Holed: the cup. Returns { x, y, z, end } (end = the event that ended the shot).
   const simWind = v3(), simRng = createRng(LANDING_SIM.restSeed);
-  const simBall = createBall({ terrain, surfaces, cup, wind: simWind, rng: simRng }); // no obstacles: the ⚑ ignores them (K4)
+  const simBall = createBall({ terrain, surfaces, cup, wind: simWind, rng: simRng }); // no obstacles: the ⚑ ignores them (K4), and the flagstick too (FL1)
   const NO_CAP = { maxPower: Infinity, sweetScale: 1 };
   function restPoint(i, a = p.aim, power = lieOf(i).maxPower) {
     simRng.reseed(LANDING_SIM.restSeed);

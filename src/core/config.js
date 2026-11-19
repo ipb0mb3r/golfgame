@@ -193,6 +193,11 @@ export const TUNABLES = Object.freeze({
   OBSTACLE_KEEP:         { def: 0.7,  min: 0,     max: 1 },    // share of the speed ALONG it that is kept
   CANOPY_SLOW:           { def: 0.3,  min: 0,     max: 1 },    // share of its speed a ball keeps when it flies into a tree's leaves (K3)
   CANOPY_DEFLECT:        { def: 15,   min: 0,     max: 45 },   // degrees: the leaves turn the ball left or right by up to this (seeded RNG)
+  // Flagstick (FL1, DESIGN §4 "Cup"): a thin vertical pole standing in the cup. Putts ignore it.
+  FLAG_R:                { def: 0.025, min: 0,    max: 0.2 },  // m: the pole's radius (the drawn pole is 0.025)
+  FLAG_H:                { def: 2.6,  min: 0,     max: 4 },    // m: the pole's height above the cup (the drawn pole is 2.6); 0 = no pole
+  FLAG_REST:             { def: 0.15, min: 0,     max: 1 },    // share of the speed INTO the pole that bounces back (soft: the ball drops dead)
+  FLAG_KEEP:             { def: 0.2,  min: 0,     max: 1 },    // share of the speed ALONG the pole's side (a glancing hit) that is kept
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)

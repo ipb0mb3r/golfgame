@@ -688,11 +688,10 @@
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": 27.35021602730821,
-        "y": 3.8710860736597508,
-        "z": -448.0551335819034,
-        "event": "stopped",
-        "reason": "still",
+        "x": 25.750631684654536,
+        "y": 3.840378201078191,
+        "z": -447.9762506365926,
+        "event": "holed",
         "strokes": 3,
         "club": "sw",
         "wind": {
@@ -1762,11 +1761,10 @@
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": -5.232511712430287,
-        "y": 4.158986797454061,
-        "z": -176.26659951837348,
-        "event": "stopped",
-        "reason": "still",
+        "x": -3.7969955700052127,
+        "y": 4.190848806084448,
+        "z": -174.7843077931092,
+        "event": "holed",
         "strokes": 2,
         "club": "sw",
         "wind": {
@@ -2217,9 +2215,60 @@
         "y": -1
       },
       "end": {
-        "x": -5.3245963744874745,
-        "y": 4.156917712416213,
-        "z": -176.3658879258622,
+        "x": -3.7629852181472536,
+        "y": 4.193710476793542,
+        "z": -174.7313902798814,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "sw",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "FL1 h1 chip hits the pole low and drops in",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 4,
+        "z": -132
+      },
+      "strokes": 1,
+      "power": 0.27,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4,
+        "y": 0,
+        "z": -151.8360310698838,
+        "event": "holed",
+        "strokes": 2,
+        "club": "sw",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "FL1 h1 chip hits the pole high and stops by it",
+      "hole": "pl-01",
+      "seed": null,
+      "start": {
+        "x": 4,
+        "z": -132
+      },
+      "strokes": 1,
+      "power": 0.3,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 4,
+        "y": 0.002,
+        "z": -151.42663407290337,
         "event": "stopped",
         "reason": "still",
         "strokes": 2,
