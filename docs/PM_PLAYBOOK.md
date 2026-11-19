@@ -63,11 +63,11 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **In flight:**
 - **FL1 flagpole** (`dev/FL1-flagpole`, fresh dev, 60 min; core + tests first, then a stop for the PM review). QA Full after.
-- **Owner is writing answers to the tech lead's 5 questions** (art direction, his phone, one or more golfers, browser vs app later, CC0/Mixamo placeholders). Then: AP tasks into TASKS (Phase A), the performance budget into DESIGN.
+- **Owner decisions on art (from the tech lead follow-up, `reviews/art-tech-lead-followup.md`):** golfer shape (chibi or normal), agree the shared base (low-poly flat colours; PS1 vs clean after the AP8 switch), 3D golfer vs sprites, pixel effect fixed or a setting. Phase A (AP0 → AP1 → AP8 → …) is in TASKS.
 - Done since the last status: **tech lead art and engine feasibility** (#70, `reviews/art-tech-lead.md`): everything is possible on Three.js + no build step; stay on it; AP0–AP10 proposed (perf first: the mountain holes are near the phone limit); phone budget proposed. #70 also carried the PM docs commit (new `artist` + `ui-designer` agents, FL1, Phase MP, Phase A).
 
 **Next (in order):**
-1. **Owner + tech lead chat on art** → PM turns the A-tasks into TASKS ("Phase A: Art pipeline") and puts the performance budget in DESIGN.
+1. **Art:** ART0 (`artist` + owner, with his examples) and AP0 → AP1 → AP8 (dev) can start in parallel; the pixel switch (AP8) lets the owner pick clean vs PS1 on the real game.
 2. **Art style session** (`artist` + owner: style, palette, biome-kit idea) and **U0 scope** (`ui-designer` + owner). The dev builds the A-tasks the artist needs.
 3. **FL1 flagpole** (small dev PR; can run while the art talks happen, the engine is free).
 4. **Phase MP: main menu pass** (`ui-designer` designs MP1–MP5 → dev builds), then Phase U for the HUD.
