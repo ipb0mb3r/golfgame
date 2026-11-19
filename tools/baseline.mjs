@@ -13,7 +13,7 @@
 // fixture keeps all three so the tests can tell a real change from that old frame-rate wobble.
 //
 // Needs Playwright with a Chromium browser (not needed for `node --test`).
-// Three.js comes from the repo (vendor/three-0.160.0, Gate A C1), so it works offline. The page
+// Three.js comes from the repo (vendor/three-<version>, Gate A C1), so it works offline. The page
 // clock is replaced with a fixed frame time (1/fps) so the result does not depend on how fast the
 // machine is, Math.random is seeded, and the wind is forced to 0.
 
@@ -62,15 +62,17 @@ const SCENARIOS = [
   { hole: 'pl-02', name: 'h2 left toward the pond', place: { x: 4, z: -250 }, shots: [{ power: 0.5, aimOff: -0.5 }] },
 ];
 
-// The vendored Three.js (the old pages loaded it from unpkg; they get this same file)
-const THREE_FILE = join(ROOT, 'vendor/three-0.160.0/three.module.js');
+// The vendored Three.js (the old pages loaded it from unpkg; they get this same file). Since r171 the
+// classes live in three.core.js (three.module.js re-exports them), so the frame-time patch goes there.
+const THREE_FILE = join(ROOT, JSON.parse(readFileSync(join(ROOT, 'index.html'), 'utf8').match(/<script type="importmap">([\s\S]*?)<\/script>/)[1]).imports.three.replace('three.module.js', 'three.core.js'));
 
 const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.mjs': 'text/javascript', '.json': 'application/json' };
 
 async function openBrowser(fps) {
   const { chromium } = require('playwright');
   // Fixed frame time: every rendered frame advances the game by exactly 1/fps seconds.
-  const three = readFileSync(THREE_FILE, 'utf8') + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\n`;
+  // main.js uses Timer (AP2); Clock is kept for the old pages.
+  const three = readFileSync(THREE_FILE, 'utf8') + `\nClock.prototype.getDelta = function () { this.elapsedTime += ${1 / fps}; return ${1 / fps}; };\nTimer.prototype.getDelta = function () { return ${1 / fps}; };\n`;
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 480, height: 320 } });
   await ctx.addInitScript(() => {
@@ -83,7 +85,7 @@ async function openBrowser(fps) {
   });
   await ctx.route('**/*', async route => {
     const url = new URL(route.request().url());
-    if (url.pathname.endsWith('/three.module.js')) return route.fulfill({ body: three, contentType: 'text/javascript' });
+    if (url.pathname.endsWith('/three.core.js')) return route.fulfill({ body: three, contentType: 'text/javascript' });
     if (url.host !== 'golf.test') return route.abort();
     const file = join(ROOT, decodeURIComponent(url.pathname));
     if (!existsSync(file)) return route.fulfill({ status: 404, body: 'not found' });

@@ -356,7 +356,7 @@
     fail('The game has to be opened from a web server, not straight from the folder. Run "python3 -m http.server 8000" in the game folder and open http://localhost:8000');
   } else if (!(window.HTMLScriptElement && HTMLScriptElement.supports && HTMLScriptElement.supports('importmap'))) {
     fail('This browser is too old for the game. It needs Safari or iOS 16.4+, Chrome or Edge 89+, or Firefox 108+.');
-  } else if (!window.WebGLRenderingContext) {
+  } else if (!window.WebGL2RenderingContext) { // Three.js needs WebGL 2 since r163 (AP2)
     fail("Your browser can't show 3D graphics (WebGL), so the game can't start. Try another browser.");
   }
   // Which game file failed to load (X10 Q3). A module that an import can't fetch is reported on the
@@ -391,7 +391,7 @@
 </script>
 <!-- Three.js is committed in the repo (Gate A C1): no CDN needed, works offline. Upgrade = swap this one folder. -->
 <script type="importmap">
-  { "imports": { "three": "./vendor/three-0.160.0/three.module.js" } }
+  { "imports": { "three": "./vendor/three-0.187.0/three.module.js", "three/addons/": "./vendor/three-0.187.0/addons/" } }
 </script>
 </head>
 <body>
