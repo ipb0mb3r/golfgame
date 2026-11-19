@@ -12,7 +12,7 @@
 //   skip()         (X9) run the rest of the shot at once: the same fixed steps, nothing drawn, same end
 //   proceed()      do it (after whatever delay the game shows): prepares the next shot, or nothing when the hole is over
 import {
-  G, ROLL_G, PHYSICS_DT, MIN_POWER, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
+  G, ROLL_G, PHYSICS_DT, MIN_POWER, BALL_R, TUNE, AUTO_CLUB_REACH, PUTT, LANDING_SIM, WIND_MAX, HUD, POWER_SECTIONS, MINIMAP_TICKS, M2Y,
 } from './config.js';
 import { v3, copy, set, dist2D, aimAt, dirFromAim, rightFromAim } from './vec.js';
 import { createRng } from './rng.js';
@@ -65,7 +65,7 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     get pickedUp() { return p.strokes >= hole.maxStrokes; },
     get canSwing() { return !ball.moving && !p.next && !p.finished; },
     reset, newWind, prepare, hit, swing, setClub, setAim, advance, skip, step, proceed, returnToLastPos, landingPoint,
-    restPoint, aimWarning, shotWarning, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
+    restPoint, aimWarning, shotWarning, treeCheck, aimMarks, clubReach, puttPlaysLike, lieOf, pinPower, distToCup, targetDist, defaultTarget, teeFacing, slope, simulate,
   };
 
   function newWind() {
@@ -171,12 +171,13 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     // steps and the same update), not the ring's bigger steps, so a step can't jump over the thin
     // edge of the leaves. Until the first obstacle or the ground. About 1 ms; memoised below.
     const { vel } = launchVelocity(bag[i], Math.max(power, MIN_POWER), a); // as resolveShot
+    const near = nearLine(vel); // X14: only what the flight passes over can be hit (same answer, ~4× faster)
     const q = { ...ball.pos }, q0 = { x: 0, y: 0, z: 0 }, h = PHYSICS_DT;
     for (let k = 0, n = LANDING_SIM.maxSteps * LANDING_SIM.dt / h; k < n; k++) {
       copy(q0, q);
       vel.y -= G * h;
       q.x += vel.x * h; q.y += vel.y * h; q.z += vel.z * h;
-      const hit = firstHit(obstacles, q0, q);
+      const hit = firstHit(near, q0, q);
       if (hit) { value = { kind: hit.kind, index: hit.o.i, x: hit.x, y: hit.y, z: hit.z, dist: dist2D(ball.pos, hit) }; break; }
       if (q.y <= terrain.heightAt(q.x, q.z)) break;
     }
@@ -184,11 +185,38 @@ export function createHolePlay(hole, { seed = 1 } = {}) {
     warnMemo.set(key, value);
     return value;
   }
-  // The warning the player sees (PM on PR #33): the full-power arc (the ring) AND the ⚑ arc (the
-  // shot we suggest, when the ⚑ is on the meter, at most the lie's cap). The ⚑ must never lead into
-  // the leaves without a warning. Returns null, or the nearer hit with `at`: 'pin' (only the ⚑
-  // shot hits), 'full' (only the full-power shot) or 'both'.
+  // X14: the obstacles a straight, windless flight with this launch velocity can touch. Seen from above it
+  // is a ray from the ball, so an obstacle whose footprint (trunk + ball, leaves, boulder + ball) is
+  // farther than that from the ray, or behind the ball, can't be hit. A safety margin (NEAR_MARGIN)
+  // keeps it conservative; the list keeps the obstacles' order, so firstHit picks the same one.
+  const NEAR_MARGIN = 1;
+  function nearLine(vel) {
+    const len = Math.hypot(vel.x, vel.z);
+    if (!(len > 0)) return obstacles;
+    const ux = vel.x / len, uz = vel.z / len, bx = ball.pos.x, bz = ball.pos.z;
+    const close = (x, z, r) => {
+      const ex = x - bx, ez = z - bz, along = ex * ux + ez * uz;
+      const R = r + BALL_R + NEAR_MARGIN;
+      return along >= -R && Math.abs(ex * uz - ez * ux) <= R;
+    };
+    return obstacles.filter(o => o.type === 'tree'
+      ? close(o.x, o.z, o.r) || close(o.canopy.x, o.canopy.z, o.canopy.rx)
+      : close(o.x, o.z, o.r));
+  }
+  // The warning the player sees: the full-power arc, the same shot as the aim marker (S22), with
+  // `at: 'full'`. X14 (PM on PR #65): since S22 the ⚑ only shows on putts, so full shots no longer warn
+  // "at ⚑ power" (a power the player can't see). That ⚑ search (whole rolled-out shots) ran on every
+  // aim frame and was the owner's aiming stutter. Putts never warn.
   function shotWarning(i = p.clubIdx, a = p.aim) {
+    if (i === PUTTER || !obstacles.length) return null;
+    const full = aimWarning(i, a, lieOf(i).maxPower);
+    return full && { ...full, at: 'full' };
+  }
+  // The K4 check of BOTH the full-power arc and the ⚑ arc (PM on PR #33; the player's warning until
+  // X14). Not shown to the player any more; the mountain course's tree thinning (holes/mtn-course.js)
+  // still builds its holes with it, so their trees stay where they are. Returns null, or the nearer hit
+  // with `at`: 'pin' (only the ⚑ shot hits), 'full' (only the full-power shot) or 'both'.
+  function treeCheck(i = p.clubIdx, a = p.aim) {
     if (i === PUTTER || !obstacles.length) return null;
     const cap = lieOf(i).maxPower;
     const full = aimWarning(i, a, cap);

@@ -28,6 +28,12 @@ export const PERFECT_POWER = 0.97;   // a straight shot above this power says "P
 export const SLIGHT_ERROR = 0.07;    // |error| below this is a "slight" hook/slice
 export const AIM_SPEED = 0.45;       // rad/s while holding aim
 export const AIM_SPEED_PUTT = 0.3;   // rad/s with the putter
+// X14: holding aim turns every frame (not on the OS key repeat), by game time, so the speed is the same
+// at any frame rate. It starts slow (a tap is a fine nudge): AIM_START_K × the speed, up to 1× over
+// AIM_RAMP_S seconds; held past fastAfterS it speeds up gently to AIM_FAST_K over fastRampS. Shift
+// (keyboard) turns at AIM_FINE_K × that. Multipliers of AIM_SPEED (AIM_SPEED_PUTT with the putter).
+// The four AIM_* names are tunables (?tune=, PM on PR #65); these two are not.
+export const AIM_TURN = { fastAfterS: 1.2, fastRampS: 0.8 };
 
 // --- Clubs and shots ---
 export const AUTO_CLUB_REACH = 0.95; // auto-pick: shortest club whose reach is ≥ 95% of the distance
@@ -188,6 +194,10 @@ export const TUNABLES = Object.freeze({
   RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
   // Camera (Phase V): the aiming view's height (V1), ball-flight variety (V3) and the hole flyover (V4)
   AIM_PIN_SIZE:          { def: 1,    min: 0.3,   max: 3 },    // the landing marker's size × this (PR #63: a small cone pointing down at the landing spot)
+  AIM_START_K:           { def: 0.4,  min: 0.05,  max: 1 },    // X14: a held aim starts at this × the aim speed (a tap is a fine nudge)...
+  AIM_RAMP_S:            { def: 0.3,  min: 0.01,  max: 1 },    // ...and reaches full speed after this many seconds
+  AIM_FAST_K:            { def: 1.6,  min: 1,     max: 3 },    // X14: held past 1.2 s, it speeds up to this × (over 0.8 s)
+  AIM_FINE_K:            { def: 0.25, min: 0.05,  max: 1 },    // X14: Shift + ◀ ▶ turns at this × (fine aim)
   CAM_AIM_HEIGHT:        { def: 1,    min: 0.5,   max: 3 },    // the full-shot aiming camera's height × main's 2.6 m (owner on #63, after comparing 1 / 1.25 / 1.5: "the today camera is the best"); putts keep main's
   CAM_VARIETY:           { def: 1,    min: 0,     max: 1 },    // 1 = varied flight camera, 0 = classic (always behind); the Settings switch sets it too
   CAM_VARIETY_MIN:       { def: 60,   min: 0,     max: 200 },  // m: shots carrying less than this (chips, pitches) are always filmed from behind
