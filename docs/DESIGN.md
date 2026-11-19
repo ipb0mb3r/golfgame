@@ -376,7 +376,7 @@ Target: a **mid-range phone** (iPhone 12 / Pixel 6 class) at **60 fps**, never b
 | Download per course | ≤ 8 MB |
 | Shadows | a soft round shadow under the golfer and the ball, no real-time shadows |
 
-**Measuring:** the debug overlay (backtick, or `?debug=1`) shows fps (smoothed over ~0.5 s), draw calls, triangles, the highest draw calls / triangles since the hole loaded, geometries, textures, the largest texture and an estimate of the graphics memory (geometry + textures, RGBA8 + mipmaps), each green (ok) or red (over budget). While the overlay is open the debug collider outlines are drawn too, so draw calls include them (the overlay says how many at most); **`?debug=perf`** opens the overlay without them, so fps and draw calls are the game's own (use it for phone checks). `tools/perf-check.mjs` checks every hole from the tee and over its flyover. Today's painted course map (one canvas of ~1500–2048 px per hole) is over the texture line until AP6 replaces it; the tool shows it but doesn't fail on it.
+**Measuring:** the debug overlay (backtick, or `?debug=1`) shows fps (smoothed over ~0.5 s), draw calls, triangles, the highest draw calls / triangles since the hole loaded, geometries, textures, the largest texture and an estimate of the graphics memory (geometry + textures, RGBA8 + mipmaps), each green (ok) or red (over budget). fps has three levels (AP1, PM on #75): green at 55 and up, amber from 30 to 55, red below 30. The painted course map is shown apart in grey, "map (AP6)", never rated (its memory still counts), and the screen buffers (colour + depth per MSAA sample) on their own unrated line, "screen ≈ N MB", outside the per-hole budget. While the overlay is open the debug collider outlines are drawn too, so draw calls include them (the overlay says how many at most); **`?debug=perf`** opens the overlay without them, so fps and draw calls are the game's own (use it for phone checks). `tools/perf-check.mjs` checks every hole from the tee and over its flyover. Today's painted course map (one canvas of ~1500–2048 px per hole) is over the texture line until AP6 replaces it; the tool shows it in its own "map (AP6)" column and leaves it out of the verdict. **Draw calls (AP1):** every repeated object is one instanced draw call: the trees in play (trunks, canopies with a shade of green per tree), boulders, OB stakes, tee markers, hills, cloud puffs and the scenery trees; the debug collider outlines are one draw call per kind.
 
 ---
 
@@ -418,7 +418,7 @@ src/
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
     main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, menus, pause, frame loop; starts and ends games, loads hole sessions
     session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
-    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene
+    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene; repeated objects instanced (AP1)
     coursePainter.js       ✅ painted course texture + minimap image
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
     camera.js              ✅ eases the camera toward the view core/views.js gives (Phase V)
@@ -440,6 +440,7 @@ tools/
   record-baseline-v2.mjs   ✅ re-records v2; prints what moved first (Gate A T3), --dry to only look
   session-check.mjs        ✅ 12 hole load/dispose cycles over holes 1–3 in a headless browser, renderer memory must not grow (Gate A A2)
   perf-check.mjs           ✅ every hole at 390x844: tee view + flyover peak vs PERF_BUDGET, time to Tee off; --strict fails over budget (AP0)
+  aim-cost.mjs             ✅ JS time of one aim step (tree warning, aim marks, landing) per hole, plain Node (AP1 / X15)
   menu-check.mjs           ✅ clicks through every menu path, pause, quit and play again in a headless browser (Phase 7, M6)
 ```
 

@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { PERF_BUDGET } from '../src/core/config.js';
-import { rate, rateItem, overBudget, textureBytes, PERF_ITEMS } from '../src/core/perf.js';
+import { rate, rateItem, overBudget, textureBytes, screenBytes, PERF_ITEMS } from '../src/core/perf.js';
 
 test('AP0: the budget holds the numbers of DESIGN §8b and is frozen', () => {
   assert.ok(Object.isFrozen(PERF_BUDGET));
@@ -23,8 +23,27 @@ test('AP0: rate() says ok at the limit and over past it; fps is a minimum', () =
   const B = PERF_BUDGET;
   assert.deepEqual(rate({ drawCalls: B.drawCalls, triangles: B.triangles, gpuMB: B.gpuMB, textureSize: B.textureSize, fps: B.fpsOk }),
     { fps: 'ok', drawCalls: 'ok', triangles: 'ok', gpuMB: 'ok', textureSize: 'ok' });
-  assert.deepEqual(rate({ drawCalls: B.drawCalls + 1, triangles: B.triangles + 1, gpuMB: B.gpuMB + 0.1, textureSize: 1024, fps: B.fpsOk - 1 }),
+  assert.deepEqual(rate({ drawCalls: B.drawCalls + 1, triangles: B.triangles + 1, gpuMB: B.gpuMB + 0.1, textureSize: 1024, fps: B.fpsFloor - 1 }),
     { fps: 'over', drawCalls: 'over', triangles: 'over', gpuMB: 'over', textureSize: 'over' });
+});
+
+test('AP1 (PM on #75): fps has three levels: ok at 55 and up, warn (amber) from 30 to 55, over below 30', () => {
+  const B = PERF_BUDGET;
+  assert.equal(B.fpsOk, 55); assert.equal(B.fpsFloor, 30);
+  assert.equal(rateItem('fps', 60), 'ok');
+  assert.equal(rateItem('fps', 55), 'ok');
+  assert.equal(rateItem('fps', 54.9), 'warn');
+  assert.equal(rateItem('fps', 30), 'warn');
+  assert.equal(rateItem('fps', 29.9), 'over');
+  assert.equal(rateItem('drawCalls', 151), 'over', 'only fps has the amber level');
+  assert.deepEqual(overBudget({ fps: 40 }), [], 'amber is not over budget');
+});
+
+test('AP1 (PM on #75): screen buffer estimate (colour + depth per sample, plus the resolved colour with MSAA)', () => {
+  assert.equal(screenBytes(100, 50), 100 * 50 * 8);
+  assert.equal(screenBytes(100, 50, 1), 100 * 50 * 8);
+  assert.equal(screenBytes(100, 50, 4), 100 * 50 * (8 * 4 + 4));
+  assert.equal(screenBytes(0, 50, 4), 0);
 });
 
 test('AP0: items missing, not numbers or without a budget are not rated', () => {
