@@ -350,7 +350,7 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 **Mix and match (owner):** biomes **share assets**, so each new biome is cheaper once a few exist. Example: two mountain biomes share the pines but differ in backdrop and palette. *Alpine*: snowy peaks, cooler surface colours, log lodges as big props out of the course. *Rockies-like*: warmer colours, other mountains in the backdrop, maybe city blocks in the far background.
 
-**Planned biomes (owner's list):** grass forest · mountain (Rockies, pines) · mountain (alpine, snow in the back, other colours) · beach side Hawaii · beach side Miami (city) · beach side cliffs (Scotland) · Arizona desert (Grand Canyon) · city central park · a classic Georgia pines course (tall pines, many flower bushes and beds). Real places are **inspirations only**: in-game names are invented, and no real course's layout or branding is copied.
+**First biomes to build (owner, 2026-11-19): grassland, mountain, beach (Hawaii-like).** Other ideas, **examples only, not the plan:** grass forest · mountain (Rockies, pines) · mountain (alpine, snow in the back, other colours) · beach side Hawaii · beach side Miami (city) · beach side cliffs (Scotland) · Arizona desert (Grand Canyon) · city central park · a classic Georgia pines course (tall pines, many flower bushes and beds). Real places are **inspirations only**: in-game names are invented, and no real course's layout or branding is copied.
 
 The exact format (how pieces are shared between biomes) is set by ART0 (owner + artist) and built by the dev as AP5.
 
