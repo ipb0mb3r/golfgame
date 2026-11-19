@@ -105,6 +105,12 @@ export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole
 export const SCORECARD_GROUP = 9;
 export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000, holeCard: 2500 }; // skipAfter: X9 ⏩ Skip shows this long after the hit; holeCard: the compact hole card (holes 2+ of a round) closes by itself after this
 
+// FL1: how the flagstick looks (src/game/props.js). Its size is TUNE.FLAG_R / FLAG_H (what the ball hits).
+// cloth: m wide/high, its centre clothDrop m below the top; minH: m, a 0-tall pole still gets a valid mesh
+// (hidden). wobble: rad the stick leans after a hit, swinging wobbleHz times a second, fading with time
+// constant wobbleDecay s, over after wobbleS s.
+export const FLAG_FX = Object.freeze({ clothW: 0.9, clothH: 0.55, clothDrop: 0.3, minH: 0.01, wobble: 0.09, wobbleHz: 2.5, wobbleDecay: 0.35, wobbleS: 1.6 });
+
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line
 // has a tick where a straight, no-wind shot at each of those powers lands (25/50/75% for 4)

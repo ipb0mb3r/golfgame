@@ -131,3 +131,19 @@ test('FL1: the pole is not a tree: the aim line, marker, K4 warning, ⚑ and aut
   const p = createHolePlay(hole, { seed: 1 }); p.reset({ ball: { x: 0, z: CUP.z + 20 }, wind: { x: 0, z: 0 } });
   for (let i = 0; i < p.bag.length - 1; i++) { p.setClub(i); assert.equal(p.shotWarning(), null, p.club.name); assert.equal(p.aimWarning(), null); }
 });
+
+// The two Practice spots (scenarios.js) promise these powers in their text: keep them honest.
+for (const [id, inPower, outPower] of [['h1-pin-chip', 0.27, 0.30], ['h1-pin-approach', 0.85, 0.88]]) {
+  test(`FL1: scenario ${id} hits the pole and drops in at ${inPower * 100}%, stops by it at ${outPower * 100}%`, () => {
+    for (const [power, end] of [[inPower, 'holed'], [outPower, 'stopped']]) {
+      const sc = SCENARIOS[id];
+      const p = createHolePlay(HOLES[sc.hole], { seed: sc.seed });
+      p.reset(sc);
+      p.hit(power, 0, 'normal');
+      const types = [];
+      for (let i = 0; i < 240 * 60 && p.ball.moving; i++) { const ev = p.step(); if (ev) types.push(ev.type); }
+      assert.ok(types.includes('hitFlag'), `${power}: hits the pole`);
+      assert.equal(types.at(-1), end, `${power}`);
+    }
+  });
+}
