@@ -12,6 +12,7 @@ import { TIMING, MPS_TO_MPH, TUNE, CAM, G } from '../core/config.js';
 import { createRng } from '../core/rng.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
 import { aimTurn } from '../core/aim.js';
+import { pinShown } from '../core/obstacles.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
@@ -73,6 +74,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let warn = null;     // K4: where the aimed shot would hit an obstacle (play.aimWarning), or null
   let aimHeld = 0, aimHeldDir = 0; // X14: how long (game s) the aim has been held in this direction
   let treeFlash = false; // one obstacle flash per shot is enough (a ball can rattle through branches)
+  let pinFlash = false; // FL1: one "Off the pin!" per shot
   const target = { x: 0, y: 0, z: 0 };
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
@@ -232,7 +234,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     }
     if (shot.label) hud.flash(shot.label); // a putt has no label (S14)
     state = shot.kind === 'putt' ? 'roll' : 'flight';
-    shotT = 0; treeFlash = false;
+    shotT = 0; treeFlash = false; pinFlash = false;
     const sd = play.shotDir, carry = land ? dist2D(from, land) : 0;
     flight = pickFlightView(flightWorld, viewRng, flightHistory, {
       putt: shot.kind === 'putt' || !land, classic: classicCam, from, land: land || from, carry,
@@ -247,6 +249,13 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function onEvent(ev) {
     if (ev.type === 'landed' && flight) { flight.landed = true; if (flight.kind === 'side') flight.dropped = true; } // V3: the side camera hands over at the first bounce
     if (ev.type === 'lippedOut') { hud.flash('Lipped out!'); return; }
+    // FL1: off the flagstick (never on a putt: putts don't hit it). A holed ball's flash replaces it.
+    if (ev.type === 'hitFlag') {
+      if (!pinFlash) hud.flash('Off the pin!');
+      pinFlash = true;
+      props.hitPin(t, play.shotDir.x, play.shotDir.z); // the top leans away from the ball
+      return;
+    }
     // K2/K3: the trees and rocks
     if (ev.type === 'hitLeaves' || ev.type === 'hitObstacle') {
       if (!treeFlash) hud.flash(ev.type === 'hitLeaves' ? 'Into the trees!' : ev.kind === 'boulder' ? 'Off the rock!' : 'Off the tree!');
@@ -370,6 +379,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
       if (key !== lastAimKey) { lastAimKey = key; updateHud(); }
     } else { warn = null; marks = null; props.setAimGuide(false); }
 
+    props.setPin(pinShown(play.club.putter || (play.isPutt && isBallMoving(state)), ball.pos, cup)); // FL1: hidden only near the cup on a putt
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);

@@ -1,6 +1,6 @@
 // Flag, cup, ball, shadow, flight trail and the aim guide.
 import * as THREE from 'three';
-import { CUP_R, BALL_R, HUD, TUNE } from '../core/config.js';
+import { CUP_R, BALL_R, HUD, TUNE, FLAG_FX } from '../core/config.js';
 
 export function createProps(scene, hole, terrain, cup) {
   const { heightAt, normalAt } = terrain;
@@ -15,15 +15,25 @@ export function createProps(scene, hole, terrain, cup) {
   const cupRim = new THREE.Mesh(new THREE.RingGeometry(CUP_R, CUP_R + 0.03, 24), new THREE.MeshBasicMaterial({ color: 0xffffff }));
   cupRim.quaternion.copy(tilt); cupRim.position.set(cup.x, cup.y + 0.021, cup.z);
   scene.add(cupRim);
-  const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 2.6, 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
-  pole.position.set(cup.x, cup.y + 1.3, cup.z);
-  scene.add(pole);
-  const flagGeo = new THREE.PlaneGeometry(0.9, 0.55, 12, 4);
-  flagGeo.translate(0.45, 0, 0);
+  // FL1: the flagstick is drawn from the same TUNE.FLAG_R / FLAG_H the ball hits (read once per hole,
+  // so ?tune= changes both); FLAG_H 0 = no pole and no cloth. The pole and the cloth hang in one group
+  // standing on the cup, so a hit can wobble them around the base (hitPin). setPin(false) hides the
+  // stick (core obstacles.pinShown: only on a putt near the cup).
+  const stickH = TUNE.FLAG_H, hasStick = stickH > 0;
+  const stick = new THREE.Group();
+  stick.position.set(cup.x, cup.y, cup.z);
+  stick.visible = hasStick;
+  scene.add(stick);
+  const pole = new THREE.Mesh(new THREE.CylinderGeometry(TUNE.FLAG_R, TUNE.FLAG_R, Math.max(stickH, FLAG_FX.minH), 8), new THREE.MeshLambertMaterial({ color: 0xffffff }));
+  pole.position.y = stickH / 2;
+  stick.add(pole);
+  const flagGeo = new THREE.PlaneGeometry(FLAG_FX.clothW, FLAG_FX.clothH, 12, 4);
+  flagGeo.translate(FLAG_FX.clothW / 2, 0, 0);
   const flagBase = flagGeo.attributes.position.array.slice();
   const flag = new THREE.Mesh(flagGeo, new THREE.MeshLambertMaterial({ color: sc.flagColor, side: THREE.DoubleSide }));
-  flag.position.set(cup.x, cup.y + 2.3, cup.z);
-  scene.add(flag);
+  flag.position.y = stickH - FLAG_FX.clothDrop;
+  stick.add(flag);
+  let stickShown = hasStick, wobbleT0 = -1, wobbleX = 0, wobbleZ = 0; // wobble: start time, direction the top leans
 
   // Ball, shadow, flight trail
   const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 20, 14), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333333 }));
@@ -198,6 +208,23 @@ export function createProps(scene, hole, terrain, cup) {
       }
       flagGeo.attributes.position.needsUpdate = true;
       flag.rotation.y = Math.atan2(-wind.z, wind.x) || 0;
+      // FL1: after a hit the stick rocks away from the ball and settles (a damped swing around its base)
+      if (wobbleT0 >= 0) {
+        const s = t - wobbleT0;
+        const a = s < FLAG_FX.wobbleS ? FLAG_FX.wobble * Math.exp(-s / FLAG_FX.wobbleDecay) * Math.sin(s * FLAG_FX.wobbleHz * 2 * Math.PI) : 0;
+        stick.rotation.x = a * wobbleZ; stick.rotation.z = -a * wobbleX;
+        if (!a) wobbleT0 = -1;
+      }
+    },
+    // FL1: the ball hit the pole at time t, moving along (dx, dz)
+    hitPin(t, dx, dz) {
+      const l = Math.hypot(dx, dz) || 1;
+      wobbleT0 = t; wobbleX = dx / l; wobbleZ = dz / l;
+    },
+    // FL1: show the stick, or take it out (putts). Only touches the scene when it changes.
+    setPin(on) {
+      const v = hasStick && on;
+      if (v !== stickShown) { stickShown = v; stick.visible = v; }
     },
   };
 }

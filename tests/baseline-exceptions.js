@@ -8,11 +8,15 @@ export const EXCEPTIONS = {
   // approaches should run out on the green). Every shot below ends rolling on a green, so it rolls
   // further. Putts keep their distance on flat ground (putt power is calibrated to the green), but
   // break more on a slope.
-  1:  { name: 'h1 full then chip and putts', task: 'S17', end: { x: 4.19, z: -159.04 }, why: 'tee shot runs 1.3 m further across the faster green' },
+  // FL1 (2026-11-19): the flagstick is an obstacle. This tee shot (S17: 1.3 m further across the faster
+  // green) lands 2.2 m short of the cup and hops into the pole 0.8 m up: it drops dead 0.7 m short.
+  1:  { name: 'h1 full then chip and putts', task: 'S17 + FL1', end: { x: 3.98, z: -151.33 }, why: 'hops into the flagstick and drops 0.7 m short of the cup (S17 alone: 7 m past)' },
   5:  { name: 'h1 three-quarter tee shot', task: 'S17', end: { x: 3.94, z: -149.65 }, why: 'the chip runs 1.3 m further on the faster green' },
   6:  { name: 'h1 hook', task: 'S17', end: { x: -10.42, z: -151.76 }, why: 'the hook lands on the green and runs 1.4 m further (the old page spread 2.4 m on this shot across frame rates)' },
   14: { name: 'h2 approach from the lay-up zone', task: 'S17 + P10', end: { x: 24.51, z: -437.16 }, why: 'the approach runs 1.7 m further up the faster two-tier green (P10: 0.3 m, it settles instead of creeping)' },
   // K8 (PM on PR #33): every tree inside OB on holes 1–2 is a real tree. Only this shot reaches one.
   9:  { name: 'h1 forced max slice', task: 'K8', end: { x: 38.50, z: -125.23 }, why: 'the big slice flies into the leaves of the tree at (31, -115.8) and drops about 11 m short' },
+  // FL1: the flagstick is an obstacle. This 5 Iron lands 4 m short and hops into the pole 1.1 m up.
+  11: { name: 'h2 driver, then 3 wood', task: 'FL1', end: { x: 24.88, z: -446.84 }, why: 'hops into the flagstick and drops 1.6 m short of the cup instead of running 9 m past into the rough' },
   18: { name: 'h2 side-hill putt (breaks)', task: 'S17', end: { x: 26.89, z: -445.68 }, why: 'the same putt breaks 1 m more on the faster green, then settles (P10)' },
 };

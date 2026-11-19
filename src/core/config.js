@@ -105,6 +105,12 @@ export const WIND_MAX = 5.5;         // default max wind speed (m/s) when a hole
 export const SCORECARD_GROUP = 9;
 export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, afterPickUp: 900, flash: 1500, skipAfter: 1000, holeCard: 2500 }; // skipAfter: X9 ⏩ Skip shows this long after the hit; holeCard: the compact hole card (holes 2+ of a round) closes by itself after this
 
+// FL1: how the flagstick looks (src/game/props.js). Its size is TUNE.FLAG_R / FLAG_H (what the ball hits).
+// cloth: m wide/high, its centre clothDrop m below the top; minH: m, a 0-tall pole still gets a valid mesh
+// (hidden). wobble: rad the stick leans after a hit, swinging wobbleHz times a second, fading with time
+// constant wobbleDecay s, over after wobbleS s.
+export const FLAG_FX = Object.freeze({ clothW: 0.9, clothH: 0.55, clothDrop: 0.3, minH: 0.01, wobble: 0.09, wobbleHz: 2.5, wobbleDecay: 0.35, wobbleS: 1.6 });
+
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line
 // has a tick where a straight, no-wind shot at each of those powers lands (25/50/75% for 4)
@@ -193,6 +199,12 @@ export const TUNABLES = Object.freeze({
   OBSTACLE_KEEP:         { def: 0.7,  min: 0,     max: 1 },    // share of the speed ALONG it that is kept
   CANOPY_SLOW:           { def: 0.3,  min: 0,     max: 1 },    // share of its speed a ball keeps when it flies into a tree's leaves (K3)
   CANOPY_DEFLECT:        { def: 15,   min: 0,     max: 45 },   // degrees: the leaves turn the ball left or right by up to this (seeded RNG)
+  // Flagstick (FL1, DESIGN §4 "Cup"): a thin vertical pole standing in the cup. Putts ignore it.
+  FLAG_R:                { def: 0.025, min: 0,    max: 0.2 },  // m: the pole's radius (the drawn pole is 0.025)
+  FLAG_H:                { def: 2.6,  min: 0,     max: 4 },    // m: the pole's height above the cup (the drawn pole is 2.6); 0 = no pole
+  FLAG_REST:             { def: 0.15, min: 0,     max: 1 },    // share of the speed INTO the pole that bounces back (soft: the ball drops dead)
+  FLAG_KEEP:             { def: 0.2,  min: 0,     max: 1 },    // share of the speed ALONG the pole's side (a glancing hit) that is kept
+  FLAG_PUTT_HIDE:        { def: 3,    min: 0,     max: 30 },   // m: on a putt the drawn pole and flag are hidden while the ball is this close to the cup (0 = never hide). Looks only
   // Default aim (§3)
   CHIP_AIM_RANGE:        { def: 30,   min: 0,     max: 80 },   // m: this close to the cup, the default aim is the cup on any surface (S19)
   CHIP_FLAG_SHORT:       { def: 1.5,  min: 0,     max: 10 },   // m: within CHIP_AIM_RANGE the ⚑ marks a finish this far short of the cup (PM on PR #31: no free chip-ins)

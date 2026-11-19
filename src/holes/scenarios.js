@@ -15,6 +15,15 @@ export const SCENARIOS = {
     hole: 'pl-01', ball: { x: -6, z: -146 }, strokes: 1, seed: 102, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Hole 1: flat putt', text: 'A 12 m putt on a flat green.',
   },
+  // FL1: the flagstick. Both aim at the cup with no wind; tests/flagpole.test.js checks the powers in the text.
+  'h1-pin-chip': {
+    hole: 'pl-01', ball: { x: 4, z: -132 }, strokes: 1, seed: 104, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 1: chip at the pin', text: 'A 20 m chip straight at the flagstick. Around 27% it hits the pole low and drops in; around 30% it hits it high and stops by it.',
+  },
+  'h1-pin-approach': {
+    hole: 'pl-01', ball: { x: 4, z: -62 }, aimAt: { x: 4, z: -152 }, strokes: 1, seed: 105, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Hole 1: approach at the pin', text: 'A 90 m P Wedge aimed at the flagstick. Around 85% it hops into the pole and drops in; around 88% it hits it and stops by it.',
+  },
   'h1-pond-carry': {
     hole: 'pl-01', ball: { x: -28, z: -50 }, strokes: 1, seed: 103, lie: 'rough',
     name: 'Hole 1: carry the pond', text: 'Left rough, with the pond between you and the green.',
