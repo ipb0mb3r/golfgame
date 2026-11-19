@@ -74,7 +74,7 @@ async function teeOff(key = 'Space') {
   const before = await wind();
   await ev(() => document.activeElement?.blur());
   await page.keyboard.press(key);
-  await page.waitForFunction(() => window.__golf.state === 'aim', null, { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; }, null, { timeout: 5000 }).catch(() => {});
   const st = await ev(() => window.__golf.state);
   return { before, after: await wind(), st };
 }
@@ -200,10 +200,12 @@ for (let hole = 1; hole <= 3; hole++) {
       document.activeElement?.blur();
       const before = window.__golf.state;
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true }));
+      const st = window.__golf.state;
+      if (st === 'flyover') window.__golf.skip(); // V4: Space started the hole; its flyover is skipped here
       return { before, st: window.__golf.state };
     });
     ok(r.before === 'intro' && r.st === 'aim', `round hole ${hole}: Space starts it from its ${hole === 1 ? 'intro' : 'compact'} card (${r.before} → ${r.st})`);
-  } else await page.waitForFunction(() => window.__golf.state === 'aim', null, { timeout: 10000 });
+  } else await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; }, null, { timeout: 10000 });
   // Put the ball next to the cup and putt until it's over (holed or picked up)
   await ev(() => { const c = window.__golf.HOLE; window.__golf.place(c.x, c.z + 0.6); });
   for (let k = 0; k < 20; k++) {
@@ -239,7 +241,7 @@ await openAi('prototype3', 'hard');
 for (let hole = 1; hole <= 3; hole++) {
   await page.waitForFunction(() => window.__golf.state === 'intro');
   await ev(() => { document.activeElement?.blur(); window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ', bubbles: true })); });
-  await page.waitForFunction(() => window.__golf.state === 'aim', null, { timeout: 10000 });
+  await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; }, null, { timeout: 10000 });
   await ev(() => { const c = window.__golf.HOLE; window.__golf.place(c.x, c.z + 0.6); });
   for (let k = 0; k < 20; k++) {
     const st = await ev(() => window.__golf.state);
@@ -283,7 +285,14 @@ await items(['settings']);
 await click('#setDebug');
 await click('#setGrid [data-value="on"]');
 const stored = await ev(() => localStorage.getItem('pocketlinks.settings.v1'));
-ok(stored === JSON.stringify({ debug: true, puttGrid: 'on' }), `settings saved (${stored})`);
+ok(stored === JSON.stringify({ debug: true, puttGrid: 'on', flightCam: 'varied', flyover: true }), `settings saved (${stored})`);
+// Phase V: the flight camera and flyover switches save too (then back to their defaults for the checks below)
+await click('#setCam [data-value="classic"]');
+await click('#setFlyover');
+const storedV = await ev(() => localStorage.getItem('pocketlinks.settings.v1'));
+ok(storedV === JSON.stringify({ debug: true, puttGrid: 'on', flightCam: 'classic', flyover: false }), `Phase V settings saved (${storedV})`);
+await click('#setCam [data-value="varied"]');
+await click('#setFlyover');
 await page.reload();
 await page.waitForFunction(() => window.__golf?.app);
 ok(await ev(() => window.__golf.app.settings.debug === true && window.__golf.app.settings.puttGrid === 'on'), 'settings survive a reload');

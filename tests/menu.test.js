@@ -77,9 +77,11 @@ test('M4: settings: defaults, valid values kept, anything broken falls back', ()
   assert.deepEqual(parseSettings(null), DEFAULT_SETTINGS);
   assert.deepEqual(parseSettings('not json'), DEFAULT_SETTINGS);
   assert.deepEqual(parseSettings('[1,2]'), DEFAULT_SETTINGS);
-  assert.deepEqual(parseSettings('{"debug":true,"puttGrid":"on"}'), { debug: true, puttGrid: 'on' });
-  assert.deepEqual(parseSettings('{"debug":"yes","puttGrid":"sideways"}'), DEFAULT_SETTINGS);
-  assert.equal(serializeSettings({ debug: true, puttGrid: 'off', junk: 1 }), '{"debug":true,"puttGrid":"off"}');
+  // Phase V: flightCam (V3) and flyover (V4) default to varied / on, so older saved settings get them
+  assert.deepEqual(parseSettings('{"debug":true,"puttGrid":"on"}'), { debug: true, puttGrid: 'on', flightCam: 'varied', flyover: true });
+  assert.deepEqual(parseSettings('{"flightCam":"classic","flyover":false}'), { ...DEFAULT_SETTINGS, flightCam: 'classic', flyover: false });
+  assert.deepEqual(parseSettings('{"debug":"yes","puttGrid":"sideways","flightCam":"drone","flyover":"no"}'), DEFAULT_SETTINGS);
+  assert.equal(serializeSettings({ debug: true, puttGrid: 'off', junk: 1 }), '{"debug":true,"puttGrid":"off","flightCam":"varied","flyover":true}');
 });
 
 test('M4: putt grid: hole default keeps each green, on = grid everywhere, off = no grid', () => {

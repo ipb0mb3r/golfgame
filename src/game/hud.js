@@ -13,6 +13,7 @@ const HINTS = {
   grace: 'MAX! Click now for full power',
   nopower: 'No power! Click for a mini shot, or wait to cancel',
   accuracy: 'Click on the green line for a straight shot!',
+  flyover: 'Tap to skip the flyover', // V4
 };
 // S14: a putt is 2 clicks (start, power); the hints that differ
 const PUTT_HINTS = {

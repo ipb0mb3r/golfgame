@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { testHole, scriptedSwing } from './helpers.js';
 import { createHolePlay } from '../src/core/play.js';
 import { getHole } from '../src/holes/sets.js';
-import { METER_PHASES, SWING_PHASES, GAME_STATES, isSwinging, isAimingState, isAimView, isBallMoving } from '../src/core/states.js';
+import { METER_PHASES, SWING_PHASES, GAME_STATES, isSwinging, isAimingState, isAimView, isBallMoving, isFlyover } from '../src/core/states.js';
 import { createMeter, pressMeter, tickMeter } from '../src/core/swing.js';
 
 // Play until the shot ends; returns the events
@@ -179,8 +179,8 @@ test('A3 / S14: a 2-click putt meter reaches only listed phases, never accuracy'
 test('A3: game-state predicates (used by the HUD, camera and input) cover every state once', () => {
   for (const ph of SWING_PHASES) assert.ok(GAME_STATES.includes(ph), `${ph} is a game state`);
   for (const s of GAME_STATES) {
-    // every state is exactly one of: aim view (intro/aim/swing), ball moving, or the after-shot states
-    const kinds = [isAimView(s), isBallMoving(s), ['wait', 'holed', 'result'].includes(s)].filter(Boolean).length;
+    // every state is exactly one of: aim view (intro/aim/swing), the flyover (Phase V), ball moving, or the after-shot states
+    const kinds = [isAimView(s), isFlyover(s), isBallMoving(s), ['wait', 'holed', 'result'].includes(s)].filter(Boolean).length;
     assert.equal(kinds, 1, s);
   }
   assert.ok(isAimingState('grace') && isAimingState('nopower') && isAimView('nopower'), 'S8 phases are aiming (the camera missed them before)');

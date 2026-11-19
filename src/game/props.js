@@ -1,6 +1,6 @@
 // Flag, cup, ball, shadow, flight trail and the aim guide.
 import * as THREE from 'three';
-import { CUP_R, BALL_R } from '../core/config.js';
+import { CUP_R, BALL_R, HUD, TUNE } from '../core/config.js';
 
 export function createProps(scene, hole, terrain, cup) {
   const { heightAt, normalAt } = terrain;
@@ -57,23 +57,40 @@ export function createProps(scene, hole, terrain, cup) {
   const warnPole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshBasicMaterial({ color: WARN_COLOR, transparent: true, opacity: 0.7 }));
   scene.add(warnPole);
   warnMark.visible = warnFoot.visible = warnPole.visible = false;
-  // S22: full shots end the line in a marker (a flat triangle pointing along the aim) where a 100%
-  // (or the lie's capped) straight shot lands, with short bars across the line at the 25/50/75% landings.
+  // S22: full shots end the line in a marker where a 100% (or the lie's capped) straight shot lands, with
+  // short bars across the line at the 25/50/75% landings. Since PR #63 (owner: "the landing triangle is way
+  // too big") the marker is a small cone pointing DOWN at the landing spot, hovering a little above it,
+  // with a small dot on the ground under it; fitMarker() keeps its size on screen modest at any distance.
   // Grey when the lie caps the power, red when the shot would hit an obstacle (K4), blue when it lands
   // in water or out of bounds (S23; the obstacle wins: the ball would never get there).
   const CAP_COLOR = new THREE.Color(0xb8b8b8), HAZARD_COLOR = new THREE.Color(0x46b4ff);
-  const triGeo = new THREE.BufferGeometry();
-  triGeo.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, -1.6, -1.1, 0, 0.9, 1.1, 0, 0.9], 3)); // tip along −z (the aim at 0)
-  const markTri = new THREE.Mesh(triGeo, new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.95, side: THREE.DoubleSide }));
-  scene.add(markTri);
+  const P = HUD.aimPin;
+  const markMat = new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+  // A unit pin: 1 m tall, tip at the bottom (y 0) pointing down, base on top
+  const pinGeo = new THREE.ConeGeometry(P.radius, 1, 16).rotateX(Math.PI).translate(0, 0.5, 0);
+  const markTri = new THREE.Mesh(pinGeo, markMat); // (the S22 name: the marker)
+  const markDot = new THREE.Mesh(new THREE.CircleGeometry(P.dotR, 20).rotateX(-Math.PI / 2), markMat);
+  scene.add(markTri, markDot);
+  let pinScale = 1, pinGround = 0; // the marker's size (m) and the ground under it, for the label (pinTop)
   const TICKS = 8; // more than POWER_SECTIONS − 1 needs
   const ticks = new THREE.InstancedMesh(new THREE.PlaneGeometry(1.8, 0.28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }), TICKS);
   ticks.frustumCulled = false; ticks.count = 0; scene.add(ticks);
-  markTri.visible = false;
+  markTri.visible = markDot.visible = false;
   const tmpQ = new THREE.Quaternion(), UP = new THREE.Vector3(0, 1, 0);
   const tmpM = new THREE.Matrix4(), tmpV = new THREE.Vector3(), tmpS = new THREE.Vector3();
 
   return {
+    // PR #63: the landing marker's size follows the camera distance (× AIM_PIN_SIZE), clamped, so it is
+    // never huge up close (the 🔍 Landing view) nor a speck far away. Call after the camera has moved.
+    fitMarker(camPos) {
+      if (!markTri.visible) return;
+      const d = Math.hypot(camPos.x - markTri.position.x, camPos.y - pinGround, camPos.z - markTri.position.z);
+      pinScale = Math.min(P.max, Math.max(P.min, d * P.screenK)) * TUNE.AIM_PIN_SIZE;
+      markTri.scale.setScalar(pinScale); markDot.scale.setScalar(pinScale);
+      markTri.position.y = pinGround + P.hover * pinScale;
+    },
+    // The top of the marker (world y), where its label sits
+    pinTop() { return pinGround + (P.hover + 1) * pinScale; },
     // pos = where to draw the ball (world), holed = hide the shadow
     setBall(pos, holed) {
       ballMesh.position.set(pos.x, pos.y + BALL_R, pos.z);
@@ -95,17 +112,16 @@ export function createProps(scene, hole, terrain, cup) {
     // marks = play.aimMarks() (S22, full shots): the marker and the 25/50/75% ticks; putts keep the ring
     setAimGuide(visible, from, dir, len, target, putter, warn = null, marks = null) {
       dots.visible = visible;
-      ring.visible = visible && putter;
-      markTri.visible = ticks.visible = visible && !putter && !!marks;
+      ring.visible = visible && !!putter; // !!: club.putter is undefined on other clubs, and Three.js draws anything not === false (the S22 ring showed on full shots, PR #63)
+      markTri.visible = markDot.visible = ticks.visible = visible && !putter && !!marks;
       warnMark.visible = warnFoot.visible = warnPole.visible = visible && !!warn;
       if (!visible) return;
       if (markTri.visible) {
-        const grow = 1 + len / 90; // stays readable far away
-        tmpQ.setFromAxisAngle(UP, Math.atan2(-dir.x, -dir.z));
-        markTri.quaternion.copy(tmpQ);
-        markTri.position.set(marks.x, heightAt(marks.x, marks.z) + 0.1, marks.z);
-        markTri.scale.setScalar(grow);
-        markTri.material.color.copy(warn ? WARN_COLOR : marks.hazard ? HAZARD_COLOR : marks.capped ? CAP_COLOR : AIM_COLOR);
+        tmpQ.setFromAxisAngle(UP, Math.atan2(-dir.x, -dir.z)); // (the ticks' orientation)
+        pinGround = heightAt(marks.x, marks.z);
+        markTri.position.set(marks.x, pinGround + P.hover * pinScale, marks.z);
+        markDot.position.set(marks.x, pinGround + 0.08, marks.z);
+        markMat.color.copy(warn ? WARN_COLOR : marks.hazard ? HAZARD_COLOR : marks.capped ? CAP_COLOR : AIM_COLOR);
         ticks.count = Math.min(marks.ticks.length, TICKS);
         for (let k = 0; k < ticks.count; k++) {
           const q = marks.ticks[k];

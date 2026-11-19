@@ -36,7 +36,7 @@ const frames = n => page.evaluate(k => new Promise(res => { const f = () => (--k
 const startHole = async () => {
   await page.waitForFunction(() => window.__golf?.state === 'intro');
   await page.evaluate(() => document.getElementById('startBtn').click());
-  await page.waitForFunction(() => window.__golf.state === 'aim');
+  await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; });
 };
 
 await page.goto('http://golf.test/index.html?hole=pl-01&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');

@@ -89,7 +89,60 @@ export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, a
 export const POWER_SECTIONS = 4;
 // S22 (owner on PR #53): the minimap's aim line shows only these ticks (less busy than the 3D line)
 export const MINIMAP_TICKS = Object.freeze([0.5]);
-export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 }, puttMarkerMinPx: 8 }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below); puttMarkerMinPx (S14, PM on PR #61): on a putt bar the marker's centre stays at least this far from the left edge, inside the rounded end
+export const HUD = { slopeMinPct: 0.5, elevMinM: 0.5, pinTickMax: 1.02, pinFlagFlip: 0.85, atTeeM: 1, minimapFit: { gap: 8, minH: 40 }, accFrame: { widthPx: 1.5, opacity: 0.6, overPx: 6 }, puttMarkerMinPx: 8,
+  // PR #63 (owner: "the landing triangle is way too big"): the S22 marker is a cone pointing down at the landing spot.
+  // radius = of its top for a 1 m cone; hover = gap between its tip and the ground (× its size); dotR = the dot on the ground
+  // (× its size). Its size (m) = screenK × the camera distance, clamped to [min, max], × AIM_PIN_SIZE.
+  aimPin: Object.freeze({ radius: 0.36, hover: 0.45, dotR: 0.32, screenK: 0.016, min: 0.6, max: 4.5 }) }; // pinFlagFlip: above this power the ⚑ flag sits left of its line (H1); atTeeM: "plays N yd" shows while the ball is this close to the tee; minimapFit (S22): px the minimap keeps clear of the bottom panel, and its smallest height; accFrame (S22, owner on PR #53): the accuracy window's edge lines past the bar (px wide, opacity, px above and below); puttMarkerMinPx (S14, PM on PR #61): on a putt bar the marker's centre stays at least this far from the left edge, inside the rounded end
+
+// --- Camera (Phase V, DESIGN §4 "Camera"; core/views.js) ---
+// The aiming view (V1) is main's camera (owner on PR #63): back m behind the ball, up m above the
+// ground under it, looking at the ground `ahead` m down the aim line; clear = m above the ground at the
+// camera. ballMax: in a short landscape screen the camera tilts down so the ball shows no lower than
+// this share of the free band (else it hid behind the hint line). losStep = m between samples when
+// checking a line of sight (V3).
+export const CAM = Object.freeze({
+  aim:  Object.freeze({ back: 7, up: 2.6, ahead: 30, clear: 1.5 }),
+  putt: Object.freeze({ back: 3.5, up: 1.6, ahead: 5, clear: 0.8 }),
+  ballMax: 0.97, losStep: 2,
+  // V2 views (the buttons while aiming). landing: from backK × the carry behind the marker (clamped),
+  // heightK × that above it; the marker shows at markAt of the free band.
+  landing:   Object.freeze({ backK: 0.25, backMin: 22, backMax: 60, heightK: 0.6, markAt: 0.55, clear: 2 }),
+  // readAbove: over the middle of the putt, high enough that the putt (+ margin m) fills `fill` of the free band (clamped); tilt = how far behind
+  // the middle (× the height), so the putt points up the screen. readLow: back m behind the ball, height m up. *At = where that point shows in the free band.
+  readAbove: Object.freeze({ fill: 0.7, margin: 2, hMin: 6, hMax: 60, tilt: 0.2, midAt: 0.5 }),
+  readLow:   Object.freeze({ back: 3, height: 0.45, cupAt: 0.45 }),
+  // V3 flight views (core/views.js pickFlightView): side = a spot `along` × the carry down the line and
+  // `off` × the carry to one side, at max(minH, apexK × the apex) m; landingCam = `past` m beyond the
+  // predicted landing and `off` m to one side, `height` m up. The landing camera hands over to the chase
+  // camera when the ball runs more than passBy m past it.
+  side:       Object.freeze({ along: 0.4, off: 0.17, minH: 15, apexK: 1,
+    // QA-1 (PR #64): on tree-lined holes the first spot often has leaves in the way, so these are tried
+    // next, in order (on the drawn side, then the other side): up = m higher, off = × the carry further out
+    tries: Object.freeze([{ up: 0, off: 0 }, { up: 12, off: 0 }, { up: 12, off: 0.08 }, { up: 25, off: 0.12 }, { up: 40, off: 0.18 }]) }),
+  landingCam: Object.freeze({ past: 25, off: 9, height: 7, passBy: 40 }),
+  flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
+  viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)
+  // V4 flyover (core/views.js flyoverPath; owner on #63: slower, high start behind the tee, no dive,
+  // smooth). startBack / startHeight: m behind / above the tee at the start (startLiftMax: m more it may
+  // rise to see the tee over a bank); lead: a path point that far down the first leg (a straight start);
+  // height: m over the (smoothed) ground on the way, endHeight at the stop endBack m short of the cup;
+  // rise / descend: m over which it eases from the start height / to the end height; minClear: never
+  // lower than this over the ground. The path: `samples` per spline segment, smoothed smoothPasses × over
+  // ±smoothM m, resampled every `step` m; the ground under it smoothed over ±groundSmoothM m; the look
+  // target leads lookAhead m along it, damped over ±lookSmoothM m (it starts on the tee box and turns
+  // ahead over the first teeLook m), and slides onto the flag over the
+  // last lookCup m. Time: length / CAM_FLYOVER_SPEED clamped to [minTime, maxTime] s, speeding up over
+  // `accel` and slowing over `decel` of it; then CAM_FLYOVER_PAUSE, then an orbit of orbitDeg in
+  // CAM_FLYOVER_ORBIT s. easeTime / easeLift: the ease into the aiming view (s, m up mid-way).
+  flyover:    Object.freeze({ startBack: 14, startHeight: 20, teeLook: 100, startLiftMax: 30, lead: 40, height: 20, endHeight: 18, minClear: 8,
+    rise: 120, descend: 140, endBack: 35, samples: 24, smoothPasses: 4, smoothM: 30, step: 2, groundSmoothM: 40,
+    lookAhead: 110, lookSmoothM: 40, lookCup: 120, orbitDeg: 50, minTime: 5, maxTime: 16, accel: 0.25, decel: 0.3,
+    easeTime: 1.0, easeLift: 35 }),
+  holdMs: 300,  // V2: a press on a view button longer than this is a hold (the view goes back on release); shorter is a tap (stays until tapped again)
+  ease: Object.freeze({ aim: 5, view: 4 }), // how fast the camera eases to the aiming view / a button view (1/s)
+  bandProbe: 60, // px each side of the screen's centre: a top panel inside this column pushes the free band down (portrait)
+});
 
 // --- Tunables: ?tune= overrides (X8), one entry each (Gate A A5) ---
 // The only names a tune link may change. Each entry is the whole definition: the default (`def`)
@@ -133,6 +186,20 @@ export const TUNABLES = Object.freeze({
   RIVAL_SKILL_MAX:       { def: 0.45, min: -1,    max: 2 },    // the best rival's skill
   RIVAL_EASY_SHIFT:      { def: -0.35, min: -1.5, max: 0 },    // Easy: added to every rival's skill (negative = weaker)
   RIVAL_HARD_SHIFT:      { def: 0.3,  min: 0,     max: 1.5 },  // Hard: added to every rival's skill (positive = stronger)
+  // Camera (Phase V): the aiming view's height (V1), ball-flight variety (V3) and the hole flyover (V4)
+  AIM_PIN_SIZE:          { def: 1,    min: 0.3,   max: 3 },    // the landing marker's size × this (PR #63: a small cone pointing down at the landing spot)
+  CAM_AIM_HEIGHT:        { def: 1,    min: 0.5,   max: 3 },    // the full-shot aiming camera's height × main's 2.6 m (owner on #63, after comparing 1 / 1.25 / 1.5: "the today camera is the best"); putts keep main's
+  CAM_VARIETY:           { def: 1,    min: 0,     max: 1 },    // 1 = varied flight camera, 0 = classic (always behind); the Settings switch sets it too
+  CAM_VARIETY_MIN:       { def: 60,   min: 0,     max: 200 },  // m: shots carrying less than this (chips, pitches) are always filmed from behind
+  CAM_W_BEHIND:          { def: 0.5,  min: 0,     max: 1 },    // weights of the flight views (normalised)
+  CAM_W_SIDE:            { def: 0.25, min: 0,     max: 1 },
+  CAM_W_LANDING:         { def: 0.25, min: 0,     max: 1 },
+  CAM_MAX_RUN:           { def: 2,    min: 1,     max: 10 },   // no flight view more than this many shots in a row (landing: never twice)
+  CAM_FLYOVER_SPEED:     { def: 45,   min: 10,    max: 300 },  // m/s along the route (owner on #63: 36 → 45, "a little bit faster"; travel clamped to CAM.flyover minTime..maxTime s)
+  CAM_FLYOVER_PAUSE:     { def: 0,    min: 0,     max: 5 },    // s the flyover stays still above the green (owner on #63)
+  CAM_FLYOVER_ORBIT:     { def: 1.4,  min: 0,     max: 8 },    // s of a slow orbit round the cup after the pause (CAM.flyover.orbitDeg)
+  CAM_FLIGHT_HOLD:       { def: 1.2,  min: 0,     max: 4 },    // V3 (owner on #63): s after a full shot the camera stays at address, only turning to watch the ball, before the flight view starts
+  CAM_BEHIND_STAY:       { def: 0,    min: 0,     max: 1 },    // 1 = a 'behind' shot is watched from address until the ball first lands (only side / landing cut away); 0 = the chase camera after the hold
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones

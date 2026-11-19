@@ -8,7 +8,7 @@
 // readBest(setId, mode) reads the personal best of that course in that mode.
 //   menus.back()         one screen back (Esc); false when already on the main menu
 //   menus.hide()
-import { MODES, PUTT_GRID, soloCourses, aiCourses, difficultyItems, practiceItems } from '../core/menu.js';
+import { MODES, PUTT_GRID, FLIGHT_CAM, soloCourses, aiCourses, difficultyItems, practiceItems } from '../core/menu.js';
 import { toParText } from '../core/round.js';
 import { RIVALS, DEFAULT_DIFFICULTY } from '../core/rivals.js';
 
@@ -17,6 +17,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 // Each screen's parent, for Back and Esc
 const PARENT = { play: 'main', solo: 'play', ai: 'play', aiDiff: 'ai', practice: 'play', how: 'main', settings: 'main' };
 const GRID_TEXT = { hole: 'Hole default', on: 'Every green', off: 'Off' };
+const CAM_TEXT = { varied: 'Varied', classic: 'Classic' };
 
 export function createMenus({ sets, holes, scenarios, readBest, settings, onLaunch, onSettings }) {
   const root = $('menu');
@@ -83,12 +84,17 @@ export function createMenus({ sets, holes, scenarios, readBest, settings, onLaun
     const d = $('setDebug');
     d.setAttribute('aria-checked', String(on)); d.textContent = on ? 'On' : 'Off'; d.classList.toggle('on', on);
     $('setGrid').innerHTML = PUTT_GRID.map(v => `<button data-setting="puttGrid" data-value="${v}" aria-pressed="${settings.puttGrid === v}" class="${settings.puttGrid === v ? 'on' : ''}">${GRID_TEXT[v]}</button>`).join('');
+    $('setCam').innerHTML = FLIGHT_CAM.map(v => `<button data-setting="flightCam" data-value="${v}" aria-pressed="${settings.flightCam === v}" class="${settings.flightCam === v ? 'on' : ''}">${CAM_TEXT[v]}</button>`).join('');
+    const fo = $('setFlyover');
+    fo.setAttribute('aria-checked', String(settings.flyover)); fo.textContent = settings.flyover ? 'On' : 'Off'; fo.classList.toggle('on', settings.flyover);
     $('setSaved').textContent = saved === false ? 'This browser can\'t save settings, so they only last until you close the page.' : 'Settings are saved on this device. They apply from the next hole you start.';
   }
 
   function changeSetting(name, value) {
     if (name === 'debug') settings.debug = !settings.debug;
     if (name === 'puttGrid') settings.puttGrid = value;
+    if (name === 'flightCam') settings.flightCam = value;
+    if (name === 'flyover') settings.flyover = !settings.flyover;
     saved = onSettings(settings);
     renderSettings();
   }

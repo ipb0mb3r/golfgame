@@ -76,9 +76,12 @@ export function allLaunches(sets, holes, scenarios) {
 // Settings (M4), saved in localStorage by the game layer (read and written in try/catch).
 //   debug     the debug overlay is open when a game starts (the backtick still toggles it)
 //   puttGrid  'hole' = each hole's own green (hole 2 has a grid), 'on' = a grid on every green, 'off' = none
+//   flightCam 'varied' = the flight camera changes view from shot to shot (Phase V, V3), 'classic' = always from behind
+//   flyover   the hole flyover plays the first time a hole starts from its tee (V4)
 export const SETTINGS_KEY = 'pocketlinks.settings.v1';
 export const PUTT_GRID = Object.freeze(['hole', 'on', 'off']);
-export const DEFAULT_SETTINGS = Object.freeze({ debug: false, puttGrid: 'hole' });
+export const FLIGHT_CAM = Object.freeze(['varied', 'classic']);
+export const DEFAULT_SETTINGS = Object.freeze({ debug: false, puttGrid: 'hole', flightCam: 'varied', flyover: true });
 
 // Stored text → settings. Anything missing, broken or out of range falls back to the default, so a
 // bad value can never stop the game from starting.
@@ -89,6 +92,8 @@ export function parseSettings(text) {
   if (v && typeof v === 'object') {
     if (typeof v.debug === 'boolean') s.debug = v.debug;
     if (PUTT_GRID.includes(v.puttGrid)) s.puttGrid = v.puttGrid;
+    if (FLIGHT_CAM.includes(v.flightCam)) s.flightCam = v.flightCam;
+    if (typeof v.flyover === 'boolean') s.flyover = v.flyover;
   }
   return s;
 }

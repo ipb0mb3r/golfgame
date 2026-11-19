@@ -8,7 +8,8 @@
 //
 // The rules are in core: play.swing() hits the ball, play.next says what happens after a shot,
 // play.proceed() does it. This file only maps that to delays, flash text and the camera.
-import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE } from '../core/config.js';
+import { AIM_SPEED, AIM_SPEED_PUTT, TIMING, MPS_TO_MPH, TUNE, CAM, G } from '../core/config.js';
+import { createRng } from '../core/rng.js';
 import { createHolePlay, aimMarkLabel } from '../core/play.js';
 import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from '../core/swing.js';
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
@@ -20,6 +21,7 @@ import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
 import { createHud, createMinimap, setupHolePage, fitMinimap, yd } from './hud.js';
 import { greenStyle } from '../core/menu.js';
+import { nextView, pickFlightView, flyoverRoute, flyoverPath } from '../core/views.js';
 
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
@@ -28,8 +30,10 @@ const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed:
 //          round (Phase 6, or null): { number, of, onDone(finished) } — the hole's place in the round, and
 //          what to call when the hole is over instead of showing the single-hole result card,
 //          puttGrid (Phase 7 setting, core/menu.js PUTT_GRID), links (false: hide the intro card's ?hole= links,
-//          for a hole started from the menu) }
-export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true }) {
+//          for a hole started from the menu), flyover (V4: play the hole flyover after the card), classicCam (V3
+//          setting: the flight camera always films from behind), flightHistory (V3: the flight views of the game so
+//          far, oldest first; main.js shares one array across a round so the variety rules count over the round) }
+export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true, flyover = false, classicCam = false, flightHistory = [] }) {
   const play = createHolePlay(hole, { seed });
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
@@ -48,7 +52,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const hud = createHud(play);
   const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles);
 
-  // Game state (core/states.js GAME_STATES): intro | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
+  // Game state (core/states.js GAME_STATES): intro | flyover | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
   // The hole's timers (what happens after a shot, the compact card closing). They stop while the
   // game is paused (M3) and carry on with the time they had left.
@@ -70,8 +74,70 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   let marks = null; // S22: play.aimMarks() while aiming a full shot (the marker, ticks and label)
   const markPt = camera.position.clone(); // reused for the label's screen position
 
-  const updateHud = () => hud.update(state, meter.power);
-  const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir });
+  const updateHud = () => { hud.update(state, meter.power); $view().hidden = state !== 'aim'; document.body.classList.toggle('flyover', state === 'flyover'); measureFrame(); };
+  // V2: the view button while aiming (null = the aiming view, else core/views.js VIEW_STEPS)
+  let view = null, viewPress = null; // viewPress = { at, opened } while the button is held
+  // V1: the free band of the screen the aiming view must fit in (core/views.js `frame`), measured from the HUD
+  let camFrame = null;
+  const putEnd = { x: 0, y: 0, z: 0 };
+  function camMark() {
+    if (!play.club.putter) return play.aimMarks();
+    const d = dirFromAim(play.aim), len = Math.min(play.distToCup(), play.puttMax);
+    putEnd.x = ball.pos.x + d.x * len; putEnd.z = ball.pos.z + d.z * len; putEnd.y = terrain.heightAt(putEnd.x, putEnd.z);
+    return putEnd;
+  }
+  // V3: the flight camera of the shot in the air (core/views.js pickFlightView), on its own seeded
+  // stream (the physics never draws from it, so a replay plays the same and the baselines don't move)
+  const viewRng = createRng((seed ^ CAM.viewSalt) | 0);
+  const flightWorld = { heightAt: terrain.heightAt, surfaceAt: terrain.surfaceAt, obstacles: play.obstacles, penalty: id => !!play.surfaces[id]?.penalty };
+  let flight = null; // { kind, spot, side, cut (the rig cuts to the spot on its next frame), dropped (handed back to the chase camera) }
+  // V4: the flyover (null when the hole has none or it has played)
+  let fly = flyover && !start ? { path: null, t0: 0, cam: null } : null;
+  const camView = () => ({ state, ball: ball.pos, dir: dirFromAim(play.aim), putter: play.club.putter, isPutt: play.isPutt, shotDir: play.shotDir,
+    mark: isAimingState(state) || state === 'intro' ? camMark() : null, cup, view, frame: camFrame || measureFrame(),
+    flight, shotT, fly: state === 'flyover' ? fly?.cam : null });
+
+  // The part of the screen the 3D view really has (V1): from the lowest top panel that covers the
+  // screen's centre column (portrait: the scorecard) down to the top of the meter panel.
+  function measureFrame() {
+    const W = window.innerWidth || 1, H = window.innerHeight || 1, cx = W / 2;
+    let top = 0;
+    for (const id of ['info', 'windBox', 'minimap', 'pauseBtn']) {
+      const el = document.getElementById(id);
+      if (!el || el.hidden) continue;
+      const r = el.getBoundingClientRect();
+      if (r.height && r.left < cx + CAM.bandProbe && r.right > cx - CAM.bandProbe) top = Math.max(top, r.bottom);
+    }
+    const b = document.getElementById('bottom')?.getBoundingClientRect();
+    const bottom = b && b.height ? b.top : H;
+    camFrame = { aspect: W / H, fov: camera.fov, top: Math.min(top / H, 0.5), bottom: Math.max(bottom / H, 0.5) };
+    return camFrame;
+  }
+  function setView(v) {
+    view = v;
+    const b = $view();
+    b.classList.toggle('on', !!v);
+    b.textContent = viewLabel();
+  }
+  // What the button does next: open the first view, step to the next, or go back
+  function viewLabel() {
+    const nxt = nextView(view, play.club.putter);
+    if (!nxt) return '↩ Back';
+    return nxt === 'landing' ? '🔍 Landing' : nxt === 'above' ? '👁 Read' : '👁 Low';
+  }
+  // pointer down / up on the view button (or the V key: a tap). A tap opens a view (and steps through
+  // a putt's two); holding it shows the view only until it is released.
+  function onViewInput(down, at = performance.now()) {
+    if (state !== 'aim') { viewPress = null; return; }
+    if (down) {
+      const opened = view === null;
+      setView(nextView(view, play.club.putter));
+      viewPress = { at, opened };
+    } else if (viewPress) {
+      if (viewPress.opened && at - viewPress.at > CAM.holdMs) setView(null);
+      viewPress = null;
+    }
+  }
 
   function clearTimers() { timers.forEach(tm => clearTimeout(tm.id)); timers = []; }
 
@@ -87,15 +153,17 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     state = 'aim';
     resetMeter(meter);
     props.resetTrail();
+    setView(null);
     updateHud();
     if (snapCamera) rig.snap(camView());
   }
 
   // The three-click swing (two clicks with the putter, S14). `at` = when the click happened (s, performance.now() clock, S16)
   function onSwingInput(at = performance.now() / 1000) {
+    if (state === 'flyover') { endFlyover(); return; } // V4: a tap skips the flyover, it never swings
     if (!isAimingState(state)) return;
     // The top of the meter is the lie's power cap for this club (S11); the putter's meter has no accuracy click (S14)
-    if (state === 'aim') { input.releaseAim(); resetMeter(meter, play.lieOf().maxPower, swingClicks(play.club) === 2); }
+    if (state === 'aim') { input.releaseAim(); setView(null); viewPress = null; resetMeter(meter, play.lieOf().maxPower, swingClicks(play.club) === 2); }
     const result = pressMeterAt(meter, at);
     if (result) endSwing(result);
     else state = meter.phase;
@@ -106,6 +174,10 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // a cancelled swing: back to aim, no stroke.
   function endSwing(result) {
     meter.power = result.power;
+    // V3: where a straight, no-wind shot at this power would land (before the hit: the ball is still here)
+    const putt = !!play.club.putter;
+    const land = !putt && result.outcome !== 'cancel' && play.canSwing ? play.landingPoint(play.clubIdx, play.aim, result.power) : null;
+    const from = { ...ball.pos };
     const shot = play.swing(result);
     if (!shot) {
       if (result.outcome === 'cancel') hud.flash('Swing cancelled', 'No stroke counted');
@@ -115,12 +187,19 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     if (shot.label) hud.flash(shot.label); // a putt has no label (S14)
     state = shot.kind === 'putt' ? 'roll' : 'flight';
     shotT = 0; treeFlash = false;
+    const sd = play.shotDir, carry = land ? dist2D(from, land) : 0;
+    flight = pickFlightView(flightWorld, viewRng, flightHistory, {
+      putt: shot.kind === 'putt' || !land, classic: classicCam, from, land: land || from, carry,
+      dir: { x: sd.x, z: sd.z }, apex: shot.vel ? shot.vel.y * shot.vel.y / (2 * G) : 0 });
+    flight.cut = flight.kind !== 'behind'; flight.dropped = false; flight.landed = false;
+    flightHistory.push(flight.kind);
     updateHud();
     return shot;
   }
 
   // Core events → what the player sees. When a shot ends, core has decided what's next (play.next).
   function onEvent(ev) {
+    if (ev.type === 'landed' && flight) { flight.landed = true; if (flight.kind === 'side') flight.dropped = true; } // V3: the side camera hands over at the first bounce
     if (ev.type === 'lippedOut') { hud.flash('Lipped out!'); return; }
     // K2/K3: the trees and rocks
     if (ev.type === 'hitLeaves' || ev.type === 'hitObstacle') {
@@ -162,6 +241,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // and picked-up flows play normally. Returns true when it skipped.
   const canSkip = () => isBallMoving(state) && shotT * 1000 >= TIMING.skipAfter;
   function skip() {
+    if (state === 'flyover') { endFlyover(); return true; } // V4: Space / Enter / ⏩ skip the flyover too
     if (!canSkip()) return false;
     for (const ev of play.skip()) onEvent(ev);
     props.setBall(ball.pos, false);
@@ -173,13 +253,26 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 
   function changeClub(step) {
     if (state !== 'aim') return;
+    const wasPutter = play.club.putter;
     play.setClub(play.clubIdx + step);
+    if (play.club.putter !== wasPutter) setView(null); // the putter's views aren't a full shot's
     updateHud();
   }
 
   // One drawn frame. dt = game time (capped), now = this frame's real time in seconds (the meter's clock, S16)
   function frame(dt, now) {
     t += dt;
+    // V4: the flyover runs on the real clock (a slow frame or a headless browser doesn't stretch it)
+    if (state === 'flyover') {
+      if (!fly.t0) fly.t0 = now;
+      fly.cam = fly.path.at(now - fly.t0);
+      if (now - fly.t0 >= fly.path.duration) endFlyover(true);
+    }
+    // V3: the landing camera hands over to the chase camera once the ball has run well past it
+    if (flight?.kind === 'landing' && !flight.dropped && isBallMoving(state)) {
+      const s = play.shotDir;
+      if ((ball.pos.x - flight.spot.x) * s.x + (ball.pos.z - flight.spot.z) * s.z > CAM.landingCam.passBy) flight.dropped = true;
+    }
     // Compact card: start its countdown on the 2nd frame, when the 1st drawn frame (the hole) is showing
     if (cardFrames >= 0 && ++cardFrames === 2) { cardFrames = -1; if (state === 'intro') later(teeOff, TIMING.holeCard); }
     // Aiming
@@ -231,6 +324,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
+    props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);
     aimLabel();
   }
@@ -239,7 +333,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function aimLabel() {
     if (!marks) { hud.setAimLabel(null); return; }
     camera.updateMatrixWorld();
-    const v = markPt.set(marks.x, terrain.heightAt(marks.x, marks.z) + 0.1, marks.z).project(camera);
+    const v = markPt.set(marks.x, props.pinTop(), marks.z).project(camera); // above the floating marker (PR #63)
     const onScreen = v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
     hud.setAimLabel(onScreen ? aimMarkLabel(marks) : null, (v.x + 1) / 2, (1 - v.y) / 2, marks.capped, !!warn, !!marks.hazard);
   }
@@ -247,7 +341,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   // K5: wireframe outlines of the colliders (the debug overlay turns them on)
   function showColliders(on) { colliderOutlines.visible = !!on; }
 
-  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); }
+  function resize(w, h) { camera.aspect = w / h; camera.updateProjectionMatrix(); fitMinimap(); measureFrame(); }
 
   function debugText(fps) {
     const p = ball.pos, v = ball.vel, g = terrain.gradAt(p.x, p.z), s = play.slope();
@@ -281,8 +375,24 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     const cardWind = { x: wind.x, y: wind.y, z: wind.z };
     resetGame();
     Object.assign(wind, cardWind);
+    if (fly) startFlyover();
     updateHud();
     return true;
+  }
+
+  // V4: the hole flyover, once, after the card: the regular route (core/views.js flyoverRoute) from
+  // the tee to the green. Then the tee's aiming view. A tap, Space, Enter or ⏩ skips it.
+  function startFlyover() {
+    fly.path = flyoverPath(terrain.heightAt, flyoverRoute(hole, play.target));
+    fly.cam = fly.path.at(0); fly.t0 = 0;
+    state = 'flyover';
+  }
+  // natural = it played to the end: ease into the tee's aiming view (owner on #63); a skip cuts at once
+  function endFlyover(natural = false) {
+    if (state !== 'flyover') return;
+    fly = null;
+    readyForShot(!natural); // (its updateHud brings the bottom panel back)
+    if (natural) rig.easeFrom(CAM.flyover.easeTime, CAM.flyover.easeLift);
   }
 
   // Pause (M3). A swing in progress is cancelled with no stroke (the meter runs on real time, so it
@@ -310,6 +420,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     clearTimers();
     $holeCard().classList.add('hidden');
     showSkip(false);
+    $view().hidden = true; $view().classList.remove('on'); document.body.classList.remove('flyover');
     hud.dispose();
     disposeScene(scene);
   }
@@ -334,6 +445,10 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     // Hit straight away as if the meter gave this result (skips the meter, same path as a real swing)
     testHit(power, acc = 0, outcome = 'normal') { if (state !== 'aim') return null; return endSwing({ power, acc, outcome }); },
     skip, get canSkip() { return canSkip(); },
+    get flight() { return flight && { kind: flight.kind, side: flight.side, dropped: flight.dropped }; }, get flightHistory() { return [...flightHistory]; },
+    get flyover() { return fly?.path ? { duration: fly.path.duration, length: fly.path.length } : null; },
+    get view() { return view; }, viewTap() { onViewInput(true); onViewInput(false); return view; },
+    get camFrame() { return camFrame; }, cameraAt() { return { pos: camera.position.clone(), fov: camera.fov, aspect: camera.aspect }; },
     get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
   };
 
@@ -344,7 +459,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     canAim: () => state === 'aim',
     get paused() { return paused; },
     get timerCount() { return timers.length; },
-    onSwingInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
+    onSwingInput, onViewInput, changeClub, skip, frame, resize, debugText, dispose, showColliders, pause, resume,
     start: teeOff,
     again: () => { if (!round) resetGame(); }, // in a round a hole is never replayed (the result card isn't shown)
   };
@@ -353,3 +468,4 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
 const $intro = () => document.getElementById('intro');
 const $holeCard = () => document.getElementById('holeCard');
 const $skip = () => document.getElementById('skipBtn');
+const $view = () => document.getElementById('viewBtn');

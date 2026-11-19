@@ -85,6 +85,10 @@ const debugParam = params.get('debug') === '1';
 // The game being played: null in the menus. `game` = { launch, hole, seed, start, fromMenu } for a
 // single hole (restart replays it), and `round` for a round.
 let session = null, round = null, game = null;
+// V4: the holes whose flyover has played in this game (a round, or one hole and its restarts)
+const flown = new Set();
+// V3 (PM on #63): the flight views of this game, so "not too many in a row" counts across the round
+const flightHistory = [];
 let paused = false;
 const extraInfo = () => [
   ...(round?.mode === 'ai' ? [`vs AI  ${round.difficulty}  ${round.leaderboard().map(r => `${r.posText} ${r.id} ${toParText(r.toPar)}`).join(' · ')}`] : []),
@@ -97,7 +101,10 @@ function loadHole(h, opts = {}) {
   session = createHoleSession(readyHole(h), {
     renderer, input, seed: opts.seed, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
+    // V4: the flyover plays the first time a hole starts from its tee in this game (not from a scenario's spot)
+    flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,
   });
+  if (!opts.start) flown.add(h.id);
   session.showColliders(debug.visible); // K5: collider outlines show while the debug overlay is open
   resize();
   return session;
@@ -109,6 +116,7 @@ const input = bindInput(canvas, {
   active,
   swing: t => session.onSwingInput(t),
   skip: () => session.skip(),
+  view: (down, at) => session.onViewInput(down, at),
   club: step => session.changeClub(step),
   canAim: () => active() && session.canAim(),
   start: () => !!session && session.start(),
@@ -136,6 +144,8 @@ window.visualViewport?.addEventListener('resize', resize);
 // opts = { fromMenu, notices: [] (start-up notices for the first card) }
 function startGame(launch, { fromMenu = true, notices = [] } = {}) {
   endGame();
+  flown.clear(); // V4: a new game shows each hole's flyover again
+  flightHistory.length = 0; // V3: and the flight-view rules start over
   menus.hide();
   game = { launch, fromMenu };
   debug.show(settings.debug || debugParam);
@@ -267,6 +277,8 @@ function playAgain() {
   if (!round) return;
   const set = round.set, g = game, opts = { mode: round.mode, difficulty: round.difficulty ?? DEFAULT_DIFFICULTY };
   endGame();
+  flown.clear(); // V4: once per hole per round, and this is a new round
+  flightHistory.length = 0;
   game = g;
   startRound(set, freshSeed(), opts);
 }
@@ -323,6 +335,9 @@ window.__golf = {
   testHit: (pw, acc = 0, outcome = 'normal') => api().testHit(pw, acc, outcome),
   skip: () => api().skip(), get canSkip() { return api().canSkip; },
   get warn() { return api().warn; }, get collidersShown() { return api().collidersShown; },
+  // Phase V: the view button (V2) and the camera
+  get flight() { return api().flight; }, get flightHistory() { return api().flightHistory; }, get flyover() { return api().flyover; },
+  get view() { return api().view; }, viewTap: () => api().viewTap(), get camFrame() { return api().camFrame; }, cameraAt: () => api().cameraAt(),
   // A2: unload the current hole and load another one in place (tools/session-check.mjs); renderer
   // memory as Three.js counts it (geometries, textures, shader programs)
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return session.hole.id; },

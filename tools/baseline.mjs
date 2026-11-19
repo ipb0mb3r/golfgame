@@ -105,7 +105,7 @@ async function startHole(ctx, hole) {
   await page.goto(`http://golf.test/${PAGES[pagesArg][hole]}`);
   await page.waitForFunction(() => window.__golf && window.__golf.state === 'intro');
   await page.evaluate(() => document.getElementById('startBtn').click());
-  await page.waitForFunction(() => window.__golf.state === 'aim');
+  await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; });
   await page.evaluate(() => window.__golf.wind.set(0, 0, 0));
   return page;
 }
@@ -155,7 +155,7 @@ async function replay(fps, shots) {
     await page.waitForFunction(() => ['aim', 'result'].includes(window.__golf.state), null, { timeout: 600000 });
     if (await page.evaluate(() => window.__golf.state) === 'result') {
       await page.evaluate(() => document.getElementById('againBtn').click());
-      await page.waitForFunction(() => window.__golf.state === 'aim');
+      await page.waitForFunction(() => { const g = window.__golf; if (g.state === 'flyover') g.skip(); return g.state === 'aim'; });
     }
     // Hit with the club the old page used (v1 checks physics only; S13 changed the auto-pick, e.g. no
     // Driver off the fairway), aimed at the pin like the old page (S18 changed the default aim).
