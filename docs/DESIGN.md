@@ -226,6 +226,8 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 - The rendered terrain mesh, the ball, the cup, the aim ring and the minimap all use the same `heightAt`.
 - The HUD **Slope readout** shows things like "Uphill 4% · breaks left".
 - Shared terrain helpers go in `core/terrain.js`: `ss` (smoothstep), `ell` (ellipse distance), `bump(x,z,{x,z,r,h})` (Gaussian hill or dip).
+- **Terrain mesh (AP1b, `core/terrainMesh.js`):** looks only; the ball always uses `heightAt`. The hole's `scenery.mesh` still says where the mesh ends, its far cell size and where the fine area (the 1 m parts, about the map) and the green's 0.5 m band are. The fine area is cut into 8 m tiles (`TERRAIN_LOD` in config.js), each with one cell size: **1 m** on the play area (fairway, green, fringe, tee, sand) and one tile around it, **0.5 m** on the green band and where 1 m cells would miss `heightAt` by more than 5 cm (12 cm away from the play area: creek banks, bunker faces, rock edges), otherwise the coarsest of 8 / 4 / 2 m that stays within **1 cm** of `heightAt` on every 1 m point. The far ring keeps the old 10 m points across (same far silhouettes). Where a fine tile meets a coarser one, its edge points are put on the coarse edge, so there are no cracks; normals come from `heightAt` (central differences), so shading is continuous. `tests/terrain-mesh.test.js` checks the triangle budget, that the ball sits on the drawn ground as closely as with the old full mesh, no cracks, and the ground plane (K13).
+- **Mountain `heightAt` speed (X20):** the Mountain 9 kit (`holes/mtn-course.js`) skips only terms that add exactly nothing, so the heights are the same to the bit; `tests/terrain-exact.test.js` compares them with heights recorded before the change. A course designer who changes a hole's terrain on purpose re-records them (`RECORD_TERRAIN=1`, see the test).
 
 ### Acceptance
 - [x] From the same landing speed, an uphill roll is shorter than a downhill roll. *(tests)*
@@ -398,6 +400,7 @@ src/
     clubs.js               ✅ club table, bag, lieFor (cap + window), pickClub (auto-pick)
     surfaces.js            ✅ base surface table + getEffectiveSurface(id, hole, weather) + the lie-tune layer
     terrain.js             ✅ ss, ell, bump, makeTerrain(hole) → { heightAt, gradAt, normalAt, surfaceAt }
+    terrainMesh.js         ✅ the terrain mesh with detail by distance: 8 m tiles of 0.5–8 m cells, far ring, crack-free edges, normals (AP1b, tests/terrain-mesh.test.js)
     swing.js               ✅ meter state machine (incl. S8 phases) + resolveShot
     ball.js                ✅ flight, bounce, roll, cup, penalties, trunks / leaves / boulders → events
     obstacles.js           ✅ colliders from hole `obstacles` (trunk cylinder, leaf ellipsoid, boulder sphere) + swept hit test (Phase K)
@@ -413,12 +416,12 @@ src/
     hole3.js               ✅ pl-03, par 4 dogleg with trees, boulders and rock (Phase K prototype)
     sets.js                ✅ HOLES registry (builds nothing at import, X12), SETS (playlists of any length), resolveHole, resolveSet, readyHole (build + check a hole about to be played)
     lazy.js                ✅ lazyHole(meta, heavy, build): a hole whose heavy fields (heightAt, surfaceAt, map, obstacles, …) are built on first read; menus, rounds and rivals read only the light ones (X12)
-    mtn-course.js          ✅ the Mountain 9 course kit: makeMtnHole(spec) → a lazy hole (grids and forest built on first use, X12)
+    mtn-course.js          ✅ the Mountain 9 course kit: makeMtnHole(spec) → a lazy hole (grids and forest built on first use, X12); heightAt about 2× faster with the same bits (X20)
     scenarios.js           ✅ designer test spots for ?scenario= (each checked when it is first resolved, X12)
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
     main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, menus, pause, frame loop; starts and ends games, loads hole sessions
     session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
-    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh from heightAt, obstacles + collider outlines (K5), disposeScene; repeated objects instanced (AP1)
+    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh (core/terrainMesh.js, AP1b) in one geometry, obstacles + collider outlines (K5), disposeScene; repeated objects instanced (AP1)
     coursePainter.js       ✅ painted course texture + minimap image
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
     camera.js              ✅ eases the camera toward the view core/views.js gives (Phase V)

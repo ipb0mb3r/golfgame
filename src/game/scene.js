@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
 import { TUNE } from '../core/config.js';
-import { meshAxis as axis } from '../core/terrain.js';
+import { buildTerrainMesh } from '../core/terrainMesh.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -48,29 +48,15 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles = []
   ground.rotation.x = -Math.PI / 2; ground.position.y = sc.ground.y; ground.name = 'far ground';
   scene.add(ground);
 
-  // The terrain: a grid whose heights come from heightAt, with the painted course on it
+  // The terrain: tiles whose heights come from heightAt, 1 m cells around the play area and coarser
+  // far away (AP1b, core/terrainMesh.js), with the painted course on it. One geometry, one draw call.
   {
-    const XS = axis(sc.mesh.xs), ZS = axis(sc.mesh.zs);
-    const nx = XS.length, nz = ZS.length;
-    const pos = new Float32Array(nx * nz * 3), uv = new Float32Array(nx * nz * 2);
-    for (let j = 0; j < nz; j++) for (let i = 0; i < nx; i++) {
-      const x = XS[i], z = ZS[j], k = j * nx + i;
-      pos[k * 3] = x; pos[k * 3 + 1] = heightAt(x, z); pos[k * 3 + 2] = z;
-      uv[k * 2] = (x - map.x0) / (map.x1 - map.x0);
-      uv[k * 2 + 1] = (map.z1 - z) / (map.z1 - map.z0);
-    }
-    const idx = new Uint32Array((nx - 1) * (nz - 1) * 6);
-    let p = 0;
-    for (let j = 0; j < nz - 1; j++) for (let i = 0; i < nx - 1; i++) {
-      const a = j * nx + i, b = a + 1, c = a + nx, d = c + 1;
-      idx[p++] = a; idx[p++] = c; idx[p++] = b;
-      idx[p++] = b; idx[p++] = c; idx[p++] = d;
-    }
+    const m = buildTerrainMesh(hole, terrain);
     const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    geo.setIndex(new THREE.BufferAttribute(idx, 1));
-    geo.computeVertexNormals();
+    geo.setAttribute('position', new THREE.BufferAttribute(m.positions, 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(m.normals, 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(m.uvs, 2));
+    geo.setIndex(new THREE.BufferAttribute(m.index, 1));
     const tex = new THREE.CanvasTexture(courseCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
