@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biome Sheets</title>
+<!-- ART0 round 1 sheets. ?mode=palette&p=<palette id> | ?mode=textures | ?mode=structure | ?mode=options | ?mode=matrix
+     Stand-alone page, renders the draft data in draft-data.js. — Agent: artist -->
+<style>
+  :root { --bg: #f7f5ef; --ink: #1f2a2e; --muted: #5f6b6e; --line: #d9d4c7; --card: #ffffff; --ok: #2f8a4a; --bad: #c8412f; --acc: #2b7bb9; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 13px/1.4 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 16px; width: 390px; }
+  h1 { font-size: 19px; margin: 0 0 2px; } h2 { font-size: 14px; margin: 14px 0 6px; } .sub { color: var(--muted); margin: 0 0 10px; }
+  .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .sw { background: var(--card); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .sw i { display: block; height: 34px; } .sw span { display: block; padding: 3px 5px; font-size: 10px; line-height: 1.25; } .sw b { font-weight: 600; }
+  .sky { height: 70px; border-radius: 10px; border: 1px solid var(--line); position: relative; overflow: hidden; }
+  table { border-collapse: collapse; width: 100%; font-size: 11px; background: var(--card); border-radius: 8px; overflow: hidden; }
+  td, th { border-bottom: 1px solid var(--line); padding: 3px 5px; text-align: left; } th { background: #eee9dc; }
+  .ok { color: var(--ok); font-weight: 700; } .bad { color: var(--bad); font-weight: 700; }
+  .tiles { display: grid; grid-template-columns: 56px repeat(5, 1fr); gap: 4px; align-items: center; font-size: 10px; }
+  .tiles canvas { width: 100%; border-radius: 6px; display: block; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; }
+  .slot { display: flex; gap: 8px; align-items: flex-start; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+  .slot:last-child { border: 0; }
+  .ico { flex: 0 0 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 12px; }
+  .tag { display: inline-block; font-size: 10px; padding: 0 6px; border-radius: 99px; margin-left: 4px; vertical-align: 1px; }
+  .shared { background: #dcefe0; color: #1e6a35; } .own { background: #f6e2cf; color: #8a4a12; } .fixed { background: #dde8f3; color: #1d4f7a; }
+  .mx td, .mx th { text-align: center; } .mx td:first-child, .mx th:first-child { text-align: left; }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 99px; }
+  .arrow { text-align: center; color: var(--muted); font-size: 16px; margin: 2px 0; }
+  small { color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script type="module">
+import { PALETTES, BIOMES, LIBRARY } from './draft-data.js';
+import { colourAt, delta, hex } from './paint.js';
+const q = new URLSearchParams(location.search), mode = q.get('mode') || 'palette', app = document.getElementById('app');
+const h = (html) => app.insertAdjacentHTML('beforeend', html);
+const sw = (P, key, name) => `<div class="sw"><i style="background:${P[key]}"></i><span><b>${name ?? key}</b><br>${P[key].toUpperCase()}</span></div>`;
+function tile(P, s, size = 64) {
+  const c = document.createElement('canvas'); c.width = c.height = size; const x = c.getContext('2d'), im = x.createImageData(size, size);
+  for (let j = 0; j < size; j++) for (let i = 0; i < size; i++) {
+    const wx = 40 + i / 4, wz = 40 + j / 4, k = (j * size + i) * 4;
+    const col = P ? colourAt(P, s, wx, wz) : (() => { const P0 = { fairwayA: '#ffffff', fairwayB: '#d8d8d8', greenA: '#ffffff', greenB: '#e2e2e2', water: '#cfcfcf' }; return colourAt({ ...P0, [s]: P0[s] ?? '#e6e6e6' }, s, wx, wz); })();
+    im.data[k] = col[0]; im.data[k + 1] = col[1]; im.data[k + 2] = col[2]; im.data[k + 3] = 255;
+  }
+  x.putImageData(im, 0, 0); return c;
+}
+// readability rules (also written in ART_STYLE.md): checked for every palette
+const avg = (a, b) => '#' + hex(a).map((v, i) => Math.round((v + hex(b)[i]) / 2).toString(16).padStart(2, '0')).join('');
+function checks(P) {
+  const S = { fairway: avg(P.fairwayA, P.fairwayB), rough: P.rough, green: avg(P.greenA, P.greenB), sand: P.sand, water: P.water, fringe: P.fringe };
+  const rules = [
+    ['fairway', 'rough', 15, 8], ['green', 'fairway', 10, 5], ['green', 'rough', 20, 10], ['sand', 'fairway', 20, 10],
+    ['sand', 'rough', 30, 15], ['water', 'fairway', 30, 0], ['water', 'rough', 25, 0], ['water', 'green', 30, 0],
+  ];
+  const ui = [['aim yellow', '#FFD447', S.fairway, 20], ['warning red', '#FF4A3A', S.rough, 30], ['white dots', '#FFFFFF', S.fairway, 15], ['flag red', '#FF5A36', S.green, 30]];
+  let rows = '', fails = 0;
+  for (const [a, b, dE, dL] of rules) {
+    const d = delta(S[a], S[b]), ok = d.dE >= dE && d.dL >= dL; fails += !ok;
+    rows += `<tr><td><span class="dot" style="background:${S[a]}"></span> ${a} / <span class="dot" style="background:${S[b]}"></span> ${b}</td><td>${d.dE.toFixed(0)} (≥${dE})</td><td>${d.dL.toFixed(0)} (≥${dL || '-'})</td><td class="${ok ? 'ok' : 'bad'}">${ok ? 'PASS' : 'FAIL'}</td></tr>`;
+  }
+  for (const [n, c, bg, dE] of ui) {
+    const d = delta(c, bg), ok = d.dE >= dE; fails += !ok;
+    rows += `<tr><td><span class="dot" style="background:${c}"></span> ${n} on <span class="dot" style="background:${bg}"></span></td><td>${d.dE.toFixed(0)} (≥${dE})</td><td>${d.dL.toFixed(0)}</td><td class="${ok ? 'ok' : 'bad'}">${ok ? 'PASS' : 'FAIL'}</td></tr>`;
+  }
+  return { rows, fails };
+}
+
+if (mode === 'palette') {
+  const P = PALETTES[q.get('p') || 'alpine-day'];
+  const biome = Object.values(BIOMES).find(b => b.palettes.includes(P.id));
+  h(`<h1>${P.label}</h1><p class="sub">Palette <code>${P.id}</code>${P.base ? ` · a variant of <code>${P.base}</code> (time of day)` : ''} · biome: ${biome?.name ?? '-'}</p>`);
+  h(`<div class="sky" style="background:linear-gradient(${P.skyTop}, ${P.skyHorizon} 70%, ${P.fog})"><div style="position:absolute;left:0;right:0;bottom:0;height:30px;background:linear-gradient(transparent, ${P.backFar} 0)">
+     <svg viewBox="0 0 358 30" width="100%" height="30" style="position:absolute;bottom:0"><polygon points="0,30 40,8 70,20 110,2 150,22 190,6 230,24 280,4 320,18 358,10 358,30" fill="${P.backNear}"/><polygon points="102,6 110,2 118,7" fill="${P.backCap}"/><polygon points="272,8 280,4 288,9" fill="${P.backCap}"/></svg></div></div>`);
+  h(`<h2>Surfaces (course textures are recoloured by these)</h2><div class="grid">${[['tee'], ['fairwayA', 'fairway A'], ['fairwayB', 'fairway B'], ['fringe'], ['greenA', 'green A'], ['greenB', 'green B'], ['rough'], ['deepRough', 'deep rough'], ['sand'], ['water'], ['waterDeep', 'deep water'], ['rock'], ['path']].map(([k, n]) => sw(P, k, n)).join('')}</div>`);
+  h(`<h2>Sky, fog, light (time of day lives here)</h2><div class="grid">${[['skyTop', 'sky top'], ['skyHorizon', 'sky horizon'], ['cloud'], ['fog'], ['sun', 'sun tint'], ['ambient', 'ambient'], ['shadow', 'shadow tint']].map(([k, n]) => sw(P, k, n)).join('')}</div>`);
+  h(`<h2>Backdrop tint</h2><div class="grid">${[['backFar', 'far layer'], ['backNear', 'near layer'], ['backCap', 'caps / snow'], ['backCapShade', 'cap shade']].map(([k, n]) => sw(P, k, n)).join('')}</div>`);
+  h(`<h2>Trees and props tint</h2><div class="grid">${[['pine'], ['trunk'], ['leaf'], ['leafAlt', 'leaf 2'], ['trunkAlt', 'trunk 2'], ['wood'], ['roof'], ['propSnow', 'prop light'], ['propA', 'flower A'], ['propB', 'flower B'], ['glass']].map(([k, n]) => sw(P, k, n)).join('')}</div>`);
+  const { rows, fails } = checks(P);
+  h(`<h2>Readability check (no blind shots) · ${fails ? `<span class="bad">${fails} FAIL</span>` : '<span class="ok">all PASS</span>'}</h2>
+     <table><tr><th>pair</th><th>ΔE</th><th>ΔL</th><th></th></tr>${rows}</table>
+     <p><small>ΔE = colour difference (CIE76), ΔL = lightness difference (what stays in greyscale and for colour-blind players). Thresholds in ART_STYLE.md §4.</small></p>`);
+}
+
+if (mode === 'textures') {
+  const list = ['fairway', 'green', 'rough', 'sand', 'water'];
+  const pals = ['meadow-day', 'alpine-day', 'alpine-sunset', 'island-day'];
+  h(`<h1>One set of textures, many palettes</h1><p class="sub">Each surface has ONE greyscale texture (top row), the same in every biome. The palette only colours it. A new biome needs no new ground art.</p>`);
+  const grid = document.createElement('div'); grid.className = 'tiles';
+  grid.insertAdjacentHTML('beforeend', `<div></div>${list.map(s => `<div style="text-align:center"><b>${s}</b></div>`).join('')}`);
+  const row = (label, P) => { grid.insertAdjacentHTML('beforeend', `<div><b>${label}</b></div>`); for (const s of list) grid.appendChild(tile(P, s)); };
+  row('texture', null);
+  for (const p of pals) row(PALETTES[p].label.replace(' · ', '<br>'), PALETTES[p]);
+  app.appendChild(grid);
+  h(`<p><small>Textures are stylised brush dabs, speckles, ripples and facets (no photos). Mowing stripes and the green's stripes are part of the shared texture; the palette gives their two shades (A/B).</small></p>`);
+}
+
+if (mode === 'structure') {
+  const slots = [
+    ['D', '#6d7d80', 'Description', 'one short paragraph', 'own'],
+    ['P', '#d9822b', 'Palette (+ time-of-day variants)', 'surfaces, water, trees, sky, fog, light, backdrop and prop tints', 'own'],
+    ['T', '#2b7bb9', 'Course textures', 'fairway, green, rough, sand, water, rock… the SAME for every biome, recoloured', 'fixed'],
+    ['1', '#2f8a4a', 'On-course trees', '2–3 models from the library, recoloured; collisions stay in the hole data', 'shared'],
+    ['2', '#4f9a6a', 'Off-course trees', '2–3 cheap models from the library, recoloured', 'shared'],
+    ['S', '#58a6e0', 'Skybox', 'one gradient sky + clouds, recoloured', 'fixed'],
+    ['s', '#b57bd0', 'Small props', 'tufts, flowers, fences in the rough; no physics', 'shared'],
+    ['B', '#a0603a', 'Big props', 'lodges, windmills, huts, city blocks, out of bounds; no physics', 'shared'],
+    ['M', '#7f9cc0', 'Backdrop', 'far scenery (peaks, hills, sea), recoloured by the palette', 'shared'],
+    ['N', '#444', 'Gameplay notes', 'advice for the course designer; may suggest a weather', 'own'],
+  ];
+  h(`<h1>What a biome set is</h1><p class="sub">A small file the course designer applies to a hole. It names pieces; the pieces live in a shared library.</p>`);
+  h(`<div class="card"><b>biome set file</b> <small>e.g. "Alpine"</small>${slots.map(([i, c, t, d, k]) => `<div class="slot"><div class="ico" style="background:${c}">${i}</div><div><b>${t}</b><span class="tag ${k}">${k === 'own' ? 'its own' : k === 'fixed' ? 'same for all' : 'picked from library'}</span><br><small>${d}</small></div></div>`).join('')}</div>`);
+  h(`<div class="arrow">picks by name ↓</div><div class="card"><b>shared library</b> <small>(assets/, one copy each)</small><br>
+     <small><b>trees:</b> ${Object.keys(LIBRARY.onTrees).join(', ')} · <b>far trees:</b> ${Object.keys(LIBRARY.offTrees).join(', ')}<br>
+     <b>small props:</b> ${LIBRARY.smallProps.join(', ')}<br><b>big props:</b> ${LIBRARY.bigProps.join(', ')}<br><b>backdrops:</b> ${LIBRARY.backdrops.join(', ')}<br>
+     <b>textures:</b> ${LIBRARY.textures.join(', ')} · <b>sky:</b> gradient</small></div>`);
+  h(`<div class="card"><b>Not in a biome set:</b> <small>weather (per playlist), physics (surfaces.js + hole data), the HUD.</small></div>`);
+}
+
+if (mode === 'options') {
+  h(`<h1>How biomes share pieces: 2 options</h1><p class="sub">Both use one shared library of assets. They differ in how a biome file is written.</p>`);
+  h(`<div class="card"><b>Option A · Pick list</b> <span class="tag shared">recommended</span><br><small>Every biome file names ALL its pieces from the library. Nothing is inherited.</small>
+  <pre style="font-size:11px;background:#f1efe8;padding:6px;border-radius:6px;margin:6px 0">Alpine:  palette alpine-day
+         trees   pine        far  pineFar
+         props   tuft flowers fence
+         big     logLodge    back peaksSnow
+Meadow:  palette meadow-day
+         trees   round pine  far  blobFar
+         props   tuft flowers fence
+         big     windmill    back hillsRound</pre>
+  <small>+ each file reads on its own, no surprises when another biome changes<br>+ simplest format for the dev and for validateKit<br>− a few lines repeat between close biomes</small></div>`);
+  h(`<div class="card"><b>Option B · Base + variant</b><br><small>A biome may say "based on X" and lists only what it changes.</small>
+  <pre style="font-size:11px;background:#f1efe8;padding:6px;border-radius:6px;margin:6px 0">Ridge country:  based on Alpine
+         palette rockies-day
+         trees   pine aspen   back ridgesWarm
+         big     cityBlocks
+         (props, sky: from Alpine)</pre>
+  <small>+ very short files for close cousins<br>− editing Alpine silently changes its variants<br>− chains (a variant of a variant) get hard to follow</small></div>`);
+  h(`<div class="card"><b>Recommendation:</b> <small>A, with ONE exception borrowed from B: <b>palettes</b> may be variants of a palette (alpine-sunset = alpine-day with sky, fog, light and a few surface shades changed). That is where time of day lives, and it is the only place where "change the base, update the variants" is what we want.</small></div>`);
+}
+
+if (mode === 'matrix') {
+  const cols = [['grassland', 'Meadow'], ['mountain', 'Alpine'], ['beach', 'Island']];
+  const rows = [
+    ['Course textures (10)', 'S', 'S', 'S'], ['Skybox (gradient)', 'S', 'S', 'S'], ['Palette', 'N', 'N', 'N'],
+    ['Tree: pine', 'S', 'S', '-'], ['Tree: round leafy', 'S', '-', 'S'], ['Tree: palm', '-', '-', 'N'],
+    ['Far tree: pineFar', 'S', 'S', '-'], ['Far tree: blobFar', 'S', '-', 'S'], ['Far tree: palmFar', '-', '-', 'N'],
+    ['Small: grass tuft', 'S', 'S', 'S'], ['Small: flowers', 'S', 'S', 'S'], ['Small: fence', 'S', 'S', '-'],
+    ['Big: windmill', 'N', '-', '-'], ['Big: log lodge', '-', 'N', '-'], ['Big: beach hut', '-', '-', 'N'],
+    ['Backdrop: round hills', 'N', '-', '-'], ['Backdrop: snowy peaks', '-', 'N', '-'], ['Backdrop: sea + volcano', '-', '-', 'N'],
+  ];
+  const cell = v => v === 'S' ? '<td style="background:#dcefe0">shared</td>' : v === 'N' ? '<td style="background:#f6e2cf">own</td>' : '<td style="color:#bbb">·</td>';
+  h(`<h1>Who uses what: 3 starter biomes</h1><p class="sub">Build order Meadow → Alpine → Island. "own" = made for this biome (it then joins the library for later biomes).</p>`);
+  h(`<table class="mx"><tr><th>piece</th>${cols.map(c => `<th>${c[1]}</th>`).join('')}</tr>${rows.map(r => `<tr><td>${r[0]}</td>${r.slice(1).map(cell).join('')}</tr>`).join('')}</table>`);
+  h(`<h2>New work per biome</h2><table><tr><th>biome</th><th>new assets</th><th>reused</th></tr>
+     <tr><td>Meadow (first)</td><td>palette, pine, round tree, 2 far trees, tuft, flowers, fence, windmill, hills, 10 textures, sky</td><td>-</td></tr>
+     <tr><td>Alpine</td><td>palette (+sunset), log lodge, snowy peaks</td><td>textures, sky, pine, pineFar, tuft, flowers, fence</td></tr>
+     <tr><td>Island</td><td>palette, palm, palmFar, beach hut, sea + volcano</td><td>textures, sky, round tree, blobFar, tuft, flowers</td></tr></table>`);
+  h(`<p><small><b>Later examples</b> reuse the same library: a desert takes the shared textures + a new palette + canyon walls; a city park takes the round trees, flowers and fence + city blocks; sea cliffs take the sea backdrop + rock + a lighthouse. Each one is mostly a palette plus 1–3 new pieces.</small></p>`);
+}
+document.title = 'ready';
+</script>
+</body>
+</html>
