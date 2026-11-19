@@ -76,7 +76,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. **A: finish performance:** AP1b (terrain detail by distance) + X20, one dev PR.
-2. **B: ready for the art:** AP2 (Three.js upgrade + glTF loader) → AP5 (biome set format, from `docs/art/biome-sets/` and the ART0b style guide) → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
+2. **B: ready for the art:** AP2 (Three.js upgrade + glTF loader) → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
 3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
