@@ -41,3 +41,31 @@ Observations (not bugs):
 **READY TO MERGE** for the parts tested: no bugs, 447/447 tests, 19/19 baseline, centre hit identical to main, aim line and white ring match the real ball, icon and keys behave as agreed, no overlap on three phone sizes. The full play-through (item 7), the lie limits (9), fps (10), and right-hand and `BC_BACK` 1 camera checks are NOT TESTED; the owner's phone playtest should cover the double tap and the feel.
 
 — Agent: qa
+
+
+---
+
+## Light re-check at 9dc58bf (curve +15%)
+
+- **SHA:** 9dc58bfa6be79907d2e98d817309b003ead3ded3 (dev/BC-ball-control). Level LIGHT, 15 min hard stop. Time spent: about 15 min, most of it lost to a scripting problem (below).
+- `tools/menu-check.mjs` not run, as instructed.
+
+| # | Item | Result | Notes |
+|---|---|---|---|
+| 1a | `node --test` | PASS | 447 pass, 0 fail |
+| 1b | `node tools/baseline.mjs check` | PASS | all 19 shots match |
+| 2 | Centre Driver on pl-02 unchanged vs 88754a2 | NOT TESTED | my two scripted runs (both builds) read the ball back at (0, 0) because the shot did not register in the headless script (not judged a game bug: the same harness worked at 88754a2 earlier). Indirect cover: the v2 baseline replays the centre shots within 0.01 m and passes with the re-recorded file, and `shape.start` does not enter a centre hit (impact 0,0) |
+| 3 | Left/right Driver pl-02, left 7 Iron mtn-02: bigger bend (about 10.7 m), comes back, aim line + marker + ring match | NOT TESTED | same reason. Not seen in a browser at 9dc58bf. The code reads Driver `start: 11.5` (it was 10), 7i 8.05, wedges 4.6, so the bend is +15% on paper |
+| 4 | One shot with real keyboard input, no console errors | NOT TESTED | out of time |
+
+### Bugs
+None found. (No bug is claimed for the scripting failure; it is a QA tooling problem.)
+
+### Feel notes
+1. Not judged by eye in this pass. At 88754a2 a full Driver curved about 9 m; 11.5/10 means roughly 10.3 to 10.7 m now. The owner's phone playtest is the real check for the +15%.
+2. Please confirm on the phone that the ring and marker still agree on a real left shot with trees; I could not show it at this SHA.
+
+### Verdict
+**NOT READY on QA evidence alone** (only items 1a and 1b verified). No defect found, and the diff is small and covered by the 447 tests and the re-recorded v2 baseline, so the PM may choose to merge after the owner's phone playtest. Items 2 to 4 are NOT TESTED.
+
+— Agent: qa
