@@ -84,6 +84,7 @@ Both options keep **one shared library** (`assets/`, one copy of each model, tex
 - **Surfaces:** `tee`, `fairwayA`/`fairwayB` (mowing stripes), `edge` (the darker edge line, round 2), `fringe`, `greenA`/`greenB`, `rough`, `deepRough`, `sand`, `lip` (bunker rim, round 2), `water`, `waterDeep`, `bank` (water bank, round 2), `rock`, `path`.
 - **Sky / fog / light:** `skyTop`, `skyHorizon`, `cloud`, `fog`, `sun` (sun tint), `ambient` (sky light), `shadow` (shadow tint, the hemisphere ground colour: never black).
 - **Backdrop tint:** `backFar`, `backNear`, `backCap` (snow / tops), `backCapShade`, `backTrees` (the wall of treetops, round 2).
+- **Accents (owner, 2026-11-19):** `accent` (the **flag** and the biome's main signature touch) and `subAccent` (tee markers, flower beds, prop trims, signs). Small things only, never a surface. The biome's signature colours.
 - **Trees and props tint:** `pine`, `trunk`, `leafTop`/`leaf`/`leafLow` (light top, mid, dark bottom: round 2), `leafAlt`, `trunkAlt`, `wood`, `roof`, `propSnow` (light parts), `propA`/`propB` (flowers), `glass`.
 - The **round 2 palettes** (§4.5) replace the round 1 examples (`docs/art/biome-sets/draft-data.js`, kept for history).
 
@@ -109,7 +110,9 @@ Checked automatically on every palette sheet (CIE76 ΔE = colour difference, ΔL
 | aim yellow `#FFD447` on fairway | 20 | |
 | warning red `#FF4A3A` on rough | 30 | |
 | white aim dots on fairway | 15 | |
-| flag red `#FF5A36` on green | 30 | |
+| flag `accent` on green (both shades), rough, fairway, sky top and horizon | 30 | |
+| `accent` vs HUD warning red `#FF4A3A` and aim yellow `#FFD447` | 15 | (a flag must never look like a warning) |
+| `subAccent` on green, rough and sky horizon | 30 | |
 
 Also: the course is always lighter and more saturated than the backdrop; no surface may use the HUD's yellow or red; the putting grid (when shown) must stay visible on both green shades. All four palettes in this round pass. Known weak spot: warning red vs rough has almost no lightness difference (ΔL 1-5), so red/green colour-blind players need the warning's **shape** too (ask: UI designer).
 
@@ -159,6 +162,17 @@ Data: `docs/art/style-r2/palettes.js` · sheet: `docs/art/style-r2/06-palettes.j
 | `propA` | `#FF5C8E` | `#FF6FA0` | `#FF7C9A` | `#FF5E94` |
 | `propB` | `#FFD83A` | `#FFE04A` | `#FFD45A` | `#FFD02E` |
 | `glass` | `#BFE6FF` | `#CBE9FF` | `#FFD6A0` | `#CFF4FA` |
+
+**Accents (owner: "good for now", 2026-11-19)** · image `07-accents.jpg`. All pass the accent rules in §4.4 (flag vs green ≥ 114, vs sky ≥ 54, vs HUD red ≥ 33).
+
+| Biome set | `accent` (flag) | `subAccent` | Why |
+|---|---|---|---|
+| Meadow | `#D91E5B` poppy pink-red | `#FF9A1F` marigold | wildflower field |
+| Alpine | `#B8143C` deep mountain red | `#3550D8` gentian blue | red roofs, blue mountain flowers; darker than the HUD warning red |
+| Alpine sunset | `#B0207E` magenta | `#FFB21E` golden | reads on the orange sky, golden hour |
+| Island coast | `#FF2E8A` hibiscus pink | `#FF7A1A` mango orange | tropical flowers and fruit |
+
+All palettes (accents included) are **starting values**: every biome gets a full pass with the per-biome process (§6.2) once biome-set support (AP5) is on main (owner).
 
 ## 5. Phone budget for art (from `reviews/art-tech-lead-followup.md`)
 - Tree / rock model **≤ 300-500 triangles** (our models: 100-250), far trees ≤ 50, ≤ 8 tree/rock types per biome.
@@ -225,3 +239,4 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 | `04-round1-vs-B.jpg` | round 1 mock-up vs direction B, same tee |
 | `05-approach.jpg` | approach views, Alpine and Island coast |
 | `06-palettes.jpg` | the four palettes |
+| `07-accents.jpg` | accent / sub-accent per biome, flag on the green |

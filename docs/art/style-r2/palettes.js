@@ -1,10 +1,12 @@
 // ART0b round 2: direction B "Sunny postcard" palettes for the first biome sets (proposal until the owner approves).
 // Same keys as round 1 (docs/ART_STYLE.md §4.1) plus: edge (fairway edge line), lip (bunker rim), bank (water bank),
-// leafTop/leafLow (tree light/dark ends), backTrees (the wall of treetops at the back). One palette per biome set:
+// leafTop/leafLow (tree light/dark ends), backTrees (the wall of treetops at the back),
+// accent/subAccent (the biome's signature: flag, tee markers, flower beds, trims, signs; owner, 2026-11-19). One palette per biome set:
 // Alpine sunset is its own set with its own full palette (owner, #73). Mock-up data only, not engine code.
 // — Agent: artist
 const meadow = {
   id: 'meadow', label: 'Meadow',
+  accent: '#D91E5B', subAccent: '#FF9A1F', // poppy pink-red flag / marigold orange: wildflower field
   tee: '#8DE05A', fairwayA: '#88DA4E', fairwayB: '#79CC42', edge: '#4E9F2E', fringe: '#7DD04A', greenA: '#B6F57C', greenB: '#AAF06C',
   rough: '#4CAA36', deepRough: '#3A942E', sand: '#FFF0C2', lip: '#C9B27A', water: '#2C8FE3', waterDeep: '#1C66C2', bank: '#9C7A4E',
   rock: '#A89B8E', path: '#E9D9AE',
@@ -16,6 +18,7 @@ const meadow = {
 };
 const alpine = {
   id: 'alpine', label: 'Alpine',
+  accent: '#B8143C', subAccent: '#3550D8', // deep mountain red flag (darker than the HUD warning red) / gentian blue: red roofs, mountain flowers
   tee: '#86DD6C', fairwayA: '#80D964', fairwayB: '#70CB57', edge: '#3F9A3E', fringe: '#76D05E', greenA: '#B2F590', greenB: '#A6EF82',
   rough: '#3FA64E', deepRough: '#2F8C46', sand: '#FAF3DC', lip: '#BFB79A', water: '#1FA2EA', waterDeep: '#1474C9', bank: '#8C8070',
   rock: '#A4ABB6', path: '#DCD3BE',
@@ -28,6 +31,7 @@ const alpine = {
 // Alpine sunset: its own biome set. Values started from Alpine, then every one re-chosen for golden hour.
 const alpineSunset = {
   id: 'alpine-sunset', label: 'Alpine sunset',
+  accent: '#B0207E', subAccent: '#FFB21E', // magenta flag, reads on the orange sky / golden: golden hour
   tee: '#7ED668', fairwayA: '#7AD25E', fairwayB: '#6AC452', edge: '#3E8A44', fringe: '#70CA58', greenA: '#ACEE84', greenB: '#A0E878',
   rough: '#3C9650', deepRough: '#2E7C48', sand: '#FFE6C4', lip: '#C2A48C', water: '#4A86E0', waterDeep: '#3A5CB8', bank: '#8E6A58',
   rock: '#B49CA4', path: '#E6C9B0',
@@ -39,6 +43,7 @@ const alpineSunset = {
 };
 const island = {
   id: 'island', label: 'Island coast',
+  accent: '#FF2E8A', subAccent: '#FF7A1A', // hibiscus pink flag / mango orange: tropical flowers and fruit
   tee: '#90E85C', fairwayA: '#8CE652', fairwayB: '#7CD846', edge: '#3FA036', fringe: '#82DC4C', greenA: '#BCFA86', greenB: '#B0F676',
   rough: '#40B43E', deepRough: '#319C3A', sand: '#FFF5D8', lip: '#D6C496', water: '#18C6E2', waterDeep: '#0B8ED2', bank: '#F2E2B4',
   rock: '#5E5866', path: '#EEDDB4',
