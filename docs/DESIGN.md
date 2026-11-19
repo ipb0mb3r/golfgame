@@ -337,6 +337,7 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 **What a biome set contains:**
 - A **short description** of the set.
 - The **colour palette** of everything on the course: the surfaces, water, trees… **Time of day is done through the palette** (no lighting engine): a sunset version is a separate biome set with a sunset palette.
+  - Including an **accent colour** and a **sub-accent colour** (owner, 2026-11-19) for small things: the **flag** and other decorations (tee markers, flower beds, props' trims, signs…). They give each biome its signature touch, and the flag must stay clearly readable against the green and the sky (readability rule).
 - **Course textures** (fairway, green, rough, sand…) are **always the same textures in every biome, only recoloured by the palette**.
 - **On-course trees** (in play, like today's): chosen from **2–3 models**, recolourable by the palette. Their collisions stay as today (obstacles in the hole data); the biome picks only the look.
 - **Off-course trees** (like today's, simpler): chosen from **2–3 models**, recolourable by the palette.

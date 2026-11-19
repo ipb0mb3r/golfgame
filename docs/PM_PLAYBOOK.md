@@ -69,7 +69,8 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **In flight:**
 - **AP1 fewer draw calls** (#77): every hole 83–222 → 20–25 draw calls, no visible change; QA Full running. Owner phone (S25 Ultra): 60 fps everywhere (pl-01 ~11k tris, mtn-07 ~350k, mtn-09 ~540k); mountain aiming "a bit less smooth"; centre vs off-centre impact "pretty similar" → X21 backlog idea only.
-- **Artist style talk ART0b** in its **own session**, which the owner chats with directly ("Pocket Links: Artist (style talk ART0b)", created by the PM via create_session). It ends with a PR "Art: style round 2"; the PM reviews it.
+- **Biome palette: accent + sub-accent colours** (owner, 2026-11-19; flag and decorations) added to DESIGN §8b; passed to the artist session for ART_STYLE.md and palettes.js.
+- **Artist style talk ART0b** (done: #78, direction B "Sunny postcard") in its **own session**, which the owner chats with directly ("Pocket Links: Artist (style talk ART0b)", created by the PM via create_session). It ends with a PR "Art: style round 2"; the PM reviews it.
 
 **After #77 merges, PM docs:** TASKS: AP8 moved after AP6/AP7 (owner: pixel effect not a priority), X20 (faster mountain `heightAt`, identical results), X21 (lighter preview roll while aim is held, idea only); AGENTS.md: `tools/aim-cost.mjs`.
 
