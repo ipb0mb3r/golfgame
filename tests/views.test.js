@@ -249,6 +249,8 @@ test('V3 (owner on #63): after a full shot the camera holds at address for CAM_F
   } finally { resetTunables(); }
 });
 
+const angleDeg = (a, b) => Math.acos(Math.max(-1, Math.min(1, (a.x * b.x + a.y * b.y + a.z * b.z) / (Math.hypot(a.x, a.y, a.z) * Math.hypot(b.x, b.y, b.z) || 1)))) * 180 / Math.PI;
+
 // --- V4: the flyover ----------------------------------------------------------------------------
 test('V4: the route is tee → aimTarget → green (par 3: tee → green), never the playLine corner', () => {
   for (const hole of Object.values(HOLES)) {
@@ -275,7 +277,9 @@ test('V4 (owner on #63): the flyover starts behind and above the tee, travels sl
     assert.ok(back > 0 && Math.abs(Math.hypot(a.pos.x - t0.x, a.pos.z - t0.z) - c.startBack) < 1, `${id} starts ${c.startBack} m behind the tee`);
     assert.ok(a.pos.y - h(a.pos.x, a.pos.z) >= c.startHeight - 1e-6, `${id} a little above`);
     assert.ok(lineClear(h, a.pos, { x: t0.x, y: h(t0.x, t0.z) + 1, z: t0.z }), `${id} sees the tee box`);
-    assert.ok(Math.hypot(a.look.x - t0.x, a.look.z - t0.z) < 1e-6, `${id} looks at the tee box first`);
+    const toTee = { x: t0.x - a.pos.x, y: h(t0.x, t0.z) - a.pos.y, z: t0.z - a.pos.z }, toLook = { x: a.look.x - a.pos.x, y: a.look.y - a.pos.y, z: a.look.z - a.pos.z };
+    assert.ok(angleDeg(toTee, toLook) < 0.5, `${id} looks down at the tee box first`);
+    assert.ok(a.pos.y - h(t0.x, t0.z) >= c.startHeight - 1, `${id} starts well above the tee`);
     // It moves forward from the start, never back behind it
     let prev = -Infinity;
     for (let t = 0; t <= Math.min(3, path.travel); t += 0.05) {
@@ -295,9 +299,32 @@ test('V4 (owner on #63): the flyover starts behind and above the tee, travels sl
     // Never below its lowest height over the ground, and never dives: the height above ground never drops faster than the descent
     let minUp = Infinity;
     for (let t = 0; t <= path.duration; t += 0.05) { const v = path.at(t); minUp = Math.min(minUp, v.pos.y - h(v.pos.x, v.pos.z)); }
-    assert.ok(minUp >= Math.min(c.startHeight, c.endHeight) - 1e-6, `${id} lowest ${minUp.toFixed(1)} m`);
+    assert.ok(minUp >= c.minClear - 1e-6, `${id} lowest ${minUp.toFixed(1)} m`);
   }
-  // About 2.5× the first version's time on a long hole (owner: "at least 59% slower")
+  // About 2× the first version's time on a long hole (owner: slower, then "a little bit faster")
   const long = flyoverPath(flat, [{ x: 0, z: 0 }, { x: 0, z: -230 }, { x: 0, z: -420 }]);
-  assert.ok(long.travel > 10 && long.travel < 14, `travel ${long.travel}`);
+  assert.ok(long.travel > 8 && long.travel < 12, `travel ${long.travel}`);
+});
+
+test('V4 (owner on #63: "it seems to follow a rigid path"): the flyover turns, steers and climbs smoothly on every hole', () => {
+  // Sampled at 30 Hz. Before the smoothing pass (centripetal spline, smoothed path, ground and look target,
+  // eased speed): look up to 64°/s with jerks to 760°/s², heading kinks to 225°/s, height following every bump at 20 m/s.
+  // Now: look ≤ 41°/s and ≤ 186°/s², heading ≤ 69°/s (the pl-03 dogleg), height ≤ 6.6 m/s.
+  const dt = 1 / 30, limits = { look: 60, lookJerk: 300, heading: 90, vertical: 9 };
+  for (const hole of Object.values(HOLES)) {
+    const play = createHolePlay(hole, { seed: 1 }); play.reset();
+    const path = flyoverPath(play.terrain.heightAt, flyoverRoute(hole, play.target));
+    let prevW = null;
+    const dir = v => ({ x: v.look.x - v.pos.x, y: v.look.y - v.pos.y, z: v.look.z - v.pos.z });
+    for (let t = dt; t < path.travel - dt; t += dt) {
+      const a = path.at(t - dt), b = path.at(t), c2 = path.at(t + dt), why = `${hole.id} at ${t.toFixed(2)} s`;
+      const w = angleDeg(dir(a), dir(b)) / dt;
+      assert.ok(w <= limits.look, `${why}: look turns ${w.toFixed(0)}°/s`);
+      if (prevW !== null) assert.ok(Math.abs(w - prevW) / dt <= limits.lookJerk, `${why}: look jerks ${(Math.abs(w - prevW) / dt).toFixed(0)}°/s²`);
+      prevW = w;
+      const va = { x: b.pos.x - a.pos.x, y: 0, z: b.pos.z - a.pos.z }, vb = { x: c2.pos.x - b.pos.x, y: 0, z: c2.pos.z - b.pos.z };
+      if (Math.hypot(va.x, va.z) > 0.05) assert.ok(angleDeg(va, vb) / dt <= limits.heading, `${why}: heading turns ${(angleDeg(va, vb) / dt).toFixed(0)}°/s`);
+      assert.ok(Math.abs(c2.pos.y - b.pos.y) / dt <= limits.vertical, `${why}: climbs ${(Math.abs(c2.pos.y - b.pos.y) / dt).toFixed(1)} m/s`);
+    }
+  }
 });

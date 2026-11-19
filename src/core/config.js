@@ -119,17 +119,22 @@ export const CAM = Object.freeze({
   landingCam: Object.freeze({ past: 25, off: 9, height: 7, passBy: 40 }),
   flightEase: Object.freeze({ look: 12 }), // how fast a standing flight camera turns to keep the ball in view (1/s)
   viewSalt: 0x5eed1e55, // V3: the view RNG = createRng(hole seed ^ this), its own stream (physics never draws from it)
-  // V4 flyover (core/views.js flyoverPath; owner on #63: slower, start behind the tee, no dive): it starts
-  // (lead: a path point that many m down the first leg, so the start runs straight; startLiftMax: m it may
-  // rise at the start until it sees the tee box over a bank behind it)
-  // startBack m behind the tee at startHeight m, rises to `height` over the first `rise` m, eases down to
-  // endHeight over the last `descend` m and stops endBack m short of the cup; lookAhead = m ahead it looks,
-  // within lookCup m of the stop it looks at the flag. Travel = length / CAM_FLYOVER_SPEED, clamped to
-  // [minTime, maxTime] s; then CAM_FLYOVER_PAUSE s still and an orbit of orbitDeg in CAM_FLYOVER_ORBIT s.
-  // easeTime: s to ease from the green into the tee's aiming view at the end (a skip cuts at once);
-  // easeLift: m the camera rises mid-way through that ease (it passes over the trees).
-  flyover:    Object.freeze({ startBack: 12, startHeight: 4.5, startLiftMax: 30, lead: 40, height: 32, rise: 80, endHeight: 22, descend: 120, endBack: 35,
-    lookAhead: 90, lookCup: 40, orbitDeg: 70, samples: 24, minTime: 6, maxTime: 18, easeTime: 1.8, easeLift: 45 }),
+  // V4 flyover (core/views.js flyoverPath; owner on #63: slower, high start behind the tee, no dive,
+  // smooth). startBack / startHeight: m behind / above the tee at the start (startLiftMax: m more it may
+  // rise to see the tee over a bank); lead: a path point that far down the first leg (a straight start);
+  // height: m over the (smoothed) ground on the way, endHeight at the stop endBack m short of the cup;
+  // rise / descend: m over which it eases from the start height / to the end height; minClear: never
+  // lower than this over the ground. The path: `samples` per spline segment, smoothed smoothPasses × over
+  // ±smoothM m, resampled every `step` m; the ground under it smoothed over ±groundSmoothM m; the look
+  // target leads lookAhead m along it, damped over ±lookSmoothM m (it starts on the tee box and turns
+  // ahead over the first teeLook m), and slides onto the flag over the
+  // last lookCup m. Time: length / CAM_FLYOVER_SPEED clamped to [minTime, maxTime] s, speeding up over
+  // `accel` and slowing over `decel` of it; then CAM_FLYOVER_PAUSE, then an orbit of orbitDeg in
+  // CAM_FLYOVER_ORBIT s. easeTime / easeLift: the ease into the aiming view (s, m up mid-way).
+  flyover:    Object.freeze({ startBack: 14, startHeight: 20, teeLook: 100, startLiftMax: 30, lead: 40, height: 20, endHeight: 18, minClear: 8,
+    rise: 120, descend: 140, endBack: 35, samples: 24, smoothPasses: 4, smoothM: 30, step: 2, groundSmoothM: 40,
+    lookAhead: 110, lookSmoothM: 40, lookCup: 120, orbitDeg: 50, minTime: 5, maxTime: 16, accel: 0.25, decel: 0.3,
+    easeTime: 1.2, easeLift: 35 }),
   holdMs: 300,  // V2: a press on a view button longer than this is a hold (the view goes back on release); shorter is a tap (stays until tapped again)
   ease: Object.freeze({ aim: 5, view: 4 }), // how fast the camera eases to the aiming view / a button view (1/s)
   bandProbe: 60, // px each side of the screen's centre: a top panel inside this column pushes the free band down (portrait)
@@ -185,9 +190,9 @@ export const TUNABLES = Object.freeze({
   CAM_W_SIDE:            { def: 0.25, min: 0,     max: 1 },
   CAM_W_LANDING:         { def: 0.25, min: 0,     max: 1 },
   CAM_MAX_RUN:           { def: 2,    min: 1,     max: 10 },   // no flight view more than this many shots in a row (landing: never twice)
-  CAM_FLYOVER_SPEED:     { def: 36,   min: 10,    max: 300 },  // m/s along the route (owner on #63: 40% of the first 90 m/s; travel clamped to CAM.flyover minTime..maxTime s)
-  CAM_FLYOVER_PAUSE:     { def: 0.8,  min: 0,     max: 5 },    // s the flyover stays still above the green (owner on #63)
-  CAM_FLYOVER_ORBIT:     { def: 2.2,  min: 0,     max: 8 },    // s of a slow orbit round the cup after the pause (CAM.flyover.orbitDeg)
+  CAM_FLYOVER_SPEED:     { def: 45,   min: 10,    max: 300 },  // m/s along the route (owner on #63: 36 → 45, "a little bit faster"; travel clamped to CAM.flyover minTime..maxTime s)
+  CAM_FLYOVER_PAUSE:     { def: 0.3,  min: 0,     max: 5 },    // s the flyover stays still above the green (owner on #63)
+  CAM_FLYOVER_ORBIT:     { def: 1.4,  min: 0,     max: 8 },    // s of a slow orbit round the cup after the pause (CAM.flyover.orbitDeg)
   CAM_FLIGHT_HOLD:       { def: 1.2,  min: 0,     max: 4 },    // V3 (owner on #63): s after a full shot the camera stays at address, only turning to watch the ball, before the flight view starts
   CAM_BEHIND_STAY:       { def: 0,    min: 0,     max: 1 },    // 1 = a 'behind' shot is watched from address until the ball first lands (only side / landing cut away); 0 = the chase camera after the hold
   // Render quality (Gate A C4), game layer only: never affects the physics

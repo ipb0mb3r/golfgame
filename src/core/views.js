@@ -222,81 +222,142 @@ export function flyoverRoute(hole, teeAim = null) {
   return land ? [pt(hole.tee), pt(land), pt(hole.cup)] : [pt(hole.tee), pt(hole.cup)];
 }
 
-// The flyover's camera path (owner on #63: slower, start behind the tee, no dive at the end).
-//   travel: from CAM.flyover.startBack m behind the tee (startHeight m up, looking at the tee box) along
-//           the route smoothed (Catmull-Rom), rising to `height`, easing down to endHeight over the last
-//           `descend` m, and stopping endBack m short of the cup, looking at it. length / CAM_FLYOVER_SPEED s,
-//           clamped to [minTime, maxTime]; smoothstep easing at both ends.
-//   then:   a pause of CAM_FLYOVER_PAUSE s above the green, then a slow orbit of orbitDeg round the cup in
-//           CAM_FLYOVER_ORBIT s, still looking at the flag.
+// The flyover's camera path (owner on #63: slower, start high behind the tee, no dive, smooth).
+// Built once per hole, then read by time:
+//   1. the route (a point startBack m behind the tee, the tee, one lead m down the first leg, the landing
+//      area, a stop endBack m short of the cup) as a centripetal Catmull-Rom spline (no loops or overshoot),
+//   2. smoothed (moving average, smoothPasses × smoothM m) and resampled every `step` m by arc length,
+//   3. the height: the ground smoothed over ±groundSmoothM m plus a profile (startHeight above the tee,
+//      easing to `height`, then to endHeight over the last `descend` m), never under minClear m,
+//   4. the look target leads lookAhead m along the path, averaged (damped) over ±lookSmoothM m; it starts
+//      on the tee box (turning ahead over the first teeLook m) and slides onto the flag over the last lookCup m,
+//   5. travel time = length / CAM_FLYOVER_SPEED (clamped to [minTime, maxTime]) with an ease-in / ease-out
+//      speed curve (accel and decel shares of the time), then a CAM_FLYOVER_PAUSE s pause and a slow
+//      orbit of orbitDeg round the cup in CAM_FLYOVER_ORBIT s, looking at the flag.
 // Returns { length (m), travel (s), duration (s, all of it), at(t) } where at(t) (seconds, clamped) gives { pos, look }.
 export function flyoverPath(heightAt, route) {
   const c = CAM.flyover;
   const n = route.length, a = route[n - 2], b = route[n - 1], t0 = route[0], t1 = route[1];
   const dl = Math.hypot(b.x - a.x, b.z - a.z) || 1, d0 = Math.hypot(t1.x - t0.x, t1.z - t0.z) || 1;
-  const start = { x: t0.x - (t1.x - t0.x) / d0 * c.startBack, z: t0.z - (t1.z - t0.z) / d0 * c.startBack };
+  const ux = (t1.x - t0.x) / d0, uz = (t1.z - t0.z) / d0;
+  const start = { x: t0.x - ux * c.startBack, z: t0.z - uz * c.startBack };
   const endBack = Math.min(c.endBack, dl * 0.5);
   const stop = { x: b.x - (b.x - a.x) / dl * endBack, z: b.z - (b.z - a.z) / dl * endBack };
-  // A point lead m down the first leg keeps the spline from swinging back behind the start
-  const lead = Math.min(c.lead, d0 * 0.5), ahead = { x: t0.x + (t1.x - t0.x) / d0 * lead, z: t0.z + (t1.z - t0.z) / d0 * lead };
-  const pts = [start, t0, ahead, ...route.slice(1, -1), stop];
-  // Sample the spline densely and measure it, so the camera moves at an even speed
-  const P = i => pts[Math.max(0, Math.min(pts.length - 1, i))];
-  const cr = (p0, p1, p2, p3, s) => 0.5 * (2 * p1 + (p2 - p0) * s + (2 * p0 - 5 * p1 + 4 * p2 - p3) * s * s + (3 * p1 - p0 - 3 * p2 + p3) * s * s * s);
-  const samples = [];
+  const lead = Math.min(c.lead, d0 * 0.5);
+  const pts = [start, t0, { x: t0.x + ux * lead, z: t0.z + uz * lead }, ...route.slice(1, -1), stop];
+  // 1. centripetal Catmull-Rom (alpha 0.5), with mirrored end points
+  const P = i => i < 0 ? { x: 2 * pts[0].x - pts[1].x, z: 2 * pts[0].z - pts[1].z }
+    : i >= pts.length ? { x: 2 * pts[pts.length - 1].x - pts[pts.length - 2].x, z: 2 * pts[pts.length - 1].z - pts[pts.length - 2].z } : pts[i];
+  const raw = [];
   for (let i = 0; i < pts.length - 1; i++) {
+    const p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
+    const kt = (p, q) => Math.max(1e-6, Math.sqrt(Math.hypot(q.x - p.x, q.z - p.z)));
+    const T1 = kt(p0, p1), T2 = T1 + kt(p1, p2), T3 = T2 + kt(p2, p3);
     for (let k = 0; k < c.samples; k++) {
-      const s = k / c.samples, p0 = P(i - 1), p1 = P(i), p2 = P(i + 1), p3 = P(i + 2);
-      samples.push({ x: cr(p0.x, p1.x, p2.x, p3.x, s), z: cr(p0.z, p1.z, p2.z, p3.z, s) });
+      const t = T1 + (T2 - T1) * k / c.samples;
+      const L = (pa, pb, ta, tb) => ({ x: (pa.x * (tb - t) + pb.x * (t - ta)) / (tb - ta), z: (pa.z * (tb - t) + pb.z * (t - ta)) / (tb - ta) });
+      const A1 = L(p0, p1, 0, T1), A2 = L(p1, p2, T1, T2), A3 = L(p2, p3, T2, T3);
+      const B1 = L(A1, A2, 0, T2), B2 = L(A2, A3, T1, T3);
+      raw.push(L(B1, B2, T1, T2));
     }
   }
-  samples.push(pts[pts.length - 1]);
-  const cum = [0];
-  for (let i = 1; i < samples.length; i++) cum.push(cum[i - 1] + Math.hypot(samples[i].x - samples[i - 1].x, samples[i].z - samples[i - 1].z));
-  const length = cum[cum.length - 1];
+  raw.push(pts[pts.length - 1]);
+  // 2. resample by arc length, smooth, resample again (so the speed along it is even)
+  const resample = arr => {
+    const cum = [0];
+    for (let i = 1; i < arr.length; i++) cum.push(cum[i - 1] + Math.hypot(arr[i].x - arr[i - 1].x, arr[i].z - arr[i - 1].z));
+    const L = cum[cum.length - 1], m = Math.max(2, Math.ceil(L / c.step)), out = [];
+    for (let k = 0, j = 1; k <= m; k++) {
+      const d = L * k / m;
+      while (j < arr.length - 1 && cum[j] < d) j++;
+      const f = (d - cum[j - 1]) / ((cum[j] - cum[j - 1]) || 1);
+      out.push({ x: arr[j - 1].x + (arr[j].x - arr[j - 1].x) * f, z: arr[j - 1].z + (arr[j].z - arr[j - 1].z) * f });
+    }
+    return out;
+  };
+  // A moving average over ±w samples that keeps the two ends where they are
+  const smoothArr = (arr, w, get, set) => {
+    const out = arr.map(v => ({ ...v }));
+    for (let i = 1; i < arr.length - 1; i++) {
+      const r = Math.min(w, i, arr.length - 1 - i);
+      let acc = null;
+      for (let j = i - r; j <= i + r; j++) { const v = get(arr[j]); acc = acc ? acc.map((x, q) => x + v[q]) : [...v]; }
+      set(out[i], acc.map(x => x / (2 * r + 1)));
+    }
+    return out;
+  };
+  let path = resample(raw);
+  const wS = Math.max(1, Math.round(c.smoothM / c.step));
+  for (let k = 0; k < c.smoothPasses; k++) path = smoothArr(path, wS, v => [v.x, v.z], (o, [x, z]) => { o.x = x; o.z = z; });
+  path = resample(path);
+  const N = path.length, step = (() => { let L = 0; for (let i = 1; i < N; i++) L += Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z); return L / (N - 1); })();
+  const length = step * (N - 1), dAt = i => i * step;
+  const sm = u => u * u * (3 - 2 * u);
+  // Never blind at the start: behind a tee cut into a slope the camera rises until it sees the tee box
+  const teeY = heightAt(t0.x, t0.z) + 1, gs = Math.max(heightAt(start.x, start.z), teeY - 1); // startHeight is over the tee too
+  let lift = 0;
+  while (lift < c.startLiftMax && !lineClear(heightAt, { x: start.x, y: gs + c.startHeight + lift, z: start.z }, { x: t0.x, y: teeY, z: t0.z })) lift += 1;
+  // 3. the height: smoothed ground + a smooth profile, never under minClear
+  const ground = path.map(q => heightAt(q.x, q.z));
+  const wG = Math.max(1, Math.round(c.groundSmoothM / c.step));
+  let gS = ground.map(g => ({ g }));
+  for (let k = 0; k < 2; k++) gS = smoothArr(gS, wG, v => [v.g], (o, [g]) => { o.g = g; });
+  const profile = d => {
+    const up = clamp(d / c.rise, 0, 1), down = clamp((d - (length - c.descend)) / Math.max(1, c.descend), 0, 1);
+    return (c.startHeight + lift) + (c.height - c.startHeight - lift) * sm(up) + (c.endHeight - c.height) * sm(down);
+  };
+  let ys = path.map((q, i) => ({ y: Math.max(gS[i].g + profile(dAt(i)), ground[i] + c.minClear) }));
+  ys[0].y = gs + c.startHeight + lift;
+  for (let k = 0; k < 2; k++) ys = smoothArr(ys, wG, v => [v.y], (o, [y]) => { o.y = y; });
+  ys = ys.map((v, i) => ({ y: Math.max(v.y, ground[i] + c.minClear) }));
+  // 4. the look target: lead along the path, damped, from the tee box to the flag
+  const cupPt = { x: b.x, y: heightAt(b.x, b.z), z: b.z }, teePt = { x: t0.x, y: heightAt(t0.x, t0.z), z: t0.z };
+  const nLead = Math.round(c.lookAhead / step);
+  let looks = path.map((q, i) => { const j = Math.min(N - 1, i + nLead); return { x: path[j].x, z: path[j].z }; });
+  const wL = Math.max(1, Math.round(c.lookSmoothM / step));
+  for (let k = 0; k < 2; k++) looks = smoothArr(looks, wL, v => [v.x, v.z], (o, [x, z]) => { o.x = x; o.z = z; });
+  // The tee part is blended as a DIRECTION (pitch and yaw from the start pose toward the tee box, easing
+  // to the look-ahead direction over the first teeLook m), so the look point never sweeps under the camera
+  const p0 = { x: path[0].x, y: ys[0].y, z: path[0].z };
+  const yaw0 = Math.atan2(teePt.x - p0.x, teePt.z - p0.z), pitch0 = Math.atan2(teePt.y - p0.y, Math.hypot(teePt.x - p0.x, teePt.z - p0.z));
+  looks = looks.map((l, i) => {
+    const d = dAt(i), wt = 1 - sm(clamp(d / c.teeLook, 0, 1)), wc = sm(clamp((d - (length - c.lookCup)) / c.lookCup, 0, 1));
+    let x = l.x, z = l.z, y = heightAt(x, z);
+    if (wt > 0) {
+      const q = { x: path[i].x, y: ys[i].y, z: path[i].z };
+      const yaw1 = Math.atan2(x - q.x, z - q.z), pitch1 = Math.atan2(y - q.y, Math.hypot(x - q.x, z - q.z));
+      let dy = yaw0 - yaw1; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      const yaw = yaw1 + dy * wt, pitch = pitch1 + (pitch0 - pitch1) * wt, R = Math.hypot(x - q.x, y - q.y, z - q.z); // the same distance: no step when the blend ends
+      x = q.x + Math.sin(yaw) * Math.cos(pitch) * R; z = q.z + Math.cos(yaw) * Math.cos(pitch) * R; y = q.y + Math.sin(pitch) * R;
+    }
+    x += (cupPt.x - x) * wc; z += (cupPt.z - z) * wc; y += (cupPt.y - y) * wc;
+    return { x, y, z };
+  });
+  looks[N - 1] = { ...cupPt };
+  // 5. time: an ease-in / ease-out speed curve (accelerate over `accel` of the time, slow over `decel`)
   const travel = clamp(length / TUNE.CAM_FLYOVER_SPEED, c.minTime, c.maxTime);
   const pause = TUNE.CAM_FLYOVER_PAUSE, orbit = TUNE.CAM_FLYOVER_ORBIT;
   const duration = travel + pause + orbit;
-  const pointAt = d => {
-    d = clamp(d, 0, length);
-    let i = 1; while (i < cum.length - 1 && cum[i] < d) i++;
-    const f = (d - cum[i - 1]) / ((cum[i] - cum[i - 1]) || 1);
-    return { x: samples[i - 1].x + (samples[i].x - samples[i - 1].x) * f, z: samples[i - 1].z + (samples[i].z - samples[i - 1].z) * f };
+  const A = c.accel, D = c.decel, vmax = 1 / (1 - A / 2 - D / 2); // the share of the path per share of time at full speed
+  const progress = u => {
+    if (u <= A) { const s = u / A; return vmax * A * (s * s * s * (1 - s / 2)) ; } // smooth start (zero speed and zero acceleration)
+    if (u >= 1 - D) { const s = (1 - u) / D; return 1 - vmax * D * (s * s * s * (1 - s / 2)); }
+    return vmax * (A / 2 + (u - A));
   };
-  const cupPt = { x: b.x, y: heightAt(b.x, b.z), z: b.z };
-  // Never blind at the start: behind a tee cut into a slope the camera rises until it sees the tee box
-  const teeY = heightAt(t0.x, t0.z) + 1, gs = heightAt(start.x, start.z);
-  let lift = 0;
-  while (lift < c.startLiftMax && !lineClear(heightAt, { x: start.x, y: gs + c.startHeight + lift, z: start.z }, { x: t0.x, y: teeY, z: t0.z })) lift += 1;
-  const heightOver = d => {
-    const up = clamp(d / c.rise, 0, 1), down = clamp((d - (length - c.descend)) / c.descend, 0, 1);
-    const sm = u => u * u * (3 - 2 * u);
-    return c.startHeight + lift * (1 - sm(up)) + (c.height - c.startHeight) * sm(up) + (c.endHeight - c.height) * sm(down);
-  };
-  const lookFrom = d => {
-    if (d >= length - c.lookCup) return { ...cupPt };
-    let l = pointAt(Math.min(d + c.lookAhead, length));
-    // At the start it looks at the tee box, then turns ahead over the first `rise` m
-    const s0 = clamp(d / c.rise, 0, 1), sm0 = s0 * s0 * (3 - 2 * s0);
-    l = { x: t0.x + (l.x - t0.x) * sm0, z: t0.z + (l.z - t0.z) * sm0 };
-    // Near the end the look point slides onto the flag, so there is no turn at the stop
-    const k = clamp((d - (length - c.lookCup - c.lookAhead)) / c.lookAhead, 0, 1) * sm0; // (a short hole: the tee first, then the flag)
-    const lx = l.x + (cupPt.x - l.x) * k, lz = l.z + (cupPt.z - l.z) * k;
-    return { x: lx, y: heightAt(lx, lz), z: lz };
-  };
-  const endPos = { x: stop.x, y: heightAt(stop.x, stop.z) + c.endHeight, z: stop.z };
+  const sample = (arr, f) => { const x = clamp(f, 0, 1) * (N - 1), i = Math.min(N - 2, Math.floor(x)), r = x - i; return [arr[i], arr[i + 1], r]; };
+  const lerp3 = (p, q, r, y0, y1) => ({ x: p.x + (q.x - p.x) * r, y: y0 + (y1 - y0) * r, z: p.z + (q.z - p.z) * r });
+  const endPos = { x: path[N - 1].x, y: ys[N - 1].y, z: path[N - 1].z };
   function at(t) {
     t = clamp(t, 0, duration);
     if (t <= travel) {
-      const u = travel > 0 ? t / travel : 1, e = u * u * (3 - 2 * u), d = e * length;
-      const q = pointAt(d);
-      return { pos: { x: q.x, y: heightAt(q.x, q.z) + heightOver(d), z: q.z }, look: lookFrom(d) };
+      const f = progress(travel > 0 ? t / travel : 1);
+      const [p, q, r] = sample(path, f), [ya, yb] = sample(ys, f), [la, lb] = sample(looks, f);
+      return { pos: lerp3(p, q, r, ya.y, yb.y), look: lerp3(la, lb, r, la.y, lb.y) };
     }
-    // The pause, then the slow orbit round the cup (same radius and height), looking at the flag
-    const u = orbit > 0 ? clamp((t - travel - pause) / orbit, 0, 1) : 0, e = u * u * (3 - 2 * u);
+    const u = orbit > 0 ? clamp((t - travel - pause) / orbit, 0, 1) : 0, e = sm(u);
     const ang = e * c.orbitDeg * Math.PI / 180, rx = endPos.x - cupPt.x, rz = endPos.z - cupPt.z;
     const x = cupPt.x + rx * Math.cos(ang) - rz * Math.sin(ang), z = cupPt.z + rx * Math.sin(ang) + rz * Math.cos(ang);
-    return { pos: { x, y: Math.max(endPos.y, heightAt(x, z) + c.endHeight), z }, look: { ...cupPt } };
+    return { pos: { x, y: Math.max(endPos.y, heightAt(x, z) + c.minClear), z }, look: { ...cupPt } };
   }
   return { length, travel, duration, at };
 }
