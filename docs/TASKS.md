@@ -201,7 +201,7 @@ From the owner's design doc "Arcade Golf Course Design Principles", relayed by t
 - ~~D1 Several tee sets per hole~~ Dropped by the owner (2026-11-18): one tee per hole is fine.
 - [ ] D2 Several pin positions per green (4+). Today: 1 cup per hole.
 - [ ] D3 Hole intro flyover camera. → **scheduled as V4** (Phase V): the regular route only.
-- [ ] D4 Intentional draw / fade (shape the shot on purpose). Today the ball curves only on a mistimed 3rd click.
+- [ ] D4 Intentional draw / fade. → **moved to Phase BC, ball control (BC1)**.
 - [ ] D5 More surfaces: deep rough, waste areas, gorse / heather. Today: fairway, rough, sand, rock, water, OB.
 - [ ] D6 Wind shown in the landing zones (flags, trees moving). Today: the HUD arrow and speed, and the flag at the cup.
 - [ ] D7 Built walls (stone wall, low wall) as in-play obstacles the ball bounces off. Today: trees and boulders only. Natural rock cliffs need no engine work (steep terrain + rock surface).
@@ -217,6 +217,29 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [x] V3 Ball-flight camera with **variety**: sometimes the flight as today (behind), sometimes **at an angle** from the side, sometimes **from the landing spot, looking back at the ball coming in**. Chosen per shot by rules + the seeded RNG (no same view many times in a row; short shots and putts stay simple). A setting to turn variety off (classic camera). *(Dev, Nov 18: `pickFlightView`, own seeded stream, in-bounds + line-of-sight check incl. trees, Settings Varied / Classic)*
 - [x] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round. *(Dev, Nov 18: tee → aimTarget → green, `flyover` state, rounds and `?hole=`, not scenarios; Settings On / Off)*
 - [x] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport. *(Dev, Nov 18: tests/views.test.js (15); session-check and menu-check pass; headless software WebGL can't measure fps, the new camera math costs < 0.1 ms per frame, see PR #63)*
+
+## Phase BC: Ball control (owner, 2026-11-18/19, NEXT)
+Shape the shot on purpose, before the swing, by **choosing where the club hits the ball** (the impact point). Physics and swing feel change, so AGENTS.md rules 8–9 apply (v2 re-record, per-shot v1 exceptions), and **a centre hit must be exactly today's shot** (every existing baseline shot unchanged). The owner's reference is a screenshot of another game's ball icon with a movable impact dot (learn the idea, copy no look).
+**BC0 design, decided by the owner:**
+- **Control:** a small ball icon in the bottom-right corner shows the impact point as a dot; it resets to the centre every shot. **Phone:** tap or drag on the ball icon. **PC: Shift + arrows** move the dot (plain arrows still aim). Putts: no impact point (putts stay straight, S14).
+- **Left / right = curve, with a "start out, then curve back" flight**, right-handed by default: an impact point on the **left** of the ball starts the ball out to the **left**, then it **curves to the right**; on the **right**, it starts right and curves left. Keep a **handedness** switch in the code from the start (no characters yet; a left-handed player would mirror it).
+- **Bottom / top = height:** **bottom** → a **higher** flight that **rolls less** and is **affected more by the wind**; **top** → a **lower** flight that **rolls more** and is **affected less by the wind** (the risk/reward of the choice).
+- **Corners combine** both (e.g. low-left = a high flight that starts left and curves right).
+- **Readability (BC4):** the aim line and the landing marker show the shaped flight (out and back), so there are no surprises. Never a blind shot.
+- **Fairness:** the lie limits the effect (rough and sand reduce curve and height change; capped lies as today). Strength per club: propose it in the PR (e.g. wedges change height most, the Driver curves most).
+- **Spin is NOT decided** (owner): maybe later. If it is added, it is a **separate control**, not part of the impact point.
+- [ ] BC0 ✅ Design above (owner, 2026-11-19). The dev proposes the exact curve/height/roll/wind amounts per club as tunables; the owner tunes them on the phone.
+- [ ] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch)
+- [ ] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind)
+- [ ] BC3 Spin: **undecided**; only if the owner asks, as a separate control
+- [ ] BC4 The aim line and marker show the shaped flight; tests on every hole that a shaped default shot is never blind
+- [ ] BC5 The impact-point control: ball icon (tap/drag), Shift + arrows on PC, reset each shot, hidden on putts; tests; How to Play line
+
+## Backlog after the playtest 1 pass (PM, 2026-11-19)
+- [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
+- [ ] X15 The real ball tests every obstacle on every physics step (`firstHit` in ball.js): a coarse grid would speed up ⏩ Skip and flights on tree-heavy holes (also the warning flight, ~1–3 ms per aim step on mtn-04).
+- [ ] X16 (to confirm on the owner's phone) A very quick tap on the ▶/◀ touch buttons may not nudge the aim (QA N2 on PR #66; Playwright releases within one frame).
+- [ ] Drag aiming on touch → Phase U.
 
 ## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
 A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.
