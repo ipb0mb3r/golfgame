@@ -20,7 +20,7 @@
 | `tech-lead` | No (report only) | inherit | gate B, last, after the fix pass; also one-off consults (e.g. the art feasibility report, 2026-11-19) |
 | `course-designer` | Hole data only (`course/*` branches) | inherit | one hole per session, **co-designs with Alexis** (he talks to it directly) |
 | `artist` | No game code: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (`art/*` branches) | inherit | art style, palettes, **modular biome kits**; co-designs with Alexis (added 2026-11-19) |
-| `ui-designer` | No game code: `docs/UI.md`, `docs/ui/` specs + clickable mock-ups (`ui/*` branches) | inherit | menus and HUD, function **and** look; co-designs with Alexis; the dev builds it (added 2026-11-19) |
+| `ui-designer` | No game code: `docs/UI.md`, `docs/ui/` specs + clickable mock-ups (`ui/*` branches) | inherit | menus and HUD, function **and** look; co-designs with Alexis; **never writes game code, the dev builds it** (owner decision A, 2026-11-19) |
 
 Prompts and budgets: `docs/AGENT_PROMPTS.md`. The agent files point there, so update the prompts in one place.
 
