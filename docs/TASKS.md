@@ -218,7 +218,7 @@ The camera matters more now that the player aims himself (S21/S22). Camera code 
 - [x] V4 Hole intro flyover (was D3): follows the hole's regular route from the tee to the green (owner: no need to show every route); tap to skip; once per hole per round. *(Dev, Nov 18: tee → aimTarget → green, `flyover` state, rounds and `?hole=`, not scenarios; Settings On / Off)*
 - [x] V5 Tests (view choice in core, seeded) and `tools/session-check.mjs` still passing; fps check on a phone-size viewport. *(Dev, Nov 18: tests/views.test.js (15); session-check and menu-check pass; headless software WebGL can't measure fps, the new camera math costs < 0.1 ms per frame, see PR #63)*
 
-## Phase BC: Ball control (owner, 2026-11-18/19, NEXT)
+## Phase BC: Ball control (owner, 2026-11-18/19) ✅ done (#68)
 Shape the shot on purpose, before the swing, by **choosing where the club hits the ball** (the impact point). Physics and swing feel change, so AGENTS.md rules 8–9 apply (v2 re-record, per-shot v1 exceptions), and **a centre hit must be exactly today's shot** (every existing baseline shot unchanged). The owner's reference is a screenshot of another game's ball icon with a movable impact dot (learn the idea, copy no look).
 **BC0 design, decided by the owner:**
 - **Control:** a small ball icon in the bottom-right corner shows the impact point as a dot; it resets to the centre every shot. **Phone:** tap or drag on the ball icon. **PC: Shift + arrows** move the dot (plain arrows still aim). Putts: no impact point (putts stay straight, S14).
@@ -228,12 +228,30 @@ Shape the shot on purpose, before the swing, by **choosing where the club hits t
 - **Readability (BC4):** the aim line and the landing marker show the shaped flight (out and back), so there are no surprises. Never a blind shot.
 - **Fairness:** the lie limits the effect (rough and sand reduce curve and height change; capped lies as today). Strength per club: propose it in the PR (e.g. wedges change height most, the Driver curves most).
 - **Spin is NOT decided** (owner): maybe later. If it is added, it is a **separate control**, not part of the impact point.
-- [ ] BC0 ✅ Design above (owner, 2026-11-19). The dev proposes the exact curve/height/roll/wind amounts per club as tunables; the owner tunes them on the phone.
+- [x] BC0 ✅ Design above (owner, 2026-11-19). The dev proposes the exact curve/height/roll/wind amounts per club as tunables; the owner tunes them on the phone.
 - [x] BC1 Curve from the left/right impact point (start out, then curve back; handedness switch) *(Dev, Nov 19, `dev/BC-ball-control`, PR #68: `core/shape.js`, tests/shape.test.js, 9 new v2 shots; amounts accepted by the PM as the starting point, `BC_BACK` 1)*
 - [x] BC2 Height from the bottom/top impact point (higher = less roll, more wind; lower = more roll, less wind) *(Dev, Nov 19, PR #68: same carry for top and bottom)*
+- [x] BC tune (owner playtest on #68, 2026-11-19): `BC_BACK` 1 (lands on the aim line), high/low unchanged, **curve +15%** (`start` Driver 11.5, 3W 10.35, 5i 9.2, 7i 8.05, 9i 6.9, PW 5.75, SW 4.6)
 - [ ] BC3 Spin: **undecided**; only if the owner asks, as a separate control
 - [x] BC4 The aim line and marker show the shaped flight; tests on every hole that a shaped default shot is never blind *(Dev, Nov 19, PR #68: `aimMarks().shape` (path, roll, rest), curved yellow dots + white run-out dots and ring, minimap curve, shaped K4 warning and S23 hazard; tests/shape-preview.test.js)*
 - [x] BC5 The impact-point control: ball icon (tap/drag), Shift + arrows on PC, reset each shot, hidden on putts; tests; How to Play line *(Dev, Nov 19, PR #68: + double tap = centre, caption pill above the icon, fine aim moved to Shift + A / D; tests/shape-preview.test.js)*
+
+## Small gameplay items (owner, 2026-11-19)
+- [ ] **FL1** (owner: "Ability to hit the flagpole. It's always a fun thing when it arrives on an approach or chip; it would not bounce much and the ball drops dead, sometimes even in the hole") **The flagstick is an obstacle.** A ball that hits the pole in the air or on the roll loses almost all its speed (a small, soft rebound, tunable) and drops near the pole; because the pole stands in the cup, a ball that drops right at it can fall in (normal cup rules). Putts: today's cup rules first (the stick counts as out for putts, unless the dev finds a reason otherwise: ask in the PR). The aim line / K4 warning must **not** treat the pole as a tree (it never turns the marker red). Physics change → AGENTS.md rules 8–9 (new v2 shots for a pole hit and a pole-in; any v1 shot that moves is listed per shot). Tests in core (hit, dead drop, drop-in, putts unchanged). A ?scenario= spot for a chip at the pin so the owner can try it on the phone.
+
+## Phase MP: Main menu pass (owner, 2026-11-19; designed by the ui-designer, built by the dev)
+Today's menu (Phase 7): Play → Solo / vs AI / Practice, course list from `sets.js`, Settings. The owner wants room for **more game modes**, better **round and hole selection**, and **round options**. The ui-designer designs it with the owner first (MP0), then the dev builds it in one or more PRs.
+- [ ] **MP0** 🅿️ Owner + ui-designer: menu structure and look (screens, flow, mock-ups at phone size). Includes how modes will be added later without a redesign.
+- [ ] **MP1** Game modes shown as a list that grows from data (today Solo, vs AI, Practice), so a new mode is a data entry + its rules, not a new menu.
+- [ ] **MP2** Round preview: before starting a course, see its holes (number, name, par, length, a one-line **description** per hole). Holes get a `desc` field (course designer fills it). Later: a minimap **preview image** per hole.
+- [ ] **MP3** **Build your own playlist:** pick holes (from any course) in an order, play them as a round (any length, DESIGN §8). Saved in localStorage (try/catch), named, editable; vs AI works on it (rivals use each hole's difficulty).
+- [ ] **MP4** Round options before tee-off, from data: today wind (on/off or strength?) and vs AI difficulty; **weather** once Phase 5 rain exists. Owner decides the first list in MP0.
+- [ ] **MP5** Tests: the new menu model in core (pure), menu-check paths for the new screens, playlists saved/loaded/broken data ignored.
+
+## Phase A: Art pipeline (owner, 2026-11-19; scope from the tech lead's art report)
+Owner goals: richer textures and models, an animated golfer who hits the ball, menu sprites, a "retro" post-processing look, and **modular biome kits** (mix and match palette, ground, trees, props, sky). The tech lead's feasibility report (`reviews/art-tech-lead.md`) proposes the engine tasks and a phone performance budget; the PM adds them here as A1… once the owner has talked it through.
+- [ ] **A0** 🅿️ Owner + tech lead: talk through the report; owner picks what to build first.
+- [ ] **ART0** 🅿️ Owner + artist: art style, palette, what a biome kit contains → `docs/ART_STYLE.md`.
 
 ## Backlog after the playtest 1 pass (PM, 2026-11-19)
 - [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
@@ -243,7 +261,7 @@ Shape the shot on purpose, before the swing, by **choosing where the club hits t
 
 ## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
 A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.
-- [ ] U0 🅿️ Owner + PM: scope and priorities of the UI pass (what screens, what devices, reference screenshots)
+- [ ] U0 🅿️ Owner + ui-designer (with the PM): scope and priorities of the UI pass (what screens, what devices, reference screenshots). The main menu part is Phase MP.
 
 ## Phase 8: Small polish (only if useful for testing)
 - [x] **X1** Camera follows the ball, plus a green view

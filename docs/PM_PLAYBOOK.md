@@ -17,10 +17,14 @@
 | `dev` | Yes (`dev/*` branches) | inherit | one phase / task group at a time |
 | `qa` | No (report only) | sonnet | after **every** dev PR: Light (15 min) for small PRs, Full (30 min) for big ones |
 | `reviewer-*` (security, scalability, maintainability, compatibility, testing) | No (report only) | sonnet | review gates only, in parallel |
-| `tech-lead` | No (report only) | inherit | gate B, last, after the fix pass |
+| `tech-lead` | No (report only) | inherit | gate B, last, after the fix pass; also one-off consults (e.g. the art feasibility report, 2026-11-19) |
 | `course-designer` | Hole data only (`course/*` branches) | inherit | one hole per session, **co-designs with Alexis** (he talks to it directly) |
+| `artist` | No game code: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (`art/*` branches) | inherit | art style, palettes, **modular biome kits**; co-designs with Alexis (added 2026-11-19) |
+| `ui-designer` | No game code: `docs/UI.md`, `docs/ui/` specs + clickable mock-ups (`ui/*` branches) | inherit | menus and HUD, function **and** look; co-designs with Alexis; the dev builds it (added 2026-11-19) |
 
 Prompts and budgets: `docs/AGENT_PROMPTS.md`. The agent files point there, so update the prompts in one place.
+
+**Requests between agents.** Subagents can't launch each other. The artist and UI designer list what they need under "Requests for …" in their PR (art from the artist, building from the dev, checks from QA). The PM reads those, turns them into task IDs, tells the owner in one line, and launches the agent. Assets flow artist → UI designer through `assets/` + a request line, never by editing each other's files.
 
 ## 3. How the PM works (the habits that kept this project clean)
 **Owner's PM rules (2026-11-18, always apply):**
@@ -55,14 +59,19 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Phase V: camera** (#63, QA #64): main's aiming camera (`CAM_AIM_HEIGHT` 1, owner pick), 🔍 Landing / 👁 Read buttons, flight-camera variety with a 1.2 s hold after the hit, side camera clear of trees, a slow smooth flyover (high start behind the tee, 1.4 s orbit at the hole, no pause), and a **small floating down-pointing landing marker** (owner pick).
 - **X14 smooth aiming** (#65, QA #66): the K4 "at ⚑ power" warning on full shots was the stutter; dropped. Shift = fine aim.
 - Docs: Phase U/V plans (#52, #56), 2-click putting decision (#58), this handoff.
+- **Phase BC: ball control** (#68, QA #69; 2026-11-19, second Claude Code PM session). Built by 4 fresh devs: core (BC1–2) → aim line + icon (BC4–5) → flight camera on the shaped landing → owner tune. Owner picks: `BC_BACK` 1 (option A, lands on the aim line), high/low as proposed ("perfect"), **curve +15%** (`start` Driver 11.5 … SW 4.6; full left Driver 10.7 m off the line). Shift + arrows = impact dot, fine aim = Shift + A / D, double tap = centre. QA Full passed with no bugs; the Light re-check of the +15% was partial (script trouble), covered by the BC4 every-hole test.
 
-**In flight:** nothing. Main is clean.
+**In flight:**
+- **Tech lead: art and engine feasibility** (one-off consult for the owner, report `reviews/art-tech-lead.md`, PR "Tech lead: art and engine feasibility"). Questions: richer assets/textures, an animated golfer, menu sprites, retro post-processing, modular biomes, stay on Three.js + no build? Plus proposed A-tasks (art pipeline) and a phone performance budget. The owner wants to talk it through: relay his follow-ups to the same tech lead.
+- This docs PR: `artist` + `ui-designer` agents, FL1 flagpole, Phase MP menu pass.
 
 **Next (in order):**
-1. **Phase BC: ball control** (owner chose it, 2026-11-19). The design is decided: **TASKS → Phase BC (BC0)**. Impact point on a ball icon; Shift + arrows on PC; left/right = start out then curve back (right-handed default, handedness switch); bottom/top = higher+less roll+more wind / lower+more roll+less wind; spin undecided (separate control if ever). Dev prompt below.
-2. **Art style decision + Phase U: UI pass** for phones and desktop (scope U0 with the owner first; he'll bring screenshots of looks, HUDs and menus he likes).
-3. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-4. **Real courses** (a genre talk per theme first) and **Phase 5: rain** (rules in DESIGN §7).
+1. **Owner + tech lead chat on art** → PM turns the A-tasks into TASKS ("Phase A: Art pipeline") and puts the performance budget in DESIGN.
+2. **Art style session** (`artist` + owner: style, palette, biome-kit idea) and **U0 scope** (`ui-designer` + owner). The dev builds the A-tasks the artist needs.
+3. **FL1 flagpole** (small dev PR; can run while the art talks happen, the engine is free).
+4. **Phase MP: main menu pass** (`ui-designer` designs MP1–MP5 → dev builds), then Phase U for the HUD.
+5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+6. **Real courses** (a genre talk per theme first, dressed with biome kits) and **Phase 5: rain** (rules in DESIGN §7; then a weather option in MP).
 
 **Lessons from the 2026-11-18/19 session (keep doing this):**
 - **Fresh agent per task.** Don't keep resuming one dev for many tweaks: its history grows (one reached ~440k tokens) and every resume reloads it, which is slow and burns the 5-hour usage limit. My prompts stand alone; small follow-ups can go to a fresh dev too.
@@ -73,6 +82,8 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Docs PRs: push everything before the owner merges.** Commits pushed to a docs branch after its merge are lost (the first Phase BC notes were). Check `git log origin/main` after each docs merge.
 - QA tends to overrun its budget: give a short MUST list, a hard stop, and run the slow menu-check yourself.
 - If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
+- **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
+- Agent worktrees live in `.claude/worktrees/` (excluded locally in `.git/info/exclude`, never committed).
 
 **Open owner decisions / backlog to remember:**
 - **S20:** `CUP_CAPTURE_SPEED` (today 3.2). Compare `?scenario=h1-green&tune=CUP_CAPTURE_SPEED:2.4` / `2.8`.
@@ -86,14 +97,5 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Before the real courses:** a genre talk per course theme. Real courses get more sloped and sometimes larger greens (GENRE_NOTES). Tree rules depend on the biome (forest/mountain: lots of trees).
 - **Later:** save a round in progress; more settings (seaside, desert, tropical); the Three.js upgrade (X6); "stay on Three.js?" at Gate B (DESIGN §11).
 
-### Phase BC prompt (ready: send to a fresh `dev`)
-```
-Assignment: "Phase BC: Ball control". Branch: dev/BC-ball-control, from main. Task IDs: BC1, BC2, BC4, BC5 (not BC3: spin is undecided).
-Read docs/TASKS.md → Phase BC (the BC0 design is decided by the owner: follow it exactly) and DESIGN (swing, flight, wind, S21/S22 aim marker, K4/S23 warnings, S14 putting) first.
-Context: the player picks where the club hits the ball on a small ball icon (bottom right; tap/drag on phones, Shift + arrows on PC; resets to the centre each shot; hidden on putts).
-Left/right: the ball starts out to that side, then curves back the other way (right-handed default; keep a handedness switch). Bottom/top: higher flight, less roll, more wind / lower flight, more roll, less wind. The lie limits the effect.
-Rules: a centre hit is exactly today's shot (v1 and v2 unchanged for every existing shot); new shaped shots get new v2 shots (rule 8) and, if any v1 shot moves, rule 9. The aim line and marker show the shaped flight; never a blind shot (test on every hole). Physics in core (pure, tested), Three.js only in src/game, tunables in config.js and ?tune=.
-First: propose the per-club amounts (curve, launch offset, height, roll, wind factor) and the ball-icon UI in the PR's first comment with a screenshot, and wait for the PM before building past BC1+BC2 core.
-PR: "Phase BC: Ball control". Owner links pinned to the full commit SHA. Phone screenshots of the ball icon and a shaped aim line. Run tools/menu-check.mjs alone.
-Budget: check in after ~90 min. QA will be Full.
-```
+### Prompts that worked
+The Phase BC dev prompts (core first with a stop for PM review, then a fresh dev for the UI, then small fresh devs for fixes and tuning) are on PR #68 and in this file's git history. Reuse that shape for new systems: **build the core, stop, PM answers, then the rest.**
