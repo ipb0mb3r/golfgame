@@ -324,6 +324,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
+    props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);
     aimLabel();
   }
@@ -332,7 +333,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   function aimLabel() {
     if (!marks) { hud.setAimLabel(null); return; }
     camera.updateMatrixWorld();
-    const v = markPt.set(marks.x, terrain.heightAt(marks.x, marks.z) + 0.1, marks.z).project(camera);
+    const v = markPt.set(marks.x, props.pinTop(), marks.z).project(camera); // above the floating marker (PR #63)
     const onScreen = v.z < 1 && Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1;
     hud.setAimLabel(onScreen ? aimMarkLabel(marks) : null, (v.x + 1) / 2, (1 - v.y) / 2, marks.capped, !!warn, !!marks.hazard);
   }
