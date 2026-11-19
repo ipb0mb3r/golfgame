@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biome Mock-up</title>
+<!-- ART0 round 1 mock-up: one mountain hole (shaped like mtn-02) dressed by a biome set.
+     ?biome=alpine|rockies  &palette=alpine-sunset (optional)  &hud=0 (hide the HUD frame).
+     Stand-alone page; it does not use src/. — Agent: artist -->
+<script type="importmap">{ "imports": { "three": "../../../vendor/three-0.160.0/three.module.js" } }</script>
+<style>
+  :root { --hud: rgba(18, 38, 46, 0.78); --hudText: #f4f7f2; --gold: #ffd447; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #8fc3e8; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  canvas { display: block; }
+  .hud { position: fixed; color: var(--hudText); background: var(--hud); border-radius: 12px; font-size: 12px; line-height: 1.45; }
+  #info { top: 12px; left: 12px; padding: 8px 12px; width: 190px; }
+  #info b.t { color: var(--gold); font-size: 14px; }
+  #wind { top: 12px; right: 12px; padding: 8px 10px; width: 68px; text-align: right; }
+  #mini { top: 66px; right: 12px; width: 104px; height: 186px; padding: 0; overflow: hidden; border: 2px solid rgba(255,255,255,.5); }
+  #meter { bottom: 64px; left: 12px; right: 12px; height: 26px; border-radius: 14px; }
+  #clubs { bottom: 12px; left: 12px; right: 12px; height: 42px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  #tag { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.9); color: #233; padding: 4px 12px; border-radius: 99px; font-size: 13px; font-weight: 700; white-space: nowrap; }
+  body.nohud .hud { display: none; }
+</style>
+</head>
+<body>
+<div class="hud" id="info"><b class="t">HOLE 2 · PAR 4</b><br>To pin: 331 yd · plays 365 yd<br>Lie: Tee box<br>Aim: straight ahead</div>
+<div class="hud" id="wind">WIND<br><b>7 mph</b></div>
+<div class="hud" id="mini"><canvas id="miniC" width="104" height="186"></canvas></div>
+<div class="hud" id="meter"></div>
+<div class="hud" id="clubs">Driver · max 225 yd</div>
+<div id="tag"></div>
+<script type="module">
+import * as THREE from 'three';
+import { PALETTES, BIOMES } from './draft-data.js';
+import { colourAt, hex, mixHex } from './paint.js';
+
+const q = new URLSearchParams(location.search);
+const biomeId = q.get('biome') || 'mountain';
+const raw = BIOMES[biomeId];
+const B = raw.base ? { ...BIOMES[raw.base], ...raw } : raw;      // option B: a variant borrows from its base
+const P = PALETTES[q.get('palette') || B.palette];
+if (q.get('hud') === '0') document.body.classList.add('nohud');
+document.getElementById('tag').textContent = `${B.name.split(' (')[0]} · ${P.label.split(' · ')[1]} (rough mock-up, not a style)`;
+document.body.style.background = P.skyHorizon;
+const SEA = B.backdrop === 'seaHorizon'; // beach: beyond the left OB the ground drops to a beach and the sea
+
+// ---------------- the hole (shaped like mtn-02, plus a pond and a rock outcrop to test readability) ----------------
+const FAIR = [[0, -24, 12], [0, -120, 20], [3, -212, 24], [46, -252, 20], [80, -278, 15]];
+const FAIR2 = [[18, -180, 8], [42, -226, 13], [70, -262, 14]];
+const GREEN = { cx: 94, cz: -285, rx: 15, rz: 13 }, CUP = { x: 96, z: -287 };
+const BUNKERS = [{ cx: -12, cz: -244, rx: 9, rz: 6 }, { cx: 111, cz: -294, rx: 4, rz: 8 }, { cx: 80, cz: -297, rx: 6, rz: 4 }];
+const POND = { cx: -30, cz: -150, rx: 13, rz: 20 };
+const ROCKS = [{ cx: -44, cz: -70, rx: 7, rz: 5 }];
+const OB = { x0: -56, x1: 132, z0: -322, z1: 18 };
+function segDist(px, pz, line) {
+  let best = { d: 1e9, w: 0 };
+  for (let i = 0; i < line.length - 1; i++) {
+    const [ax, az, aw] = line[i], [bx, bz, bw] = line[i + 1];
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((px - ax) * dx + (pz - az) * dz) / (dx * dx + dz * dz)));
+    const d = Math.hypot(px - ax - dx * t, pz - az - dz * t);
+    if (d < best.d) best = { d, w: aw + (bw - aw) * t };
+  }
+  return best;
+}
+const ell = (x, z, e, m = 0) => ((x - e.cx) / (e.rx + m)) ** 2 + ((z - e.cz) / (e.rz + m)) ** 2;
+function surfaceAt(x, z) {
+  if (SEA && (x < OB.x0 - 40 + 6 * Math.sin(z / 23) || z < OB.z0 - 34 + 5 * Math.sin(x / 19))) return 'sand';
+  if (x < OB.x0 || x > OB.x1 || z < OB.z0 || z > OB.z1) return 'deepRough';
+  if (Math.abs(x) < 5 && z > -4 && z < 4) return 'tee';
+  if (ell(x, z, POND) < 1) return 'water';
+  for (const b of BUNKERS) if (ell(x, z, b) < 1) return 'sand';
+  for (const r of ROCKS) if (ell(x, z, r) < 1 + 0.25 * Math.sin(x * 1.3 + z)) return 'rock';
+  if (ell(x, z, GREEN) < 1) return 'green';
+  if (ell(x, z, GREEN, 2.5) < 1) return 'fringe';
+  const a = segDist(x, z, FAIR), b = segDist(x, z, FAIR2);
+  if (a.d < a.w || b.d < b.w) return 'fairway';
+  if (Math.abs(x + 50) < 1.4) return 'path';
+  return 'rough';
+}
+function heightAt(x, z) {
+  let h = -0.011 * z + 0.9 * Math.sin(x / 19 + 1) * Math.cos(z / 33) + 0.4 * Math.sin(z / 21);
+  for (const [hx, hz, r, hh] of [[-38, -120, 24, 3], [-32, -250, 28, 3.6], [70, -330, 28, 3.4], [4, -150, 20, -0.8]]) {
+    const d = Math.hypot(x - hx, z - hz) / r; if (d < 1) h += hh * 0.5 * (1 + Math.cos(Math.PI * d));
+  }
+  const out = Math.max(0, x - OB.x1, OB.x0 - x, z - OB.z1, OB.z0 - z);
+  const shore = Math.max(OB.x0 - x, OB.z0 - 14 - z);
+  if (SEA && shore > 0) h -= Math.min(1, shore / 40) * (h + 1.2); // slopes down to the beach
+  else h += Math.min(out, 50) ** 2 * 0.004;                           // banks rise beyond OB
+  if (ell(x, z, POND) < 1.2) h -= 0.8 * Math.max(0, 1.2 - ell(x, z, POND));
+  if (ell(x, z, GREEN) < 1) h += 0.4 * (1 - ell(x, z, GREEN));
+  return h;
+}
+
+// ---------------- renderer, sky, fog, light ----------------
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(innerWidth, innerHeight);
+document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(P.fog, 260, 2300);
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.5, 6000);
+const VIEW = q.get('view') || 'tee';
+if (VIEW === 'approach') { camera.position.set(58, 20, -218); camera.lookAt(96, -4, -292); }
+else camera.position.set(-1.5, 9, 24);
+if (VIEW !== 'approach') camera.lookAt(6, -8, -170);
+scene.add(new THREE.HemisphereLight(P.ambient, P.shadow, 1.25));
+const sun = new THREE.DirectionalLight(P.sun, 1.9); sun.position.set(-90, 80, 30); scene.add(sun);
+
+// sky: one gradient dome, coloured by skyTop / skyHorizon
+const skyMat = new THREE.ShaderMaterial({
+  side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color(P.skyTop) }, hor: { value: new THREE.Color(P.skyHorizon) } },
+  vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader: 'uniform vec3 top; uniform vec3 hor; varying vec3 vp; void main(){ float t = clamp(normalize(vp).y*2.2, 0.0, 1.0); gl_FragColor = vec4(mix(hor, top, pow(t, 0.8)), 1.0); }',
+});
+scene.add(new THREE.Mesh(new THREE.SphereGeometry(5000, 48, 32), skyMat));
+// clouds: flat-bottomed puffs (merged later by the engine, AP1)
+const cloudMat = new THREE.MeshLambertMaterial({ color: P.cloud, emissive: P.cloud, emissiveIntensity: 0.55, fog: false, flatShading: true });
+let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+for (let i = 0; i < 7; i++) {
+  const g = new THREE.Group(), x = -800 + rnd() * 1600, z = -1600 - rnd() * 700, y = 760 + rnd() * 380;
+  for (let k = 0; k < 4; k++) {
+    const m = new THREE.Mesh(new THREE.IcosahedronGeometry(30 + rnd() * 25, 0), cloudMat);
+    m.position.set(k * 38 - 55, rnd() * 12, rnd() * 20); m.scale.set(1.3, 0.62, 0.9); g.add(m);
+  }
+  g.position.set(x, y, z); scene.add(g);
+}
+
+// ---------------- backdrop: recoloured by backFar / backNear / backCap ----------------
+function ridgeLayer({ dist, n, peaks, height, snow, colour, cap, capShade, haze, jag, seed: s, flat = 0, round = false }) {
+  seed = s; const pos = [], col = [];
+  const tops = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, ang = -0.75 + t * 1.5;
+    let h = 0;
+    for (const p of peaks) { const d = Math.abs(ang - p.a) / p.w; h = Math.max(h, d < 1 ? p.h * (round ? 0.5 * (1 + Math.cos(Math.PI * d)) : 1 - d) : 0); }
+    h = h * (1 - flat) + flat * Math.min(h, height * 0.55) ;
+    h += (rnd() - 0.5) * jag;
+    tops.push({ x: Math.sin(ang) * dist, z: -Math.cos(ang) * dist, h: Math.max(10, h) , sn: snow + (rnd() - 0.5) * jag * 1.4 });
+  }
+  const c0 = new THREE.Color(mixHex(colour, P.fog, haze)), cs = new THREE.Color(mixHex(colour, P.shadow, 0.18)).lerp(new THREE.Color(P.fog), haze);
+  const k0 = new THREE.Color(mixHex(cap, P.fog, haze * 0.7)), ks = new THREE.Color(mixHex(capShade, P.fog, haze * 0.7));
+  const quad = (a, b, ya0, ya1, yb0, yb1, c) => {
+    pos.push(a.x, ya0, a.z, b.x, yb0, b.z, b.x, yb1, b.z, a.x, ya0, a.z, b.x, yb1, b.z, a.x, ya1, a.z);
+    for (let k = 0; k < 6; k++) col.push(c.r, c.g, c.b);
+  };
+  for (let i = 0; i < n; i++) {
+    const a = tops[i], b = tops[i + 1], shade = b.h < a.h;           // the slope facing away from the sun is darker
+    const sa = Math.min(a.h, a.sn), sb = Math.min(b.h, b.sn);
+    quad(a, b, -60, sa, -60, sb, shade ? cs : c0);
+    if (a.h > a.sn || b.h > b.sn) quad(a, b, sa, a.h, sb, b.h, shade ? ks : k0);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide }));
+}
+function makePeaks(count, hMin, hMax, wMin, wMax, s) {
+  seed = s; const out = [];
+  for (let i = 0; i < count; i++) out.push({ a: -0.65 + rnd() * 1.3, h: hMin + rnd() * (hMax - hMin), w: wMin + rnd() * (wMax - wMin) });
+  return out;
+}
+if (B.backdrop === 'peaksSnow') {
+  // sharp, tall, snowy: an alpine skyline
+  scene.add(ridgeLayer({ dist: 2600, n: 120, peaks: makePeaks(14, 380, 760, 0.07, 0.16, 3), height: 760, snow: 420, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.45, jag: 26, seed: 11 }));
+  scene.add(ridgeLayer({ dist: 1900, n: 110, peaks: makePeaks(10, 200, 430, 0.08, 0.2, 5), height: 430, snow: 300, colour: P.backNear, cap: P.backCap, capShade: P.backCapShade, haze: 0.2, jag: 18, seed: 12 }));
+} else if (B.backdrop === 'hillsRound') {
+  // soft rolling hills, no snow
+  scene.add(ridgeLayer({ dist: 2600, n: 140, peaks: makePeaks(9, 160, 300, 0.25, 0.5, 31), height: 300, snow: 999, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.35, jag: 3, seed: 32, round: true }));
+  scene.add(ridgeLayer({ dist: 1500, n: 140, peaks: makePeaks(8, 60, 130, 0.2, 0.45, 33), height: 130, snow: 999, colour: P.backNear, cap: P.backCap, capShade: P.backCapShade, haze: 0.15, jag: 2, seed: 34, round: true }));
+} else if (B.backdrop === 'seaHorizon') {
+  // the sea to the horizon on the left and far side, one green volcano island
+  const sea = new THREE.Mesh(new THREE.PlaneGeometry(9000, 9000).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: mixHex(P.water, P.fog, 0.15) }));
+  sea.position.set(-4500 - 128, -0.6, -4500 + 400); scene.add(sea);
+  const sea2 = sea.clone(); sea2.position.set(0, -0.6, -4500 - 372); scene.add(sea2);
+  scene.add(ridgeLayer({ dist: 2600, n: 100, peaks: [{ a: -0.32, h: 520, w: 0.38 }, { a: 0.05, h: 260, w: 0.2 }], height: 520, snow: 470, colour: P.backFar, cap: P.cloud, capShade: P.backCapShade, haze: 0.18, jag: 6, seed: 35, round: true }));
+} else {
+  // long, flat-topped warm ridges with only the highest tips white, then a far city
+  scene.add(ridgeLayer({ dist: 2600, n: 90, peaks: makePeaks(8, 300, 560, 0.18, 0.4, 8), height: 560, snow: 500, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.4, jag: 12, seed: 21, flat: 0.35 }));
+  scene.add(ridgeLayer({ dist: 1900, n: 80, peaks: makePeaks(7, 120, 260, 0.2, 0.45, 9), height: 260, snow: 999, colour: P.backNear, cap: P.backCap, capShade: P.backCapShade, haze: 0.18, jag: 8, seed: 22, flat: 0.5 }));
+}
+
+// ---------------- ground: one shared set of textures, coloured by the palette ----------------
+const X0 = -170, X1 = 230, Z0 = -440, Z1 = 40, RES = 3;
+const W = (X1 - X0) * RES, H = (Z1 - Z0) * RES;
+const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+const ctx = cv.getContext('2d'), img = ctx.createImageData(W, H);
+for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+  const x = X0 + (i + 0.5) / RES, z = Z0 + (j + 0.5) / RES, s = surfaceAt(x, z);
+  const c = colourAt(P, s, x, z), k = (j * W + i) * 4;
+  img.data[k] = c[0]; img.data[k + 1] = c[1]; img.data[k + 2] = c[2]; img.data[k + 3] = 255;
+}
+ctx.putImageData(img, 0, 0);
+// crisp edges: a thin darker line around sand and water (a readability rule: hazards have an outline)
+const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
+const geo = new THREE.PlaneGeometry(X1 - X0, Z1 - Z0, (X1 - X0) / 2, (Z1 - Z0) / 2); geo.rotateX(-Math.PI / 2);
+const pa = geo.attributes.position, uv = geo.attributes.uv;
+for (let i = 0; i < pa.count; i++) {
+  const x = pa.getX(i) + (X0 + X1) / 2, z = pa.getZ(i) + (Z0 + Z1) / 2;
+  pa.setXYZ(i, x, heightAt(x, z), z); uv.setXY(i, (x - X0) / (X1 - X0), 1 - (z - Z0) / (Z1 - Z0));
+}
+geo.computeVertexNormals();
+scene.add(new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex })));
+// the far ground beyond the painted area
+const far = new THREE.Mesh(new THREE.CircleGeometry(2400, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: P.deepRough }));
+far.position.set(30, -1.5, -200); scene.add(far);
+if (!SEA) {
+  const farRing = new THREE.Mesh(new THREE.RingGeometry(300, 2400, 48).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: mixHex(P.deepRough, P.backNear, 0.25) }));
+  farRing.position.set(30, 0.5, -200); scene.add(farRing);
+}
+
+// ---------------- trees: shared models (library), palette colours ----------------
+const flat = c => new THREE.MeshLambertMaterial({ color: c, flatShading: true });
+const MODELS = { // each: list of [geometry, palette colour]; every model stays at 100-250 triangles
+  pine: () => [[new THREE.CylinderGeometry(0.28, 0.38, 2.6, 6).translate(0, 1.3, 0), P.trunk],
+    ...[[2.4, 3.6, 2.2], [1.9, 3.0, 4.0], [1.3, 2.6, 5.6]].map(([r, h, y], k) => [new THREE.ConeGeometry(r, h, 7).translate(0, y + h / 2, 0), k === 1 ? mixHex(P.pine, P.skyHorizon, 0.12) : P.pine])],
+  aspen: () => [[new THREE.CylinderGeometry(0.16, 0.22, 4.6, 5).translate(0, 2.3, 0), P.trunkAlt],
+    [new THREE.IcosahedronGeometry(1.7, 0).scale(1, 1.45, 1).translate(0, 5.4, 0), P.leafAlt]],
+  round: () => [[new THREE.CylinderGeometry(0.3, 0.45, 3.2, 6).translate(0, 1.6, 0), P.trunk],
+    [new THREE.IcosahedronGeometry(2.6, 0).scale(1, 0.85, 1).translate(0, 4.8, 0), P.leaf],
+    [new THREE.IcosahedronGeometry(1.7, 0).translate(1.1, 6.0, 0.6), mixHex(P.leaf, P.skyHorizon, 0.15)]],
+  palm: () => [[new THREE.CylinderGeometry(0.2, 0.32, 7.5, 6).translate(0, 3.75, 0).rotateZ(0.12), P.trunkAlt],
+    [new THREE.ConeGeometry(3.4, 1.3, 7).translate(0.9, 7.5, 0), P.leafAlt],
+    [new THREE.ConeGeometry(2.2, 1.5, 6).rotateY(0.4).translate(0.9, 8.1, 0), mixHex(P.leafAlt, P.skyHorizon, 0.15)]],
+};
+function instanced(spots, kind) {
+  const m4 = new THREE.Matrix4(), q4 = new THREE.Quaternion(), up = new THREE.Vector3(0, 1, 0);
+  for (const [g, colour] of MODELS[kind]()) {
+    const im = new THREE.InstancedMesh(g, flat(colour), spots.length);
+    spots.forEach((s, i) => { q4.setFromAxisAngle(up, s.rot); m4.compose(new THREE.Vector3(s.x, heightAt(s.x, s.z) - 0.2, s.z), q4, new THREE.Vector3(s.k, s.k * s.tall, s.k)); im.setMatrixAt(i, m4); });
+    scene.add(im);
+  }
+}
+seed = 99;
+const spots = [];
+// the in-play stand inside the corner (same spots as mtn-02)
+for (const [x, z, k] of [[30, -90, .95], [39, -98, 1], [48, -92, .9], [56, -100, 1], [34, -112, 1], [43, -118, .95], [53, -110, .9], [62, -118, 1], [39, -134, .9], [50, -136, .85], [60, -140, 1]]) spots.push({ x, z, k: k * 1.25, tall: 1, rot: rnd() * 6 });
+// rows along the fairway edges and around the green, then the forest beyond OB
+for (let z = -40; z > -330; z -= 11) {
+  for (const side of [-1, 1]) {
+    for (let row = 0; row < 3; row++) {
+      let x = side < 0 ? OB.x0 + 6 + row * 9 + rnd() * 5 : (z > -200 ? 78 + row * 10 : OB.x1 - 4 + row * 9) + rnd() * 5;
+      if (side < 0 && z < -200 && z > -270) x -= 14;
+      if (['fairway', 'water', 'green', 'fringe', 'sand'].includes(surfaceAt(x, z))) continue;
+      spots.push({ x, z: z + rnd() * 6, k: 1.0 + rnd() * 0.6, tall: 0.9 + rnd() * 0.4, rot: rnd() * 6 });
+    }
+  }
+}
+if (!SEA) for (let x = -40; x < 150; x += 9) for (let r = 0; r < 3; r++) spots.push({ x: x + rnd() * 6, z: -338 - r * 10 - rnd() * 6, k: 1.2 + rnd() * 0.6, tall: 1, rot: rnd() * 6 });
+for (let i = 0; i < 520; i++) { // the far forest (the engine would use the cheap *Far model here)
+  const x = -700 + rnd() * 1400, z = -340 - rnd() * 700;
+  if (x > -80 && x < 160 && z > -360) continue;
+  if (SEA && (x < -110 || z < -380)) continue;
+  spots.push({ x, z, k: 1.6 + rnd() * 1.4, tall: 1, rot: rnd() * 6, far: 1 });
+}
+const kinds = B.onTrees, groups = kinds.map(() => []);
+spots.forEach((s, i) => groups[kinds.length > 1 && i % 3 === 1 ? 1 : 0].push(s));
+kinds.forEach((k, i) => instanced(groups[i], k));
+
+
+// ---------------- small props in the rough: tufts and flowers (no physics) ----------------
+seed = 5;
+const tuftG = new THREE.ConeGeometry(0.35, 0.9, 4).translate(0, 0.35, 0);
+const flowerG = new THREE.IcosahedronGeometry(0.22, 0).translate(0, 0.3, 0);
+const tufts = [], flowersA = [], flowersB = [];
+for (let i = 0; i < 2600; i++) {
+  const x = OB.x0 + rnd() * (OB.x1 - OB.x0 + 30) - 15, z = 5 - rnd() * 330;
+  if (surfaceAt(x, z) !== 'rough' && surfaceAt(x, z) !== 'deepRough') continue;
+  if (Math.hypot(x, z) < 12) continue;
+  (i % 5 === 0 ? (i % 2 ? flowersA : flowersB) : tufts).push({ x, z, k: 0.8 + rnd() * 0.6, tall: 1, rot: rnd() * 6 });
+}
+function props(list, g, colour) {
+  const im = new THREE.InstancedMesh(g, flat(colour), list.length), m4 = new THREE.Matrix4();
+  list.forEach((s, i) => { m4.makeScale(s.k, s.k, s.k).setPosition(s.x, heightAt(s.x, s.z) - 0.05, s.z); im.setMatrixAt(i, m4); });
+  scene.add(im);
+}
+props(tufts, tuftG, mixHex(P.rough, P.pine, 0.4));
+props(flowersA, flowerG, P.propA); props(flowersB, flowerG, P.propB);
+// a split-rail fence along the left OB near the tee
+const fenceMat = flat(P.wood);
+for (let z = 10; z > -60; z -= 4) {
+  const x = OB.x0 + 1.5, y = heightAt(x, z);
+  const post = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.2, 0.2), fenceMat); post.position.set(x, y + 0.6, z); scene.add(post);
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.12, 4), fenceMat); rail.position.set(x, y + 0.9, z - 2); scene.add(rail);
+}
+
+// ---------------- big props (out of bounds, no physics) ----------------
+function lodge(x, z, s, rot) {
+  const g = new THREE.Group();
+  for (let k = 0; k < 6; k++) { // stacked logs, two shades
+    const log = new THREE.Mesh(new THREE.BoxGeometry(14, 0.9, 9), flat(k % 2 ? P.wood : mixHex(P.wood, P.trunk, 0.4)));
+    log.position.y = 0.45 + k * 0.9; g.add(log);
+  }
+  const roofShape = new THREE.Shape([new THREE.Vector2(-6.4, 0), new THREE.Vector2(6.4, 0), new THREE.Vector2(0, 5)]);
+  const roof = new THREE.Mesh(new THREE.ExtrudeGeometry(roofShape, { depth: 16, bevelEnabled: false }), flat(P.roof));
+  roof.rotation.y = Math.PI / 2; roof.position.set(-8, 5.4, 0); roof.scale.set(1, 1, 1); g.add(roof);
+  const snow = new THREE.Mesh(new THREE.ExtrudeGeometry(new THREE.Shape([new THREE.Vector2(-3.4, 2.4), new THREE.Vector2(3.4, 2.4), new THREE.Vector2(0, 5.1)]), { depth: 16.2, bevelEnabled: false }), flat(P.propSnow));
+  snow.rotation.y = Math.PI / 2; snow.position.set(-8.1, 5.45, 0); g.add(snow);
+  const chim = new THREE.Mesh(new THREE.BoxGeometry(1.4, 4, 1.4), flat(P.rock)); chim.position.set(3, 8, 2); g.add(chim);
+  for (const wx of [-4, 0, 4]) { const w = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.6, 0.2), flat(P.glass)); w.position.set(wx, 2.6, 4.55); g.add(w); }
+  g.position.set(x, heightAt(x, z), z); g.rotation.y = rot; g.scale.setScalar(s); scene.add(g);
+}
+function city(cx, cz) {
+  seed = 41;
+  for (let i = 0; i < 26; i++) {
+    const w = 14 + rnd() * 20, h = 30 + rnd() * 120, x = cx + (rnd() - 0.5) * 340, z = cz - rnd() * 120;
+    const c = mixHex(i % 3 ? P.glass : mixHex(P.glass, P.backNear, 0.4), P.fog, 0.42);
+    const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, w), new THREE.MeshBasicMaterial({ color: c, fog: false }));
+    m.position.set(x, h / 2 - 5, z); scene.add(m);
+    const top = new THREE.Mesh(new THREE.BoxGeometry(w * 1.02, 3, w * 1.02), new THREE.MeshBasicMaterial({ color: mixHex(P.cloud, P.fog, 0.3), fog: false }));
+    top.position.set(x, h - 5, z); scene.add(top);
+  }
+}
+if (B.bigProps.includes('logLodge')) { lodge(-82, -385, 1.5, 0.5); lodge(150, -415, 1.6, -0.4); lodge(168, -300, 1.4, -1.2); }
+if (B.bigProps.includes('cityBlocks')) city(260, -1500);
+function windmill(x, z, s) {
+  const g = new THREE.Group();
+  const tower = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 3.6, 12, 8).translate(0, 6, 0), flat(P.propSnow)); g.add(tower);
+  const cap = new THREE.Mesh(new THREE.ConeGeometry(2.8, 3, 8).translate(0, 13.5, 0), flat(P.roof)); g.add(cap);
+  for (let k = 0; k < 4; k++) {
+    const blade = new THREE.Mesh(new THREE.BoxGeometry(1.4, 9, 0.2).translate(0, 4.5, 0), flat(P.wood));
+    blade.rotation.z = k * Math.PI / 2 + 0.4; blade.position.set(0, 11.5, 3); g.add(blade);
+  }
+  g.position.set(x, heightAt(x, z), z); g.scale.setScalar(s); g.rotation.y = -0.3; scene.add(g);
+}
+function hut(x, z, s, rot) {
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.BoxGeometry(6, 3, 5).translate(0, 1.5 + 1, 0), flat(P.wood)); g.add(body);
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(5.6, 3.4, 4).rotateY(Math.PI / 4).translate(0, 5.7, 0), flat(P.roof)); g.add(roof);
+  for (const px of [-2.6, 2.6]) for (const pz of [-2.1, 2.1]) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1, 0.3).translate(px, 0.5, pz), flat(P.trunk)); g.add(st); }
+  g.position.set(x, heightAt(x, z), z); g.scale.setScalar(s); g.rotation.y = rot; scene.add(g);
+}
+if (B.bigProps.includes('windmill')) { windmill(-72, -420, 1.5); windmill(172, -330, 1.3); }
+if (B.bigProps.includes('beachHut')) { hut(-88, -330, 1.3, 0.3); hut(-60, -352, 1.2, -0.2); hut(150, -350, 1.2, 0.5); }
+
+// ---------------- readability overlay: aim dots, landing ring, flag (colours from today's game) ----------------
+const dotG = new THREE.CircleGeometry(0.42, 10).rotateX(-Math.PI / 2), dotM = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+for (let t = 0.04; t < 1; t += 0.035) { const x = -2 * t, z = -208 * t; const d = new THREE.Mesh(dotG, dotM); d.position.set(x, heightAt(x, z) + 0.15, z); scene.add(d); }
+const ring = new THREE.Mesh(new THREE.RingGeometry(3.2, 4.4, 40).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0xffd447, side: THREE.DoubleSide }));
+ring.position.set(-2, heightAt(-2, -208) + 0.2, -208); scene.add(ring);
+const cone = new THREE.Mesh(new THREE.ConeGeometry(1.4, 3.2, 4).rotateX(Math.PI), new THREE.MeshBasicMaterial({ color: 0xffd447 }));
+cone.position.set(-2, heightAt(-2, -208) + 5, -208); scene.add(cone);
+const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 5.5, 6), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+pole.position.set(CUP.x, heightAt(CUP.x, CUP.z) + 2.75, CUP.z); scene.add(pole);
+const flag = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.5), new THREE.MeshBasicMaterial({ color: 0xff5a36, side: THREE.DoubleSide }));
+flag.position.set(CUP.x + 1.2, heightAt(CUP.x, CUP.z) + 4.7, CUP.z); scene.add(flag);
+// ball on the tee
+const ball = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+ball.position.set(0, heightAt(0, 0) + 0.25, 0); scene.add(ball);
+
+// minimap: the same palette, top-down
+const mc = document.getElementById('miniC'), mctx = mc.getContext('2d');
+for (let j = 0; j < mc.height; j++) for (let i = 0; i < mc.width; i++) {
+  const x = OB.x0 - 6 + (i / mc.width) * (OB.x1 - OB.x0 + 12), z = OB.z1 + 4 - (j / mc.height) * (OB.z1 - OB.z0 + 8);
+  const c = colourAt(P, surfaceAt(x, z), x, z); mctx.fillStyle = `rgb(${c[0]|0},${c[1]|0},${c[2]|0})`; mctx.fillRect(i, j, 1, 1);
+}
+renderer.render(scene, camera);
+document.title = 'ready';
+</script>
+</body>
+</html>
