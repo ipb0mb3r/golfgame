@@ -38,6 +38,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Check hole load/unload | `node tools/session-check.mjs` (dev/QA only, needs Playwright) |
 | Check the menus (every path, pause, quit, play again) | `node tools/menu-check.mjs` (dev/QA only, needs Playwright) |
 | Check every hole against the phone budget | `node tools/perf-check.mjs` (reports, exit 0; `--strict` exits 1 over budget; `--hole mtn-07`, `--breakdown`; dev/QA only, needs Playwright) |
+| Time one aim step per hole (JS only) | `node tools/aim-cost.mjs` (plain Node; `--hole mtn-09`, repeatable) |
 
 ## Current state (Nov 2026)
 - One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`. Since Gate A Fix pass 1, `main.js` is the long-lived app and each hole is a disposable session (`src/game/session.js`); the hole flow (what happens after each shot) is decided in core (`play.swing` / `play.next` / `play.proceed`).
@@ -56,6 +57,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - **`tools/record-baseline-v2.mjs`** (plain Node) writes `tests/fixtures/baseline-v2.json` from the current engine. See coding rule 8. It first prints a table of every shot that moved, is new or was removed (paste it in the PR); `--dry` only prints, and nothing is written when nothing changed.
 - **`tools/session-check.mjs`** (Playwright) loads and unloads holes 10 times in place and fails if `renderer.info.memory` grows, input is bound twice or a timer from the old hole fires. Run it after any change to `src/game/`.
 - **`tools/perf-check.mjs`** (Playwright, AP0) opens every hole fresh at 390x844 and prints a table against `PERF_BUDGET` (`src/core/config.js`, DESIGN §8b "Phone performance budget"): draw calls and triangles in the tee view and the highest frame of the flyover, geometries, textures, estimated graphics memory, and the time until Tee off. It only reports by default (exit 0); `--strict` exits 1 when a hole is over budget. `--breakdown` lists the draw calls by kind of object (`window.__golf.perfBreakdown()`). Headless fps and today's painted course map are printed but not rated. The same numbers are in `window.__golf.perf()` and the debug overlay (green ok / red over).
+- **`tools/aim-cost.mjs`** (plain Node, AP1) times the JS work of one aim step from the tee (the tree warning, the aim marks and the landing point, with a fresh aim each step as when ◀/▶ is held), for a centre and an off-centre impact, per hole: mean / p95 / max ms. A phone's CPU is about 2–4× slower. Rendering is not measured.
 
 ## Branch and PR rules
 - `main` must always be playable, because GitHub Pages serves it. **Nobody pushes directly to `main`.**

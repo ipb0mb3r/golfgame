@@ -103,6 +103,18 @@ export const ROLL_TIMEOUT = 40;      // safety net: a roll never lasts longer th
 // OBSTACLE_REST, OBSTACLE_KEEP, CANOPY_SLOW, CANOPY_DEFLECT: tunables, see TUNABLES
 export const GROUND_PLANE_MARGIN = 0.1; // K13: m; the background ground plane must sit at least this far below the lowest terrain
 export const GROUND_CHECK_STEP = 2;      // K13: m; validateHole samples the terrain mesh at least this coarsely for that check
+// AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
+// Looks only: the ball always uses heightAt.
+export const TERRAIN_LOD = Object.freeze({
+  tile: 8,          // m, the side of a tile in the fine area (each tile has one cell size)
+  fineStep: 1,      // m, the cells in and around the play area (the green band keeps its own 0.5 m)
+  steps: Object.freeze([8, 4, 2]), // m, the coarser cells tried away from the play area, coarsest first
+  tol: 0.01,        // m, a coarser tile stays this close to heightAt on every 1 m point
+  finerStep: 0.5,   // m, the cells of a steep tile (creek banks, bunker faces, rock edges)
+  fineTol: 0.05,    // m, a play-area tile gets finerStep cells when 1 m cells miss heightAt by more than this
+  roughTol: 0.12,   // m, the same for the other tiles (the ball is rarely there; the triangle budget)
+  detailSurfaces: Object.freeze(['fairway', 'green', 'fringe', 'tee', 'sand']), // the play area (+ one tile of margin)
+});
 export const BOULDER_SINK = 0.35;    // share of a boulder's radius below the ground (a hole may set `sink` per boulder)
 export const OBSTACLE_SLIDE = 0.5;   // m/s: a ball settling on top of a boulder is nudged off at least this fast (it can't balance there)
 export const OBSTACLE_EVENT_SPEED = 0.5; // m/s into the obstacle: slower contacts (a ball resting against a trunk) bounce but send no hitObstacle event
