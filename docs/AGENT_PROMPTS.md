@@ -161,6 +161,8 @@ Hole to make: <hole-id>, <par>, <difficulty 1–5>, from the course plan (TASKS 
 3. Check it yourself: node --test (validateHole), play it in a headless browser, confirm there's no blind
    shot, a normal player can reach par, and the hole length matches the guidelines.
 4. Record v2 shots for the hole (tools/record-baseline-v2.mjs) and list them.
+   If you changed a mountain hole's terrain on purpose, re-record the exact-height fixture too
+   (RECORD_TERRAIN=1 node --test tests/terrain-exact.test.js, see the test file) and say so in the PR.
 5. Branch course/<hole-id>, PR "Course: <hole-id> <name>". Include the brief, a minimap screenshot, and
    tap-ready raw.githack links (tee + each scenario) so Alexis can play it on his phone before merging.
 ```

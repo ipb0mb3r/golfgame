@@ -61,18 +61,23 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - Docs: Phase U/V plans (#52, #56), 2-click putting decision (#58), this handoff.
 - **Phase BC: ball control** (#68, QA #69; 2026-11-19, second Claude Code PM session). Built by 4 fresh devs: core (BC1–2) → aim line + icon (BC4–5) → flight camera on the shaped landing → owner tune. Owner picks: `BC_BACK` 1 (option A, lands on the aim line), high/low as proposed ("perfect"), **curve +15%** (`start` Driver 11.5 … SW 4.6; full left Driver 10.7 m off the line). Shift + arrows = impact dot, fine aim = Shift + A / D, double tap = centre. QA Full passed with no bugs; the Light re-check of the +15% was partial (script trouble), covered by the BC4 every-hole test.
 
-**In flight:**
-- **FL1 flagpole** (`dev/FL1-flagpole`, fresh dev, 60 min; core + tests first, then a stop for the PM review). QA Full after.
-- Art decided (owner, 2026-11-19): **chibi 3D golfers**, **3D cartoony flat colours with stylised texture**, light, low-poly; **pixel effect = a setting**. Phase A in TASKS. Next: ART0 with the artist (owner brings examples); AP0 → AP1 → AP8 for the dev after FL1.
-- Done since the last status: **tech lead art and engine feasibility** (#70, `reviews/art-tech-lead.md`): everything is possible on Three.js + no build step; stay on it; AP0–AP10 proposed (perf first: the mountain holes are near the phone limit); phone budget proposed. #70 also carried the PM docs commit (new `artist` + `ui-designer` agents, FL1, Phase MP, Phase A).
+**Also done 2026-11-19:**
+- **FL1 flagpole** (#72, QA #74): the pole is an obstacle, a hit drops almost dead (`FLAG_REST` 0.15 kept: owner wanted "drops dead"), normal cup rules decide a drop-in, putts ignore it, the aim line / warnings ignore it, the flag shows on putts except within `FLAG_PUTT_HIDE` 3 m, "Off the pin!" + wobble, practice spots `h1-pin-chip` / `h1-pin-approach`. Backlog X17 (chip spot text), X18 (320 px flash).
+- **Tech lead art feasibility** (#70) + follow-up (`reviews/art-tech-lead-followup.md`, #71). **Art decided:** 3D cartoony, flat colours with stylised texture, light, low-poly; chibi 3D golfers later; pixel / PS1 effect = a setting; mid-range phone target. Phase A (AP0–AP10) in TASKS.
+- **New agents** `artist` + `ui-designer` (#70/#71). Owner decision A: the ui-designer never writes game code.
+- **Biome sets** (DESIGN §8b, #71) + artist round 1 (#73, ART0a): a biome set = a pick list from a shared library, applied per hole; time of day = its own biome set (alpine vs alpine sunset); tint-only backdrops; big props by hand, small props by rule. First biomes: Meadow, Alpine, Island coast (internal names).
 
-**Next (in order):**
-1. **Art:** ART0 (`artist` + owner, with his examples) and AP0 → AP1 → AP8 (dev) can start in parallel; the pixel switch (AP8) lets the owner pick clean vs PS1 on the real game.
-2. **Art style session** (`artist` + owner: style, palette, biome-kit idea) and **U0 scope** (`ui-designer` + owner). The dev builds the A-tasks the artist needs.
-3. **FL1 flagpole** (small dev PR; can run while the art talks happen, the engine is free).
-4. **Phase MP: main menu pass** (`ui-designer` designs MP1–MP5 → dev builds), then Phase U for the HUD.
-5. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-6. **Real courses** (a genre talk per theme first, dressed with biome kits) and **Phase 5: rain** (rules in DESIGN §7; then a weather option in MP).
+**Also done 2026-11-19 (evening):** **AP0** perf budget + measuring (#75, QA #76), **AP1** fewer draw calls 83–222 → 20–25 (#77, QA #79), **AP1b + X20** terrain detail by distance (every hole within budget, terrain 54k–189k) + a 2× faster mountain `heightAt`, bit-identical (#80, QA #82). **Art:** ART0a biome concept (#73), ART0b style "Sunny postcard" (#78, in the owner's own artist session), accent colours (#81). Owner phone (S25 Ultra): 60 fps; mountain aiming "a bit less smooth" before #80.
+
+**In flight:** AP2 (dev). This docs PR.
+
+**Next (owner order, 2026-11-19: A → B → C):**
+1. ~~A: finish performance~~ ✅ (#80).
+2. **B: ready for the art:** AP2 (Three.js upgrade + glTF loader) → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
+3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
+4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
+6. Small, whenever: X17 (pin chip spot text).
 
 **Lessons from the 2026-11-18/19 session (keep doing this):**
 - **Fresh agent per task.** Don't keep resuming one dev for many tweaks: its history grows (one reached ~440k tokens) and every resume reloads it, which is slow and burns the 5-hour usage limit. My prompts stand alone; small follow-ups can go to a fresh dev too.
@@ -85,6 +90,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
 - **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
 - **Give every agent `isolation: worktree`, including read-only ones.** The tech lead ran in the PM's folder, switched its branch, and the PM's docs commit landed on the report branch (#70 carried both; fixing it would have needed a force push).
+- **The owner can chat with an agent directly** in its own session: `create_session` with `append_system_prompt` = a role override ("you are NOT the PM, you are the artist…") and a standalone first prompt. Its output comes back as a PR.
 - Agent worktrees live in `.claude/worktrees/` (excluded locally in `.git/info/exclude`, never committed).
 
 **Open owner decisions / backlog to remember:**
