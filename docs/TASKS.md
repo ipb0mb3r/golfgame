@@ -272,6 +272,9 @@ Today's menu (Phase 7): Play → Solo / vs AI / Practice, course list from `sets
 - [ ] X15 The real ball tests every obstacle on every physics step (`firstHit` in ball.js): a coarse grid would speed up ⏩ Skip and flights on tree-heavy holes (also the warning flight, ~1–3 ms per aim step on mtn-04).
 - [ ] X16 (to confirm on the owner's phone) A very quick tap on the ▶/◀ touch buttons may not nudge the aim (QA N2 on PR #66; Playwright releases within one frame).
 - [ ] Drag aiming on touch → Phase U.
+- [ ] **X17** (QA B1 on #72, Low) The `h1-pin-chip` spot's 27% shot holes **without** touching the pole (main ends at the same spot), so the "hits the pole and drops in" text is wrong and no "Off the pin!" shows. Re-pick a power (or the spot) where the pole really causes the drop-in, fix the text, and test that the shot hits the pole.
+- [ ] **X18** (QA B2 on #72, Low) At 320x568 a 2-line flash ("Off the pin!") overlaps the top-left stroke panel. The shared flash layout → Phase U.
+- [ ] **X19** (artist on #73) Colour-blind players: the red tree warning (`#FF4A3A`) is about as light as every rough, so red/green colour-blind players may miss it. Warnings need a shape cue as well as a colour → ui-designer, Phase U.
 
 ## Phase U: UI pass, phones and desktop (owner, 2026-11-18, not scheduled yet)
 A big pass on the whole interface so it works well on both phones (portrait and landscape, touch) and desktop (large screens, mouse and keyboard). Scope to be set with the owner before it starts (likely together with the art style decision): HUD layout per screen size, menus, touch targets, readable text sizes, the minimap and power bar placement, settings. Small HUD fixes until then go in the backlog, not in a separate pass.
