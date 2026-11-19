@@ -8,7 +8,7 @@
 //   - surfaces make sense: water always has a lip (rough or rock), greens a fringe, trees stand in rough
 //   - hills, not fields: the land beyond the fairway rises into banks, and the scenery outside OB rolls
 //   - tee and green are smoothed so the first shot is from a flat lie and the cup sits on a gentle slope
-import { ss, ell, bump, meshAxis } from '../core/terrain.js';
+import { ss, ell, meshAxis } from '../core/terrain.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from '../core/config.js';
 import { createRng } from '../core/rng.js';
 import { createHolePlay } from '../core/play.js';
@@ -46,25 +46,52 @@ export function smin(a, b, k) {
 //   { cx, cz, rx, rz, rot?, wob?, seed?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates)
 export function blobR(x, z, b) {
   // quick reject: far outside the blob's bounding circle (the painter calls this millions of times)
-  if (b._R === undefined) {
-    let R = Math.hypot(b.rx, b.rz);
-    for (const l of b.lobes ?? []) R = Math.max(R, Math.hypot(l.cx - b.cx, l.cz - b.cz) + Math.hypot(l.rx, l.rz));
-    Object.defineProperty(b, '_R', { value: R * (1 + (b.wob ?? 0)), enumerable: false });
-  }
+  const q = b._q ?? blobPrep(b);
   const ddx = x - b.cx, ddz = z - b.cz;
-  if (ddx * ddx + ddz * ddz > 9 * b._R * b._R) return 3;
-  const one = (e) => {
-    const dx = x - e.cx, dz = z - e.cz, c = Math.cos(b.rot ?? 0), sn = Math.sin(b.rot ?? 0);
-    const u = (dx * c + dz * sn) / e.rx, v = (-dx * sn + dz * c) / e.rz;
-    return Math.sqrt(u * u + v * v);
-  };
-  let r = one(b);
-  for (const l of b.lobes ?? []) r = Math.min(r, one(l));
+  if (ddx * ddx + ddz * ddz > q.R2x9) return 3;
+  // X20: the same sums as before in the same order (so the same bits), with cos / sin of the turn
+  // worked out once per blob instead of on every call, and no closure per call
+  const c = q.c, sn = q.sn;
+  let u = (ddx * c + ddz * sn) / b.rx, v = (-ddx * sn + ddz * c) / b.rz;
+  let r = Math.sqrt(u * u + v * v);
+  for (const l of q.lobes) {
+    const dx = x - l.cx, dz = z - l.cz;
+    u = (dx * c + dz * sn) / l.rx; v = (-dx * sn + dz * c) / l.rz;
+    r = Math.min(r, Math.sqrt(u * u + v * v));
+  }
   if (b.wob) {
     const a = Math.atan2(z - b.cz, x - b.cx), k = b.seed ?? 1;
     r *= 1 + b.wob * (0.6 * Math.sin(3 * a + k) + 0.4 * Math.sin(5 * a + 2.3 * k));
   }
   return r;
+}
+// X20: true when blobR(x, z, b) is surely >= edge (so a smoothstep ending at `edge` gives exactly 1
+// and the blob adds exactly nothing). A cheap lower bound: an ellipse's "radius" is at least the
+// distance to its centre over its larger radius, and the wobble shrinks it by at most (1 - wob).
+// The 1e-6 margin is far above the rounding of blobR's own sums.
+export function blobBeyond(x, z, b, edge) {
+  const wob = b.wob ?? 0;
+  if (!(wob < 0.9)) return false;
+  const q = b._q ?? blobPrep(b), k = edge * (1 + 1e-6) / (1 - wob);
+  let dx = x - b.cx, dz = z - b.cz;
+  if (dx * dx + dz * dz < k * k * q.M2) return false;
+  for (const l of q.lobes) {
+    dx = x - l.cx; dz = z - l.cz;
+    if (dx * dx + dz * dz < k * k * l.M2) return false;
+  }
+  return true;
+}
+// Per-blob constants, worked out once (not enumerable, so the hole data looks the same)
+function blobPrep(b) {
+  let R = Math.hypot(b.rx, b.rz);
+  for (const l of b.lobes ?? []) R = Math.max(R, Math.hypot(l.cx - b.cx, l.cz - b.cz) + Math.hypot(l.rx, l.rz));
+  const R1 = R * (1 + (b.wob ?? 0));
+  const q = {
+    R2x9: 9 * R1 * R1, c: Math.cos(b.rot ?? 0), sn: Math.sin(b.rot ?? 0), M2: Math.max(b.rx, b.rz) ** 2,
+    lobes: (b.lobes ?? []).map(l => ({ cx: l.cx, cz: l.cz, rx: l.rx, rz: l.rz, M2: Math.max(l.rx, l.rz) ** 2 })),
+  };
+  Object.defineProperty(b, '_q', { value: q, enumerable: false });
+  return q;
 }
 // Chaikin corner cutting: a polyline (with optional half-widths w) becomes a smooth curve with the
 // same end points, so creeks and fairway spines bend instead of kinking (L4, L8)
@@ -220,17 +247,23 @@ function buildMtnHole(spec0, meta) {
   const GX0 = spec.ob.x0 - 12, GZ0 = spec.ob.z0 - 12, GW = Math.ceil((spec.ob.x1 - spec.ob.x0 + 24) / GS) + 1, GH = Math.ceil((spec.ob.z1 - spec.ob.z0 + 24) / GS) + 1;
   const GRID = new Float32Array(GW * GH);
   const GX1 = GX0 + (GW - 1) * GS, GZ1 = GZ0 + (GH - 1) * GS;
-  const clampGrid = (x, z) => {
-    const cx = Math.min(Math.max(x, GX0), GX1), cz = Math.min(Math.max(z, GZ0), GZ1);
-    return [cx, cz, Math.hypot(x - cx, z - cz)];
-  };
   for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) GRID[j * GW + i] = SEG.length ? Math.min(fairwayGapRaw(GX0 + i * GS, GZ0 + j * GS), 1e4) : 1e4;
+  // X20: the grid cell of (x, z), without allocating (the same numbers the old clamp-to-grid array
+  // gave): gO = the cell's first index, gTx / gTz = where in the cell, gOut = the distance outside the grid. Inside
+  // the grid gOut is exactly 0, as Math.hypot(0, 0) is, so the costly hypot runs only outside.
+  let gO = 0, gTx = 0, gTz = 0, gOut = 0;
+  const gridCell = (x, z) => {
+    const cx = Math.min(Math.max(x, GX0), GX1), cz = Math.min(Math.max(z, GZ0), GZ1);
+    gOut = cx === x && cz === z ? 0 : Math.hypot(x - cx, z - cz);
+    const fx = (cx - GX0) / GS, fz = (cz - GZ0) / GS;
+    const i = Math.min(fx | 0, GW - 2), j = Math.min(fz | 0, GH - 2);
+    gTx = fx - i; gTz = fz - j; gO = j * GW + i;
+  };
+  const bilerp = A => (A[gO] * (1 - gTx) + A[gO + 1] * gTx) * (1 - gTz) + (A[gO + GW] * (1 - gTx) + A[gO + GW + 1] * gTx) * gTz;
   const fairwayGap = (x, z) => {
     // outside the grid (scenery far beyond OB): the edge value plus the distance to the edge
-    const [cx, cz, out] = clampGrid(x, z);
-    const fx = (cx - GX0) / GS, fz = (cz - GZ0) / GS;
-    const i = Math.min(fx | 0, GW - 2), j = Math.min(fz | 0, GH - 2), tx = fx - i, tz = fz - j, o = j * GW + i;
-    return (GRID[o] * (1 - tx) + GRID[o + 1] * tx) * (1 - tz) + (GRID[o + GW] * (1 - tx) + GRID[o + GW + 1] * tx) * tz + out;
+    gridCell(x, z);
+    return bilerp(GRID) + gOut;
   };
 
   // the creek's distance and half-width, cached on the same 1 m grid as the fairway
@@ -251,31 +284,46 @@ function buildMtnHole(spec0, meta) {
   }
   const creekAt = (x, z) => {
     if (!creek) return null;
-    const [cx, cz, out] = clampGrid(x, z);
-    const fx = (cx - GX0) / GS, fz = (cz - GZ0) / GS;
-    const i = Math.min(fx | 0, GW - 2), j = Math.min(fz | 0, GH - 2), tx = fx - i, tz = fz - j, o = j * GW + i;
-    const bl = A => (A[o] * (1 - tx) + A[o + 1] * tx) * (1 - tz) + (A[o + GW] * (1 - tx) + A[o + GW + 1] * tx) * tz;
-    return { d: bl(CD) + out, w: bl(CW) };
+    gridCell(x, z);
+    return { d: bilerp(CD) + gOut, w: bilerp(CW) };
   };
 
   // The ground before tee and green smoothing
-  function rawHeight(x, z) {
+  // X20: every term below is the same sum as before, in the same order. A term is skipped only when
+  // it surely adds exactly nothing, so the heights keep every bit (tests/terrain-exact.test.js):
+  //   - a hill far away (beyond 6.3 radii its bump t is below 4.3e-18 of its height, beyond 7.7
+  //     radii below 1e-26; exp(-40) = 4.25e-18, exp(-60) = 8.8e-27) when the height h so far is large
+  //     enough that adding t can't change a bit (|t| < |h| 2^-55 is below half the spacing of
+  //     doubles around h, so h + t rounds back to h);
+  //   - a rock, bunker or pond whose smoothstep is surely at its end (1 - 1 = 0 is added).
+  const HILL_NEAR = 40, HILL_TAIL_NEAR = 4.3e-18, HILL_FAR = 60, HILL_TAIL_FAR = 1e-26, HALF_ULP = 2 ** -55;
+  const ROCK_EDGE2 = 1.25 * 1.25 * (1 + 1e-9);
+  function rawHeight(x, z, ge) {
     let h = base(x, z);
-    for (const b of hills) h += bump(x, z, b);
+    for (const b of hills) {
+      const dx = x - b.x, dz = z - b.z, q = (dx * dx + dz * dz) / (b.r * b.r);
+      if (q > HILL_NEAR && Math.abs(h) * HALF_ULP > Math.abs(b.h) * (q > HILL_FAR ? HILL_TAIL_FAR : HILL_TAIL_NEAR)) continue;
+      h += b.h * Math.exp(-q); // = bump(x, z, b)
+    }
     // hills, not fields: the rough rises gently into banks away from the fairway and the green
     const gap = fairwayGap(x, z);
-    if (gap > 8) h += banks * (gap - 8) * ss(1.4, 2.4, gE(x, z));
+    if (gap > 8) h += banks * (gap - 8) * ss(1.4, 2.4, ge);
     // rock outcrops
-    for (const r of rocks) h += r.h * (1 - ss(0.4, 1.25, Math.sqrt(ell(x, z, r))));
+    for (const r of rocks) {
+      const e = ell(x, z, r);
+      if (e > ROCK_EDGE2) continue;
+      h += r.h * (1 - ss(0.4, 1.25, Math.sqrt(e)));
+    }
     return h;
   }
   // The green: a smooth surface at the raw height of its centre + raise, plus its contours
-  const gBase = rawHeight(G.cx, G.cz) + (G.raise ?? 0);
-  const teeY = rawHeight(tee.x, tee.z) + pad.h;
+  const gBase = rawHeight(G.cx, G.cz, gE(G.cx, G.cz)) + (G.raise ?? 0);
+  const teeY = rawHeight(tee.x, tee.z, gE(tee.x, tee.z)) + pad.h;
+  const creekDepth = creek ? creek.depth ?? 1.3 : 0, creekBank = creek ? creek.bank ?? 3 : 0;
   function heightAt(x, z) {
-    let h = rawHeight(x, z);
-    // the green and its surrounds: blend to the green surface (a raised green gets a bank)
     const ge = gE(x, z);
+    let h = rawHeight(x, z, ge);
+    // the green and its surrounds: blend to the green surface (a raised green gets a bank)
     const gw = 1 - ss(1.0, 1.0 + (G.bank ?? 0.9), ge);
     if (gw > 0) h = h * (1 - gw) + (gBase + (G.contour ? G.contour(x, z) : 0)) * gw;
     // the tee box: a flat pad
@@ -283,13 +331,14 @@ function buildMtnHole(spec0, meta) {
     const tw = 1 - ss(pad.r, pad.r + 9, td);
     if (tw > 0) h = h * (1 - tw) + teeY * tw;
     // bunkers are hollows of their own depth, with a sloped face
-    for (const b of bunkers) h -= (b.depth ?? 0.6) * (1 - ss(0.25, 1.12, blobR(x, z, b)));
+    for (const b of bunkers) if (!blobBeyond(x, z, b, 1.12)) h -= (b.depth ?? 0.6) * (1 - ss(0.25, 1.12, blobR(x, z, b)));
     // ponds and lakes sit in a bowl
-    for (const p of ponds) h -= (p.depth ?? 2.2) * (1 - ss(0.55, 1.15, blobR(x, z, p)));
+    for (const p of ponds) if (!blobBeyond(x, z, p, 1.15)) h -= (p.depth ?? 2.2) * (1 - ss(0.55, 1.15, blobR(x, z, p)));
     // the creek runs in a channel: water at the bottom, sloped banks (the lip) on each side
     if (creek) {
-      const c = creekAt(x, z);
-      h -= (creek.depth ?? 1.3) * (1 - ss(c.w, c.w + (creek.bank ?? 3), c.d));
+      gridCell(x, z);
+      const cw = bilerp(CW), cd = bilerp(CD) + gOut;
+      h -= creekDepth * (1 - ss(cw, cw + creekBank, cd));
     }
     return h;
   }
