@@ -186,6 +186,14 @@ Rule: the **fairway stays the lightest green in every biome** (gameplay), so the
 
 Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same library: mostly a new palette plus 1-3 new pieces each (image 03).
 
+### 6.2 How each biome set is made (owner, round 2)
+One biome set per artist session, always in this order:
+1. **Mood board (owner):** Alexis shares pictures and a few words for this biome (places, games, photos, colours, props).
+2. **Notes + library check (artist):** the artist sums up what he takes from it and lists, piece by piece (palette, ground textures, on-course trees, off-course trees, sky, backdrop, small props, big props), what **reuses the shared library** and what is **new** (with a rough triangle / size cost against the budget in §5).
+3. **Proposals (artist):** palette sheet + phone-size mock-ups on a test hole, 2-3 options where there is a real choice, with a recommendation. Every palette passes §4.4.
+4. **Approval (owner):** Alexis approves each element (palette, trees, backdrop, props, gameplay notes) or asks for changes. Nothing is final without his yes.
+5. **Record + build:** the approved set is written down (its pick list, palette, notes) and only then are the new assets made, each recorded in `assets/CREDITS.md`.
+
 ## 7. Asset list (rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
 |---|---|---|---|
