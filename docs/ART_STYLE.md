@@ -1,6 +1,6 @@
 # Pocket Links: art style guide (living document)
 
-Owner: the Artist, with Alexis (owner / game designer). Status: **ART0 round 1: the biome-set CONCEPT only.** Nothing below is decided unless marked **(owner)**. Images: `docs/art/biome-sets/`.
+Owner: the Artist, with Alexis (owner / game designer). Status: **ART0a round 1 done (PR #73, owner decisions recorded below). ART0b round 2 (the general style) in progress.** Nothing is decided unless marked **(owner)**. Images: `docs/art/biome-sets/`.
 
 > **All images in this round are rough mock-ups to explain the structure, not a style proposal.** The look (shapes, textures, colours) is a separate talk with the owner in round 2, with his examples, before any asset work. No real assets are made or downloaded, nothing is added under `assets/`.
 
@@ -26,7 +26,7 @@ A **file that defines a biome**, which the **course designer applies to a hole**
 | Piece | What | Where it comes from |
 |---|---|---|
 | Description | one short paragraph | the biome's own |
-| Palette (+ time-of-day variants) | colours of every surface, water, trees, sky, fog, light, backdrop, props | the biome's own |
+| Palette | colours of every surface, water, trees, sky, fog, light, backdrop, props (one palette per set: the time of day is part of it) | the biome's own |
 | Course textures | fairway, green, rough, sand, water, rock… | **the same for every biome**, recoloured by the palette |
 | On-course trees | 2-3 models, recoloured; collisions stay in the hole data | picked from the library |
 | Off-course trees | 2-3 cheaper models, recoloured | picked from the library |
@@ -36,16 +36,16 @@ A **file that defines a biome**, which the **course designer applies to a hole**
 | Backdrop | far scenery (peaks, hills, sea), recoloured where the asset allows | picked from the library |
 | Gameplay notes | advice for the course designer, may suggest a weather | the biome's own |
 
-**Not in a biome set:** weather (per playlist), time of day as a system (it is a palette), physics (`surfaces.js` and the hole data), the HUD.
+**Not in a biome set:** weather (per playlist), a time-of-day system (a sunset is its own biome set, see 4.2), physics (`surfaces.js` and the hole data), the HUD.
 
 ![structure](art/biome-sets/01-structure.png)
 
-## 3. How biomes share pieces (proposal: 2 options)
+## 3. How biomes share pieces: a pick list (owner, #73)
 Both options keep **one shared library** (`assets/`, one copy of each model, texture and backdrop). A biome file only names pieces.
 
 - **Option A, pick list (recommended):** every biome file names all its pieces. Nothing is inherited. Easy to read, easy to validate, no surprise when another biome changes. Cost: a few repeated lines between close biomes.
 - **Option B, base + variant:** a biome says "based on X" and lists only what it changes. Very short files for close cousins, but editing the base silently changes every variant, and chains get hard to follow.
-- **Recommendation: A, plus palette variants.** A palette may be a variant of another palette (`alpine-sunset` = `alpine-day` with sky, fog, light and some surface shades changed). That is how time of day works, and it is the one place where "change the base, update the variants" is wanted.
+- **Decided (owner, #73): option A, the pick list.** There are **no palette variants** and no inheritance anywhere: every biome set names all its pieces and has its own full palette. Other owner decisions on #73: backdrops are **tint-only** for now; **big props are placed by hand** per hole by the course designer; **small props are scattered by a rule** from the biome set; the names Meadow, Alpine, Island coast are internal.
 
 ![options](art/biome-sets/02-options.png)
 
@@ -57,8 +57,8 @@ Both options keep **one shared library** (`assets/`, one copy of each model, tex
 - **Trees and props tint:** `pine`, `trunk`, `leaf`, `leafAlt`, `trunkAlt`, `wood`, `roof`, `propSnow` (light parts), `propA`/`propB` (flowers), `glass`.
 - The five **example** palettes (to show the recolouring idea, not final colours) are in `docs/art/biome-sets/draft-data.js` and on the sheets (images 30-34). Final palettes come after the style talk.
 
-### 4.2 Time of day = a palette variant
-No lighting engine: a "sunset" palette changes the sky gradient, fog, sun and ambient tint, the shadow tint, the backdrop tint (pink caps) and shifts the surfaces warmer. It must still pass every readability rule below. A biome lists the palettes it offers (`alpine-day`, `alpine-sunset`), and the hole (or later the playlist) chooses one.
+### 4.2 Time of day = its own biome set (owner, #73)
+**Alpine** and **Alpine sunset** are **two biome sets**: the same pick list of pieces, each with its own complete palette. There is no lighting engine and no "variant of" link between palettes: the sunset palette simply has its own sky gradient, fog, sun and ambient tint, shadow tint, backdrop tint (pink caps) and warmer surfaces. It must pass every readability rule below on its own. **The hole chooses the biome set; the playlist chooses the holes** (weather stays per playlist). Tip for the artist: start a sunset palette by copying the day palette's values, then change them; after that the two are independent (editing one never changes the other).
 
 ### 4.3 How the backdrop and models are recoloured
 - **Backdrops** are built in **tint zones**: far layer, near layer, caps, cap shade. Each zone takes one palette colour, then is **mixed toward `fog`** by its distance (far layer about 40 %, near layer about 20 %). So one snowy-peaks asset works for day and sunset with no new art.
@@ -94,10 +94,10 @@ Also: the course is always lighter and more saturated than the backdrop; no surf
 | Biome | Palette mood | Trees (on / off) | Big props | Backdrop | Gameplay notes |
 |---|---|---|---|---|---|
 | **Meadow** (grassland) | warm classic greens, red roofs, pink flowers | round leafy + pine / blobFar + pineFar | windmill | soft round hills | gentle slopes, ponds, open fairways; any weather |
-| **Alpine** (mountain) | cool fresh greens, pale sand, blue water; sunset variant | pine / pineFar | log lodge | snowy peaks | creeks, raised tees, elevation; clear, light wind |
+| **Alpine** (mountain) | cool fresh greens, pale sand, blue water (plus a separate **Alpine sunset** set) | pine / pineFar | log lodge | snowy peaks | creeks, raised tees, elevation; clear, light wind |
 | **Island coast** (beach, Hawaii-like) | bright tropical greens, white sand, turquoise sea | palm + round leafy / palmFar + blobFar | beach hut | sea + green volcano | the sea along one side, waste bunkers, dark lava rock; sunny, sea wind |
 
-**Why Alpine for the mountain:** the snowy peaks are the strongest contrast with the Meadow (a different silhouette, not just another green), the existing mountain course already uses pines, and its sunset variant shows the palette-only time of day best. **Ridge country** (Rockies-like: warm palette, aspens, long ridges, far city) stays a *variant note*: it reuses everything of Alpine except the palette, one tree, the backdrop and one big prop (image 14), which is exactly the owner's mix-and-match example.
+**Why Alpine for the mountain:** the snowy peaks are the strongest contrast with the Meadow (a different silhouette, not just another green), the existing mountain course already uses pines, and its sunset set shows the palette-only time of day best. **Ridge country** (Rockies-like: warm palette, aspens, long ridges, far city) stays a *later idea*: it would reuse everything of Alpine except the palette, one tree, the backdrop and one big prop (image 14), which is exactly the owner's mix-and-match example.
 
 Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same library: mostly a new palette plus 1-3 new pieces each (image 03).
 
@@ -120,4 +120,4 @@ Later examples (desert, city park, sea cliffs, Georgia pines…) reuse the same 
 Triangle counts are rough targets for the budget, not designs. **CC0 / licensed sources: to do after the style talk** (every file added later is recorded in `assets/CREDITS.md`).
 
 ## 8. Mock-up tools (artist only)
-`docs/art/biome-sets/mockup.html` renders one hole shaped like `mtn-02` from the draft data (`?biome=grassland|mountain|beach|mountain-warm`, `&palette=`, `&view=approach`, `&hud=0`). `sheets.html` draws the palette sheets and diagrams (`?mode=palette&p=…|textures|structure|options|matrix`). Both are stand-alone pages that use only the vendored Three.js; they are not part of the game.
+`docs/art/biome-sets/mockup.html` renders one hole shaped like `mtn-02` from the draft data (`?biome=grassland|mountain|mountain-sunset|beach|mountain-warm`, `&palette=`, `&view=approach`, `&hud=0`). `sheets.html` draws the palette sheets and diagrams (`?mode=palette&p=…|textures|structure|options|matrix`). Both are stand-alone pages that use only the vendored Three.js; they are not part of the game.

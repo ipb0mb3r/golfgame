@@ -44,8 +44,10 @@ const alpineDay = {
   // props
   wood: '#B0703F', roof: '#6E4B3B', propSnow: '#FFFFFF', propA: '#E86A5A', propB: '#F6E7A8', glass: '#BFD8EE',
 };
+// Its own full palette (owner, #73: time of day = its own biome set). The spread only copies the day values
+// once, as a starting point for authoring; there is no "variant of" link.
 const alpineSunset = {
-  ...alpineDay, id: 'alpine-sunset', label: 'Alpine · sunset', base: 'alpine-day',
+  ...alpineDay, id: 'alpine-sunset', label: 'Alpine sunset',
   tee: '#A9C978', fairwayA: '#A1C56E', fairwayB: '#92B763', fringe: '#9ABA6C', greenA: '#C6DC8A', greenB: '#B6CE7C',
   rough: '#6B8E56', deepRough: '#4F6E4C', sand: '#F7D9B4', water: '#5F86CC', waterDeep: '#4A6AB0',
   rock: '#B49C9E', path: '#D8BFA8',
@@ -93,7 +95,7 @@ export const PALETTES = { 'meadow-day': meadowDay, 'alpine-day': alpineDay, 'alp
 export const BIOMES = {
   grassland: {
     name: 'Meadow', desc: 'Rolling green farmland with round leafy trees, wildflowers and a windmill on the hill.',
-    palette: 'meadow-day', palettes: ['meadow-day'],
+    palette: 'meadow-day',
     onTrees: ['round', 'pine'], offTrees: ['blobFar', 'pineFar'],
     sky: 'gradient', backdrop: 'hillsRound',
     smallProps: ['grassTuft', 'flowers', 'fence'], bigProps: ['windmill'],
@@ -101,23 +103,33 @@ export const BIOMES = {
   },
   mountain: {
     name: 'Alpine', desc: 'High meadow under snowy peaks. Cool, fresh greens, pale sand, blue water.',
-    palette: 'alpine-day', palettes: ['alpine-day', 'alpine-sunset'],
+    palette: 'alpine-day',
     onTrees: ['pine'], offTrees: ['pineFar'],
     sky: 'gradient', backdrop: 'peaksSnow',
     smallProps: ['grassTuft', 'flowers', 'fence'], bigProps: ['logLodge'],
     notes: 'Mountain streams: a creek crossing the hole suits it. Elevation changes, raised tees. Suggested weather: clear, light wind.',
   },
-  // VARIANT note (the owner's mix-and-match illustration, not planned now): borrows every piece it does not set.
+  // Time of day = its own biome set (owner, #73): the same pick list as Alpine, another palette.
+  'mountain-sunset': {
+    name: 'Alpine sunset', desc: 'The Alpine meadow at golden hour: warm low sun, pink snow caps, long blue shade.',
+    palette: 'alpine-sunset',
+    onTrees: ['pine'], offTrees: ['pineFar'],
+    sky: 'gradient', backdrop: 'peaksSnow',
+    smallProps: ['grassTuft', 'flowers', 'fence'], bigProps: ['logLodge'],
+    notes: 'Same as Alpine. Good for a closing hole. Suggested weather: clear, calm.',
+  },
+  // Later idea (the owner's mix-and-match illustration, not planned now). A full pick list, no inheritance.
   'mountain-warm': {
-    name: 'Ridge country (Rockies-like variant)', desc: 'Warm high plains under long ridges, red rock, golden aspens.',
-    base: 'mountain', palette: 'rockies-day', palettes: ['rockies-day'],
+    name: 'Ridge country (Rockies-like)', desc: 'Warm high plains under long ridges, red rock, golden aspens.',
+    palette: 'rockies-day',
     onTrees: ['pine', 'aspen'], offTrees: ['pineFar', 'aspenFar'],
-    backdrop: 'ridgesWarm', bigProps: ['cityBlocks'],
+    sky: 'gradient', backdrop: 'ridgesWarm',
+    smallProps: ['grassTuft', 'flowers', 'fence'], bigProps: ['cityBlocks'],
     notes: 'Red-rock outcrops as hazards, wide fairways. Suggested weather: clear, stronger wind.',
   },
   beach: {
     name: 'Island coast (Hawaii-like)', desc: 'Bright tropical greens, white sand, turquoise sea, palms and a green volcano.',
-    palette: 'island-day', palettes: ['island-day'],
+    palette: 'island-day',
     onTrees: ['palm', 'round'], offTrees: ['palmFar', 'blobFar'],
     sky: 'gradient', backdrop: 'seaHorizon',
     smallProps: ['grassTuft', 'flowers'], bigProps: ['beachHut'],
