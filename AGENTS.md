@@ -14,7 +14,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Project manager | Claude (PM thread) | No. Maintains `docs/`, plans tasks, writes prompts, reviews PRs against the plan |
 | Engine developer | Dev agent | Yes. Works on `dev/*` branches |
 | Course designer | Agent, one hole at a time, co-designs with the owner | Hole data only (`src/holes/`, scenarios, sets), never engine code. Works on `course/<hole-id>` branches |
-| Artist | Agent, co-designs with the owner | No game code. Art style, palettes, biome kits: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (+ biome-kit data once its format exists). Works on `art/<slug>` branches |
+| Artist | Agent, co-designs with the owner | No game code. Art style, palettes, biome kits: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (+ biome set data in `src/biomes/` since AP5). Works on `art/<slug>` branches |
 | UI designer | Agent, co-designs with the owner | No game code. Menus and HUD (function and look) as specs and clickable mock-ups: `docs/UI.md`, `docs/ui/`. The dev builds them. Works on `ui/<slug>` branches |
 | QA / playtester | Independent agent, after each dev PR | No. Plays the PR build in a headless browser and writes a report in `reviews/` |
 | Reviewers (Security, Scalability, Maintainability, Compatibility, Testing) | Independent agents | No. They write reports in `reviews/` |
@@ -39,6 +39,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Check the menus (every path, pause, quit, play again) | `node tools/menu-check.mjs` (dev/QA only, needs Playwright) |
 | Check every hole against the phone budget | `node tools/perf-check.mjs` (reports, exit 0; `--strict` exits 1 over budget; `--hole mtn-07`, `--breakdown`; dev/QA only, needs Playwright) |
 | Time one aim step per hole (JS only) | `node tools/aim-cost.mjs` (plain Node; `--hole mtn-09`, repeatable) |
+| Check a biome set's readability | `node tools/biome-check.mjs [id]` (plain Node: ΔE / ΔL of every ART_STYLE §4.4 rule, per set) |
 
 ## Current state (Nov 2026)
 - One engine (Phase 0 done): `index.html` loads `src/game/main.js`, which plays the hole named by `?hole=pl-01` (default) or `?hole=pl-02`. Since Gate A Fix pass 1, `main.js` is the long-lived app and each hole is a disposable session (`src/game/session.js`); the hole flow (what happens after each shot) is decided in core (`play.swing` / `play.next` / `play.proceed`).
@@ -46,8 +47,9 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - `hole2.html` only forwards old links to `index.html?hole=pl-02`.
 - Since Fix pass 2: the meter reads the real click time (`pressMeterAt`), rolls always end (`stopped.reason`), ⏩ Skip (`play.skip()`), default aim (`play.target`, hole `aimTarget`), designer tuning S17. v1 exceptions for intentional physics changes live in `tests/baseline-exceptions.js`.
 - Since Phase 6: `?set=<id>` plays a round (`src/core/round.js` + `src/game/roundUi.js`): a course is a playlist of hole ids of **any length**, never assume 9. Test sets `prototype3`, `test9`.
-- Since Phase 7: `index.html` opens on the main menu (`src/game/menus.js`, lists from `src/core/menu.js`): Solo (courses from `sets.js`), Practice (holes and test spots), pause menu, settings. Any dev link (`?hole=`, `?scenario=`, `?set=`, `?ai=`, `?seed=`, `?tune=`, `?debug=`) skips the menu.
+- Since Phase 7: `index.html` opens on the main menu (`src/game/menus.js`, lists from `src/core/menu.js`): Solo (courses from `sets.js`), Practice (holes and test spots), pause menu, settings. Any dev link (`?hole=`, `?scenario=`, `?set=`, `?ai=`, `?seed=`, `?tune=`, `?debug=`, `?biome=`) skips the menu.
 - Since Phase T: vs AI (`src/core/rivals.js`): a round against 5 AI rivals whose scores are generated from the round seed. `?ai=easy|normal|hard` plays the `?set=` round vs AI (alone: the first Solo course), e.g. `?set=test9&ai=normal`.
+- Since AP5: every hole names a **biome set** (`biome: '<id>'`, `src/biomes/`, DESIGN §8b) and the game takes every colour and piece from it. `?biome=<id>` (dev link) dresses every hole of the visit in another set, with a "BIOME: <id>" badge, e.g. `?hole=mtn-07&biome=meadow-day`; an unknown id is ignored with a notice. No menu lists it.
 - Tests: `node --test`. Baselines: `tests/fixtures/baseline.json` (vs the old pages) and `baseline-v2.json` (vs the engine itself).
 
 ## Tools (dev and QA only, never part of the game)
@@ -58,6 +60,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 - **`tools/session-check.mjs`** (Playwright) loads and unloads holes 10 times in place and fails if `renderer.info.memory` grows, input is bound twice or a timer from the old hole fires; then (AP2) it loads the test models `tests/fixtures/models/cube.glb` and `cube-meshopt.glb` through the import map (GLTFLoader, Meshopt decoder), draws them and checks they are freed. Run it after any change to `src/game/`.
 - **`tools/make-test-glb.mjs`** (plain Node, AP2) writes those two test models (a 1 m cube made in code; the second has its index buffer Meshopt-compressed by hand).
 - **`tools/perf-check.mjs`** (Playwright, AP0) opens every hole fresh at 390x844 and prints a table against `PERF_BUDGET` (`src/core/config.js`, DESIGN §8b "Phone performance budget"): draw calls and triangles in the tee view and the highest frame of the flyover, geometries, textures, estimated graphics memory, and the time until Tee off. It only reports by default (exit 0); `--strict` exits 1 when a hole is over budget. `--breakdown` lists the draw calls by kind of object (`window.__golf.perfBreakdown()`). Headless fps and today's painted course map are printed but not rated. The same numbers are in `window.__golf.perf()` and the debug overlay (green ok / red over).
+- **`tools/biome-check.mjs`** (plain Node, AP5) prints every readability rule (ART_STYLE §4.4) for each biome set (or one: `node tools/biome-check.mjs meadow-day`): ΔE / ΔL, the minimum, pass / FAIL / waived. `node --test` fails a set that breaks a rule it doesn't waive by name.
 - **`tools/aim-cost.mjs`** (plain Node, AP1) times the JS work of one aim step from the tee (the tree warning, the aim marks and the landing point, with a fresh aim each step as when ◀/▶ is held), for a centre and an off-centre impact, per hole: mean / p95 / max ms. A phone's CPU is about 2–4× slower. Rendering is not measured.
 
 ## Branch and PR rules

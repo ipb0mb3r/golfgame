@@ -5,7 +5,7 @@
 // menu (button or Esc) resumes, restarts the hole or quits to the menu.
 // Dev and designer links skip the menu (core/menu.js DEV_PARAMS): ?set=<id> plays a round, ?hole=<id>
 // or ?scenario=<id> one hole (X8), ?tune=NAME:value overrides tunables, ?seed=<n> fixes the wind,
-// ?debug=1 opens the debug overlay (Gate A C5, for phones; ?debug=perf without the collider outlines, AP0). Any of them alone plays hole 1 as before.
+// ?debug=1 opens the debug overlay (Gate A C5, for phones; ?debug=perf without the collider outlines, AP0). Any of them alone plays hole 1 as before. AP5: ?biome=<id> dresses the holes in another biome set (BIOME badge).
 // Phase T: vs AI (Play → vs AI → course → difficulty) plays a round against 5 rivals; ?ai=easy|normal|hard
 // plays the ?set= round (or the first Solo course) vs AI.
 import * as THREE from 'three';
