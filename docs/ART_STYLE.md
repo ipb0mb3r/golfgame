@@ -251,6 +251,33 @@ Mood board (owner): **a Swiss style, really the Alps**. The grass is **warm**, b
 | Wooden fence | 🔧 bigProps | shared with Meadow |
 | Gradient sky; textured ground | 🔧 AP6 / sky | as in §1.1 |
 
+### 6.5 Island coast (ART1, owner-approved 2026-11-20): the Honolulu vibe
+Mood board (owner): **beach, but not the Caribbean and not the US east or west coast: the Honolulu vibe**. **A lot wilder water and grass colours.** **The course follows the ocean.** **A couple of really tall palm trees as props.** **No lighthouse** here (owner: keep it for a future Cape Cod-like set). Palette strip: teal `#4AC2BE`, mint `#A3DFC8`, pale lime `#E5F0C2`, tropical orange `#F9AD64`.
+- **Decided (owner):**
+  - palette **B "wilder"**: electric lime grass, almost-neon cyan water `#00E0D8` → deep blue `#0090E8`, golden sand
+  - **tropical-orange flag** `#FF8A2A` and **bougainvillea-magenta tee markers** `#E0309A` (owner: "great accents")
+  - This set is deliberately the most saturated one: the "no neon on surfaces" rule (§1.4) is stretched here on purpose, and it still passes every §4.4 rule.
+- **Data:** `src/biomes/island-day.js` (source `docs/art/island/palettes.js`), no waiver. The `boulder` engine key is a light lava grey for now, because a test expects every set's boulders to be darkened on the minimap. It becomes dark lava `#3e3a40` once that test is relaxed (request in the PR). Images: `docs/art/island/01-05`.
+- **For the course designer:** run the fairways along the beach, with the sea on one side; keep holes low, near sea level; use lava-rock edges and waste bunkers; add 1-3 very tall palms as landmarks.
+- **Pieces** (✅ in the library today · 🔧 new, needs dev work first):
+
+| Piece | Status | Notes |
+|---|---|---|
+| Palette | ✅ in `island-day` | wild lime, cyan shallows, deep blue, golden sand, lava rock |
+| Flag, tee markers, OB stakes, pond, boulders | ✅ reused | tinted by the palette |
+| **Ocean backdrop** (deep sea, cyan shallow bands along the shore, beach, lava patches at the waterline) | 🔧 new backdrop piece | flat planes, `waterDeep` → `water`; the shore follows the hole's OB |
+| Green volcanic ridge (invented crater shape), far resort towers (fogged, 6-10 boxes) | 🔧 backdrop | tint zones `backFar`, `glass` / cream |
+| Palm (curved banded trunk, drooping fronds, coconuts) | 🔧 AP7 + gradient slots | ~600 tris in the mock-up, **target ≤ 400** |
+| Very tall palm (landmark big prop) | 🔧 bigProps | the same model, about 2× taller, placed by hand |
+| Monkeypod (wide umbrella canopy) | 🔧 AP7 | ~310 tris |
+| Round treetop wall | 🔧 AP7 | shared with Meadow |
+| Bougainvillea bushes, orange flowers, tufts | 🔧 smallProps | `propA` magenta, `propB` orange |
+| Beach hut | 🔧 bigProps | ~200 tris |
+| Gradient sky; textured ground | 🔧 AP6 / sky | as in §1.1 |
+
+### 6.6 Ideas for later biome sets (owner)
+- **Cape Cod-like coast:** a white lighthouse on the rocks, dunes and beach grass, weathered shingle cottages, a cooler Atlantic sea (owner, while choosing Island coast).
+
 ## 7. Asset list (rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
 |---|---|---|---|
@@ -283,6 +310,8 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 | `05-approach.jpg` | approach views, Alpine and Island coast |
 | `06-palettes.jpg` | the four palettes |
 | `07-accents.jpg` | accent / sub-accent per biome, flag on the green |
+
+**ART1 Island coast:** `docs/art/island/mockup.html` (`?set=island-wild|island-wilder`, `&view=golfer|tee|approach|coast`). Images `01-wild-vs-wilder`, `02-views`, `03-palettes`, `04-approved`, `05-in-game`.
 
 **ART1 Alpine:** `docs/art/alpine/mockup.html` (`?set=alpine-warm|alpine-fresh`, `&view=golfer|tee|approach|chalets`, `&skyTop=` / `&skyHor=` to try a sky). Images `01-warm-vs-fresh`, `02-views`, `03-palettes`, `04-peaks-before-after`, `05-sky`, `06-approved`, `07-in-game`.
 
