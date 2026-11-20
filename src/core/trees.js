@@ -63,8 +63,8 @@ const straightTrunk = L => lathe([[L.trunkTop, 1, 0], [1, 0, 0]], L.trunkSegs);
 
 // A stacked tier: a pole on top, the rounded shoulder, the skirt edge, the drooping tip, a concave underside
 function tier([yb, yt, R], L, twist) {
-  const h = yt - yb, T = TREE_LOOK, last = T.tierProfile.length - 1;
-  const outline = T.tierProfile.map(([fr, fd], i) => {
+  const h = yt - yb, T = TREE_LOOK, prof = L.tierProfile ?? T.tierProfile, last = prof.length - 1;
+  const outline = prof.map(([fr, fd], i) => {
     const y = yt - fd * h;
     return [fr * R, y, clamp01(wAt(y) - (i === last ? L.dark : 0)), i >= last - 1 ? L.wobble : L.wobble / 3];
   });
@@ -86,7 +86,8 @@ function blob([x, y, z, r, h, segs, rows], L, twist) {
   for (let i = 0; i < p.positions.length; i += 3) { p.positions[i] += x; p.positions[i + 2] += z; }
   return p;
 }
-const blobs = L => mergeParts(L.blobs.map((b, k) => blob(L.segScale ? [...b.slice(0, 5), Math.max(5, Math.round(b[5] * L.segScale)), Math.max(4, b[6] - 1)] : b, L, k * 1.7)));
+// (scenery lod: segScale × the sides, rowsLess fewer rows, only the first blobCount lobes)
+const blobs = L => mergeParts(L.blobs.slice(0, L.blobCount ?? L.blobs.length).map((b, k) => blob(L.segScale ? [...b.slice(0, 5), Math.max(5, Math.round(b[5] * L.segScale)), Math.max(4, b[6] - (L.rowsLess ?? 0))] : b, L, k * 1.7)));
 
 // Birch trunk: a slim taper with dark bark bands (each band its own pair of rings, so the marks are crisp)
 function birchTrunk(L) {
