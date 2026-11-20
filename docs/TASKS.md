@@ -269,6 +269,15 @@ Today's menu (Phase 7): Play → Solo / vs AI / Practice, course list from `sets
 - [ ] **AP10** (S, with Phase U) Self-hosted WOFF2 fonts, SVG icons, a sprite-sheet CSS helper.
 - App later (not scheduled): a PWA install is S; a store wrapper (Capacitor-like) is M. Keep saves in one module, safe areas, pause when hidden, store-safe licences.
 
+### Art requests from ART1 (artist, #90 Meadow, #91 Alpine, #93 Island coast)
+The models and pieces the first three biome sets need. They shape AP3 → AP7 → AP6; the PM turns them into dev tasks as each step starts. Every model fits the phone budget (DESIGN §8b; tree / rock ≤ 300–500 triangles) and the style (ART_STYLE).
+- **Trees (AP7):** round tree, conifer, pines, spruces, birch, palm (≤ 400 tris), very tall palm, monkeypod; a treetop wall and a pine wall for the back of the hole (cheap, far).
+- **Big props (AP7, placed by hand per hole):** windmill, cow, fence, chalet, hay hut, beach hut.
+- **Small props (scattered by rule):** wildflowers, bougainvillea; **smallProps weights + clusters** in the biome set format.
+- **Backdrops (library pieces):** horn peaks (Alpine; the artist's mock-up generator is a reference), ocean (Island coast).
+- **Rendering:** gradient slots leafLow → leaf → leafTop on trees, an optional per-pick slot override (AP7); the ground material (AP6); a gradient sky (AP6).
+- [ ] **X27** (artist on #93, S) `tests/biome.test.js` expects every set's boulders to be darkened on the minimap; a boulder colour that already passes the minimap rules needs no darkening. Relax the test so Island coast can use its dark lava `#3e3a40` (the artist then changes `boulder` in island-day.js).
+
 ## Backlog after the playtest 1 pass (PM, 2026-11-19)
 - [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
 - [ ] X15 The real ball tests every obstacle on every physics step (`firstHit` in ball.js): a coarse grid would speed up ⏩ Skip and flights on tree-heavy holes. *(AP1 measured it: the aim-step warning already tests only the obstacles near the aim line (X14), so `firstHit` is ≤ 0.2 ms of an aim step; the aim cost is the terrain (`heightAt`, ~1 µs a call on the mountain holes vs 0.02 µs on pl-01) and the shaped preview. A grid would only help the real ball and ⏩ Skip.)*
