@@ -76,8 +76,9 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 **Also done 2026-11-20:** **X26 + X25** minimap in the biome's colours (trees and rocks darkened one fixed step, minimap readability rules; HUD colours from `UI_COLORS`) (#89, QA #92). **ART1 Meadow** (#90), **Alpine** (#91), **Island coast** (#93, open): the three first biome sets, approved by the owner in his artist session. The artist may register a new set in `src/biomes/index.js`.
 
 **In flight:**
-- **AP3 asset loader + loading screen** (+ X27 test fix), dev running. Then **AP6a quick visual wins** (owner: palettes alone are "too subtle").
-- Island coast #93 waiting for the owner's merge (he tried `?biome=island-day` before it was on main).
+- ~~AP3 asset loader + loading screen + X27~~ ✅ (#95, QA #96): model pieces in the library (`model` + `fallback`), a cache per visit, the loader imported only when needed, a loading bar on the card, a friendly fallback; AP7 models are palette-only (the gradient as vertex weights mapped to palette keys).
+- **AP6a quick visual wins**, dev next (the artist's notes: `docs/art/ap6a-artist-notes.md`). Then **AP6a quick visual wins** (owner: palettes alone are "too subtle").
+- Island coast merged (#93); the artist switches its `boulder` to dark lava `#3e3a40` now that X27 is in.
 - Artist requests from ART1 → TASKS "Art requests from ART1" (trees, props, backdrops, rendering): they shape AP3 → AP7 → AP6.
 - Owner phone check pending: minimap trees a bit lighter than before (QA: closest to the rough); one more darkening step is a single setting (`MINIMAP_DARKEN`).
 

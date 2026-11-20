@@ -290,6 +290,8 @@ The models and pieces the first three biome sets need. They shape AP3 → AP7 �
 - [ ] **X22** (dev on #80, Low) `validateHole`'s ground-plane check samples the old mesh grid, not the AP1b tiles (the new terrain-mesh test checks the real lowest point, so nothing is wrong today).
 - [ ] **X23** (dev on #80, Low) `tools/perf-check.mjs`: a terrain-triangle column, so the 200k terrain line shows.
 - [ ] **X24** (QA on #80, Low) At 320x568 the top info panel and the wind badge touch → Phase U.
+- [ ] **X28** (QA B1 on #95, Low) At 320x568 the intro card scrolls and the loading bar is below the fold (only the greyed Tee off shows) → Phase U.
+- [ ] **X29** (dev on #95, Low) `tools/session-check.mjs` serves `.glb` as `text/plain` (harmless); the loading bar counts files, not bytes (one file jumps 0 → 100 %).
 - [x] **X20** (S) Faster mountain heightAt with identical results (from AP1's aim-cost measurement). *(Dev: `mtn-course.js` skips terms that add exactly nothing and keeps per-blob constants; about 2× faster, the same heights to the bit, `tests/terrain-exact.test.js`.)*
 - [ ] **X21** (idea, not planned) Lighter shaped-preview roll while ◀/▶ is held; owner: centre vs off-centre impact feels the same on his S25 Ultra (PR #77), so only if a mid-range phone shows a difference.
 - [x] **X25** (Low) HUD aim colours duplicated as literals in props.js / hud.js vs UI_COLORS. *(Dev: `UI_COLORS` in config.js gains `capped`, `cappedMap` and `hazard`; props.js (3D aim guide) and hud.js (minimap line and ×) read every aim colour from it, same values, no visual change. The biome test's "no hard-coded colour" list no longer allows them in `src/game`.)*
