@@ -6,6 +6,7 @@ import { BASE_SURFACES } from './surfaces.js';
 import { CLUBS } from './clubs.js';
 import { createHolePlay } from './play.js';
 import { meshAxis } from './terrain.js';
+import { parseSeaSide } from './backdrop.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
@@ -130,6 +131,10 @@ export function validateHole(hole, { shots = true } = {}) {
       }
       if (sc.ground.y > low.y - GROUND_PLANE_MARGIN) bad(`scenery.ground.y (${sc.ground.y}) must be at least ${GROUND_PLANE_MARGIN} m below the lowest terrain, ${low.y.toFixed(2)} m at (${low.x}, ${low.z}): use ${(Math.floor((low.y - GROUND_PLANE_MARGIN) * 10) / 10).toFixed(1)} or lower`);
     }
+  }
+  // AP6a: where the sea is when the hole's biome set draws the ocean backdrop (looks only, never physics)
+  if (sc?.seaSide !== undefined) {
+    try { parseSeaSide(sc.seaSide); } catch (e) { bad(`scenery.${e.message}`); }
   }
   // S21 fairness (owner: "it's ok sometimes if the default aim ends not in the fairway, makes the
   // player adjust it"): the default tee shot (default aim and club, no wind, straight, at the power

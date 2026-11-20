@@ -5,6 +5,8 @@ import { TUNE } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
 import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
+import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
+import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK } from '../core/config.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -46,6 +48,9 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
   const { heightAt } = terrain;
   const scene = new THREE.Scene();
   const sky = look('skies', biome.sky);
+  // AP6a: the ocean backdrop draws the shore (core/backdrop.js oceanShore): the DRAWN ground beyond OB on the
+  // sea side(s) slopes under the sea; heightAt (physics) is never changed.
+  const shore = biome.backdrop === 'ocean' ? makeShore(hole, terrain, sc) : null;
   scene.background = new THREE.Color(sky.sky);
   scene.fog = new THREE.Fog(sky.fog, sc.fog[0], sc.fog[1]);
   const camera = new THREE.PerspectiveCamera(55, 1, 0.05, sc.cameraFar);
@@ -60,23 +65,27 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
   // Far-away flat ground under everything. K13: it sits below the lowest point of the terrain mesh
   // (validateHole checks it), so it never pokes through a hollow and hides the course or the ball.
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(sc.ground.size, sc.ground.size), new THREE.MeshLambertMaterial({ color: P.farGround }));
-  ground.rotation.x = -Math.PI / 2; ground.position.y = sc.ground.y; ground.name = 'far ground';
+  ground.rotation.x = -Math.PI / 2; ground.position.y = shore ? shore.groundY : sc.ground.y; ground.name = 'far ground';
   scene.add(ground);
 
   // The terrain: tiles whose heights come from heightAt, 1 m cells around the play area and coarser
   // far away (AP1b, core/terrainMesh.js), with the painted course on it. One geometry, one draw call.
   {
     const m = buildTerrainMesh(hole, terrain);
+    const tint = shore ? lowerShore(m, shore, P) : null;
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(m.positions, 3));
     geo.setAttribute('normal', new THREE.BufferAttribute(m.normals, 3));
     geo.setAttribute('uv', new THREE.BufferAttribute(m.uvs, 2));
     geo.setIndex(new THREE.BufferAttribute(m.index, 1));
+    if (tint) geo.setAttribute('shoreTint', new THREE.BufferAttribute(tint, 4));
     const tex = new THREE.CanvasTexture(courseCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     tex.userData.courseMap = true; // AP1: the perf overlay shows this one apart ("map (AP6)"), unrated until AP6
-    const mesh = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex }));
+    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    if (tint) shoreTinted(mat);
+    const mesh = new THREE.Mesh(geo, mat);
     mesh.name = 'terrain'; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
     scene.add(mesh);
   }
@@ -105,9 +114,9 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     }
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
-  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look);
+  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf);
-  addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome.backdrop);
+  addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
   return { scene, camera, colliderOutlines };
 }
 
@@ -255,7 +264,7 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf) {
 // Decoration trees (instanced so hundreds are cheap), standing on the ground. K8: only outside the
 // OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
 // AP5: the look is the set's first offTrees piece (more looks: later).
-function addTrees(scene, t, heightAt, surfaceAt, biome, look) {
+function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore) {
   const r = createRng(42);
   const spots = [];
   let guard = 0;
@@ -265,6 +274,8 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look) {
     spots.push([x, z, 0.8 + r() * 0.7]);
   }
   for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
+  // AP6a: no scenery tree on the beach or in the sea (only with the ocean backdrop)
+  if (shore) for (let i = spots.length - 1; i >= 0; i--) if (shore.outward(spots[i][0], spots[i][1]) > -OCEAN_LOOK.gap / 2) spots.splice(i, 1);
   const id = biome.offTrees[0], b = builder(OFF_TREES, id), colours = look('offTrees', id), shade = LIBRARY.offTrees[id].shade;
   const trunks = new THREE.InstancedMesh(b.trunk(), new THREE.MeshLambertMaterial({ color: colours.trunk }), spots.length);
   const leaves = new THREE.InstancedMesh(b.canopy(), shadedMaterial(shade, colours.canopy, { flatShading: true }), spots.length);
@@ -280,10 +291,12 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look) {
   scene.add(trunks, leaves);
 }
 
-// Distant hills and clouds. AP1: all hills are one instanced draw call, all cloud puffs another
-// (a puff is the unit sphere scaled to its radius, flattened as before).
+// Distant hills and clouds (the sky's and the backdrop's pieces). AP1: all hills are one instanced draw
+// call, all cloud puffs another (a puff is the unit sphere scaled to its radius, flattened as before).
 // AP5: hills = the set's backdrop piece (colours: its slots), clouds = the sky piece's `clouds` slot.
-function addBackdrop(scene, sc, backdrop, sky, backdropId) {
+// AP6a: today's pieces (flatSky's clouds, roundHills) are drawn exactly as before, from the same seeded
+// stream whatever the other piece is; the new pieces are built by SKIES / BACKDROP_PIECES below.
+function addBackdrop(scene, sc, backdrop, sky, biome, shore) {
   const hl = sc.hills, cl = sc.clouds;
   const r = createRng(9), pose = new THREE.Object3D();
   const hills = [];
@@ -293,7 +306,7 @@ function addBackdrop(scene, sc, backdrop, sky, backdropId) {
     pose.position.set(Math.sin(a) * d, hl.posY, hl.cz + Math.cos(a) * d);
     hills.push(matrixOf(pose));
   }
-  if (hills.length) scene.add(instanced(builder(BACKDROPS, backdropId)(), new THREE.MeshLambertMaterial({ color: backdrop.hills }), hills, 'hills (instanced)'));
+  if (biome.backdrop === 'roundHills' && hills.length) scene.add(instanced(builder(BACKDROPS, 'roundHills')(), new THREE.MeshLambertMaterial({ color: backdrop.hills }), hills, 'hills (instanced)'));
   const puffs = [];
   for (let i = 0; i < cl.count; i++) {
     const cloud = [];
@@ -307,5 +320,134 @@ function addBackdrop(scene, sc, backdrop, sky, backdropId) {
       puffs.push(matrixOf(pose));
     }
   }
-  if (puffs.length) scene.add(instanced(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshBasicMaterial({ color: sky.clouds, fog: false }), puffs, 'cloud puffs (instanced)'));
+  if (biome.sky === 'flatSky' && puffs.length) scene.add(instanced(new THREE.SphereGeometry(1, 12, 8), new THREE.MeshBasicMaterial({ color: sky.clouds, fog: false }), puffs, 'cloud puffs (instanced)'));
+  // AP6a: the new pieces. ctx = the hole's backdrop frame: centre (0, cz), scale k (BACKDROP_FIT), base
+  // height (the far ground plane), the palette, the toon ramp, the ocean's shore
+  const ctx = { sc, P: biome.palette, k: backdropScale(sc.cameraFar), cz: hl.cz, baseY: sc.ground.y, toon: null, shore };
+  ctx.toon = (SKIES[biome.sky] || BACKDROP_PIECES[biome.backdrop]) ? toonRamp() : null;
+  SKIES[biome.sky]?.(scene, ctx, sky);
+  BACKDROP_PIECES[biome.backdrop]?.(scene, ctx, backdrop);
+}
+
+// ---- AP6a: the gradient sky, horn peaks, haze hills and ocean (core/backdrop.js has the shapes) ----
+// Toon shading in 3 bands (ART_STYLE §3, the mock-ups' gradient map): one tiny texture per scene, freed with it.
+function toonRamp() {
+  const t = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1);
+  t.minFilter = t.magFilter = THREE.NearestFilter; t.needsUpdate = true;
+  return t;
+}
+// '#rrggbb' per vertex → a colour attribute (linear, as Three.js expects vertex colours)
+function colourAttribute(hexes) {
+  const out = new Float32Array(hexes.length * 3), cache = new Map(), c = new THREE.Color();
+  hexes.forEach((h, i) => {
+    if (!cache.has(h)) cache.set(h, c.set(h).toArray());
+    out.set(cache.get(h), i * 3);
+  });
+  return new THREE.BufferAttribute(out, 3);
+}
+// Several { positions, colours } parts as one non-indexed geometry (one draw call)
+function mergedGeometry(parts, normals = false) {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(parts.flatMap(p => p.positions), 3));
+  g.setAttribute('color', colourAttribute(parts.flatMap(p => p.colours)));
+  if (normals) g.computeVertexNormals(); // non-indexed: each face its own normal (flat, faceted)
+  return g;
+}
+// A backdrop mesh in the hole's frame: around (0, cz), scaled by k, its y from y0
+function framed(mesh, ctx, y0, name) {
+  mesh.scale.setScalar(ctx.k); mesh.position.set(0, y0, ctx.cz); mesh.name = name;
+  return mesh;
+}
+const ridgeMesh = (layers, ctx, y0, name) =>
+  framed(new THREE.Mesh(mergedGeometry(layers.map(l => ridgeLayer(l, ctx.P))), new THREE.MeshBasicMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide })), ctx, y0, name);
+
+const SKIES = {
+  // The dome follows the camera and is drawn first, behind everything (no depth test), so its size
+  // never hides anything; the clouds are toon puffs, bright (emissive) and never fogged.
+  gradientSky(scene, ctx, sky) {
+    const L = SKY_LOOK, c = v => new THREE.Color(v);
+    const mat = new THREE.ShaderMaterial({
+      side: THREE.BackSide, depthWrite: false, depthTest: false, fog: false,
+      uniforms: { top: { value: c(sky.top) }, hor: { value: c(sky.sky) }, fogC: { value: c(sky.fog) }, k: { value: new THREE.Vector4(L.scale, L.pow, L.fogBand[0], L.fogBand[1]) } },
+      vertexShader: 'varying vec3 vp; void main(){ vp = position; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+      // core/backdrop.js skyColour is the same formula (tested there)
+      fragmentShader: 'uniform vec3 top; uniform vec3 hor; uniform vec3 fogC; uniform vec4 k; varying vec3 vp;\n' +
+        'void main(){ float y = normalize(vp).y; vec3 col = mix(hor, top, pow(clamp(y * k.x, 0.0, 1.0), k.y));\n' +
+        ' gl_FragColor = vec4(mix(fogC, col, smoothstep(k.z, k.w, y)), 1.0);\n #include <colorspace_fragment>\n}',
+    });
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(L.dome * ctx.sc.cameraFar, 32, 16), mat);
+    dome.renderOrder = -1; dome.frustumCulled = false; dome.name = 'sky dome';
+    dome.onBeforeRender = (renderer, s, camera) => { dome.position.copy(camera.position); dome.updateMatrixWorld(); };
+    scene.add(dome);
+    const pose = new THREE.Object3D(), puffs = cloudPuffs().map(p => {
+      pose.position.set(p.x * ctx.k, ctx.baseY + p.y * ctx.k, ctx.cz + p.z * ctx.k); pose.rotation.set(0, p.yaw, 0);
+      pose.scale.set(p.r * ctx.k, p.r * 0.8 * ctx.k, p.r * 0.8 * ctx.k);
+      return matrixOf(pose);
+    });
+    const cloudMat = new THREE.MeshToonMaterial({ color: sky.clouds, emissive: sky.clouds, emissiveIntensity: L.clouds.emissive, fog: false, gradientMap: ctx.toon });
+    scene.add(instanced(new THREE.IcosahedronGeometry(1, 2), cloudMat, puffs, 'cloud puffs (toon, instanced)'));
+  },
+};
+const BACKDROP_PIECES = {
+  hornPeaks(scene, ctx) {
+    const L = HORN_PEAKS_LOOK, horns = hornRange(ctx.P);
+    const mat = new THREE.MeshToonMaterial({ vertexColors: true, fog: false, side: THREE.DoubleSide, gradientMap: ctx.toon });
+    scene.add(framed(new THREE.Mesh(mergedGeometry([horns], true), mat), ctx, ctx.baseY + L.baseY * ctx.k, 'horn peaks (toon, merged)'));
+    scene.add(ridgeMesh([L.farRidge, L.slopes], ctx, ctx.baseY, 'far ridge + forested slopes (merged)'));
+  },
+  hazeHills(scene, ctx) {
+    scene.add(ridgeMesh([HAZE_HILLS_LOOK.far, HAZE_HILLS_LOOK.near], ctx, ctx.baseY, 'haze hills: near + far rings (merged)'));
+  },
+  ocean(scene, ctx, colours) {
+    const shore = ctx.shore, key = { water: colours.shallow, mid: mixHex(colours.shallow, colours.deep, 0.5), waterDeep: colours.deep };
+    const pos = [], hex = [];
+    for (const b of shore.bands) {
+      pos.push(b.x0, b.y, b.z0, b.x0, b.y, b.z1, b.x1, b.y, b.z1, b.x0, b.y, b.z0, b.x1, b.y, b.z1, b.x1, b.y, b.z0);
+      for (let i = 0; i < 6; i++) hex.push(key[b.key]);
+    }
+    const sea = new THREE.Mesh(mergedGeometry([{ positions: pos, colours: hex }]), new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+    sea.name = 'sea (bands, merged)';
+    scene.add(sea);
+    scene.add(ridgeMesh([OCEAN_LOOK.ridge, OCEAN_LOOK.island], ctx, shore.seaY, 'volcanic ridge + far island (merged)'));
+  },
+};
+
+// The ocean's shore for this hole: the sea side(s) from the hole (scenery.seaSide) or the piece's default
+function makeShore(hole, terrain, sc) {
+  const sides = parseSeaSide(sc.seaSide ?? LIBRARY.backdrops.ocean.seaSide);
+  const ends = parts => [parts[0][0], parts[parts.length - 1][1]];
+  const [x0, x1] = ends(sc.mesh.xs), [z0, z1] = ends(sc.mesh.zs);
+  return oceanShore({ ob: obBox(hole), heightAt: terrain.heightAt, extent: { x0, x1, z0, z1 }, groundY: sc.ground.y, reach: sc.cameraFar, sides, cz: sc.hills.cz });
+}
+// The OB box from the stake lines (the stakes stand on the OB line; the far end is the last stake row)
+function obBox(hole) {
+  const st = hole.scenery.stakes, xs = st.xs ?? [-st.x, st.x];
+  return { x0: Math.min(...xs), x1: Math.max(...xs), z0: st.z1, z1: st.z0 };
+}
+// Lower the drawn terrain beyond the beach top (positions and normals, in place) → the shore tint per
+// vertex (rgb linear + amount), painted over the course map by shoreTinted
+function lowerShore(m, shore, P) {
+  const pos = m.positions, nor = m.normals, n = pos.length / 3, tint = new Float32Array(n * 4), E = 1;
+  const rgb = { sand: new THREE.Color(P.sand).toArray(), rock: new THREE.Color(P.rock).toArray() };
+  for (let i = 0; i < n; i++) {
+    const x = pos[i * 3], z = pos[i * 3 + 2];
+    if (shore.outward(x, z) <= 0) continue;
+    pos[i * 3 + 1] = shore.drawnY(x, z);
+    const dx = (shore.drawnY(x + E, z) - shore.drawnY(x - E, z)) / (2 * E), dz = (shore.drawnY(x, z + E) - shore.drawnY(x, z - E)) / (2 * E);
+    const L = Math.hypot(dx, 1, dz);
+    nor[i * 3] = -dx / L; nor[i * 3 + 1] = 1 / L; nor[i * 3 + 2] = -dz / L;
+    const t = shore.tint(x, z);
+    tint.set([...rgb[t.colour], t.amount], i * 4);
+  }
+  return tint;
+}
+// The terrain material with the shore tint: the beach's sand and lava rock painted over the course map
+function shoreTinted(mat) {
+  mat.onBeforeCompile = s => {
+    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 shoreTint;\nvarying vec4 vShoreTint;')
+      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvShoreTint = shoreTint;');
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vShoreTint;')
+      .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vShoreTint.rgb, vShoreTint.a);');
+  };
+  mat.customProgramCacheKey = () => 'shoreTint';
 }

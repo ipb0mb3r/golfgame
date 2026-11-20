@@ -32,9 +32,17 @@ export const LIBRARY = Object.freeze({
   },
   skies: {
     flatSky: { desc: 'One flat sky colour that the fog fades into, with white cloud puffs (today\'s sky; skyTop is not drawn yet).', slots: { sky: 'skyHorizon', fog: 'fog', clouds: 'cloud' }, tris: 0 },
+    // AP6a: the artist's sky (docs/art/ap6a-artist-notes.md, core/backdrop.js, config SKY_LOOK)
+    gradientSky: { desc: 'A dome from skyTop overhead to skyHorizon at the horizon (melting into the fog just under it, no seam), with 9 groups of big toon puffy clouds in `cloud`, bright (emissive) and never fogged, high and far in front.', slots: { sky: 'skyHorizon', top: 'skyTop', fog: 'fog', clouds: 'cloud' }, tris: 15000 },
   },
   backdrops: {
     roundHills: { desc: 'A ring of big round hills far around the course (one tint zone, backNear).', slots: { hills: 'backNear' }, tris: 440 },
+    // AP6a (docs/art/ap6a-artist-notes.md; geometry in core/backdrop.js, numbers in config.js). Drawn unfogged with
+    // the haze baked into their colours (mixed toward `fog`), fitted inside the hole's cameraFar (BACKDROP_FIT).
+    hazeHills: { desc: 'The stronger far-hill tint: a near ring of soft round hills in backNear and a far ring in backFar, each mixed toward the fog by distance (10 % / 22 %), their bases fading further into the haze.', slots: { near: 'backNear', far: 'backFar', fog: 'fog' }, tris: 1600 },
+    hornPeaks: { desc: 'Alpine: a WIDE hero horn and 6 smaller horns (faceted toon rock in backFar, snow in backCap above the snow line and on flat faces), a low snowy far ridge (backFar / backCap / backCapShade) and a full ring of dark forested slopes in front (backNear).', slots: { rock: 'backFar', slopes: 'backNear', snow: 'backCap', snowShade: 'backCapShade', fog: 'fog' }, tris: 1650 },
+    // seaSide: where the sea is when the hole doesn't say (hole scenery.seaSide overrides it)
+    ocean: { desc: 'Island coast: a deep sea (waterDeep) to the horizon on the sea side(s), a mid and a shallow shore band (water), a sand beach with lava rock patches beyond OB (drawn only: physics never changes), a green volcanic ridge with soft tops (backFar) and a low far island (backNear).', slots: { shallow: 'water', deep: 'waterDeep', sand: 'sand', rock: 'rock', ridge: 'backFar', island: 'backNear', fog: 'fog' }, seaSide: 'left+far', tris: 330 },
   },
   // The course's own small things, one of each kind per set (flag, tee markers, OB stakes, pond surface)
   furniture: {
