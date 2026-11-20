@@ -3,7 +3,7 @@
 // src/biomes/alpine-day.js. — Agent: artist
 const base = {
   edge: '#3E8A3A', water: '#2A9AD8', waterDeep: '#1E6CB4', bank: '#8A8478', rock: '#9AA2AC', path: '#C9C6BE', lip: '#B8B29C',
-  skyTop: '#5CB4F2', skyHorizon: '#B4E4FC', cloud: '#FFFFFF', fog: '#BEE6FA', // owner: lighter azure, from his photos
+  skyTop: '#5CB4F2', skyHorizon: '#B4E4FC', cloud: '#E4EEF8', fog: '#BEE6FA', // owner: lighter azure, from his photos
   sun: '#FFF6E8', ambient: '#E2EEFF', shadow: '#2E5E6A',
   backFar: '#7E9CC8', backNear: '#3E6A70', backCap: '#FFFFFF', backCapShade: '#BCD2EE', backTrees: '#24584A',
   pine: '#22684E', trunk: '#6E4A30', leaf: '#4E9A48', leafTop: '#6FB070', leafLow: '#123E36', leafAlt: '#1E5E5A', trunkAlt: '#E8E4DA',

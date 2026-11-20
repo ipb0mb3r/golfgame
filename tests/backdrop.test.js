@@ -141,10 +141,16 @@ test('AP6a library: the new pieces are registered, each slot a palette key, and 
   assert.ok(PICKS.sky && PICKS.backdrop);
 });
 
-test('AP6a: the artist\'s sets keep their picks (the artist picks the new pieces), and no hole or menu uses a test set', () => {
-  for (const id of ['alpine-day', 'island-day', 'meadow-day', 'mtn-default', 'proto-default']) {
+test('AP6a: the legacy sets keep flatSky + roundHills, every set picks a real sky and backdrop, and no hole or menu uses a test set', () => {
+  // only the legacy looks are pinned (the prototype and mountain looks must not change by accident);
+  // the artist's sets may pick any piece, that is their data
+  for (const id of ['mtn-default', 'proto-default']) {
     assert.equal(BIOMES[id].sky, 'flatSky', id);
     assert.equal(BIOMES[id].backdrop, 'roundHills', id);
+  }
+  for (const [id, set] of Object.entries(BIOMES)) {
+    assert.ok(LIBRARY.skies[set.sky], `${id} sky ${set.sky}`);
+    assert.ok(LIBRARY.backdrops[set.backdrop], `${id} backdrop ${set.backdrop}`);
   }
   for (const h of Object.values(HOLES)) assert.ok(!h.biome.startsWith('test-'), h.id);
   // the test sets differ from their source only by sky and backdrop

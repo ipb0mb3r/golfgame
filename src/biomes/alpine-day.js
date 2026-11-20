@@ -15,7 +15,7 @@ export default {
     rough: '#56a040', deepRough: '#438a3a', sand: '#f2ecd6', lip: '#b8b29c', water: '#2a9ad8', waterDeep: '#1e6cb4', bank: '#8a8478',
     rock: '#9aa2ac', path: '#c9c6be',
     // sky, fog, light (owner: a lighter azure)
-    skyTop: '#5cb4f2', skyHorizon: '#b4e4fc', cloud: '#ffffff', fog: '#bee6fa',
+    skyTop: '#5cb4f2', skyHorizon: '#b4e4fc', cloud: '#e4eef8', fog: '#bee6fa',
     sun: '#fff6e8', ambient: '#e2eeff', shadow: '#2e5e6a',
     // backdrop: blue-grey peaks with white snow, dark forested slopes, dark pine wall
     backFar: '#7e9cc8', backNear: '#3e6a70', backCap: '#ffffff', backCapShade: '#bcd2ee', backTrees: '#24584a',
@@ -33,8 +33,8 @@ export default {
   onTrees: ['roundTree'],     // later: soft pines, a tall spruce and a few birches (AP7, ART_STYLE §6.4)
   offTrees: ['coneTree'],     // later: the cheap pine wall (AP7)
   rocks: ['roundBoulder'],
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',     // later: the stylised horn peaks + forested slopes (new backdrop piece)
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'hornPeaks',  // the wide stylised horn peaks + forested slopes (AP6a, from docs/art/alpine/)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: grass tufts, white and blue wildflowers (AP7)
   bigProps: [],               // later: Swiss chalet, small chalet / hay hut, wooden fence (AP7), placed by hand out of bounds

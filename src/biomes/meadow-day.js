@@ -14,7 +14,7 @@ export default {
     rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
     rock: '#a89b8c', path: '#e8d8ae',
     // sky, fog, light
-    skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#ffffff', fog: '#d2ecfa',
+    skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#e2ecf6', fog: '#d2ecfa',
     sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',
     // backdrop
     backFar: '#86aecb', backNear: '#5e9a4a', backCap: '#7db858', backCapShade: '#629e4a', backTrees: '#4a8a40',
@@ -31,8 +31,8 @@ export default {
   onTrees: ['roundTree'],     // later: the soft round tree + the tall conifer (AP7, ART_STYLE §6.3)
   offTrees: ['coneTree'],     // later: the cheap round treetop wall (AP7)
   rocks: ['roundBoulder'],
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'hazeHills',  // the soft hazy hills, near ring backNear + far ring backFar (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: grass tufts, buttercup patches, a few red flowers, bushes (AP7)
   bigProps: [],               // later: windmill, cow, wooden fence (AP7), placed by hand out of bounds

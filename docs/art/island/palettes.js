@@ -3,7 +3,7 @@
 // the approved one becomes src/biomes/island-day.js. — Agent: artist
 const base = {
   edge: '#3E9A2C', lip: '#C9A36A', bank: '#E8C88A', rock: '#3E3A40', path: '#EAD8B0',
-  skyTop: '#1E90F0', skyHorizon: '#BFF2FF', cloud: '#FFFFFF', fog: '#C8F0FA',
+  skyTop: '#1E90F0', skyHorizon: '#BFF2FF', cloud: '#E4F2F8', fog: '#C8F0FA',
   sun: '#FFF4DC', ambient: '#EEFAFF', shadow: '#2A7060',
   backFar: '#3E9C7A', backNear: '#2E8A50', backCap: '#6CC48A', backCapShade: '#4FA870', backTrees: '#2E9A44',
   pine: '#2A8A50', trunk: '#8E6A46', leaf: '#3CB848', leafTop: '#9CEC50', leafLow: '#1E7038', leafAlt: '#46D04E', trunkAlt: '#C49A68',

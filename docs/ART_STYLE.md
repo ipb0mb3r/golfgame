@@ -275,6 +275,12 @@ Mood board (owner): **beach, but not the Caribbean and not the US east or west c
 | Beach hut | 🔧 bigProps | ~200 tris |
 | Gradient sky; textured ground | 🔧 AP6 / sky | as in §1.1 |
 
+### 6.5b The new sky and backdrops (owner, 2026-11-20)
+- Since AP6a/AP6b, all three sets use the **gradient sky**. Their backdrops: Meadow **hazy hills** (owner, over round hills), Alpine **horn peaks**, Island coast **ocean**.
+- **Skies kept** as they are (owner).
+- **Clouds softened** (owner: pure white looked "like stickers"): `cloud` is a soft sky-tinted off-white per set (Meadow `#E2ECF6`, Alpine `#E4EEF8`, Island `#E4F2F8`), so the toon shading shows. Rule for new sets: **never pure white `cloud`**; use a light tint of the set's sky.
+- Images: `docs/art/new-sky/`.
+
 ### 6.6 Ideas for later biome sets (owner)
 - **Cape Cod-like coast:** a white lighthouse on the rocks, dunes and beach grass, weathered shingle cottages, a cooler Atlantic sea (owner, while choosing Island coast).
 

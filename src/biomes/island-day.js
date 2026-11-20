@@ -15,7 +15,7 @@ export default {
     rough: '#3ec036', deepRough: '#2ca232', sand: '#feebb8', lip: '#c9a36a', water: '#00e0d8', waterDeep: '#0090e8', bank: '#e8c88a',
     rock: '#3e3a40', path: '#ead8b0',
     // sky, fog, light
-    skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#ffffff', fog: '#c8f0fa',
+    skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#e4f2f8', fog: '#c8f0fa',
     sun: '#fff4dc', ambient: '#eefaff', shadow: '#2a7060',
     // backdrop: the green volcanic ridge, the tree wall
     backFar: '#3e9c7a', backNear: '#2e8a50', backCap: '#6cc48a', backCapShade: '#4fa870', backTrees: '#2e9a44',
@@ -32,8 +32,8 @@ export default {
   onTrees: ['roundTree'],     // later: palm, monkeypod (AP7, ART_STYLE §6.5)
   offTrees: ['coneTree'],     // later: palm / round treetop wall (AP7)
   rocks: ['roundBoulder'],    // dark lava boulders
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',     // later: the ocean + beach + lava shore, volcanic ridge, far towers (new backdrop piece)
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'ocean',    // the sea along the course (left + far), beach, lava, volcanic ridge, far island (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: bougainvillea bushes, tropical flowers, grass tufts (AP7)
   bigProps: [],               // later: very tall palm (landmark), beach hut (AP7), placed by hand
