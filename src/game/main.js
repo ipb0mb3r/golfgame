@@ -352,6 +352,8 @@ const api = () => session.test;
 window.__golf = {
   get hole() { return api().hole; }, get play() { return api().play; }, get meter() { return api().meter; },
   get scenario() { return game?.launch.kind === 'scenario' ? game.launch.scenarioId : null; }, tune: tune.set,
+  // AP5: the biome set the current hole is drawn with (its id), and the far ground's colour as drawn (tools/session-check.mjs)
+  get biome() { return session?.biome.id ?? null; }, get groundColour() { return '#' + session?.scene.getObjectByName('far ground')?.material.color.getHexString(); },
   get state() { return api().state; }, get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
   get clubIdx() { return api().play.clubIdx; }, set clubIdx(v) { api().play.setClub(v); },
   get aim() { return api().play.aim; }, set aim(v) { api().play.setAim(v); },
