@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
 import { TUNE } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
-import { sceneLight, treeLooks, pieceColours } from '../core/biome.js';
+import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
@@ -150,7 +150,6 @@ const OFF_TREES = {
 const ROCKS = { roundBoulder: () => new THREE.IcosahedronGeometry(1, 2) };
 const BACKDROPS = { roundHills: () => new THREE.SphereGeometry(1, 20, 12) };
 const builder = (table, id) => table[id] ?? (() => { throw new Error(`no builder for the library piece "${id}" (src/game/scene.js)`); })();
-const TREE_LOOK_SEED = 78; // AP5: the seeded pick of a tree's look (only with 2+ onTrees), its own stream
 
 // A piece's per-copy shade (library `shade`), drawn from r in the same order as before AP5.
 // 'around': the copy's colour, spread around the slot colour (the material is white).
@@ -184,7 +183,7 @@ function addObstacles(scene, obstacles, data, biome, look) {
   const pose = new THREE.Object3D(), r = createRng(77);
   const rocks = [], trunkLines = [], leafLines = [], rockLines = [];
   const trees = obstacles.filter(o => o.type === 'tree');
-  const looks = new Map(treeLooks(trees.map(o => data[o.i] ?? {}), biome.onTrees, createRng(TREE_LOOK_SEED)).map((id, k) => [trees[k], id]));
+  const looks = new Map(holeTreeLooks(trees, data, biome.onTrees).map((id, k) => [trees[k], id])); // core/biome.js, the minimap uses the same
   const byLook = new Map(); // look id → { colours, trunks, leaves, leafColors }
   const SINK = 0.5; // m of trunk drawn below the ground, so it never floats on a slope
   // One pose: position, rotation, scale → its matrix (rotation reset each time)

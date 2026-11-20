@@ -1,6 +1,6 @@
 // Flag, cup, ball, shadow, flight trail and the aim guide.
 import * as THREE from 'three';
-import { CUP_R, BALL_R, HUD, TUNE, FLAG_FX } from '../core/config.js';
+import { CUP_R, BALL_R, HUD, TUNE, FLAG_FX, UI_COLORS } from '../core/config.js';
 import { flagColour } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 
@@ -57,11 +57,11 @@ export function createProps(scene, hole, terrain, cup, biome) {
   const DOTS = 40;
   // K4: the dots past an obstacle the shot would hit, and the ring, turn WARN_COLOR, and a marker
   // shows where it hits (in the air, with a ring on the ground under it)
-  const AIM_COLOR = new THREE.Color(0xffd447), WARN_COLOR = new THREE.Color(0xff4a3a);
+  const AIM_COLOR = new THREE.Color(UI_COLORS.aim), WARN_COLOR = new THREE.Color(UI_COLORS.warn); // X25: from config
   const dots = new THREE.InstancedMesh(new THREE.CircleGeometry(0.22, 10), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 }), DOTS);
   dots.frustumCulled = false; scene.add(dots);
   for (let i = 0; i < DOTS; i++) dots.setColorAt(i, AIM_COLOR);
-  const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 40), new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(1.6, 2.1, 40), new THREE.MeshBasicMaterial({ color: AIM_COLOR, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
   ring.rotation.x = -Math.PI / 2; scene.add(ring);
   const warnMark = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 10), new THREE.MeshBasicMaterial({ color: WARN_COLOR, depthTest: false, transparent: true, opacity: 0.95 }));
   warnMark.renderOrder = 11; scene.add(warnMark);
@@ -76,9 +76,9 @@ export function createProps(scene, hole, terrain, cup, biome) {
   // with a small dot on the ground under it; fitMarker() keeps its size on screen modest at any distance.
   // Grey when the lie caps the power, red when the shot would hit an obstacle (K4), blue when it lands
   // in water or out of bounds (S23; the obstacle wins: the ball would never get there).
-  const CAP_COLOR = new THREE.Color(0xb8b8b8), HAZARD_COLOR = new THREE.Color(0x46b4ff);
+  const CAP_COLOR = new THREE.Color(UI_COLORS.capped), HAZARD_COLOR = new THREE.Color(UI_COLORS.hazard);
   const P = HUD.aimPin;
-  const markMat = new THREE.MeshBasicMaterial({ color: 0xffd447, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
+  const markMat = new THREE.MeshBasicMaterial({ color: AIM_COLOR, transparent: true, opacity: 0.95, side: THREE.DoubleSide });
   // A unit pin: 1 m tall, tip at the bottom (y 0) pointing down, base on top
   const pinGeo = new THREE.ConeGeometry(P.radius, 1, 16).rotateX(Math.PI).translate(0, 0.5, 0);
   const markTri = new THREE.Mesh(pinGeo, markMat); // (the S22 name: the marker)
