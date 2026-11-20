@@ -4,6 +4,8 @@ import assert from 'node:assert/strict';
 import { TREE_IDS, treeParts, sceneryTree, triangles, partBounds, gradientHex, treeColours, lathe } from '../src/core/trees.js';
 import { TREE_LOOK, PERF_BUDGET } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
+import { BIOMES } from '../src/biomes/index.js';
+import { minimapColours, minimapShade, pieceColours } from '../src/core/biome.js';
 
 const gradientPieces = group => Object.entries(LIBRARY[group]).filter(([, p]) => p.gradient).map(([id]) => id);
 
@@ -17,6 +19,20 @@ test('every gradient tree piece has a builder, the gradient slots, and its tris 
     assert.equal(p.tris, n, `${group}.${id} tris`);
   }
   assert.deepEqual(gradientPieces('onTrees').sort(), [...TREE_IDS].sort());
+});
+
+test('the mid colours (artist Q4 on #105): pine → pine, spruce and palm → leafAlt, round canopy and birch → leaf; the minimap follows', () => {
+  const MID = { pineTree: 'pine', spruceTree: 'leafAlt', palmTree: 'leafAlt', roundCanopy: 'leaf', birchTree: 'leaf' };
+  assert.deepEqual(Object.keys(MID).sort(), [...TREE_IDS].sort());
+  for (const group of ['onTrees', 'offTrees']) for (const [id, key] of Object.entries(MID)) assert.equal(LIBRARY[group][id].slots.canopy, key, `${group}.${id}`);
+  for (const [setId, set] of Object.entries(BIOMES)) {
+    assert.ok(set.palette.leafAlt, `${setId} defines leafAlt`);
+    const trees = minimapColours(set, LIBRARY).trees;
+    for (const id of set.onTrees.filter(i => MID[i])) {
+      assert.equal(pieceColours(set, LIBRARY)('onTrees', id).canopy, set.palette[MID[id]], `${setId} ${id} 3D mid colour`);
+      assert.equal(trees[id], minimapShade(set.palette, 'tree', set.palette[MID[id]], id).colour, `${setId} ${id} minimap colour`);
+    }
+  }
 });
 
 test('the phone budget: every tree ≤ 500 triangles (the palm ≤ 400), a scenery tree lighter than in play', () => {

@@ -155,7 +155,7 @@ export const OCEAN_LOOK = Object.freeze({
 // AP7a: the gradient tree pieces (pineTree, spruceTree, palmTree; core/trees.js builds them, DESIGN §8b).
 // Shapes are in UNIT spaces so an in-play tree fits its collider (obstacles.js): the trunk in the trunk
 // cylinder's (radius 1, y 0 → 1), the canopy in the canopy ellipsoid's (radius 1 across, y −1 → 1).
-// Gradient: a per-vertex weight 0 (bottom, leafLow) → 0.5 (leaf) → 1 (top, leafTop); `dark` lowers the
+// Gradient: a per-vertex weight 0 (bottom, leafLow) → 0.5 (the mid colour: pine / leafAlt / leaf, library slots) → 1 (top, leafTop); `dark` lowers the
 // weight of each tier's droop tip and underside so the tiers read. scenery = the size of a scenery tree
 // (offTrees, before its random 0.8–1.5 scale), in the obstacle format (m); lod = what a scenery tree draws
 // with fewer sides, rings, tiers or lobes (there are hundreds; ~100–160 triangles each).

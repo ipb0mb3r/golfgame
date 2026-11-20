@@ -16,8 +16,10 @@
 // (glTF models, textures, props) are added here by AP6 / AP7 and the artist (ART1).
 // AP7a: the gradient trees' slots (low → canopy → top, bottom to top) and per-copy tint
 const TREE_GRADIENT_SLOTS = Object.freeze({ low: 'leafLow', canopy: 'leaf', top: 'leafTop', trunk: 'trunk' });
-const CONIFER_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'pine' });
-const PALM_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, trunk: 'trunkAlt', mark: 'trunk' });
+const PINE_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'pine' });
+// artist Q4 on #105: the spruce and the palm take leafAlt as their mid colour
+const SPRUCE_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt' });
+const PALM_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt', trunk: 'trunkAlt', mark: 'trunk' });
 const BIRCH_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, trunk: 'trunkAlt', mark: 'trunk' });
 const TREE_TINT =Object.freeze({ slot: 'canopy', mode: 'tint', h: [0.2, 0.15], s: 0.25, l: [0.84, 0.16] });
 export const LIBRARY = Object.freeze({
@@ -31,12 +33,12 @@ export const LIBRARY = Object.freeze({
     // (3 bands, AP6a's ramp) and painted per vertex low → canopy → top from bottom to top; `canopy` is
     // its mid colour (the minimap's tree colour). shade 'tint': each copy is multiplied by a near-white
     // colour picked in the hsl ranges (h, l: [from, spread]), so copies differ a little in shade.
-    // The conifers' mid colour is `pine`. `mark` = the trunk's second colour (palm grooves, birch bark marks).
+    // Mid colours: the pine `pine`, the spruce and the palm `leafAlt`, the round canopy and the birch `leaf`. `mark` = the trunk's second colour (palm grooves, birch bark marks).
     // Each copy in play also gets a random turn and a slight lean of its canopy (inside its collider).
     // The same pieces can be offTrees (below); `tris` = one tree in play (trunk + canopy).
-    pineTree: { desc: 'Soft pine: a tapered trunk and 3 stacked tiers, each with a rounded shoulder and a drooping, gently wavy skirt, toon shaded with the leafLow → pine → leafTop gradient.', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 276 },
-    spruceTree: { desc: 'Spruce: narrower and taller-looking than the pine, 5 tiers, the same gradient and toon shading.', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
-    palmTree: { desc: 'Palm: a bowed trunk (trunkAlt) with darker ring grooves (trunk), a crown of 12 drooping fronds in two layers, the gradient running down the fronds.', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
+    pineTree: { desc: 'Soft pine: a tapered trunk and 3 stacked tiers, each with a rounded shoulder and a drooping, gently wavy skirt, toon shaded with the leafLow → pine → leafTop gradient.', slots: PINE_SLOTS, gradient: true, shade: TREE_TINT, tris: 276 },
+    spruceTree: { desc: 'Spruce: narrower and taller-looking than the pine, 5 tiers, the leafLow → leafAlt → leafTop gradient, toon shaded.', slots: SPRUCE_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
+    palmTree: { desc: 'Palm: a bowed trunk (trunkAlt) with darker ring grooves (trunk), a crown of 12 drooping fronds in two layers, the leafLow → leafAlt → leafTop gradient running down the fronds.', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
     roundCanopy: { desc: 'The artist\'s round tree: a round top sphere over 3 overlapping low lobes, flat-ish bottoms and a soft shoulder, the leafLow → leaf → leafTop gradient, toon shaded.', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 458 },
     birchTree: { desc: 'Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (trunk) and a light, airy canopy of 5 small lobes.', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 400 },
   },
@@ -46,8 +48,8 @@ export const LIBRARY = Object.freeze({
     // AP7a: the gradient trees as scenery, one draw call per piece (trunk + canopy merged, config TREE_LOOK
     // .scenery size); a lighter version (TREE_LOOK lod) as there are hundreds; each copy its own size,
     // width, lean, turn and tint. tris = one scenery tree.
-    pineTree: { desc: 'The soft pine as scenery (fewer sides, a simpler tier outline).', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 96 },
-    spruceTree: { desc: 'The spruce as scenery (3 tiers, fewer sides).', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 96 },
+    pineTree: { desc: 'The soft pine as scenery (fewer sides, a simpler tier outline).', slots: PINE_SLOTS, gradient: true, shade: TREE_TINT, tris: 96 },
+    spruceTree: { desc: 'The spruce as scenery (3 tiers, fewer sides).', slots: SPRUCE_SLOTS, gradient: true, shade: TREE_TINT, tris: 96 },
     palmTree: { desc: 'The palm as scenery (fewer sides).', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 164 },
     roundCanopy: { desc: 'The round tree as scenery (fewer sides).', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 144 },
     birchTree: { desc: 'The birch as scenery (3 lobes, 2 bark marks, fewer sides).', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 144 },
