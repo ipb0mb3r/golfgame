@@ -75,6 +75,8 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **AP5 biome set format** (#86): step 1 format + `validateBiomeSet` approved by the PM and reviewed by the artist ("fits"); step 2 (the game reads the sets, no visual change except the proto flags, `meadow-day` proof via `?biome=`) with a fresh dev. Then QA Full; then message the artist session to check meadow-day.
 - **Artist requests for later** (#86): gradient slots leafLow→leaf→leafTop and a per-pick slot override (AP7), smallProps weights + clusters (ART1), a backdrop brightness check (later).
 
+**Owner priority (2026-11-20): X26** (the minimap's trees, rocks, water and sand take the biome set's colours, with a readability rule for the minimap) is **important**: a small dev PR right after AP5 merges, before AP3. TASKS line added after #86 merges (the dev PR edits TASKS). Also backlog X25 (HUD aim colours duplicated in props.js / hud.js vs `UI_COLORS`).
+
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
 2. **B: ready for the art:** ~~AP2~~ ✅ → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
