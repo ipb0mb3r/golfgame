@@ -60,5 +60,5 @@ Follow a hard hole with a breather. Never put two big difficulty jumps in a row.
 `pl-01` (flat par 3), `pl-02` (hilly par 5) and `pl-03` (par 4 dogleg with trees, Phase K) stay as **practice and test holes**. They're not part of the mountain 9 and don't have to follow these guidelines (e.g. pl-03's lone tree on the fairway).
 
 ## Biome notes for the course designer (PM, 2026-11-20)
-- **Island / sea holes (`ocean` backdrop, AP6a):** keep the land near the sea **low and fairly flat**. Sea level is the lowest beach top − 1 m, so a high bank beside the sea turns into a steep drop. Say which side the sea is with `scenery.seaSide` (`'left' | 'right' | 'far' | 'near'`, joined with `+`); the owner wants "the course follows the ocean".
+- **Island / sea holes (`ocean` backdrop, AP6a):** keep the land near the sea **low and fairly flat**. Sea level is the lowest beach top − 1 m, so a high bank beside the sea turns into a steep drop. Say which side the sea is with `scenery.seaSide` (`'left' | 'right' | 'far' | 'near'`, joined with `+`); the owner wants "the course follows the ocean". **Widen `hole.map` on the sea side(s)** (well past OB), so the minimap shows a readable band of sea (AP6b: with today's maps it's a 3–4 px strip on a phone).
 - Read each biome set's **gameplay notes** (`notes` in `src/biomes/<id>.js`) before designing a hole for it.
