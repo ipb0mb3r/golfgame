@@ -1,8 +1,8 @@
 // AP6a: the gradient sky, horn peaks, haze hills and ocean pieces (core/backdrop.js, DESIGN §8b).
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { skyMix, skyColour, skyFogMix, cloudPuffs, hornPeak, hornRange, ridgeLayer, parseSeaSide, oceanShore, backdropScale, mixHex } from '../src/core/backdrop.js';
-import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, BACKDROP_FIT } from '../src/core/config.js';
+import { skyMix, skyColour, skyFogMix, cloudPuffs, hornPeak, hornRange, ridgeLayer, parseSeaSide, oceanShore, shoreMapColour, backdropScale, mixHex } from '../src/core/backdrop.js';
+import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, BACKDROP_FIT, RIDGE } from '../src/core/config.js';
 import { validateBiomeSet, PICKS } from '../src/core/biome.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';
@@ -152,4 +152,44 @@ test('AP6a: the artist\'s sets keep their picks (the artist picks the new pieces
     assert.equal(BIOMES[t].palette, BIOMES[src].palette);
     assert.deepEqual(BIOMES[t].onTrees, BIOMES[src].onTrees);
   }
+});
+
+test('AP6b round ridge layers: smooth light across each hill (no streaks from the jag noise), fading to the base at the foot; trimmed layers have no low tail', () => {
+  const P = BIOMES['meadow-day'].palette;
+  for (const layer of [HAZE_HILLS_LOOK.near, HAZE_HILLS_LOOK.far]) {
+    const r = ridgeLayer(layer, P), base = mixHex(P[layer.key], P.fog, layer.haze + RIDGE.baseFade);
+    const lit = mixHex(P[layer.key], P.fog, layer.haze), shd = mixHex(mixHex(P[layer.key], P.shadow, RIDGE.shade), P.fog, layer.haze);
+    assert.ok(r.colours.includes(lit) && r.colours.includes(shd));
+    // per segment: the lower quad (baseY to the foot) is the base colour; the upper quad goes base → top
+    const tops = [];
+    for (let q = 0; q < r.positions.length / 18; q++) {
+      const ys = [1, 4, 7, 10, 13, 16].map(i => r.positions[q * 18 + i]), cs = r.colours.slice(q * 6, q * 6 + 6);
+      if (q % 2 === 0) { assert.ok(ys.every(y => y <= 0)); assert.ok(cs.every(c => c === base)); }
+      else { assert.equal(cs[0], base); assert.equal(cs[1], base); tops.push(cs[5], cs[2]); }
+    }
+    // the light changes smoothly along the ring: neighbouring tops never jump from lit to shade
+    const lum = c => { const n = parseInt(c.slice(1), 16); return ((n >> 16) & 255) + ((n >> 8) & 255) + (n & 255); };
+    const jump = Math.abs(lum(lit) - lum(shd));
+    for (let i = 2; i < tops.length; i += 2) assert.ok(Math.abs(lum(tops[i]) - lum(tops[i - 1])) < jump * 0.5, `${layer.key} step ${i}`);
+  }
+  // the volcanic ridge is trimmed: no strip at the arc's left end, where no peak is
+  const ridge = ridgeLayer(OCEAN_LOOK.ridge, BIOMES['island-day'].palette);
+  const angles = [];
+  for (let i = 0; i < ridge.positions.length; i += 3) angles.push(Math.atan2(ridge.positions[i], -ridge.positions[i + 2]));
+  assert.ok(Math.min(...angles) > OCEAN_LOOK.ridge.a[0] + 0.1, `starts at ${Math.min(...angles).toFixed(2)}`);
+  assert.ok(ridge.triangles < OCEAN_LOOK.ridge.n * 4);
+});
+
+test('AP6b minimap sea: beyond the OB line on a sea side the sea colours (shallow, mid, deep); land sides and inside OB unchanged', () => {
+  const hole = HOLES['mtn-07'], terrain = makeTerrain(hole), sc = hole.scenery, P = BIOMES['island-day'].palette;
+  const ob = { x0: sc.stakes.xs[0], x1: sc.stakes.xs[1], z0: sc.stakes.z1, z1: sc.stakes.z0 };
+  const ends = parts => [parts[0][0], parts[parts.length - 1][1]];
+  const [x0, x1] = ends(sc.mesh.xs), [z0, z1] = ends(sc.mesh.zs);
+  const shore = oceanShore({ ob, heightAt: terrain.heightAt, extent: { x0, x1, z0, z1 }, groundY: sc.ground.y, reach: sc.cameraFar, sides: ['left'], cz: sc.hills.cz });
+  const z = (ob.z0 + ob.z1) / 2, L = OCEAN_LOOK;
+  assert.equal(shoreMapColour(shore, P, ob.x0 + 1, z), null); // inside OB
+  assert.equal(shoreMapColour(shore, P, ob.x1 + 50, z), null); // the land side
+  assert.equal(shoreMapColour(shore, P, ob.x0 - 1, z), P.water); // just beyond the OB line: the sea
+  assert.equal(shoreMapColour(shore, P, ob.x0 - L.gap - L.slope - L.shallow - 10, z), mixHex(P.water, P.waterDeep, 0.5));
+  assert.equal(shoreMapColour(shore, P, ob.x0 - L.gap - L.slope - L.shallow - L.mid - 10, z), P.waterDeep);
 });
