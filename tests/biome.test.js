@@ -2,8 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour, minimapColours, minimapTree, checkMinimap, MINIMAP_READABILITY, mixColour } from '../src/core/biome.js';
-import { MINIMAP_TREE_DARKEN } from '../src/core/config.js';
+import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour, minimapColours, minimapShade, checkMinimap, MINIMAP_READABILITY, mixColour } from '../src/core/biome.js';
+import { MINIMAP_DARKEN } from '../src/core/config.js';
 import { checkHoleLooks } from '../src/holes/sets.js';
 import { validateHole } from '../src/core/validate.js';
 import { createRng } from '../src/core/rng.js';
@@ -160,26 +160,33 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
   // the boulders and each onTrees look's canopy, from the library's slots
   for (const set of Object.values(BIOMES)) {
     const c = minimapColours(set, LIBRARY);
-    assert.equal(c.rock, set.palette.boulder, set.id);
     assert.deepEqual(Object.keys(c.trees), set.onTrees, set.id);
     // every set passes the minimap rules (after the step), with no waiver
     assert.deepEqual(checkMinimap(set, LIBRARY).filter(r => !r.ok), [], set.id);
-    assert.ok(!Object.keys(set.readabilityWaivers ?? {}).some(id => id.startsWith('minimap')), set.id);
+    assert.ok(!Object.keys(set.readabilityWaivers ?? {}).some(id => id.startsWith('minimap')), set.id); // no waiver
   }
   // the rules use the fairway / rough thresholds
-  assert.deepEqual(MINIMAP_READABILITY.map(r => r.slice(1)), [['fairway', 15, 8], ['rough', 15, 8]]);
-  // a canopy that passes is used as it is; one that fails is darkened by MINIMAP_TREE_DARKEN
+  assert.deepEqual(MINIMAP_READABILITY.map(r => r.slice(1)), [['tree', 'fairway', 15, 8], ['tree', 'rough', 15, 8], ['rock', 'fairway', 15, 8], ['rock', 'rough', 15, 8]]);
+  // the rocks too (PM on #89): today's boulders are about as light as the fairway / rough, so all three sets
+  // draw them one step darker, and pass
+  for (const set of Object.values(BIOMES)) {
+    const r = minimapShade(set.palette, 'rock', set.palette.boulder);
+    assert.equal(r.darkened, true, set.id);
+    assert.equal(minimapColours(set, LIBRARY).rock, r.colour, set.id);
+    assert.ok(r.rows.every(x => x.ok) && r.rows.length === 2, set.id);
+  }
+  // a canopy that passes is used as it is; one that fails is darkened by MINIMAP_DARKEN
   const p = base.palette;
-  assert.deepEqual(minimapTree(p, '#1c4a20').colour, '#1c4a20');
-  const m = minimapTree(p, p.leaf); // today's mountain leaf: ΔL 1 from the fairway
+  assert.deepEqual(minimapShade(p, 'tree', '#1c4a20').colour, '#1c4a20');
+  const m = minimapShade(p, 'tree', p.leaf); // today's mountain leaf: ΔL 1 from the fairway
   assert.equal(m.darkened, true);
-  assert.deepEqual(parseColour(m.colour), parseColour(p.leaf).map(v => Math.round(v * (1 - MINIMAP_TREE_DARKEN))));
+  assert.deepEqual(parseColour(m.colour), parseColour(p.leaf).map(v => Math.round(v * (1 - MINIMAP_DARKEN))));
   assert.ok(m.rows.every(r => r.ok));
-  assert.equal(minimapTree(BIOMES['meadow-day'].palette, BIOMES['meadow-day'].palette.leaf).darkened, true); // ΔE 8 from its rough
+  assert.equal(minimapShade(BIOMES['meadow-day'].palette, 'tree', BIOMES['meadow-day'].palette.leaf).darkened, true); // ΔE 8 from its rough
   // a tree the step cannot save fails the set, named by rule and look; a waiver by name lets it through
   // a canopy the colour of the fairway, with a rough exactly one step darker: darkened, it lands on the rough
   const fw = mixColour(p.fairwayA, p.fairwayB);
-  const failing = withPalette({ leaf: fw, rough: '#' + parseColour(fw).map(v => Math.round(v * (1 - MINIMAP_TREE_DARKEN)).toString(16).padStart(2, '0')).join('') });
+  const failing = withPalette({ leaf: fw, rough: '#' + parseColour(fw).map(v => Math.round(v * (1 - MINIMAP_DARKEN)).toString(16).padStart(2, '0')).join('') });
   assert.throws(() => validateBiomeSet(failing, LIBRARY), /minimapTree\/(fairway|rough) \(roundTree\) ΔE/);
   const ids = [...new Set([...checkReadability(failing.palette), ...checkMinimap(failing, LIBRARY)].filter(r => !r.ok).map(r => r.id))];
   assert.ok(ids.includes('minimapTree/rough'));

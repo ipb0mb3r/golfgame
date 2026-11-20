@@ -1,7 +1,7 @@
 // AP5 (plain Node, dev / artist): prints every readability rule (ART_STYLE §4.4) for one biome set or a
 // bare palette module, so the artist sees ΔE / ΔL per pair. `node tools/biome-check.mjs mtn-default`
-// (a set in src/biomes/), or `--all` for every registered set. X26: then the minimap tree rules, per
-// onTrees look, on the colour the minimap draws ("darkened" = the one fixed MINIMAP_TREE_DARKEN step).
+// (a set in src/biomes/), or `--all` for every registered set. X26: then the minimap tree and rock rules, per
+// onTrees look and rock, on the colour the minimap draws ("darkened" = the one fixed MINIMAP_DARKEN step).
 import { checkReadability, checkMinimap } from '../src/core/biome.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';

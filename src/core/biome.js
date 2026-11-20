@@ -4,7 +4,7 @@
 // from the shared library (src/biomes/library.js). No inheritance: every set names all its pieces and
 // all its colours. Physics never comes from a biome set (surfaces.js and the hole data keep it).
 // Pure: no Three.js, no DOM (coding rule 1). The game reads the set; this file only checks it.
-import { UI_COLORS, MINIMAP_TREE_DARKEN } from './config.js';
+import { UI_COLORS, MINIMAP_DARKEN } from './config.js';
 import { createRng } from './rng.js';
 
 // ---- 1. Palette keys: every set defines ALL of them (ART_STYLE §4.1, plus the engine group) ----
@@ -92,39 +92,49 @@ export const READABILITY = Object.freeze([
 const colourOf = (palette, name) =>
   name.startsWith('ui:') ? UI_COLORS[name.slice(3)] : MIXES[name] ? mixColour(palette[MIXES[name][0]], palette[MIXES[name][1]]) : palette[name];
 
-// X26 (owner, 2026-11-20): the minimap draws the trees in play in their canopy colour, so a tree must stay
-// clearly apart from the fairway AND the rough there (the fairway/rough thresholds). [id, vs, ΔE, ΔL]
+// X26 (owner, 2026-11-20): the minimap draws the trees in play in their canopy colour and the boulders in
+// their rock colour, so each must stay clearly apart from the fairway AND the rough there (the fairway/rough
+// thresholds; rocks: PM on #89). [id, kind, vs, ΔE, ΔL]
 export const MINIMAP_READABILITY = Object.freeze([
-  ['minimapTree/fairway', 'fairway', 15, 8],
-  ['minimapTree/rough', 'rough', 15, 8],
+  ['minimapTree/fairway', 'tree', 'fairway', 15, 8],
+  ['minimapTree/rough', 'tree', 'rough', 15, 8],
+  ['minimapRock/fairway', 'rock', 'fairway', 15, 8],
+  ['minimapRock/rough', 'rock', 'rough', 15, 8],
 ]);
 const darken = (c, k) => '#' + parseColour(c).map(v => Math.round(v * (1 - k)).toString(16).padStart(2, '0')).join('');
-const treeRows = (palette, c, look) => MINIMAP_READABILITY.map(([id, b, minE, minL]) => {
+const minimapRows = (palette, kind, c, look) => MINIMAP_READABILITY.filter(r => r[1] === kind).map(([id, , b, minE, minL]) => {
   const d = delta(c, colourOf(palette, b));
   return { id, look, a: c, b, dE: d.dE, dL: d.dL, minE, minL, ok: d.dE >= minE && d.dL >= minL };
 });
-// The minimap colour of one tree canopy colour: as it is when it passes both rules, else darkened by
-// MINIMAP_TREE_DARKEN (one fixed step, never searched). → { colour, darkened, rows } (rows of the colour used)
-export function minimapTree(palette, canopy, look = '') {
-  const rows = treeRows(palette, canopy, look);
-  if (rows.every(r => r.ok)) return { colour: canopy, darkened: false, rows };
-  const dark = darken(canopy, MINIMAP_TREE_DARKEN);
-  return { colour: dark, darkened: true, rows: treeRows(palette, dark, look) };
+// The minimap colour of a tree canopy (kind 'tree') or a boulder (kind 'rock'): as it is when it passes its
+// rules, else darkened by MINIMAP_DARKEN (one fixed step, never searched). → { colour, darkened, rows }
+// (rows = the rules on the colour used)
+export function minimapShade(palette, kind, colour, look = '') {
+  const rows = minimapRows(palette, kind, colour, look);
+  if (rows.every(r => r.ok)) return { colour, darkened: false, rows };
+  const dark = darken(colour, MINIMAP_DARKEN);
+  return { colour: dark, darkened: true, rows: minimapRows(palette, kind, dark, look) };
 }
+const minimapPieces = (set, library) => {
+  const look = pieceColours(set, library);
+  return [
+    ...set.onTrees.map(id => ({ group: 'trees', id, m: minimapShade(set.palette, 'tree', look('onTrees', id).canopy, id) })),
+    { group: 'rock', id: set.rocks[0], m: minimapShade(set.palette, 'rock', look('rocks', set.rocks[0]).body, set.rocks[0]) },
+  ];
+};
 // The minimap's colours from the set (X26): every onTrees look → its tree colour, and the boulders (the
 // first rocks piece, as in 3D). The course surfaces, water and sand are the painted course itself, and
 // the flag is flagColour; the aim line, warning and ball stay HUD colours (UI_COLORS).
 export function minimapColours(set, library) {
-  const look = pieceColours(set, library);
+  const pieces = minimapPieces(set, library);
   return {
-    trees: Object.fromEntries(set.onTrees.map(id => [id, minimapTree(set.palette, look('onTrees', id).canopy, id).colour])),
-    rock: look('rocks', set.rocks[0]).body,
+    trees: Object.fromEntries(pieces.filter(p => p.group === 'trees').map(p => [p.id, p.m.colour])),
+    rock: pieces.find(p => p.group === 'rock').m.colour,
   };
 }
-// Every minimap rule's result for each onTrees look (after the darken step): [{ id, look, ..., ok, darkened }]
+// Every minimap rule's result for each onTrees look and the rock (after the darken step): [{ id, look, ..., ok, darkened }]
 export function checkMinimap(set, library) {
-  const look = pieceColours(set, library);
-  return set.onTrees.flatMap(id => { const m = minimapTree(set.palette, look('onTrees', id).canopy, id); return m.rows.map(r => ({ ...r, darkened: m.darkened })); });
+  return minimapPieces(set, library).flatMap(({ m }) => m.rows.map(r => ({ ...r, darkened: m.darkened })));
 }
 
 // Every rule's result: [{ id, a, b, dE, dL, minE, minL, ok }]. The palette must already be complete.
@@ -198,7 +208,7 @@ export function validateBiomeSet(set, library) {
   }
 
   // readability (ART_STYLE §4.4): every rule passes, or is waived by name with a reason
-  // + the minimap tree rules (X26), on each onTrees look's minimap colour (after the darken step)
+  // + the minimap rules (X26), on each onTrees look's and the rock's minimap colour (after the darken step)
   const waivers = set.readabilityWaivers ?? {};
   for (const [id, why] of Object.entries(waivers)) {
     if (!READABILITY.some(r => r[0] === id) && !MINIMAP_READABILITY.some(r => r[0] === id)) bad(`readabilityWaivers names an unknown rule "${id}"`);
