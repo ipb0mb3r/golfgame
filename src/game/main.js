@@ -396,7 +396,8 @@ window.__golf = {
   get scenario() { return game?.launch.kind === 'scenario' ? game.launch.scenarioId : null; }, tune: tune.set,
   // AP5: the biome set the current hole is drawn with (its id), and the far ground's colour as drawn (tools/session-check.mjs)
   get biome() { return session?.biome.id ?? null; }, get groundColour() { return '#' + session?.scene.getObjectByName('far ground')?.material.color.getHexString(); },
-  get state() { return session ? api().state : loading ? 'loading' : null; }, // AP3: 'loading' while a hole's files load get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
+  // AP3: state is 'loading' while a hole waits for its model files (no session yet)
+  get state() { return session ? api().state : loading ? 'loading' : null; }, get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
   get clubIdx() { return api().play.clubIdx; }, set clubIdx(v) { api().play.setClub(v); },
   get aim() { return api().play.aim; }, set aim(v) { api().play.setAim(v); },
   get wind() { return api().wind; }, swing: () => session.onSwingInput(),
@@ -416,6 +417,7 @@ window.__golf = {
   loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return id; },
   // AP3: the round's model cache (tools/session-check.mjs): files known, and whether a hole waits for its files
   get assets() { return { files: assets.size, loading: !!loading }; },
+  objectNames: () => session?.scene.children.map(o => o.name) ?? [],
   // Phase 6: the round (null when playing a single hole)
   get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null,
     // Phase T: vs AI (null in solo)

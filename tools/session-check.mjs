@@ -8,7 +8,11 @@
 //   2. one click still moves the meter one step (input is bound once, not once per hole),
 //   3. a timer from the old hole (a shot in progress) never fires on the new one,
 //   4. the model loaders (AP2) work: the test models in tests/fixtures/models/ load through the import
-//      map (three/addons/ GLTFLoader, the Meshopt decoder for cube-meshopt.glb), draw, and are freed.
+//      map (three/addons/ GLTFLoader, the Meshopt decoder for cube-meshopt.glb), draw, and are freed,
+//   5. the asset loader (AP3): a round dressed in the test-models set (?biome=test-models) shows the loading
+//      bar, loads the model file once, plays on to hole 2 without fetching it again (cache hit), and after
+//      quitting to the menu renderer memory is back where it was; a missing file shows the notice and the
+//      procedural fallback, never a crash; a hole without model files never shows the loading bar.
 // Exit code 1 on a problem.
 import { readFileSync, existsSync } from 'node:fs';
 import { join, dirname, extname } from 'node:path';
@@ -33,6 +37,15 @@ await page.route('**/*', route => {
 });
 const errors = [];
 page.on('pageerror', e => errors.push(e.message));
+// AP3: count the fetches of the test model, and let step 5 slow it down or make it fail
+const MODEL = 'assets/models/test-cube.glb';
+let modelFetches = 0, modelMode = 'ok';
+await page.route(`**/${MODEL}`, async route => {
+  modelFetches++;
+  if (modelMode === 'missing') return route.fulfill({ status: 404, body: 'not found' });
+  await new Promise(r => setTimeout(r, 400)); // long enough to see the loading bar
+  return route.fallback();
+});
 
 const frames = n => page.evaluate(k => new Promise(res => { const f = () => (--k <= 0 ? res() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
 const startHole = async () => {
@@ -134,7 +147,61 @@ for (const m of models.models) {
 }
 if (packed.indices !== plain.indices) fail('loaders: cube-meshopt.glb decoded to other indices than cube.glb (Meshopt decoder)');
 
+// 5. The asset loader (AP3)
+{
+  const ev = fn => page.evaluate(fn);
+  // a hole whose set has no model files: built at once, no loading bar, nothing in the cache
+  await page.goto('http://golf.test/index.html?hole=pl-01&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');
+  await page.waitForFunction(() => window.__golf?.state === 'intro');
+  const plain = await ev(() => ({ bar: !document.getElementById('introLoad').hidden, files: window.__golf.assets.files }));
+  if (plain.bar || plain.files) fail(`AP3: pl-01 without models showed the loading bar or cached files (${JSON.stringify(plain)})`);
+  // the menu's memory with no hole: the level a quit must come back to
+  await ev(() => window.__golf.app.toMenu());
+  await frames(2);
+  const menuMem = await ev(() => window.__golf.renderInfo());
+  // a 3-hole round in the test set: the loading bar shows, then the hole with the model markers
+  modelFetches = 0;
+  await page.goto('http://golf.test/index.html?set=prototype3&biome=test-models&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');
+  await page.waitForFunction(() => window.__golf?.state === 'loading');
+  const bar = await ev(() => ({ bar: !document.getElementById('introLoad').hidden, text: document.querySelector('#introLoad span').textContent, disabled: document.getElementById('startBtn').disabled }));
+  if (!bar.bar || !bar.disabled || !/Loading… \d+%/.test(bar.text)) fail(`AP3: no loading bar while the model loads (${JSON.stringify(bar)})`);
+  await startHole(); await frames(3);
+  const h1 = await ev(() => ({ names: window.__golf.objectNames(), files: window.__golf.assets.files, mem: window.__golf.renderInfo(), notice: document.getElementById('introAssetNotice').hidden, bar: !document.getElementById('introLoad').hidden }));
+  if (!h1.names.includes('tee markers (instanced, model)')) fail(`AP3: hole 1 tee markers not drawn from the model (${h1.names.filter(n => n.startsWith('tee')).join(', ')})`);
+  if (h1.files !== 1 || !h1.notice || h1.bar) fail(`AP3: hole 1 cache ${h1.files} files, notice hidden ${h1.notice}, bar ${h1.bar}`);
+  // play hole 1 out (ball next to the cup, putt until it is over) and go on to hole 2
+  await ev(() => { const c = window.__golf.HOLE; window.__golf.place(c.x, c.z + 0.6); });
+  for (let k = 0; k < 20 && !(await ev(() => window.__golf.round.cards.length)); k++) {
+    if (await ev(() => window.__golf.state) === 'aim') await ev(() => window.__golf.testHit(Math.max(0.05, window.__golf.play.pinPower()), 0));
+    await ev(() => window.__golf.skip());
+    await page.waitForTimeout(250);
+  }
+  await ev(() => window.__golf.nextHole());
+  const atOnce = await ev(() => window.__golf.state); // a cache hit: built at once, never 'loading'
+  await startHole(); await frames(3);
+  const h2 = await ev(() => ({ hole: window.__golf.hole, index: window.__golf.round.index, names: window.__golf.objectNames(), files: window.__golf.assets.files }));
+  if (h2.index !== 1 || atOnce === 'loading' || !h2.names.includes('tee markers (instanced, model)')) fail(`AP3: hole 2 (${h2.hole}) was not a cache hit (state ${atOnce}, ${JSON.stringify(h2.names.filter(n => n.startsWith('tee')))})`);
+  if (modelFetches !== 1) fail(`AP3: the model was fetched ${modelFetches} times over 2 holes of a round (expected once)`);
+  // quit to the menu: the cache is freed, memory is back to the menu's level
+  await ev(() => window.__golf.app.toMenu());
+  await frames(2);
+  const quit = await ev(() => ({ mem: window.__golf.renderInfo(), files: window.__golf.assets.files }));
+  if (quit.files !== 0 || quit.mem.geometries !== menuMem.geometries || quit.mem.textures !== menuMem.textures) fail(`AP3: after quitting, ${quit.files} cached files, ${quit.mem.geometries} geometries / ${quit.mem.textures} textures (menu: ${menuMem.geometries} / ${menuMem.textures})`);
+  console.log(`assets: ?set=prototype3&biome=test-models: loading bar "${bar.text}", hole 1 ${h1.mem.geometries} geometries with the model markers, hole 2 (${h2.hole}) a cache hit (${modelFetches} fetch in the round), after quit ${quit.mem.geometries} geometries / ${quit.files} cached files (menu ${menuMem.geometries})`);
+  // a missing file: the notice names it, the procedural markers are drawn, the hole plays
+  modelMode = 'missing';
+  await page.goto('http://golf.test/index.html?hole=pl-01&biome=test-models&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');
+  await page.waitForFunction(() => window.__golf?.state === 'intro');
+  const missing = await ev(() => { const n = document.getElementById('introAssetNotice'); return { names: window.__golf.objectNames(), shown: !n.hidden, text: n.textContent, bar: !document.getElementById('introLoad').hidden }; });
+  if (!missing.names.includes('tee markers (instanced)') || !missing.shown || !missing.text.includes(MODEL) || missing.bar) fail(`AP3: missing file: ${JSON.stringify({ ...missing, names: missing.names.filter(n => n.startsWith('tee')) })}`);
+  await startHole();
+  const playable = await ev(() => { window.__golf.testHit(0.3, 0); return window.__golf.strokes; });
+  if (playable !== 1) fail(`AP3: the hole with a missing model did not play (strokes ${playable})`);
+  console.log(`assets: missing file → "${missing.text}" and the procedural tee markers; the hole plays`);
+  modelMode = 'ok';
+}
+
 if (errors.length) fail(`page errors: ${errors.join(' | ')}`);
 await browser.close();
-console.log(bad ? `${bad} problem(s)` : `ok: ${CYCLES} load/dispose cycles, no growth in renderer memory, input bound once, no stray timers, model loaders ok`);
+console.log(bad ? `${bad} problem(s)` : `ok: ${CYCLES} load/dispose cycles, no growth in renderer memory, input bound once, no stray timers, model loaders ok, asset loader ok (load, cache hit, freed on quit, fallback)`);
 process.exitCode = bad ? 1 : 0;
