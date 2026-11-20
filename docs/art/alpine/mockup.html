@@ -171,8 +171,38 @@ function makePeaks(count, hMin, hMax, wMin, wMax, s) {
   for (let i = 0; i < count; i++) out.push({ a: -0.72 + rnd() * 1.44, h: hMin + rnd() * (hMax - hMin), w: wMin + rnd() * (wMax - wMin) });
   return out;
 }
-if (PICKS.backdrop === 'peaksSnow') { // prominent Swiss peaks: a far snowy range, one big glacier peak, dark forested slopes in front
-  scene.add(ridgeLayer({ dist: 2900, n: 160, peaks: [...makePeaks(12, 650, 1050, 0.06, 0.13, 3), { a: 0.1, h: 1500, w: 0.22 }, { a: -0.42, h: 1250, w: 0.16 }], snow: 560, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.1, jag: 30, seed: 11 }));
+// A stylised horn peak (Matterhorn-like, invented): a 5-6 sided pyramid, steeper and bent toward the summit
+// (the hook), faceted rock faces, snow on the upper slopes and on the flatter ledges. Toon shaded.
+function hornPeak({ ang, dist, h, r, hook = 0.3, sides = 6, seed: sd = 1, snowLine = 0.55 }) {
+  seed = sd; const rows = 7, pos = [], col = [];
+  const rand = Array.from({ length: (rows + 1) * sides }, () => rnd());
+  const P3 = (k, t) => { // ring k (0..sides), height step t (0..1)
+    const a = (k % sides) / sides * Math.PI * 2 + 0.3, n = rand[Math.round(t * rows) * sides + (k % sides)];
+    const rad = r * Math.pow(1 - t, 1.25) * (0.8 + 0.4 * n);
+    return [Math.cos(a) * rad + hook * r * t * t, t * h, Math.sin(a) * rad * 0.8];
+  };
+  const tri = (a, b, c, ta) => {
+    pos.push(...a, ...b, ...c);
+    const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+    let nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx; const L = Math.hypot(nx, ny, nz); ny /= L;
+    const snow = ta > snowLine + 0.08 * Math.sin(ta * 23 + a[0]) || (ta > 0.22 && Math.abs(ny) > 0.58);
+    const c0 = new THREE.Color(snow ? P.backCap : mixHex(P.backFar, '#34465E', 0.3 + 0.25 * rnd())).lerp(new THREE.Color(P.fog), 0.12);
+    for (let q = 0; q < 3; q++) col.push(c0.r, c0.g, c0.b);
+  };
+  for (let row = 0; row < rows; row++) for (let k = 0; k < sides; k++) {
+    const t0 = row / rows, t1 = (row + 1) / rows;
+    const a0 = P3(k, t0), b0 = P3(k + 1, t0), a1 = P3(k, t1), b1 = P3(k + 1, t1);
+    if (row === rows - 1) tri(a0, b0, [hook * r, h, 0], t0); else { tri(a0, b0, b1, t0 + 0.07); tri(a0, b1, a1, t0 + 0.07); }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.computeVertexNormals();
+  const m = new THREE.Mesh(g, toon({ vertexColors: true, fog: false, side: THREE.DoubleSide }));
+  m.position.set(Math.sin(ang) * dist, -40, -Math.cos(ang) * dist); m.rotation.y = -ang + 0.4; scene.add(m);
+}
+if (PICKS.backdrop === 'peaksSnow') { // prominent Swiss peaks: one hero horn, a range of smaller horns, a low far ridge, dark forested slopes in front
+  scene.add(ridgeLayer({ dist: 3300, n: 160, peaks: makePeaks(14, 380, 620, 0.05, 0.11, 3), snow: 420, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.25, jag: 30, seed: 11 }));
+  hornPeak({ ang: 0.06, dist: 3000, h: 1150, r: 430, hook: 0.42, sides: 6, seed: 21, snowLine: 0.55 });   // the hero horn
+  for (const [ang, dist, h, r, hook, sd] of [[-0.4, 3100, 760, 520, -0.2, 22], [-0.22, 3200, 620, 480, 0.15, 23], [0.28, 3150, 700, 520, -0.25, 24], [0.48, 3000, 820, 500, 0.2, 25], [-0.58, 3050, 640, 560, 0.1, 26], [0.7, 3100, 600, 520, -0.1, 27]])
+    hornPeak({ ang, dist, h, r, hook, sides: 5, seed: sd, snowLine: 0.36 });
   scene.add(ridgeLayer({ dist: 1500, n: 140, peaks: [{ a: -0.75, h: 520, w: 0.45 }, { a: 0.8, h: 560, w: 0.5 }, ...makePeaks(6, 140, 260, 0.12, 0.3, 5)], snow: 9999, colour: P.backNear, cap: P.backCap, capShade: P.backCapShade, haze: 0.08, jag: 10, seed: 12 }));
 } else if (PICKS.backdrop === 'hillsRound') {
   scene.add(ridgeLayer({ dist: 2700, n: 160, peaks: makePeaks(9, 190, 330, 0.22, 0.45, 31), snow: 999, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.22, jag: 3, seed: 32, round: true }));
