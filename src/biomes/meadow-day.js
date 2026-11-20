@@ -14,7 +14,7 @@ export default {
     rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
     rock: '#a89b8c', path: '#e8d8ae',
     // sky, fog, light
-    skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#ffffff', fog: '#d2ecfa',
+    skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#e2ecf6', fog: '#d2ecfa',
     sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',
     // backdrop
     backFar: '#86aecb', backNear: '#5e9a4a', backCap: '#7db858', backCapShade: '#629e4a', backTrees: '#4a8a40',

@@ -3,7 +3,7 @@
 // — Agent: artist
 const base = {
   edge: '#4E8A30', fringe: '#93CC56', water: '#2C8AD8', waterDeep: '#1D62B8', bank: '#9A7A50', rock: '#A89B8C', path: '#E8D8AE',
-  skyTop: '#1C76E2', skyHorizon: '#C9EAFF', cloud: '#FFFFFF', fog: '#D2ECFA',
+  skyTop: '#1C76E2', skyHorizon: '#C9EAFF', cloud: '#E2ECF6', fog: '#D2ECFA',
   sun: '#FFF0D2', ambient: '#EAF4FF', shadow: '#356A40',
   backFar: '#86AECB', backNear: '#5E9A4A', backCap: '#7DB858', backCapShade: '#629E4A', backTrees: '#4A8A40',
   pine: '#3E7E4A', trunk: '#8A5634', leaf: '#56A040', leafTop: '#A8CA5B', leafLow: '#376643', leafAlt: '#3F7A52', trunkAlt: '#7A4E30',

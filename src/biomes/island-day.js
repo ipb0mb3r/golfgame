@@ -15,7 +15,7 @@ export default {
     rough: '#3ec036', deepRough: '#2ca232', sand: '#feebb8', lip: '#c9a36a', water: '#00e0d8', waterDeep: '#0090e8', bank: '#e8c88a',
     rock: '#3e3a40', path: '#ead8b0',
     // sky, fog, light
-    skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#ffffff', fog: '#c8f0fa',
+    skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#e4f2f8', fog: '#c8f0fa',
     sun: '#fff4dc', ambient: '#eefaff', shadow: '#2a7060',
     // backdrop: the green volcanic ridge, the tree wall
     backFar: '#3e9c7a', backNear: '#2e8a50', backCap: '#6cc48a', backCapShade: '#4fa870', backTrees: '#2e9a44',
