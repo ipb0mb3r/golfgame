@@ -29,14 +29,14 @@ import { CENTRE, impactFromOffset, stepImpact, isDoubleTap, impactCaption } from
 // What the game waits before carrying out core's decision (play.next), in ms
 const DELAY = { aim: TIMING.afterStop, returnToLast: TIMING.afterPenalty, holed: TIMING.afterHoled, pickedUp: TIMING.afterPickUp };
 
-// opts = { renderer, input (from bindInput), seed, start (scenario start or null), info (extra debug lines),
+// opts = { renderer, input (from bindInput), seed, biome (AP5: the resolved biome set the hole is drawn with), start (scenario start or null), info (extra debug lines),
 //          round (Phase 6, or null): { number, of, onDone(finished) } — the hole's place in the round, and
 //          what to call when the hole is over instead of showing the single-hole result card,
 //          puttGrid (Phase 7 setting, core/menu.js PUTT_GRID), links (false: hide the intro card's ?hole= links,
 //          for a hole started from the menu), flyover (V4: play the hole flyover after the card), classicCam (V3
 //          setting: the flight camera always films from behind), flightHistory (V3: the flight views of the game so
 //          far, oldest first; main.js shares one array across a round so the variety rules count over the round) }
-export function createHoleSession(hole, { renderer, input, seed, start = null, info = () => [], round = null, puttGrid = 'hole', links = true, flyover = false, classicCam = false, flightHistory = [] }) {
+export function createHoleSession(hole, { renderer, input, seed, biome, start = null, info = () => [], round = null, puttGrid = 'hole', links = true, flyover = false, classicCam = false, flightHistory = [] }) {
   const play = createHolePlay(hole, { seed });
   const { terrain, cup, tee, ball, wind } = play;
   const meter = createMeter();
@@ -48,12 +48,12 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   const compact = !!round && round.number > 1;
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
-  const courseCanvas = paintCourse(hole, terrain.surfaceAt, { green });
-  const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles);
-  const props = createProps(scene, hole, terrain, cup);
+  const courseCanvas = paintCourse(hole, terrain.surfaceAt, biome, { green });
+  const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome);
+  const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
-  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles);
+  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles, biome);
 
   // Game state (core/states.js GAME_STATES): intro | flyover | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
@@ -513,7 +513,7 @@ export function createHoleSession(hole, { renderer, input, seed, start = null, i
   };
 
   return {
-    hole, play, scene, camera, test,
+    hole, biome, play, scene, camera, test,
     get state() { return state; },
     get disposed() { return disposed; },
     canAim: () => state === 'aim',

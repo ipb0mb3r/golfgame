@@ -13,9 +13,9 @@ import { DIFFICULTIES } from './rivals.js';
 // The address-bar shortcuts that skip the menu (dev and designer links, M2). Any one of them plays
 // straight away, exactly as before Phase 7 (?tune= alone plays hole 1 with the tunes, for example).
 // Phase T: ?ai=easy|normal|hard plays the ?set= round vs AI (alone: the first Solo course vs AI).
-export const DEV_PARAMS = Object.freeze(['hole', 'scenario', 'set', 'ai', 'seed', 'tune', 'debug']);
+export const DEV_PARAMS = Object.freeze(['hole', 'scenario', 'set', 'ai', 'seed', 'tune', 'debug', 'biome']);
 // The ones that name what to play. Quitting to the menu drops these from the address, so a reload
-// shows the menu; ?tune=, ?seed= and ?debug= stay for the whole visit.
+// shows the menu; ?tune=, ?seed=, ?debug= and ?biome= (AP5) stay for the whole visit.
 export const PLAY_PARAMS = Object.freeze(['hole', 'scenario', 'set', 'ai']);
 
 // params = anything with get(name) (URLSearchParams). True when the page should skip the menu.

@@ -1,8 +1,11 @@
 // Flag, cup, ball, shadow, flight trail and the aim guide.
 import * as THREE from 'three';
 import { CUP_R, BALL_R, HUD, TUNE, FLAG_FX } from '../core/config.js';
+import { flagColour } from '../core/biome.js';
+import { LIBRARY } from '../biomes/library.js';
 
-export function createProps(scene, hole, terrain, cup) {
+// biome = the hole's biome set (AP5): the flag cloth is the furniture.flag piece's colour (the accent)
+export function createProps(scene, hole, terrain, cup, biome) {
   const { heightAt, normalAt } = terrain;
   const sc = hole.scenery;
 
@@ -30,7 +33,7 @@ export function createProps(scene, hole, terrain, cup) {
   const flagGeo = new THREE.PlaneGeometry(FLAG_FX.clothW, FLAG_FX.clothH, 12, 4);
   flagGeo.translate(FLAG_FX.clothW / 2, 0, 0);
   const flagBase = flagGeo.attributes.position.array.slice();
-  const flag = new THREE.Mesh(flagGeo, new THREE.MeshLambertMaterial({ color: sc.flagColor, side: THREE.DoubleSide }));
+  const flag = new THREE.Mesh(flagGeo, new THREE.MeshLambertMaterial({ color: flagColour(biome, LIBRARY), side: THREE.DoubleSide }));
   flag.position.y = stickH - FLAG_FX.clothDrop;
   stick.add(flag);
   let stickShown = hasStick, wobbleT0 = -1, wobbleX = 0, wobbleZ = 0; // wobble: start time, direction the top leans

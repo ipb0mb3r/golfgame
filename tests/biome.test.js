@@ -1,7 +1,11 @@
 // AP5: biome sets (DESIGN §8b): the format, the library pick list and the readability rules (ART_STYLE §4.4).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY } from '../src/core/biome.js';
+import { readFileSync, readdirSync } from 'node:fs';
+import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour } from '../src/core/biome.js';
+import { checkHoleLooks } from '../src/holes/sets.js';
+import { validateHole } from '../src/core/validate.js';
+import { createRng } from '../src/core/rng.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
 import { HOLES } from '../src/holes/sets.js';
@@ -79,11 +83,73 @@ test('the colour maths matches CIE76 (and the artist\'s round-2 palettes pass ev
   assert.ok(Math.abs(delta('#ffffff', '#000000').dE - 100) < 0.01);
   assert.ok(Math.abs(delta('#ffffff', '#000000').dL - 100) < 0.01);
   assert.equal(delta('#3a80c4', '#3a80c4').dE, 0);
+  // (the rules on the dev's engine keys, e.g. the putting grid's gridLine, are left out: the artist's sheets don't have them)
+  const engine = new Set(PALETTE_KEYS.engine);
   for (const [id, p] of Object.entries(ARTIST_R2)) {
-    const fails = checkReadability(p).filter(r => !r.ok).map(r => r.id);
+    const fails = checkReadability({ ...p, gridLine: '#000000' }).filter(r => !r.ok && !engine.has(r.a) && !engine.has(r.b)).map(r => r.id);
     assert.deepEqual(fails, [], id);
   }
   // the artist's palettes carry every artist key (only the engine group is the dev's)
   for (const p of Object.values(ARTIST_R2)) for (const k of Object.values(PALETTE_KEYS).slice(0, -1).flat()) assert.ok(parseColour(p[k]), k);
   assert.equal(READABILITY.length, new Set(READABILITY.map(r => r[0])).size);
+});
+
+test('step 2 rules (artist on #86): per stripe and the putting grid; today\'s looks waive them by name', () => {
+  for (const id of ['fairwayB/rough', 'greenB/fairwayA', 'gridLine/greenA', 'gridLine/greenB']) assert.ok(READABILITY.some(r => r[0] === id), id);
+  assert.throws(() => validateBiomeSet(withPalette({ gridLine: base.palette.greenA }), LIBRARY), /gridLine\/greenA ΔE 0 \(≥ 10\)/);
+  const { 'greenB/fairwayA': _, ...fewer } = base.readabilityWaivers;
+  assert.throws(() => validateBiomeSet(withChange({ readabilityWaivers: fewer }), LIBRARY), /greenB\/fairwayA ΔE 6 \(≥ 10\)/);
+});
+
+test('meadow-day (the AP5 proof): the artist\'s Meadow palette, today\'s pieces only, no waiver, no hole uses it', () => {
+  const m = BIOMES['meadow-day'];
+  assert.equal(validateBiomeSet(m, LIBRARY), m);
+  assert.equal(m.readabilityWaivers, undefined);
+  assert.deepEqual(checkReadability(m.palette).filter(r => !r.ok), []);
+  // every artist key is the artist's Meadow value (only the engine keys are the dev's)
+  for (const k of Object.values(PALETTE_KEYS).slice(0, -1).flat()) assert.equal(m.palette[k], ARTIST_R2.meadow[k].toLowerCase(), k);
+  assert.ok(Object.values(HOLES).every(h => h.biome !== 'meadow-day'));
+});
+
+test('the optional light override: replaces the hole\'s scenery light when present', () => {
+  const sc = { hemi: 1.2, sun: { intensity: 2, pos: [-90, 80, 30] } };
+  assert.deepEqual(sceneLight(base, sc), { hemi: 1.2, sun: 2, sunPos: [-90, 80, 30] });
+  const light = { sunIntensity: 1.4, hemiIntensity: 0.8, sunDir: [-1, 0.3, 0.2] };
+  assert.deepEqual(sceneLight(withChange({ light }), sc), { hemi: 0.8, sun: 1.4, sunPos: [-1, 0.3, 0.2] });
+  assert.ok(validateBiomeSet(withChange({ light }), LIBRARY));
+  assert.throws(() => validateBiomeSet(withChange({ light: { ...light, sunDir: [0, -1, 0] } }), LIBRARY), /light\.sunDir must be \[x, y, z\] toward the sun/);
+  assert.throws(() => validateBiomeSet(withChange({ light: { ...light, fog: [1, 2] } }), LIBRARY), /light has an unknown key "fog"/);
+  assert.throws(() => validateBiomeSet(withChange({ light: { ...light, sunIntensity: -1 } }), LIBRARY), /light\.sunIntensity must be a number ≥ 0/);
+});
+
+test('tree looks: the obstacle\'s own look if the set has it, else a seeded pick from onTrees', () => {
+  const trees = [{}, { look: 'b' }, { look: 'zz' }, {}];
+  // one piece: always it, and nothing is drawn from the stream
+  let draws = 0;
+  assert.deepEqual(treeLooks(trees, ['a'], () => { draws++; return 0.5; }), ['a', 'a', 'a', 'a']);
+  assert.equal(draws, 0);
+  const picks = treeLooks(trees, ['a', 'b', 'c'], createRng(78));
+  assert.equal(picks[1], 'b');
+  assert.ok(picks.every(p => ['a', 'b', 'c'].includes(p)));
+  assert.deepEqual(treeLooks(trees, ['a', 'b', 'c'], createRng(78)), picks); // seeded: the same every time
+  // hole data: `look` on trees only, and it must be a library tree piece
+  const h = HOLES['pl-03'], i = h.obstacles.findIndex(o => o.type === 'tree');
+  const withLook = look => ({ ...h, obstacles: h.obstacles.map((o, k) => (k === i ? { ...o, look } : o)) });
+  assert.ok(checkHoleLooks(withLook('roundTree')));
+  assert.throws(() => checkHoleLooks(withLook('palm')), /obstacles\[\d+\]\.look "palm" is not a tree piece \(the library's onTrees: roundTree\)/);
+  assert.throws(() => validateHole(withLook(7), { shots: false }), /obstacles\[\d+\]\.look must be a tree piece id/);
+});
+
+test('the game reads colours through the library slots; no biome colour is hard-coded in src/game or src/holes', () => {
+  assert.equal(flagColour(BIOMES['proto-default'], LIBRARY), BIOMES['proto-default'].palette.accent);
+  assert.deepEqual(pieceColours(base, LIBRARY)('onTrees', 'roundTree'), { canopy: base.palette.leaf, trunk: base.palette.trunk });
+  assert.throws(() => pieceColours(base, LIBRARY)('skies', 'gradient'), /no skies piece "gradient"/);
+  // the colours left in code are not the biome's: white / black (ball, cup, stakes, pole, the canopy's
+  // white base), the HUD's aim colours (UI_COLORS), the debug outlines and the minimap legend
+  const allowed = new Set(['ffffff', '111111', '000000', '333333', 'ffd447', 'ff4a3a', 'b8b8b8', 'c8c8c8', '46b4ff', 'ff4040', 'ffe040', '40e0ff', 'ff5a4a']);
+  for (const dir of ['src/game', 'src/holes']) for (const f of readdirSync(dir).filter(n => n.endsWith('.js'))) {
+    const code = readFileSync(`${dir}/${f}`, 'utf8').replace(/^\s*\/\/.*$/gm, '');
+    const found = [...code.matchAll(/(?:0x|#)([0-9a-fA-F]{6})\b/g)].map(m => m[1].toLowerCase()).filter(c => !allowed.has(c));
+    assert.deepEqual(found, [], `${dir}/${f}`);
+  }
 });

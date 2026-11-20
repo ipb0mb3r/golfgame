@@ -72,13 +72,12 @@ export default {
 
   // ---- Looks only (read by src/game, never by the physics) ----
   scenery: {
-    sky: 0x9fd3ff, fog: [160, 480], cameraFar: 1500,
+    fog: [160, 480], cameraFar: 1500,
     hemi: 1.6, sun: { intensity: 1.6, pos: [-60, 120, 40] },
     ground: { size: 1600, y: -0.1 }, // K13: below the lowest terrain (0 m) by GROUND_PLANE_MARGIN
     // The terrain mesh only covers the painted map: a flat hole is one quad, like the old course plane
     mesh: { xs: [[-60, 60, 120]], zs: [[-180, 20, 200]] },
     paint: { res: 7.5, stripe: 5, green: 'stripes', border: false },
-    flagColor: 0xff3b3b, teeColor: 0x2b6cff,
     stakes: { x: 55, z0: 15, z1: -200, step: 12 },
     trees: {
       count: 170, xSpan: 280, zTop: 70, zSpan: 340, sink: 0,

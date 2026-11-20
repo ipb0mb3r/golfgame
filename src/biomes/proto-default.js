@@ -16,7 +16,7 @@ export default {
     // backdrop
     backNear: '#4f8a45',
     backFar: '#6f96d2', backCap: '#ffffff', backCapShade: '#c6daf4', backTrees: '#25784e', // not drawn yet
-    // accents: the flag, the tee markers (pl-01's; see the AP5 PR question about pl-02 / pl-03)
+    // accents: the flag, the tee markers (pl-01's, now on pl-02 and pl-03 too: PM on #86)
     accent: '#ff3b3b', subAccent: '#2b6cff',
     // trees and props
     pine: '#2f6b34', trunk: '#6b4a2b', leaf: '#6fab6d',
@@ -39,6 +39,8 @@ export default {
   // the artist's pass (ART1) replaces this set; a new set must pass every rule.
   readabilityWaivers: {
     'green/fairway': 'today\'s green is only ΔE 9 from the fairway (needs 10)',
+    'greenB/fairwayA': 'today\'s darker green shade is only ΔE 6 / ΔL 5 from the lighter fairway stripe (needs 10 / 5)',
+    'fairwayB/rough': 'today\'s darker fairway stripe is only ΔE 13 from the rough (needs 15)',
     'accent/warn': 'today\'s flag is almost the HUD warning red (ΔE 6, needs 15)',
   },
 };

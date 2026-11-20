@@ -106,6 +106,8 @@ export function validateHole(hole, { shots = true } = {}) {
       if (s === 'tee' || s === 'green' || s === 'fringe') bad(`${where} (${o.x}, ${o.z}) stands on the ${s}`);
       if (s === 'fairway' && o.onFairway !== true) bad(`${where} (${o.x}, ${o.z}) stands on the fairway (set onFairway: true if that is the design)`);
       if (o.onFairway !== undefined && typeof o.onFairway !== 'boolean') bad(`${where}.onFairway must be true or false`);
+      // AP5: a tree may name its look (a library onTrees piece; src/holes/sets.js readyHole checks it exists)
+      if (o.look !== undefined && (o.type !== 'tree' || typeof o.look !== 'string' || !o.look)) bad(`${where}.look must be a tree piece id, on trees only (got ${JSON.stringify(o.look)})`);
     });
   }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {

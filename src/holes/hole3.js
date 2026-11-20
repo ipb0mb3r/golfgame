@@ -109,7 +109,7 @@ export default {
 
   // ---- Looks only (read by src/game, never by the physics) ----
   scenery: {
-    sky: 0x9fd3ff, fog: [240, 700], cameraFar: 1800,
+    fog: [240, 700], cameraFar: 1800,
     hemi: 1.3, sun: { intensity: 1.9, pos: [-80, 90, 40] },
     ground: { size: 2400, y: -0.75 }, // K13: below the lowest terrain (-0.60 m, the swale at the corner)
     mesh: {
@@ -117,7 +117,6 @@ export default {
       zs: [[-620, -290, 10], [-290, -258, 1], [-258, -218, 0.5], [-218, 25, 1], [25, 200, 10]],
     },
     paint: { res: 5, stripe: 6, green: 'stripes', border: true },
-    flagColor: 0x40c4ff, teeColor: 0xffd400,
     stakes: { xs: [OB.x0, OB.x1], z0: 18, z1: -280, step: 12 },
     // decoration only, all of it out of bounds (the trees in play are `obstacles` above)
     trees: {

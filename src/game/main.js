@@ -12,6 +12,7 @@ import * as THREE from 'three';
 import { applyTune, tuneSummary } from '../core/tune.js';
 import { MAX_FRAME_DT } from '../core/config.js';
 import { HOLES, SETS, resolveHole, getHole, resolveSet, readyHole } from '../holes/sets.js';
+import { BIOMES, resolveBiome } from '../biomes/index.js';
 import { createRound, isNewBest, toParText, bestId } from '../core/round.js';
 import { resolveDifficulty, DEFAULT_DIFFICULTY } from '../core/rivals.js';
 import { SCENARIOS, resolveScenario } from '../holes/scenarios.js';
@@ -34,6 +35,11 @@ const tune = applyTune(params.get('tune'));
 const paramSeed = () => parseSeed(params.get('seed'));
 const freshSeed = () => paramSeed() ?? (Date.now() >>> 0);
 const settings = loadSettings();
+// AP5: ?biome=<id> dresses every hole of this visit in that biome set instead of its own (a dev and
+// artist preview, never in a menu). Matched case-insensitively; an unknown id is ignored with a notice.
+const requestedBiome = params.get('biome');
+const biomeKey = (requestedBiome ?? '').trim().toLowerCase();
+const biomeOverride = biomeKey && Object.hasOwn(BIOMES, biomeKey) ? biomeKey : null;
 
 // What a dev link asks for (the pre-Phase 7 behaviour), and the notices it needs on the first card
 function launchFromUrl() {
@@ -64,6 +70,10 @@ function launchFromUrl() {
   }
   if (requestedAi != null && single) notices.push('?ai= plays a round, so it is ignored with ?hole= or ?scenario=.');
   else if (requestedAi != null && !resolveDifficulty(requestedAi) && set) notices.push(`There is no difficulty "${requestedAi}", so the rivals play on Normal.`);
+  if (requestedBiome != null && !biomeOverride) {
+    console.warn(`Pocket Links: unknown biome set "${requestedBiome}".`);
+    notices.push(`There is no biome set "${requestedBiome}", so the hole keeps its own look.`);
+  }
   if (tune.rejected.length) {
     console.warn('Pocket Links: ignored tune values', tune.rejected);
     notices.push(`Ignored in ?tune=: ${tune.rejected.map(r => `"${r.text}" (${r.why})`).join(', ')}.`);
@@ -72,6 +82,7 @@ function launchFromUrl() {
   return { launch, notices };
 }
 if (tune.set.length) { const b = $('tuned'); b.textContent = `TUNED · ${tuneSummary(tune)}`; b.hidden = false; }
+if (biomeOverride) { const b = $('biomeBadge'); b.textContent = `BIOME: ${biomeOverride}`; b.hidden = false; }
 
 // Gate A C2: no WebGL → a plain message on the intro card instead of a dead Tee off button
 const canvas = $('game');
@@ -101,12 +112,13 @@ const extraInfo = () => [
   ...(round?.mode === 'ai' ? [`vs AI  ${round.difficulty}  ${round.leaderboard().map(r => `${r.posText} ${r.id} ${toParText(r.toPar)}`).join(' · ')}`] : []),
   ...(round ? [`round  ${round.set.id}  hole ${Math.min(round.index + 1, round.length)}/${round.length}  round seed ${round.seed}  ${toParText(round.totals.toPar)} (${round.totals.strokes})`] : []),
   ...(tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : []),
+  ...(session ? [`biome  ${session.biome.id}${biomeOverride ? ' (?biome=)' : ''}`] : []),
 ];
 function loadHole(h, opts = {}) {
   session?.dispose();
   // X12: holes are built and checked on first use, so only the holes played are paid for
   session = createHoleSession(readyHole(h), {
-    renderer, input, seed: opts.seed, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
+    renderer, input, seed: opts.seed, biome: resolveBiome(biomeOverride ?? h.biome) /* AP5: the look */, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
     // V4: the flyover plays the first time a hole starts from its tee in this game (not from a scenario's spot)
     flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,

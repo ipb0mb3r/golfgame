@@ -36,7 +36,10 @@ export const PICKS = Object.freeze({
   furniture: { group: 'furniture', keys: ['flag', 'teeMarkers', 'stakes', 'pond'] }, // the course's own small things
   bigProps: { group: 'bigProps', list: true },     // what the course designer may place by hand (hole scenery.bigProps)
 });
-const SET_FIELDS = new Set(['id', 'name', 'description', 'palette', 'smallProps', 'notes', 'readabilityWaivers', ...Object.keys(PICKS)]);
+const SET_FIELDS = new Set(['id', 'name', 'description', 'palette', 'smallProps', 'notes', 'readabilityWaivers', 'light', ...Object.keys(PICKS)]);
+// The optional `light` override (PM on #86): when a set has it, it replaces the hole's scenery light
+// (a sunset wants a low sun); without it the hole's own values apply. Fog distances stay in the hole.
+export const LIGHT_FIELDS = Object.freeze(['sunIntensity', 'hemiIntensity', 'sunDir']);
 
 // ---- 2. Colours ----
 // A colour is '#rrggbb' (what the artist writes). Returns [r, g, b] 0..255, or null.
@@ -66,7 +69,9 @@ export function delta(c1, c2) {
 const MIXES = { fairway: ['fairwayA', 'fairwayB'], green: ['greenA', 'greenB'] };
 export const READABILITY = Object.freeze([
   ['fairway/rough', 'fairway', 'rough', 15, 8],
+  ['fairwayB/rough', 'fairwayB', 'rough', 15, 8],     // per stripe too (artist on #86): the darker stripe vs rough
   ['green/fairway', 'green', 'fairway', 10, 5],
+  ['greenB/fairwayA', 'greenB', 'fairwayA', 10, 5],   // the darker green shade vs the lighter fairway stripe
   ['green/rough', 'green', 'rough', 20, 10],
   ['sand/fairway', 'sand', 'fairway', 20, 10],
   ['sand/rough', 'sand', 'rough', 30, 15],
@@ -80,6 +85,8 @@ export const READABILITY = Object.freeze([
   ['accent/warn', 'accent', 'ui:warn', 15, 0], // a flag must never look like a warning
   ['accent/aim', 'accent', 'ui:aim', 15, 0],
   ...['green', 'rough', 'skyHorizon'].map(k => [`subAccent/${k}`, 'subAccent', k, 30, 0]),
+  // the putting grid stays visible on both green shades (ART_STYLE §4.4 "Also", artist on #86)
+  ...['greenA', 'greenB'].map(k => [`gridLine/${k}`, 'gridLine', k, 10, 0]),
 ]);
 const colourOf = (palette, name) =>
   name.startsWith('ui:') ? UI_COLORS[name.slice(3)] : MIXES[name] ? mixColour(palette[MIXES[name][0]], palette[MIXES[name][1]]) : palette[name];
@@ -145,6 +152,15 @@ export function validateBiomeSet(set, library) {
     if (!Array.isArray(sp.on) || !sp.on.length || !sp.on.every(s => typeof s === 'string')) bad('smallProps.on must list the surfaces they are scattered on');
   }
 
+  // light (optional): overrides the hole's scenery light when present
+  if (set.light !== undefined) {
+    const l = set.light;
+    if (!l || typeof l !== 'object') bad('light must be { sunIntensity, hemiIntensity, sunDir }');
+    for (const k of Object.keys(l)) if (!LIGHT_FIELDS.includes(k)) bad(`light has an unknown key "${k}" (known: ${LIGHT_FIELDS.join(', ')})`);
+    for (const k of ['sunIntensity', 'hemiIntensity']) if (!(Number.isFinite(l[k]) && l[k] >= 0)) bad(`light.${k} must be a number ≥ 0 (got ${l[k]})`);
+    if (!(Array.isArray(l.sunDir) && l.sunDir.length === 3 && l.sunDir.every(Number.isFinite) && l.sunDir[1] > 0)) bad(`light.sunDir must be [x, y, z] toward the sun, with y > 0 (got ${JSON.stringify(l.sunDir)})`);
+  }
+
   // readability (ART_STYLE §4.4): every rule passes, or is waived by name with a reason
   const waivers = set.readabilityWaivers ?? {};
   for (const [id, why] of Object.entries(waivers)) {
@@ -157,3 +173,28 @@ export function validateBiomeSet(set, library) {
   if (unneeded.length) bad(`readabilityWaivers: ${unneeded.join(', ')} already pass, remove the waiver`);
   return set;
 }
+
+// ---- 5. What the game reads (pure helpers, so the choices are tested in Node) ----
+// The scene light: the set's `light` when it has one, else the hole's scenery values.
+export function sceneLight(set, scenery) {
+  const l = set.light;
+  return l ? { hemi: l.hemiIntensity, sun: l.sunIntensity, sunPos: l.sunDir } : { hemi: scenery.hemi, sun: scenery.sun.intensity, sunPos: scenery.sun.pos };
+}
+// The look of each tree in play (PM on #86): the obstacle's own `look` when the set has that piece,
+// else a seeded pick from the set's onTrees (rng = a seeded stream of its own, so the look never moves
+// another random draw). With one onTrees piece nothing is drawn from rng. trees = the hole's tree obstacles.
+export function treeLooks(trees, onTrees, rng) {
+  return trees.map(o => onTrees.includes(o.look) ? o.look : onTrees.length === 1 ? onTrees[0] : onTrees[Math.floor(rng() * onTrees.length) % onTrees.length]);
+}
+// A piece's colours by slot ('#rrggbb'), read through the library's slot → palette key map, so a piece
+// is coloured the same way in every set: pieceColours(set, LIBRARY)('furniture', 'clothFlag') → { cloth }.
+// library = src/biomes/library.js LIBRARY (passed in, so core stays free of data files).
+export function pieceColours(set, library) {
+  return (group, id) => {
+    const piece = library[group]?.[id];
+    if (!piece) throw new Error(`biome set "${set.id}": no ${group} piece "${id}"`);
+    return Object.fromEntries(Object.entries(piece.slots).map(([slot, key]) => [slot, set.palette[key]]));
+  };
+}
+// The flag cloth's colour (the 3D flag and the minimap's flag)
+export const flagColour = (set, library) => pieceColours(set, library)('furniture', set.furniture.flag).cloth;

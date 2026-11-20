@@ -15,6 +15,7 @@ import mtn08 from './mtn-08.js';
 import mtn09 from './mtn-09.js';
 import { validateHole } from '../core/validate.js';
 import { resolveBiome } from '../biomes/index.js';
+import { LIBRARY } from '../biomes/library.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
 // X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
@@ -59,7 +60,17 @@ export const getHole = id => resolveHole(id).hole;
 // every hole. Returns the hole. The game calls it for every hole it loads (src/game/main.js).
 const ready = new WeakSet();
 export function readyHole(hole) {
-  if (!ready.has(hole)) { validateHole(hole, { shots: false }); resolveBiome(hole.biome); ready.add(hole); } // AP5: its biome set exists and passes
+  if (!ready.has(hole)) { validateHole(hole, { shots: false }); checkHoleLooks(hole); ready.add(hole); }
+  return hole;
+}
+
+// AP5: the hole's biome set exists and passes (validateBiomeSet), and every tree `look` is a library
+// onTrees piece (a look the set doesn't pick falls back to the set's own pick, core/biome.js treeLooks)
+export function checkHoleLooks(hole) {
+  resolveBiome(hole.biome);
+  (hole.obstacles ?? []).forEach((o, i) => {
+    if (o.look !== undefined && !Object.hasOwn(LIBRARY.onTrees, o.look)) throw new Error(`hole "${hole.id}": obstacles[${i}].look "${o.look}" is not a tree piece (the library's onTrees: ${Object.keys(LIBRARY.onTrees).join(', ')})`);
+  });
   return hole;
 }
 

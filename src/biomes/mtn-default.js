@@ -39,6 +39,8 @@ export default {
   // the artist's pass (ART1) replaces this set; a new set must pass every rule.
   readabilityWaivers: {
     'green/fairway': 'today\'s green is only ΔE 9 from the fairway (needs 10)',
+    'greenB/fairwayA': 'today\'s darker green shade is only ΔE 6 / ΔL 5 from the lighter fairway stripe (needs 10 / 5)',
+    'fairwayB/rough': 'today\'s darker fairway stripe is only ΔE 13 from the rough (needs 15)',
     'accent/warn': 'today\'s flag is almost the HUD warning red (ΔE 8, needs 15)',
     'subAccent/skyHorizon': 'today\'s white tee markers are ΔE 25 from the hazy sky (needs 30)',
   },
