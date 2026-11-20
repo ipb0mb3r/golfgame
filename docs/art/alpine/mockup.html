@@ -200,8 +200,8 @@ function hornPeak({ ang, dist, h, r, hook = 0.3, sides = 6, seed: sd = 1, snowLi
 }
 if (PICKS.backdrop === 'peaksSnow') { // prominent Swiss peaks: one hero horn, a range of smaller horns, a low far ridge, dark forested slopes in front
   scene.add(ridgeLayer({ dist: 3300, n: 160, peaks: makePeaks(14, 380, 620, 0.05, 0.11, 3), snow: 420, colour: P.backFar, cap: P.backCap, capShade: P.backCapShade, haze: 0.25, jag: 30, seed: 11 }));
-  hornPeak({ ang: 0.06, dist: 3000, h: 1150, r: 430, hook: 0.42, sides: 6, seed: 21, snowLine: 0.55 });   // the hero horn
-  for (const [ang, dist, h, r, hook, sd] of [[-0.4, 3100, 760, 520, -0.2, 22], [-0.22, 3200, 620, 480, 0.15, 23], [0.28, 3150, 700, 520, -0.25, 24], [0.48, 3000, 820, 500, 0.2, 25], [-0.58, 3050, 640, 560, 0.1, 26], [0.7, 3100, 600, 520, -0.1, 27]])
+  hornPeak({ ang: 0.06, dist: 3000, h: 1150, r: 780, hook: 0.26, sides: 6, seed: 21, snowLine: 0.55 });   // the hero horn
+  for (const [ang, dist, h, r, hook, sd] of [[-0.42, 3100, 780, 900, -0.15, 22], [-0.2, 3250, 640, 820, 0.12, 23], [0.3, 3150, 720, 900, -0.18, 24], [0.5, 3000, 820, 860, 0.15, 25], [-0.62, 3050, 660, 920, 0.1, 26], [0.72, 3100, 620, 880, -0.1, 27]])
     hornPeak({ ang, dist, h, r, hook, sides: 5, seed: sd, snowLine: 0.36 });
   scene.add(ridgeLayer({ dist: 1500, n: 140, peaks: [{ a: -0.75, h: 520, w: 0.45 }, { a: 0.8, h: 560, w: 0.5 }, ...makePeaks(6, 140, 260, 0.12, 0.3, 5)], snow: 9999, colour: P.backNear, cap: P.backCap, capShade: P.backCapShade, haze: 0.08, jag: 10, seed: 12 }));
 } else if (PICKS.backdrop === 'hillsRound') {
