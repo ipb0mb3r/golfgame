@@ -143,7 +143,13 @@ export const FLAG_FX = Object.freeze({ clothW: 0.9, clothH: 0.55, clothDrop: 0.3
 
 // AP5: the HUD's own colours on the course (aim line, obstacle warning, aim dots). They never come
 // from a biome set; the biome readability rules (core/biome.js, ART_STYLE §4.4) check every palette against them.
-export const UI_COLORS = Object.freeze({ aim: '#ffd447', warn: '#ff4a3a', aimDot: '#ffffff' });
+// X25: the aim guide's other states, read by props.js (3D) and hud.js (minimap) from here: capped = the
+// lie's power cap (the minimap's grey is a touch lighter, as before), hazard = lands in water or OB (S23).
+export const UI_COLORS = Object.freeze({ aim: '#ffd447', warn: '#ff4a3a', aimDot: '#ffffff', capped: '#b8b8b8', cappedMap: '#c8c8c8', hazard: '#46b4ff' });
+// X26: the minimap tree colour is the set's tree canopy colour; when that is too close to the fairway or the
+// rough (core/biome.js MINIMAP_READABILITY), the minimap darkens it ONE fixed step: each RGB channel
+// moves this share of the way to black. If it still fails, the set fails (validateBiomeSet).
+export const MINIMAP_TREE_DARKEN = 0.35;
 
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line

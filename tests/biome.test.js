@@ -2,7 +2,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour } from '../src/core/biome.js';
+import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour, minimapColours, minimapTree, checkMinimap, MINIMAP_READABILITY, mixColour } from '../src/core/biome.js';
+import { MINIMAP_TREE_DARKEN } from '../src/core/config.js';
 import { checkHoleLooks } from '../src/holes/sets.js';
 import { validateHole } from '../src/core/validate.js';
 import { createRng } from '../src/core/rng.js';
@@ -145,11 +146,41 @@ test('the game reads colours through the library slots; no biome colour is hard-
   assert.deepEqual(pieceColours(base, LIBRARY)('onTrees', 'roundTree'), { canopy: base.palette.leaf, trunk: base.palette.trunk });
   assert.throws(() => pieceColours(base, LIBRARY)('skies', 'gradient'), /no skies piece "gradient"/);
   // the colours left in code are not the biome's: white / black (ball, cup, stakes, pole, the canopy's
-  // white base), the HUD's aim colours (UI_COLORS), the debug outlines and the minimap legend
-  const allowed = new Set(['ffffff', '111111', '000000', '333333', 'ffd447', 'ff4a3a', 'b8b8b8', 'c8c8c8', '46b4ff', 'ff4040', 'ffe040', '40e0ff', 'ff5a4a']);
+  // white base), the debug outlines and the red word in pl-03's intro. Since X25 the HUD aim colours are
+  // read from UI_COLORS (config.js), and since X26 the minimap has no legend colours of its own.
+  const allowed = new Set(['ffffff', '111111', '000000', '333333', 'ff4040', 'ffe040', '40e0ff', 'ff5a4a']);
   for (const dir of ['src/game', 'src/holes']) for (const f of readdirSync(dir).filter(n => n.endsWith('.js'))) {
     const code = readFileSync(`${dir}/${f}`, 'utf8').replace(/^\s*\/\/.*$/gm, '');
     const found = [...code.matchAll(/(?:0x|#)([0-9a-fA-F]{6})\b/g)].map(m => m[1].toLowerCase()).filter(c => !allowed.has(c));
     assert.deepEqual(found, [], `${dir}/${f}`);
   }
+});
+
+test('X26: the minimap takes the set\'s colours; a tree too close to fairway or rough is darkened one fixed step', () => {
+  // the boulders and each onTrees look's canopy, from the library's slots
+  for (const set of Object.values(BIOMES)) {
+    const c = minimapColours(set, LIBRARY);
+    assert.equal(c.rock, set.palette.boulder, set.id);
+    assert.deepEqual(Object.keys(c.trees), set.onTrees, set.id);
+    // every set passes the minimap rules (after the step), with no waiver
+    assert.deepEqual(checkMinimap(set, LIBRARY).filter(r => !r.ok), [], set.id);
+    assert.ok(!Object.keys(set.readabilityWaivers ?? {}).some(id => id.startsWith('minimap')), set.id);
+  }
+  // the rules use the fairway / rough thresholds
+  assert.deepEqual(MINIMAP_READABILITY.map(r => r.slice(1)), [['fairway', 15, 8], ['rough', 15, 8]]);
+  // a canopy that passes is used as it is; one that fails is darkened by MINIMAP_TREE_DARKEN
+  const p = base.palette;
+  assert.deepEqual(minimapTree(p, '#1c4a20').colour, '#1c4a20');
+  const m = minimapTree(p, p.leaf); // today's mountain leaf: ΔL 1 from the fairway
+  assert.equal(m.darkened, true);
+  assert.deepEqual(parseColour(m.colour), parseColour(p.leaf).map(v => Math.round(v * (1 - MINIMAP_TREE_DARKEN))));
+  assert.ok(m.rows.every(r => r.ok));
+  assert.equal(minimapTree(BIOMES['meadow-day'].palette, BIOMES['meadow-day'].palette.leaf).darkened, true); // ΔE 8 from its rough
+  // a tree the step cannot save fails the set, named by rule and look; a waiver by name lets it through
+  // a canopy the colour of the fairway: darkened, it lands too close to the rough (ΔE 14 < 15)
+  const failing = withPalette({ leaf: mixColour(p.fairwayA, p.fairwayB) });
+  assert.throws(() => validateBiomeSet(failing, LIBRARY), /minimapTree\/(fairway|rough) \(roundTree\) ΔE/);
+  const ids = [...new Set(checkMinimap(failing, LIBRARY).filter(r => !r.ok).map(r => r.id))];
+  assert.ok(validateBiomeSet({ ...failing, readabilityWaivers: { ...failing.readabilityWaivers, ...Object.fromEntries(ids.map(id => [id, 'test'])) } }, LIBRARY));
+  assert.throws(() => validateBiomeSet(withChange({ readabilityWaivers: { ...base.readabilityWaivers, 'minimapTree/rough': 'x' } }), LIBRARY), /minimapTree\/rough already pass, remove the waiver/);
 });
