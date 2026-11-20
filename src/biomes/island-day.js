@@ -1,0 +1,42 @@
+// ART1 biome set: Island coast (day), the Honolulu vibe (owner-approved 2026-11-20). From the owner's mood board
+// (docs/art/island/): not Caribbean, not US east/west coast; wild turquoise water and wild lime grass, golden sand,
+// dark lava rock, the course following the ocean, palms (a few really tall ones), monkeypod trees, bougainvillea,
+// a green volcanic ridge and far resort towers. No lighthouse (owner: kept for a future Cape Cod-like set).
+// Palette: option B "wilder" (owner), tropical-orange flag, bougainvillea-magenta tee markers.
+// Source: docs/art/island/palettes.js. Until the new pieces exist it uses today's library pieces; see ART_STYLE §6.5.
+// — Agent: artist
+export default {
+  id: 'island-day',
+  name: 'Island coast (day)',
+  description: 'A Honolulu-style coast: wild lime grass, electric turquoise shallows and deep blue sea, golden sand and dark lava rock, palms and monkeypod trees, a tropical-orange flag and magenta tee markers; a green volcanic ridge and resort towers far across the bay.',
+  palette: {
+    // surfaces (sand is golden, rock is dark lava)
+    tee: '#a8e82c', fairwayA: '#a6e62a', fairwayB: '#94d820', edge: '#3ea02a', fringe: '#9cde24', greenA: '#d4fc70', greenB: '#ccfa62',
+    rough: '#3ec036', deepRough: '#2ca232', sand: '#feebb8', lip: '#c9a36a', water: '#00e0d8', waterDeep: '#0090e8', bank: '#e8c88a',
+    rock: '#3e3a40', path: '#ead8b0',
+    // sky, fog, light
+    skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#ffffff', fog: '#c8f0fa',
+    sun: '#fff4dc', ambient: '#eefaff', shadow: '#2a7060',
+    // backdrop: the green volcanic ridge, the tree wall
+    backFar: '#3e9c7a', backNear: '#2e8a50', backCap: '#6cc48a', backCapShade: '#4fa870', backTrees: '#2e9a44',
+    // accents: the flag (tropical orange), the tee markers (bougainvillea magenta)
+    accent: '#ff8a2a', subAccent: '#e0309a',
+    // trees and props (leafAlt = palm fronds, trunkAlt = palm trunk; propA = bougainvillea, propB = orange flowers)
+    pine: '#2a8a50', trunk: '#8e6a46', leaf: '#3cb848', leafTop: '#aef84e', leafLow: '#1e7038', leafAlt: '#3ee04a', trunkAlt: '#c49a68',
+    wood: '#b88a5a', roof: '#7a5a3e', propSnow: '#ffffff', propA: '#e0309a', propB: '#ff9a2e', glass: '#bfeff5',
+    // engine keys (temporary, DESIGN §8b): the putting grid (fill = greenA, lines a darker green), the far
+    // ground (= deepRough), the pond surface (= water), the boulders (a light lava grey for now: tests/biome.test.js
+    // expects every set's boulders to be drawn one step darker on the minimap; dark lava #3e3a40 once that is relaxed)
+    gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#9a94a0',
+  },
+  textures: [],               // none yet (AP6): flat painted colours
+  onTrees: ['roundTree'],     // later: palm, monkeypod (AP7, ART_STYLE §6.5)
+  offTrees: ['coneTree'],     // later: palm / round treetop wall (AP7)
+  rocks: ['roundBoulder'],    // lava boulders (see the boulder key above)
+  sky: 'flatSky',             // later: the gradient sky with puffy clouds
+  backdrop: 'roundHills',     // later: the ocean + beach + lava shore, volcanic ridge, far towers (new backdrop piece)
+  furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
+  smallProps: { pieces: [] }, // later: bougainvillea bushes, tropical flowers, grass tufts (AP7)
+  bigProps: [],               // later: very tall palm (landmark), beach hut (AP7), placed by hand
+  notes: 'The course follows the ocean: run fairways along the beach, the sea on one side (often the left), waste bunkers and lava-rock edges, a few really tall palms as landmarks. Low, near sea level. No lighthouse. Suggested weather: sunny, sea wind.',
+};
