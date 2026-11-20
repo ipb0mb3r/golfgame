@@ -177,10 +177,12 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
   assert.ok(m.rows.every(r => r.ok));
   assert.equal(minimapTree(BIOMES['meadow-day'].palette, BIOMES['meadow-day'].palette.leaf).darkened, true); // ΔE 8 from its rough
   // a tree the step cannot save fails the set, named by rule and look; a waiver by name lets it through
-  // a canopy the colour of the fairway: darkened, it lands too close to the rough (ΔE 14 < 15)
-  const failing = withPalette({ leaf: mixColour(p.fairwayA, p.fairwayB) });
+  // a canopy the colour of the fairway, with a rough exactly one step darker: darkened, it lands on the rough
+  const fw = mixColour(p.fairwayA, p.fairwayB);
+  const failing = withPalette({ leaf: fw, rough: '#' + parseColour(fw).map(v => Math.round(v * (1 - MINIMAP_TREE_DARKEN)).toString(16).padStart(2, '0')).join('') });
   assert.throws(() => validateBiomeSet(failing, LIBRARY), /minimapTree\/(fairway|rough) \(roundTree\) ΔE/);
-  const ids = [...new Set(checkMinimap(failing, LIBRARY).filter(r => !r.ok).map(r => r.id))];
-  assert.ok(validateBiomeSet({ ...failing, readabilityWaivers: { ...failing.readabilityWaivers, ...Object.fromEntries(ids.map(id => [id, 'test'])) } }, LIBRARY));
+  const ids = [...new Set([...checkReadability(failing.palette), ...checkMinimap(failing, LIBRARY)].filter(r => !r.ok).map(r => r.id))];
+  assert.ok(ids.includes('minimapTree/rough'));
+  assert.ok(validateBiomeSet({ ...failing, readabilityWaivers: Object.fromEntries(ids.map(id => [id, 'test'])) }, LIBRARY));
   assert.throws(() => validateBiomeSet(withChange({ readabilityWaivers: { ...base.readabilityWaivers, 'minimapTree/rough': 'x' } }), LIBRARY), /minimapTree\/rough already pass, remove the waiver/);
 });

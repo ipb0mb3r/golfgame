@@ -148,8 +148,10 @@ export const FLAG_FX = Object.freeze({ clothW: 0.9, clothH: 0.55, clothDrop: 0.3
 export const UI_COLORS = Object.freeze({ aim: '#ffd447', warn: '#ff4a3a', aimDot: '#ffffff', capped: '#b8b8b8', cappedMap: '#c8c8c8', hazard: '#46b4ff' });
 // X26: the minimap tree colour is the set's tree canopy colour; when that is too close to the fairway or the
 // rough (core/biome.js MINIMAP_READABILITY), the minimap darkens it ONE fixed step: each RGB channel
-// moves this share of the way to black. If it still fails, the set fails (validateBiomeSet).
-export const MINIMAP_TREE_DARKEN = 0.35;
+// moves this share of the way to black (0.5: half way, so trees read clearly on the minimap, not just pass
+// the rule: 0.35 passed but left today's mountain trees only ΔL 9 from the rough, hard to see). If it still
+// fails, the set fails (validateBiomeSet).
+export const MINIMAP_TREE_DARKEN = 0.5;
 
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line
