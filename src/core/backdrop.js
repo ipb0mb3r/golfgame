@@ -75,18 +75,42 @@ export function ridgeLayer(layer, palette) {
       const d = Math.abs(angDiff(ang, p.a)) / p.w;
       if (d < 1) h = Math.max(h, p.h * (layer.round ? 0.5 * (1 + Math.cos(Math.PI * d)) : (1 - d) ** 1.15));
     }
+    const h0 = h; // the smooth silhouette, before the jag noise (AP6b: round layers are shaded from it)
     h += (rnd() - 0.5) * layer.jag;
-    tops.push({ x: Math.sin(ang) * layer.dist, z: -Math.cos(ang) * layer.dist, h: Math.max(RIDGE.minH, h), sn: layer.snow + (rnd() - 0.5) * layer.jag * 2 });
+    // AP6b: a trimmed layer (layer.trim) has no low tail where no peak is: it ends at its base line
+    // (under the sea), so no thin strip floats on the horizon
+    const top = layer.trim ? (h0 <= 0 ? 0 : Math.max(0, h)) : Math.max(RIDGE.minH, h);
+    tops.push({ x: Math.sin(ang) * layer.dist, z: -Math.cos(ang) * layer.dist, h: top, h0, sn: layer.snow + (rnd() - 0.5) * layer.jag * 2 });
   }
   const P = palette, colour = P[layer.key], hz = layer.haze;
   const lit = mixHex(colour, P.fog, hz), shd = mixHex(mixHex(colour, P.shadow, RIDGE.shade), P.fog, hz);
   const base = mixHex(colour, P.fog, Math.min(RIDGE.baseFadeMax, hz + RIDGE.baseFade));
   const kl = mixHex(P.backCap, P.fog, hz * 0.5), ks = mixHex(P.backCapShade, P.fog, hz * 0.5);
   const positions = [], colours = [], y0 = RIDGE.baseY;
-  const quad = (a, b, ya0, ya1, yb0, yb1, cTop, cBot) => {
+  // a quad between two tops a and b: y from ya0 / yb0 (bottom) to ya1 / yb1 (top), colours per corner
+  const quad4 = (a, b, ya0, ya1, yb0, yb1, cA1, cB1, cA0, cB0) => {
     positions.push(a.x, ya0, a.z, b.x, yb0, b.z, b.x, yb1, b.z, a.x, ya0, a.z, b.x, yb1, b.z, a.x, ya1, a.z);
-    colours.push(cBot, cBot, cTop, cBot, cTop, cTop);
+    colours.push(cA0, cB0, cB1, cA0, cB1, cA1);
   };
+  const quad = (a, b, ya0, ya1, yb0, yb1, cTop, cBot) => quad4(a, b, ya0, ya1, yb0, yb1, cTop, cTop, cBot, cBot);
+  if (layer.round) {
+    // AP6b: soft round hills. The light turns smoothly across each hill (lit where the smooth silhouette
+    // is flat or rising, shaded as it falls, from its slope, never from the jag noise: no vertical
+    // streaks), and the colour fades from the top down to the base colour at the layer's foot (y 0),
+    // so the visible part of each hill melts into the haze; below y 0 it stays the base colour.
+    const seg = layer.dist * (a1 - a0) / n;
+    const topC = tops.map((t, i) => {
+      const slope = (tops[Math.min(n, i + 1)].h0 - tops[Math.max(0, i - 1)].h0) / (seg * (i > 0 && i < n ? 2 : 1));
+      return mixHex(lit, shd, smooth(0, RIDGE.softSlope, -slope));
+    });
+    for (let i = 0; i < n; i++) {
+      const a = tops[i], b = tops[i + 1];
+      if (layer.trim && a.h <= 0 && b.h <= 0) continue;
+      quad(a, b, y0, 0, y0, 0, base, base);
+      quad4(a, b, 0, a.h, 0, b.h, topC[i], topC[i + 1], base, base);
+    }
+    return { positions, colours, triangles: positions.length / 9 };
+  }
   for (let i = 0; i < n; i++) {
     const a = tops[i], b = tops[i + 1], shade = b.h < a.h;
     const sa = Math.min(a.h, a.sn), sb = Math.min(b.h, b.sn);
@@ -208,4 +232,21 @@ export function oceanShore({ ob, heightAt, extent, groundY, reach, sides, cx = 0
     });
   }
   return { seaY, bedY, top, outward, drawnY, tint, bands, groundY: Math.min(groundY, bedY - 0.5) };
+}
+
+// AP6b: the minimap's colour at (x, z) on an ocean hole, so the minimap shows what the 3D view shows.
+// shore = oceanShore(...), palette = the set's. → null on land (the painted course as today), else
+// { colour '#rrggbb', amount 0..1 } to paint over the course map: the sea where the drawn ground is
+// under sea level, in the band seen there in 3D (shallow `water`, mid, deep `waterDeep`), and otherwise
+// the beach's sand / lava rock tint.
+export function shoreMapColour(shore, palette, x, z, look = OCEAN_LOOK) {
+  const out = shore.outward(x, z);
+  if (out <= 0) return null;
+  if (shore.drawnY(x, z) < shore.seaY) {
+    const colour = out <= look.slope + look.shallow ? palette.water
+      : out <= look.slope + look.shallow + look.mid ? mixHex(palette.water, palette.waterDeep, 0.5) : palette.waterDeep;
+    return { colour, amount: 1 };
+  }
+  const t = shore.tint(x, z);
+  return { colour: palette[t.colour], amount: t.amount };
 }

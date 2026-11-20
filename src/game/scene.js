@@ -117,7 +117,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
   addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
-  return { scene, camera, colliderOutlines };
+  return { scene, camera, colliderOutlines, shore }; // AP6b: shore (or null) for the minimap's sea
 }
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
@@ -379,13 +379,20 @@ const SKIES = {
     dome.renderOrder = -1; dome.frustumCulled = false; dome.name = 'sky dome';
     dome.onBeforeRender = (renderer, s, camera) => { dome.position.copy(camera.position); dome.updateMatrixWorld(); };
     scene.add(dome);
-    const pose = new THREE.Object3D(), puffs = cloudPuffs().map(p => {
+    // AP6b (QA B1 on #99): the clouds are always BEHIND every hill and backdrop. They are drawn right
+    // after the dome and write no depth, so whatever is drawn later (hills, ridges, the course) covers
+    // them cleanly: no ragged edge or specks where a puff and a far hill meet in the depth buffer.
+    // Without depth, the puffs are drawn farthest first (from the hole's middle), so a nearer puff covers a farther one.
+    const pose = new THREE.Object3D(), far = p => -Math.hypot(p.x, p.z);
+    const puffs = cloudPuffs().sort((a, b) => far(a) - far(b)).map(p => {
       pose.position.set(p.x * ctx.k, ctx.baseY + p.y * ctx.k, ctx.cz + p.z * ctx.k); pose.rotation.set(0, p.yaw, 0);
       pose.scale.set(p.r * ctx.k, p.r * 0.8 * ctx.k, p.r * 0.8 * ctx.k);
       return matrixOf(pose);
     });
-    const cloudMat = new THREE.MeshToonMaterial({ color: sky.clouds, emissive: sky.clouds, emissiveIntensity: L.clouds.emissive, fog: false, gradientMap: ctx.toon });
-    scene.add(instanced(new THREE.IcosahedronGeometry(1, 2), cloudMat, puffs, 'cloud puffs (toon, instanced)'));
+    const cloudMat = new THREE.MeshToonMaterial({ color: sky.clouds, emissive: sky.clouds, emissiveIntensity: L.clouds.emissive, fog: false, gradientMap: ctx.toon, depthWrite: false });
+    const clouds = instanced(new THREE.IcosahedronGeometry(1, 2), cloudMat, puffs, 'cloud puffs (toon, instanced)');
+    clouds.renderOrder = -0.5; // after the dome (−1), before everything else (0)
+    scene.add(clouds);
   },
 };
 const BACKDROP_PIECES = {

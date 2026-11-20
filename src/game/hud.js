@@ -6,6 +6,7 @@ import { minimapTicks } from '../core/play.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
 import { flagColour, minimapColours, holeTreeLooks } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
+import { shoreMapColour } from '../core/backdrop.js';
 
 const $ = id => document.getElementById(id);
 export const yd = m => Math.round(m * M2Y);
@@ -285,7 +286,9 @@ export function createHud(play) {
 // X26: the course (surfaces, water, sand: the painted course), the trees, the boulders and the flag are in
 // the biome set's colours (core/biome.js minimapColours: a tree's canopy colour, darkened one fixed step
 // when too close to the fairway or rough); the aim line, warning and ball are HUD colours (UI_COLORS).
-export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
+// AP6b: shore = the ocean backdrop's drawn shore (scene.js buildScene) or null: the sea and the beach
+// beyond OB are painted over the course map as in 3D (core/backdrop.js shoreMapColour).
+export function createMinimap(hole, courseCanvas, cup, obstacles, biome, shore = null) {
   const mm = $('minimap'), ctx = mm.getContext('2d'), map = hole.map;
   const flagCss = flagColour(biome, LIBRARY); // AP5: the biome set's flag colour ('#rrggbb')
   const colours = minimapColours(biome, LIBRARY), trees = obstacles.filter(o => o.type === 'tree');
@@ -296,6 +299,17 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
   const bctx = base.getContext('2d');
   bctx.drawImage(courseCanvas, 0, 0, base.width, base.height);
   const sx = base.width / (map.x1 - map.x0), sz = base.height / (map.z1 - map.z0);
+  if (shore) {
+    const img = bctx.getImageData(0, 0, base.width, base.height), d = img.data, rgb = new Map();
+    const parse = c => rgb.get(c) ?? rgb.set(c, [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16))).get(c);
+    for (let py = 0; py < base.height; py++) for (let px = 0; px < base.width; px++) {
+      const t = shoreMapColour(shore, biome.palette, map.x0 + (px + 0.5) / sx, map.z0 + (py + 0.5) / sz);
+      if (!t) continue;
+      const c = parse(t.colour), i = (py * base.width + px) * 4;
+      for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] + (c[k] - d[i + k]) * t.amount);
+    }
+    bctx.putImageData(img, 0, 0);
+  }
   for (const o of obstacles) {
     const px = (o.x - map.x0) * sx, pz = (o.z - map.z0) * sz;
     const r = Math.max(1.5, (o.type === 'tree' ? o.canopy.rx : o.r) * sx);

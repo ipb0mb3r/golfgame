@@ -120,7 +120,9 @@ export const SKY_LOOK = Object.freeze({
 // count, hMin, hMax, wMin, wMax, seed), snow (m; above it the cap colours), key (palette colour), haze
 // (toward fog), jag (m), seed, round (soft round tops) }. The base fades `baseFade` further into the fog;
 // shaded faces are mixed `shade` toward `shadow`.
-export const RIDGE = Object.freeze({ baseFade: 0.45, baseFadeMax: 0.85, shade: 0.25, baseY: -60, minH: 10 });
+// AP6b: a `round` layer is shaded smoothly from the slope of its silhouette (fully `shade` where it falls by
+// softSlope m per m or more) and fades to its base colour at its foot (y 0); `trim` drops its low tail.
+export const RIDGE = Object.freeze({ baseFade: 0.45, baseFadeMax: 0.85, shade: 0.25, baseY: -60, minH: 10, softSlope: 0.35 });
 // Horn peaks (Alpine)
 export const HORN_PEAKS_LOOK = Object.freeze({
   baseY: -40,                       // m, from the hole's ground plane (scenery.ground.y), where the horns start (mock-up)
@@ -147,8 +149,8 @@ export const OCEAN_LOOK = Object.freeze({
   bandLift: 0.04,                          // m between the bands (the shallow one on top)
   rockAt: Object.freeze([0.45, 1]),        // the lava rock patches: between these fractions of the slope...
   rockPatch: 0.55, rockStep: 23,           // ...where a seeded noise along the shore (one value per rockStep m) is above rockPatch
-  ridge: Object.freeze({ dist: 2600, a: [-0.8, 0.8], n: 110, peaks: [{ a: -0.3, h: 560, w: 0.36 }, { a: 0.1, h: 240, w: 0.18 }], snow: 9999, key: 'backFar', haze: 0.16, jag: 6, seed: 35, round: true }),
-  island: Object.freeze({ dist: 2900, a: [0.3, 0.8], n: 30, peaks: [{ a: 0.55, h: 70, w: 0.22 }], snow: 9999, key: 'backNear', haze: 0.3, jag: 3, seed: 36, round: true }),
+  ridge: Object.freeze({ dist: 2600, a: [-0.8, 0.8], n: 110, peaks: [{ a: -0.3, h: 560, w: 0.36 }, { a: 0.1, h: 240, w: 0.18 }], snow: 9999, key: 'backFar', haze: 0.16, jag: 6, seed: 35, round: true, trim: true }),
+  island: Object.freeze({ dist: 2900, a: [0.3, 0.8], n: 30, peaks: [{ a: 0.55, h: 70, w: 0.22 }], snow: 9999, key: 'backNear', haze: 0.3, jag: 3, seed: 36, round: true, trim: true }),
 });
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
