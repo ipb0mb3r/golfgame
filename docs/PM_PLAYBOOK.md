@@ -77,14 +77,15 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-20:** **AP6a** gradient sky, horn peaks, ocean, haze hills (#99, QA #100), with dev-only looks `test-alpine-look` / `test-island-look` / `test-meadow-look`; QA: "Alpine clearly reads as a different place". Island dark-lava boulders (#98).
 
+**Also done 2026-11-20:** **AP6b** polish (#101, QA #102); the artist's three sets use the new sky and backdrops (#104: Meadow hazeHills, Alpine hornPeaks, Island ocean); **AP7a trees** (#105, QA #106): the leafLow → mid → leafTop gradient, pineTree / spruceTree / palmTree / roundCanopy / birchTree (spruce and palm on `leafAlt`, artist), within budget. Owner: "don't skimp on trees"; token-conscious otherwise (smaller slices, QA Light where possible).
+
 **In flight:**
-- **AP6b polish** (#101: cloud depth, smooth haze hills, sea on the minimap, ridge trim), QA Light running.
-- **Next:** the artist switches alpine-day / island-day / meadow-day to the new pieces (data only), with the owner in his artist session. Then the owner sees the real biomes. Then AP7 (models) from the "Art requests from ART1" list.
-- Owner phone check pending: the minimap tree shade (one more darkening step = `MINIMAP_DARKEN`).
+- The artist picks the new trees in alpine-day / island-day / meadow-day with the owner (palms off-course only until AP7b).
+- **Owner to choose next:** AP7b (tree polish + palm colliders + far tree wall) or Phase MP (main menu, ui-designer first).
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
-2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ (biome sets; flag = `accent`) → ~~X26~~ ✅ → ~~AP3~~ ✅ → ~~AP6a~~ ✅ → **AP6b** polish → artist picks the new pieces → AP7 (models; artist's gradient slots + per-pick slot override) → AP6 (ground material). In parallel, the **artist per-biome pass ART1** (✅ Meadow, Alpine, Island coast) (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), Meadow first. **AP8 pixel effect after the art exists.**
+2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ (biome sets; flag = `accent`) → ~~X26~~ ✅ → ~~AP3~~ ✅ → ~~AP6a~~ ✅ → ~~AP6b~~ ✅ → ~~artist picks sky/backdrops~~ ✅ → ~~AP7a trees~~ ✅ → AP7b → AP7 (models; artist's gradient slots + per-pick slot override) → AP6 (ground material). In parallel, the **artist per-biome pass ART1** (✅ Meadow, Alpine, Island coast) (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), Meadow first. **AP8 pixel effect after the art exists.**
 3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
