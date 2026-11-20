@@ -25,7 +25,7 @@ import { colourAt, hex, mixHex, vnoise } from '../style-r2/paint.js';
 
 const q = new URLSearchParams(location.search);
 const SET = q.get('set') || 'alpine-warm';
-const P = { ...PALETTES[SET] }; if (q.get('accent')) P.accent = q.get('accent');
+const P = { ...PALETTES[SET] }; if (q.get('accent')) P.accent = q.get('accent'); if (q.get('skyTop')) P.skyTop = q.get('skyTop');
 // the biome sets' pick lists (mock-up copy; the real format is AP5)
 const PICKS = { trees: ['pine', 'cypress', 'pineTeal', 'pine', 'birch'], wall: 'pine', backdrop: 'peaksSnow', big: ['chalets'] };
 const OUTLINE = q.get('outline') || 'none', PX = Math.max(1, +(q.get('px') || 1)), VIEW = q.get('view') || 'golfer';
