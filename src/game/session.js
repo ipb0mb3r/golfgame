@@ -50,11 +50,11 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
   const courseCanvas = paintCourse(hole, terrain.surfaceAt, biome, { green });
-  const { scene, camera, colliderOutlines } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
+  const { scene, camera, colliderOutlines, shore } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
-  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles, biome);
+  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles, biome, shore);
 
   // Game state (core/states.js GAME_STATES): intro | flyover | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
