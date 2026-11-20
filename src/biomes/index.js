@@ -12,8 +12,11 @@ import testModels from './test-models.js'; // AP3: dev only (?biome=test-models)
 import testAlpineLook from './test-alpine-look.js';
 import testIslandLook from './test-island-look.js';
 import testMeadowLook from './test-meadow-look.js';
+// AP7a: dev only, the gradient trees (?biome=test-trees, ?biome=test-island-trees)
+import testTrees from './test-trees.js';
+import testIslandTrees from './test-island-trees.js';
 
-export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook].map(b => [b.id, b]));
+export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook, testTrees, testIslandTrees].map(b => [b.id, b]));
 
 // The set a hole uses, checked (validateBiomeSet throws with the set and the field). Unknown id → throws.
 export function resolveBiome(id) {
