@@ -1,10 +1,10 @@
 // HUD: scorecard panel, club box, swing meter, wind arrow, flash messages and the cards.
-import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE, POWER_SECTIONS } from '../core/config.js';
+import { M2Y, METER_MIN, MPS_TO_MPH, TIMING, HUD, TUNE, POWER_SECTIONS, UI_COLORS } from '../core/config.js';
 import { sweetHalfWidth, swingClicks } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
 import { minimapTicks } from '../core/play.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
-import { flagColour } from '../core/biome.js';
+import { flagColour, minimapColours, holeTreeLooks } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 
 const $ = id => document.getElementById(id);
@@ -265,9 +265,14 @@ export function createHud(play) {
 
 // Minimap: the painted course, shrunk once, plus the flag, the ball and the aim line.
 // K5: the trees in play (leaf circles) and boulders are drawn on it, K4: the warning point as a red ×.
+// X26: the course (surfaces, water, sand: the painted course), the trees, the boulders and the flag are in
+// the biome set's colours (core/biome.js minimapColours: a tree's canopy colour, darkened one fixed step
+// when too close to the fairway or rough); the aim line, warning and ball are HUD colours (UI_COLORS).
 export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
   const mm = $('minimap'), ctx = mm.getContext('2d'), map = hole.map;
   const flagCss = flagColour(biome, LIBRARY); // AP5: the biome set's flag colour ('#rrggbb')
+  const colours = minimapColours(biome, LIBRARY), trees = obstacles.filter(o => o.type === 'tree');
+  const looks = new Map(holeTreeLooks(trees, hole.obstacles ?? [], biome.onTrees).map((id, k) => [trees[k], id])); // each tree's look, as in 3D
   const xy = (x, z) => [(x - map.x0) / (map.x1 - map.x0) * mm.width, (z - map.z0) / (map.z1 - map.z0) * mm.height];
   const base = document.createElement('canvas');
   base.width = mm.width * 2; base.height = mm.height * 2;
@@ -277,7 +282,7 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
   for (const o of obstacles) {
     const px = (o.x - map.x0) * sx, pz = (o.z - map.z0) * sz;
     const r = Math.max(1.5, (o.type === 'tree' ? o.canopy.rx : o.r) * sx);
-    bctx.fillStyle = o.type === 'tree' ? 'rgba(28, 74, 32, 0.9)' : 'rgba(120, 118, 112, 0.95)';
+    bctx.fillStyle = o.type === 'tree' ? colours.trees[looks.get(o)] : colours.rock;
     bctx.beginPath(); bctx.arc(px, pz, r, 0, 7); bctx.fill();
   }
   // marks = play.aimMarks() (S22): for a full shot the line ends in a triangle, with ticks at 25/50/75%
@@ -288,7 +293,7 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
     const [bx, bz] = xy(ball.x, ball.z);
     if (target) {
       const [tx, tz] = xy(target.x, target.z);
-      const color = marks?.hazard && !warn ? '#46b4ff' : marks?.capped ? '#c8c8c8' : '#ffd447'; // S23: blue = lands in water / OB
+      const color = marks?.hazard && !warn ? UI_COLORS.hazard : marks?.capped ? UI_COLORS.cappedMap : UI_COLORS.aim; // S23: blue = lands in water / OB
       ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.setLineDash([3, 2]);
       ctx.beginPath(); ctx.moveTo(bx, bz);
       if (marks?.shape) for (const q of marks.shape.path) ctx.lineTo(...xy(q.x, q.z)); // BC4: the shaped flight
@@ -312,7 +317,7 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
     }
     if (warn) {
       const [wx, wz] = xy(warn.x, warn.z);
-      ctx.strokeStyle = '#ff4a3a'; ctx.lineWidth = 2;
+      ctx.strokeStyle = UI_COLORS.warn; ctx.lineWidth = 2;
       ctx.beginPath(); ctx.moveTo(wx - 3, wz - 3); ctx.lineTo(wx + 3, wz + 3); ctx.moveTo(wx + 3, wz - 3); ctx.lineTo(wx - 3, wz + 3); ctx.stroke();
     }
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
