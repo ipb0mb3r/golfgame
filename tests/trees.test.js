@@ -36,7 +36,9 @@ test('fit to the collider: the canopy roughly fills the unit ellipsoid box, the 
     assert.ok(c.rMax <= 1.1 && c.y0 >= -1.001 && c.y1 <= 1.001, `${id} canopy inside: ${JSON.stringify(c)}`);
     // ...and fills most of it (a ball hitting the leaves hits something you see)
     assert.ok(c.x1 - c.x0 >= 1.6 && c.z1 - c.z0 >= 1.5, `${id} canopy width`);
-    assert.ok(c.y1 - c.y0 >= 1.5 && c.y1 >= 0.8, `${id} canopy height`);
+    // (the palm's crown keeps to the middle: a palm crown is flat, and the colliders are taller than wide)
+    const palm = id === 'palmTree';
+    assert.ok(c.y1 - c.y0 >= (palm ? 0.85 : 1.3) && c.y1 >= (palm ? 0.3 : 0.8), `${id} canopy height`);
     assert.ok(t.y0 === 0 && t.y1 === 1, `${id} trunk from its foot to the trunk top`);
     // the trunk is the collider's width (the palm's bows sideways by `bend` trunk radii, its top and foot on the axis)
     assert.ok(t.rMax <= 1 + (TREE_LOOK[id].bend ?? 0) + 1e-9, `${id} trunk radius ${t.rMax}`);

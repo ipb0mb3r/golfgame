@@ -138,7 +138,11 @@ function palmCrown(L) {
   for (const F of L.fronds) for (let i = 0; i < F.n; i++) parts.push(frond(F, F.turn + (i / F.n) * TAU, L.frondSteps ?? F.steps));
   const c = L.cap;
   parts.push(lathe([[0, c.r, 0.7], [c.r, 0, 0.5], [0, -c.r * 1.5, 0.3]], c.segs));
-  return mergeParts(parts);
+  // the crown is flat (it keeps to the middle of its collider): its gradient runs over its own height,
+  // the drooping tips leafLow, the top leafTop
+  const crown = mergeParts(parts), b = partBounds(crown);
+  crown.w = crown.w.map((_, i) => clamp01((crown.positions[i * 3 + 1] - b.y0) / (b.y1 - b.y0)));
+  return crown;
 }
 
 // The builders, by library id: (look) → { trunk, canopy, doubleSide (the palm's fronds are seen from

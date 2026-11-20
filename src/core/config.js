@@ -181,18 +181,19 @@ export const TREE_LOOK = Object.freeze({
     // fronds: per layer, count, reach (× canopy radius), start / peak / end height, where the peak is (0..1
     // along), width, droop (how much lower the edges hang than the spine, × width), stations, turn (rad)
     fronds: Object.freeze([
-      Object.freeze({ n: 5, reach: 0.82, y0: 0.08, peak: 0.85, tp: 0.35, end: -0.2, width: 0.2, droop: 0.5, steps: 6, turn: 0 }),
-      Object.freeze({ n: 7, reach: 1, y0: 0, peak: 0.3, tp: 0.28, end: -0.95, width: 0.22, droop: 0.55, steps: 6, turn: 0.45 }),
+      Object.freeze({ n: 5, reach: 0.84, y0: 0.06, peak: 0.36, tp: 0.34, end: -0.2, width: 0.27, droop: 0.5, steps: 6, turn: 0 }),
+      Object.freeze({ n: 7, reach: 1, y0: 0, peak: 0.22, tp: 0.3, end: -0.55, width: 0.29, droop: 0.55, steps: 6, turn: 0.45 }),
     ]),
     cap: Object.freeze({ r: 0.14, segs: 6 }),
     scenery: Object.freeze({ trunkR: 0.24, trunkH: 7.5, canopyR: 3.2, canopyH: 3.2 }), lod: Object.freeze({ trunkSegs: 5, rings: 6, frondSteps: 4 }),
   }),
-  // Round canopy (the artist's round tree): overlapping low spheres [x, y, z, radius, height, segs, rows],
+  // Round canopy (the artist's round tree): a top sphere over 3 low lobes [x, y, z, radius, height, segs, rows]
+// (heights ~ radius / 1.4: a canopy collider is about 1.5× taller than wide, so they look round),
   // flat-ish bottoms (flat: the lower half's height × this), a soft shoulder.
   roundCanopy: Object.freeze({
     trunkSegs: 7, trunkTop: 0.75, flat: 0.62, dark: 0.12,
-    blobs: Object.freeze([[0, 0.1, 0, 0.8, 0.9, 12, 7], [0.5, -0.32, 0.18, 0.52, 0.62, 10, 6], [-0.36, -0.36, -0.4, 0.55, 0.62, 10, 6]]),
-    scenery: Object.freeze({ trunkR: 0.32, trunkH: 2.6, canopyR: 3, canopyH: 5.4 }), lod: Object.freeze({ segScale: 0.6, trunkSegs: 4 }),
+    blobs: Object.freeze([[0, 0.18, 0, 0.78, 0.66, 12, 7], [0.5, -0.36, 0.06, 0.52, 0.44, 10, 6], [-0.28, -0.4, 0.42, 0.52, 0.43, 10, 6], [-0.24, -0.34, -0.44, 0.5, 0.44, 10, 6]]),
+    scenery: Object.freeze({ trunkR: 0.32, trunkH: 3.4, canopyR: 3, canopyH: 8 }), lod: Object.freeze({ segScale: 0.6, trunkSegs: 4 }),
   }),
   // Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (`mark` bands [from, to] of its
   // height), a light airy canopy of small lobes with gaps (lift: the canopy weights are raised, lighter)

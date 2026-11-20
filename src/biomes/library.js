@@ -37,7 +37,7 @@ export const LIBRARY = Object.freeze({
     pineTree: { desc: 'Soft pine: a tapered trunk and 3 stacked tiers, each with a rounded shoulder and a drooping, gently wavy skirt, toon shaded with the leafLow → pine → leafTop gradient.', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 302 },
     spruceTree: { desc: 'Spruce: narrower and taller-looking than the pine, 5 tiers, the same gradient and toon shading.', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 412 },
     palmTree: { desc: 'Palm: a bowed trunk (trunkAlt) with darker ring grooves (trunk), a crown of 12 drooping fronds in two layers, the gradient running down the fronds.', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
-    roundCanopy: { desc: 'The artist\'s round tree: 3 overlapping low spheres with flat-ish bottoms and a soft shoulder, the leafLow → leaf → leafTop gradient, toon shaded.', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 358 },
+    roundCanopy: { desc: 'The artist\'s round tree: a round top sphere over 3 overlapping low lobes, flat-ish bottoms and a soft shoulder, the leafLow → leaf → leafTop gradient, toon shaded.', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 458 },
     birchTree: { desc: 'Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (trunk) and a light, airy canopy of 5 small lobes.', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 466 },
   },
   // Scenery trees outside OB (never in play)
@@ -49,7 +49,7 @@ export const LIBRARY = Object.freeze({
     pineTree: { desc: 'The soft pine as scenery (fewer sides).', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 176 },
     spruceTree: { desc: 'The spruce as scenery (fewer sides).', slots: CONIFER_SLOTS, gradient: true, shade: TREE_TINT, tris: 248 },
     palmTree: { desc: 'The palm as scenery (fewer sides).', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 240 },
-    roundCanopy: { desc: 'The round tree as scenery (fewer sides).', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 174 },
+    roundCanopy: { desc: 'The round tree as scenery (fewer sides).', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 222 },
     birchTree: { desc: 'The birch as scenery (fewer sides).', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 292 },
   },
   // Boulders in play: the look only; their collision sphere stays in the hole's `obstacles`
