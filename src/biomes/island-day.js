@@ -25,14 +25,13 @@ export default {
     pine: '#2a8a50', trunk: '#8e6a46', leaf: '#3cb848', leafTop: '#aef84e', leafLow: '#1e7038', leafAlt: '#3ee04a', trunkAlt: '#c49a68',
     wood: '#b88a5a', roof: '#7a5a3e', propSnow: '#ffffff', propA: '#e0309a', propB: '#ff9a2e', glass: '#bfeff5',
     // engine keys (temporary, DESIGN §8b): the putting grid (fill = greenA, lines a darker green), the far
-    // ground (= deepRough), the pond surface (= water), the boulders (a light lava grey for now: tests/biome.test.js
-    // expects every set's boulders to be drawn one step darker on the minimap; dark lava #3e3a40 once that is relaxed)
-    gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#9a94a0',
+    // ground (= deepRough), the pond surface (= water), the boulders (= dark lava, like `rock`)
+    gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#3e3a40',
   },
   textures: [],               // none yet (AP6): flat painted colours
   onTrees: ['roundTree'],     // later: palm, monkeypod (AP7, ART_STYLE §6.5)
   offTrees: ['coneTree'],     // later: palm / round treetop wall (AP7)
-  rocks: ['roundBoulder'],    // lava boulders (see the boulder key above)
+  rocks: ['roundBoulder'],    // dark lava boulders
   sky: 'flatSky',             // later: the gradient sky with puffy clouds
   backdrop: 'roundHills',     // later: the ocean + beach + lava shore, volcanic ridge, far towers (new backdrop piece)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },

@@ -257,7 +257,7 @@ Mood board (owner): **beach, but not the Caribbean and not the US east or west c
   - palette **B "wilder"**: electric lime grass, almost-neon cyan water `#00E0D8` → deep blue `#0090E8`, golden sand
   - **tropical-orange flag** `#FF8A2A` and **bougainvillea-magenta tee markers** `#E0309A` (owner: "great accents")
   - This set is deliberately the most saturated one: the "no neon on surfaces" rule (§1.4) is stretched here on purpose, and it still passes every §4.4 rule.
-- **Data:** `src/biomes/island-day.js` (source `docs/art/island/palettes.js`), no waiver. The `boulder` engine key is a light lava grey for now, because a test expects every set's boulders to be darkened on the minimap. It becomes dark lava `#3e3a40` once that test is relaxed (request in the PR). Images: `docs/art/island/01-05`.
+- **Data:** `src/biomes/island-day.js` (source `docs/art/island/palettes.js`), no waiver. The boulders are dark lava `#3e3a40` (since X27 the minimap test accepts boulders that pass without darkening). Images: `docs/art/island/01-05`.
 - **For the course designer:** run the fairways along the beach, with the sea on one side; keep holes low, near sea level; use lava-rock edges and waste bunkers; add 1-3 very tall palms as landmarks.
 - **Pieces** (✅ in the library today · 🔧 new, needs dev work first):
 
