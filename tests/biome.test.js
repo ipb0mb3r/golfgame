@@ -40,7 +40,7 @@ test('the palette: every key, each a #rrggbb colour, no unknown key', () => {
 });
 
 test('the pick list: every piece exists in the library', () => {
-  assert.throws(() => validateBiomeSet(withChange({ onTrees: ['palm'] }), LIBRARY), /onTrees: unknown piece "palm" \(the library's onTrees: roundTree\)/);
+  assert.throws(() => validateBiomeSet(withChange({ onTrees: ['palm'] }), LIBRARY), /onTrees: unknown piece "palm" \(the library's onTrees: roundTree, /);
   assert.throws(() => validateBiomeSet(withChange({ onTrees: [] }), LIBRARY), /onTrees must list 1–3 pieces/);
   assert.throws(() => validateBiomeSet(withChange({ offTrees: ['coneTree', 'coneTree'] }), LIBRARY), /offTrees lists a piece twice/);
   assert.throws(() => validateBiomeSet(withChange({ sky: 'gradient' }), LIBRARY), /sky: unknown piece "gradient"/);
@@ -137,7 +137,7 @@ test('tree looks: the obstacle\'s own look if the set has it, else a seeded pick
   const h = HOLES['pl-03'], i = h.obstacles.findIndex(o => o.type === 'tree');
   const withLook = look => ({ ...h, obstacles: h.obstacles.map((o, k) => (k === i ? { ...o, look } : o)) });
   assert.ok(checkHoleLooks(withLook('roundTree')));
-  assert.throws(() => checkHoleLooks(withLook('palm')), /obstacles\[\d+\]\.look "palm" is not a tree piece \(the library's onTrees: roundTree\)/);
+  assert.throws(() => checkHoleLooks(withLook('palm')), /obstacles\[\d+\]\.look "palm" is not a tree piece \(the library's onTrees: roundTree, /);
   assert.throws(() => validateHole(withLook(7), { shots: false }), /obstacles\[\d+\]\.look must be a tree piece id/);
 });
 

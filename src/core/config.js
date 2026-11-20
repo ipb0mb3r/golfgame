@@ -152,6 +152,64 @@ export const OCEAN_LOOK = Object.freeze({
   ridge: Object.freeze({ dist: 2600, a: [-0.8, 0.8], n: 110, peaks: [{ a: -0.3, h: 560, w: 0.36 }, { a: 0.1, h: 240, w: 0.18 }], snow: 9999, key: 'backFar', haze: 0.16, jag: 6, seed: 35, round: true, trim: true }),
   island: Object.freeze({ dist: 2900, a: [0.3, 0.8], n: 30, peaks: [{ a: 0.55, h: 70, w: 0.22 }], snow: 9999, key: 'backNear', haze: 0.3, jag: 3, seed: 36, round: true, trim: true }),
 });
+// AP7a: the gradient tree pieces (pineTree, spruceTree, palmTree; core/trees.js builds them, DESIGN §8b).
+// Shapes are in UNIT spaces so an in-play tree fits its collider (obstacles.js): the trunk in the trunk
+// cylinder's (radius 1, y 0 → 1), the canopy in the canopy ellipsoid's (radius 1 across, y −1 → 1).
+// Gradient: a per-vertex weight 0 (bottom, leafLow) → 0.5 (the mid colour: pine / leafAlt / leaf, library slots) → 1 (top, leafTop); `dark` lowers the
+// weight of each tier's droop tip and underside so the tiers read. scenery = the size of a scenery tree
+// (offTrees, before its random 0.8–1.5 scale), in the obstacle format (m); lod = what a scenery tree draws
+// with fewer sides, rings, tiers or lobes (there are hundreds; ~100–160 triangles each).
+// tiers: [bottom y, top y, radius]. tierProfile: the tier's outline from its top pole, as [r × radius,
+// depth × tier height]: the rounded shoulder (2 points), the skirt edge, the droop tip; then the underside
+// pole at `underside` × height.
+// A scenery tier's lighter outline (lod.tierProfile): one shoulder point, the skirt edge, the droop tip
+const FAR_TIER = Object.freeze([[0.55, 0.2], [1, 0.8], [0.88, 1]]);
+export const TREE_LOOK = Object.freeze({
+  tierProfile: Object.freeze([[0.42, 0.1], [0.78, 0.38], [1, 0.84], [0.9, 1]]), underside: 0.62,
+  // wobble: the skirt's radius waves by ± this fraction around the tier (3 lobes), so no tier is a perfect circle
+  pineTree: Object.freeze({
+    segs: 11, trunkSegs: 6, trunkTop: 0.7, dark: 0.16, wobble: 0.06,
+    tiers: Object.freeze([[-1, -0.12, 1.02], [-0.5, 0.45, 0.82], [0.05, 1, 0.56]]),
+    scenery: Object.freeze({ trunkR: 0.3, trunkH: 3, canopyR: 2.5, canopyH: 6.4 }), lod: Object.freeze({ segs: 5, trunkSegs: 3, tierProfile: FAR_TIER }),
+  }),
+  spruceTree: Object.freeze({
+    segs: 9, trunkSegs: 6, trunkTop: 0.65, dark: 0.18, wobble: 0.07,
+    tiers: Object.freeze([[-1, -0.38, 0.92], [-0.66, -0.02, 0.78], [-0.3, 0.34, 0.64], [0.06, 0.68, 0.5], [0.4, 1, 0.34]]),
+    scenery: Object.freeze({ trunkR: 0.26, trunkH: 3.6, canopyR: 1.8, canopyH: 8.6 }), lod: Object.freeze({ segs: 5, trunkSegs: 3, tierProfile: FAR_TIER, tiers: Object.freeze([[-1, -0.2, 0.9], [-0.45, 0.4, 0.66], [0.15, 1, 0.4]]) }),
+  }),
+  palmTree: Object.freeze({
+    lean: 0.2, // rad: scenery palms lean more than the others (TREE_VARIETY.sceneryLean)
+    trunkSegs: 6, rings: 8, trunkTop: 0.7, bend: 1.6, ringBulge: 0.12, // bend: the trunk's sideways bow (trunk radii)
+    // fronds: per layer, count, reach (× canopy radius), start / peak / end height, where the peak is (0..1
+    // along), width, droop (how much lower the edges hang than the spine, × width), stations, turn (rad)
+    fronds: Object.freeze([
+      Object.freeze({ n: 5, reach: 0.84, y0: 0.06, peak: 0.36, tp: 0.34, end: -0.2, width: 0.27, droop: 0.5, steps: 6, turn: 0 }),
+      Object.freeze({ n: 7, reach: 1, y0: 0, peak: 0.22, tp: 0.3, end: -0.55, width: 0.29, droop: 0.55, steps: 6, turn: 0.45 }),
+    ]),
+    cap: Object.freeze({ r: 0.14, segs: 6 }),
+    scenery: Object.freeze({ trunkR: 0.24, trunkH: 7.5, canopyR: 3.2, canopyH: 3.2 }), lod: Object.freeze({ trunkSegs: 4, rings: 4, frondSteps: 3 }),
+  }),
+  // Round canopy (the artist's round tree): a top sphere over 3 low lobes [x, y, z, radius, height, segs, rows]
+// (heights ~ radius / 1.4: a canopy collider is about 1.5× taller than wide, so they look round),
+  // flat-ish bottoms (flat: the lower half's height × this), a soft shoulder.
+  roundCanopy: Object.freeze({
+    trunkSegs: 7, trunkTop: 0.75, flat: 0.62, dark: 0.12,
+    blobs: Object.freeze([[0, 0.18, 0, 0.78, 0.66, 12, 7], [0.5, -0.36, 0.06, 0.52, 0.44, 10, 6], [-0.28, -0.4, 0.42, 0.52, 0.43, 10, 6], [-0.24, -0.34, -0.44, 0.5, 0.44, 10, 6]]),
+    scenery: Object.freeze({ trunkR: 0.32, trunkH: 3.4, canopyR: 3, canopyH: 8 }), lod: Object.freeze({ segScale: 0.5, rowsLess: 2, trunkSegs: 3 }),
+  }),
+  // Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (`mark` bands [from, to] of its
+  // height), a light airy canopy of small lobes with gaps (lift: the canopy weights are raised, lighter)
+  birchTree: Object.freeze({
+    trunkSegs: 4, trunkTop: 0.6, marks: Object.freeze([[0.14, 0.18], [0.36, 0.39], [0.56, 0.61], [0.78, 0.81]]),
+    flat: 0.7, dark: 0.1, lift: 0.12,
+    blobs: Object.freeze([[0, 0.45, 0, 0.5, 0.55, 9, 5], [0.48, 0.02, 0.2, 0.42, 0.46, 6, 5], [-0.42, -0.08, 0.32, 0.4, 0.44, 6, 5], [0.05, -0.3, -0.5, 0.42, 0.46, 6, 5], [-0.3, 0.3, -0.35, 0.36, 0.4, 6, 5]]),
+    scenery: Object.freeze({ trunkR: 0.16, trunkH: 4.5, canopyR: 2, canopyH: 5 }), lod: Object.freeze({ segScale: 0.6, rowsLess: 1, blobCount: 3, trunkSegs: 3, marks: Object.freeze([[0.3, 0.34], [0.62, 0.66]]) }),
+  }),
+});
+// AP7a: per-copy variety of the gradient trees (looks only; their own seeded streams, never physics).
+// In play: a random turn and a canopy lean up to canopyLean rad (inside its collider). Scenery: the
+// spot's size × a width factor [from, spread], a turn, a lean up to sceneryLean rad (or the piece's `lean`).
+export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryLean: 0.07, width: Object.freeze([0.86, 0.28]) });
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({
