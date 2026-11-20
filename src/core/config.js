@@ -103,6 +103,53 @@ export const ROLL_TIMEOUT = 40;      // safety net: a roll never lasts longer th
 // OBSTACLE_REST, OBSTACLE_KEEP, CANOPY_SLOW, CANOPY_DEFLECT: tunables, see TUNABLES
 export const GROUND_PLANE_MARGIN = 0.1; // K13: m; the background ground plane must sit at least this far below the lowest terrain
 export const GROUND_CHECK_STEP = 2;      // K13: m; validateHole samples the terrain mesh at least this coarsely for that check
+
+// --- AP6a: the look of the gradient sky and the new backdrop pieces (DESIGN §8b, the artist's notes
+// docs/art/ap6a-artist-notes.md; the numbers are the artist's mock-ups': docs/art/{style-r2,alpine,island}/mockup.html).
+// Distances and heights are the mock-ups' (m from the hole's centre, angles around −z). BACKDROP_FIT scales
+// the whole backdrop (and the clouds) by one factor so its farthest layer sits at `far` × the hole's
+// cameraFar: what is seen from the course (the angles) stays the mock-ups'; only the parallax grows.
+export const BACKDROP_FIT = Object.freeze({ far: 0.86, ref: 3300 }); // ref = the mock-ups' farthest layer (m)
+export const SKY_LOOK = Object.freeze({
+  scale: 1.9, pow: 0.62,            // dome colour = mix(skyHorizon, skyTop, clamp(dir.y × scale, 0, 1) ^ pow)
+  fogBand: Object.freeze([-0.04, 0.03]), // dir.y: below the first value the dome is the fog colour, mixed to the formula by the second (no seam where fogged ground meets the sky)
+  dome: 0.95,                       // the dome's radius × cameraFar (drawn first, behind everything)
+  clouds: Object.freeze({ groups: 9, puffs: [4, 3], size: [55, 50], ang: [-0.7, 1.4], dist: [2300, 600], y: [380, 520], emissive: 0.72, seed: 7 }),
+});
+// Ridge layers: { dist, a: [from, to] (rad around −z), n (segments), peaks and/or gen / back (makePeaks args:
+// count, hMin, hMax, wMin, wMax, seed), snow (m; above it the cap colours), key (palette colour), haze
+// (toward fog), jag (m), seed, round (soft round tops) }. The base fades `baseFade` further into the fog;
+// shaded faces are mixed `shade` toward `shadow`.
+export const RIDGE = Object.freeze({ baseFade: 0.45, baseFadeMax: 0.85, shade: 0.25, baseY: -60, minH: 10 });
+// Horn peaks (Alpine)
+export const HORN_PEAKS_LOOK = Object.freeze({
+  baseY: -40,                       // m, from the hole's ground plane (scenery.ground.y), where the horns start (mock-up)
+  hero: Object.freeze({ ang: 0.06, dist: 3000, h: 1150, r: 780, hook: 0.26, sides: 6, seed: 21, snowLine: 0.55 }),
+  // [ang, dist, h, r, hook, seed] (5 sides, snow line othersSnowLine)
+  others: Object.freeze([[-0.42, 3100, 780, 900, -0.15, 22], [-0.2, 3250, 640, 820, 0.12, 23], [0.3, 3150, 720, 900, -0.18, 24], [0.5, 3000, 820, 860, 0.15, 25], [-0.62, 3050, 660, 920, 0.1, 26], [0.72, 3100, 620, 880, -0.1, 27]]),
+  othersSides: 5, othersSnowLine: 0.36, rows: 7, jitter: 0.2, wobble: 0.08, flatSnow: Object.freeze({ ny: 0.58, t: 0.22 }),
+  rockDark: '#34465e', rockMix: Object.freeze([0.3, 0.25]), haze: 0.12,
+  farRidge: Object.freeze({ dist: 3300, a: [-1.2, 1.2], n: 200, gen: [14, 380, 620, 0.05, 0.11, 3], snow: 420, key: 'backFar', haze: 0.25, jag: 30, seed: 11 }),
+  // the dark forested slopes in front: a full ring (the mock-up's front arc + more slopes around), so no view shows a bare horizon
+  slopes: Object.freeze({ dist: 1500, a: [-Math.PI, Math.PI], n: 360, peaks: [{ a: -0.75, h: 520, w: 0.45 }, { a: 0.8, h: 560, w: 0.5 }], gen: [6, 140, 260, 0.12, 0.3, 5], back: [9, 160, 320, 0.25, 0.5, 15, 0.9, 2 * Math.PI - 0.9], snow: 9999, key: 'backNear', haze: 0.08, jag: 10, seed: 12 }),
+});
+// Haze hills (the stronger far-hill tint, an option to roundHills): a near ring in backNear, a far ring in backFar
+export const HAZE_HILLS_LOOK = Object.freeze({
+  far: Object.freeze({ dist: 2700, a: [-Math.PI, Math.PI], n: 400, gen: [22, 190, 330, 0.22, 0.45, 31, -Math.PI, Math.PI], snow: 9999, key: 'backFar', haze: 0.22, jag: 3, seed: 32, round: true }),
+  near: Object.freeze({ dist: 1600, a: [-Math.PI, Math.PI], n: 400, gen: [20, 80, 150, 0.18, 0.4, 33, -Math.PI, Math.PI], snow: 9999, key: 'backNear', haze: 0.1, jag: 2, seed: 34, round: true }),
+});
+// Ocean (Island coast). The sea is DRAWN only: heightAt (physics) never changes. Beyond OB on a sea side
+// the drawn ground slopes from the beach top (gap m beyond the OB line) to depth m below sea level over slope m.
+export const OCEAN_LOOK = Object.freeze({
+  sides: Object.freeze(['left', 'right', 'far', 'near']), // scenery.seaSide: one or several joined by '+', e.g. 'left+far'
+  gap: 6, slope: 30, depth: 3, below: 1,   // sea level = the lowest beach top − below (m), never under the far ground plane
+  shallow: 110, mid: 250,                  // m: the shore bands from the waterline (shallow = water, mid = half way water → waterDeep)
+  bandLift: 0.04,                          // m between the bands (the shallow one on top)
+  rockAt: Object.freeze([0.45, 1]),        // the lava rock patches: between these fractions of the slope...
+  rockPatch: 0.55, rockStep: 23,           // ...where a seeded noise along the shore (one value per rockStep m) is above rockPatch
+  ridge: Object.freeze({ dist: 2600, a: [-0.8, 0.8], n: 110, peaks: [{ a: -0.3, h: 560, w: 0.36 }, { a: 0.1, h: 240, w: 0.18 }], snow: 9999, key: 'backFar', haze: 0.16, jag: 6, seed: 35, round: true }),
+  island: Object.freeze({ dist: 2900, a: [0.3, 0.8], n: 30, peaks: [{ a: 0.55, h: 70, w: 0.22 }], snow: 9999, key: 'backNear', haze: 0.3, jag: 3, seed: 36, round: true }),
+});
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({

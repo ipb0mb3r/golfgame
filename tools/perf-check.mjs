@@ -3,6 +3,7 @@
 //   node tools/perf-check.mjs                 report every hole, exit 0
 //   node tools/perf-check.mjs --strict        exit 1 if any hole is over budget
 //   node tools/perf-check.mjs --hole mtn-07   one hole (repeatable)
+//   node tools/perf-check.mjs --biome test-alpine-look   every hole dressed in that biome set (AP6a, ?biome=)
 //   node tools/perf-check.mjs --breakdown     also list the draw calls by kind of object (for AP1)
 //
 // Loads each hole fresh at 390x844 (a phone in portrait) in headless Chromium and reads
@@ -28,6 +29,8 @@ const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.json': 'applic
 const args = process.argv.slice(2);
 const strict = args.includes('--strict'), showBreakdown = args.includes('--breakdown');
 const only = args.flatMap((a, i) => (a === '--hole' ? [args[i + 1]] : []));
+const biomeArg = args.flatMap((a, i) => (a === '--biome' ? [args[i + 1]] : []))[0];
+const biomeQuery = biomeArg ? `&biome=${encodeURIComponent(biomeArg)}` : '';
 const ids = only.length ? only : Object.keys(HOLES);
 // Not rated here: headless fps is not a phone's. (The painted course map, one big canvas per hole of
 // ~1500-2048 px that AP6 replaces by small tiling textures, is not in "max tex px" any more: it has its
@@ -54,7 +57,7 @@ async function measure(id) {
   page.on('pageerror', e => errors.push(e.message));
   const t0 = Date.now();
   // Antialias / DPR as on a phone don't change draw calls or triangles; the defaults are kept.
-  await page.goto(`http://golf.test/index.html?hole=${id}&seed=7`);
+  await page.goto(`http://golf.test/index.html?hole=${id}&seed=7${biomeQuery}`);
   await page.waitForFunction(() => window.__golf?.state === 'intro' && !document.getElementById('startBtn')?.disabled, null, { timeout: 60000 });
   const teeOffMs = Date.now() - t0;
   await page.evaluate(() => { window.__golf.perfResetPeak(); document.getElementById('startBtn').click(); });
