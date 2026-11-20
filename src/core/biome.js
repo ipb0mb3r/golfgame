@@ -6,6 +6,7 @@
 // Pure: no Three.js, no DOM (coding rule 1). The game reads the set; this file only checks it.
 import { UI_COLORS, MINIMAP_DARKEN } from './config.js';
 import { createRng } from './rng.js';
+import { modelPieceError } from './assets.js';
 
 // ---- 1. Palette keys: every set defines ALL of them (ART_STYLE §4.1, plus the engine group) ----
 export const PALETTE_KEYS = Object.freeze({
@@ -172,6 +173,8 @@ export function validateBiomeSet(set, library) {
     const piece = library[group]?.[id];
     if (!piece) bad(`${field}: unknown piece "${id}" (the library's ${group}: ${Object.keys(library[group] ?? {}).join(', ') || 'none yet'})`);
     for (const [slot, key] of Object.entries(piece.slots ?? {})) if (!ALL_PALETTE_KEYS.includes(key)) bad(`${field}: piece "${id}" slot ${slot} uses an unknown palette key "${key}" (library error)`);
+    const modelError = modelPieceError(library, group, id, field); // AP3: a model piece names a .glb under assets/ and a procedural fallback
+    if (modelError) bad(`${field}: ${modelError} (library error)`);
   };
   for (const [field, rule] of Object.entries(PICKS)) {
     const v = set[field];

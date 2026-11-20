@@ -167,14 +167,21 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
   }
   // the rules use the fairway / rough thresholds
   assert.deepEqual(MINIMAP_READABILITY.map(r => r.slice(1)), [['tree', 'fairway', 15, 8], ['tree', 'rough', 15, 8], ['rock', 'fairway', 15, 8], ['rock', 'rough', 15, 8]]);
-  // the rocks too (PM on #89): today's boulders are about as light as the fairway / rough, so all three sets
-  // draw them one step darker, and pass
+  // the rocks too (PM on #89). X27 (artist on #93): the test checks the rule, not the darkening: a boulder
+  // colour that already passes is drawn as it is, one that fails is drawn one step darker, and the colour
+  // drawn passes either way
+  const fairwayOf = pal => mixColour(pal.fairwayA, pal.fairwayB);
+  const passesRaw = (pal, c) => [fairwayOf(pal), pal.rough].every(b => { const d = delta(c, b); return d.dE >= 15 && d.dL >= 8; });
   for (const set of Object.values(BIOMES)) {
     const r = minimapShade(set.palette, 'rock', set.palette.boulder);
-    assert.equal(r.darkened, true, set.id);
+    assert.equal(r.darkened, !passesRaw(set.palette, set.palette.boulder), set.id);
+    assert.equal(r.colour, r.darkened ? '#' + parseColour(set.palette.boulder).map(v => Math.round(v * (1 - MINIMAP_DARKEN)).toString(16).padStart(2, '0')).join('') : set.palette.boulder, set.id);
     assert.equal(minimapColours(set, LIBRARY).rock, r.colour, set.id);
     assert.ok(r.rows.every(x => x.ok) && r.rows.length === 2, set.id);
   }
+  // a dark boulder that already passes (Island coast's dark lava #3e3a40 on a bright course) is not darkened
+  const lava = minimapShade(BIOMES['meadow-day'].palette, 'rock', '#3e3a40');
+  assert.deepEqual([lava.darkened, lava.colour, lava.rows.every(x => x.ok)], [false, '#3e3a40', true]);
   // a canopy that passes is used as it is; one that fails is darkened by MINIMAP_DARKEN
   const p = base.palette;
   assert.deepEqual(minimapShade(p, 'tree', '#1c4a20').colour, '#1c4a20');

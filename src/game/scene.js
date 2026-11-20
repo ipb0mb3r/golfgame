@@ -16,11 +16,12 @@ export function createRenderer(canvas) {
 
 // Free everything a hole's scene holds on the GPU (Gate A A2): geometries, materials, their
 // textures, instanced meshes. Shared objects are freed once. The scene is empty afterwards.
+// AP3: a model's geometry (userData.cached) belongs to the round's asset cache (assets.js), which frees it.
 export function disposeScene(scene) {
   const done = new Set();
   const free = o => { if (o && !done.has(o)) { done.add(o); o.dispose(); } };
   scene.traverse(obj => {
-    free(obj.geometry);
+    if (!obj.geometry?.userData.cached) free(obj.geometry);
     for (const m of [].concat(obj.material ?? [])) {
       for (const v of Object.values(m)) if (v && v.isTexture) free(v);
       free(m);
@@ -37,8 +38,11 @@ export function disposeScene(scene) {
 const FIXED_WHITE = 0xffffff; // the OB stakes (the golf rule colour, library whiteStakes)
 
 // obstacles = play.obstacles (core/obstacles.js colliders): drawn from exactly the shapes the ball hits (K5)
-export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, biome) {
+// models (AP3) = path → the loaded model geometry or null (assets.js cache.geometry): a model piece whose
+// file is not there is drawn as its procedural fallback (library `fallback`).
+export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, biome, models = () => null) {
   const sc = hole.scenery, map = hole.map, P = biome.palette, look = pieceColours(biome, LIBRARY);
+  const shapeOf = pieceShape(models);
   const { heightAt } = terrain;
   const scene = new THREE.Scene();
   const sky = look('skies', biome.sky);
@@ -88,11 +92,12 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
   // Tee markers and the white out-of-bounds stakes: one instanced draw call each (AP1)
   {
     const pose = new THREE.Object3D(), tees = [];
+    const marker = shapeOf('furniture', biome.furniture.teeMarkers, FURNITURE, TEE_MARKER_SIZE); // AP3: a model or the procedural ball
     for (const sx of [-2.6, 2.6]) {
-      pose.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + 0.14, hole.tee.z - 1.2);
-      tees.push(matrixOf(pose));
+      pose.position.set(hole.tee.x + sx, heightAt(hole.tee.x + sx, hole.tee.z - 1.2) + TEE_MARKER_SIZE / 2, hole.tee.z - 1.2);
+      tees.push(matrixOf(pose).multiply(marker.fit));
     }
-    scene.add(instanced(new THREE.SphereGeometry(0.14, 12, 8), new THREE.MeshLambertMaterial({ color: look('furniture', biome.furniture.teeMarkers).marker }), tees, 'tee markers (instanced)'));
+    scene.add(instanced(marker.geometry, new THREE.MeshLambertMaterial({ color: look('furniture', marker.id).marker }), tees, `tee markers (instanced${marker.model ? ', model' : ''})`));
     const st = sc.stakes, stakes = [];
     for (let z = st.z0; z > st.z1; z -= st.step) for (const sx of st.xs ?? [-st.x, st.x]) {
       pose.position.set(sx, heightAt(sx, z) + 0.5, z);
@@ -101,7 +106,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
   addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look);
-  const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look);
+  const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome.backdrop);
   return { scene, camera, colliderOutlines };
 }
@@ -149,7 +154,27 @@ const OFF_TREES = {
 };
 const ROCKS = { roundBoulder: () => new THREE.IcosahedronGeometry(1, 2) };
 const BACKDROPS = { roundHills: () => new THREE.SphereGeometry(1, 20, 12) };
+const TEE_MARKER_SIZE = 0.28; // m: a tee marker's ball (and a model marker's largest side)
+const FURNITURE = { ballMarkers: () => new THREE.SphereGeometry(TEE_MARKER_SIZE / 2, 12, 8) };
 const builder = (table, id) => table[id] ?? (() => { throw new Error(`no builder for the library piece "${id}" (src/game/scene.js)`); })();
+
+// AP3: the shape of a piece that may be a model (core/assets.js MODEL_PICKS). → { id (the piece drawn:
+// its colours), geometry, fit (a matrix applied to each copy after its pose), model (true when from a file) }
+// A model is centred and scaled so its largest side is `size` (the procedural piece's own size); its
+// geometry belongs to the cache (never disposed with the hole). A model piece whose file did not load
+// is drawn as its fallback, exactly as that procedural piece. `size` = the procedural piece's size in
+// the copies' pose units (1 for unit pieces scaled by their collider, the marker's 0.28 m).
+const pieceShape = models => (group, id, table, size) => {
+  const piece = LIBRARY[group][id];
+  const geometry = piece.model ? models(piece.model) : null;
+  if (!geometry) {
+    const use = piece.model ? piece.fallback : id;
+    return { id: use, geometry: builder(table, use)(), fit: new THREE.Matrix4(), model: false };
+  }
+  const box = geometry.boundingBox, dim = box.getSize(new THREE.Vector3()), c = box.getCenter(new THREE.Vector3());
+  const k = size / Math.max(dim.x, dim.y, dim.z, 1e-6);
+  return { id, geometry, fit: new THREE.Matrix4().makeScale(k, k, k).multiply(new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z)), model: true };
+};
 
 // A piece's per-copy shade (library `shade`), drawn from r in the same order as before AP5.
 // 'around': the copy's colour, spread around the slot colour (the material is white).
@@ -175,7 +200,7 @@ const shadedMaterial = (shade, slotColour, opts = {}) => new THREE.MeshLambertMa
 // AP5: each tree's look is its `look` in the hole data (data = hole.obstacles) if the set has it, else a
 // seeded pick from the set's onTrees (core/biome.js treeLooks): one trunk + one canopy draw call per
 // look used. The boulders use the set's first rocks piece.
-function addObstacles(scene, obstacles, data, biome, look) {
+function addObstacles(scene, obstacles, data, biome, look, shapeOf) {
   const outlines = new THREE.Group();
   outlines.visible = false;
   if (!obstacles.length) { scene.add(outlines); return outlines; }
@@ -212,7 +237,11 @@ function addObstacles(scene, obstacles, data, biome, look) {
     scene.add(instanced(b.trunk(), new THREE.MeshLambertMaterial({ color: g.colours.trunk }), g.trunks, `tree trunks (in play, instanced${tag})`));
     scene.add(instanced(b.canopy(), shadedMaterial(LIBRARY.onTrees[id].shade, g.colours.canopy, { flatShading: true }), g.leaves, `tree canopies (in play, instanced${tag})`, g.leafColors));
   }
-  if (rocks.length) scene.add(instanced(builder(ROCKS, biome.rocks[0])(), new THREE.MeshLambertMaterial({ color: look('rocks', biome.rocks[0]).body, flatShading: true }), rocks, 'boulders (instanced)'));
+  if (rocks.length) {
+    // AP3: a model boulder is fitted to the unit sphere's box (largest side 2), scaled by the collider like the procedural one
+    const rock = shapeOf('rocks', biome.rocks[0], ROCKS, 2);
+    scene.add(instanced(rock.geometry, new THREE.MeshLambertMaterial({ color: look('rocks', rock.id).body, flatShading: true }), rocks.map(m => m.multiply(rock.fit)), `boulders (instanced${rock.model ? ', model' : ''})`));
+  }
   // the debug outlines are always the collider shapes (a unit cylinder and sphere), whatever the look
   const outlineCyl = new THREE.CylinderGeometry(1, 1, 1, 10); outlineCyl.translate(0, 0.5, 0);
   const wireCyl = new THREE.WireframeGeometry(outlineCyl), ball = new THREE.SphereGeometry(1, 16, 10), wireBall = new THREE.WireframeGeometry(ball);

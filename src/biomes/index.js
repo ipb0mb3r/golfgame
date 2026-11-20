@@ -7,8 +7,9 @@ import protoDefault from './proto-default.js';
 import meadowDay from './meadow-day.js';
 import alpineDay from './alpine-day.js';
 import islandDay from './island-day.js';
+import testModels from './test-models.js'; // AP3: dev only (?biome=test-models), proves the asset loader
 
-export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay].map(b => [b.id, b]));
+export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels].map(b => [b.id, b]));
 
 // The set a hole uses, checked (validateBiomeSet throws with the set and the field). Unknown id → throws.
 export function resolveBiome(id) {
