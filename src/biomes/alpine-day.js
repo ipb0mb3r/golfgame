@@ -33,8 +33,8 @@ export default {
   onTrees: ['roundTree'],     // later: soft pines, a tall spruce and a few birches (AP7, ART_STYLE §6.4)
   offTrees: ['coneTree'],     // later: the cheap pine wall (AP7)
   rocks: ['roundBoulder'],
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',     // later: the stylised horn peaks + forested slopes (new backdrop piece)
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'hornPeaks',  // the wide stylised horn peaks + forested slopes (AP6a, from docs/art/alpine/)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: grass tufts, white and blue wildflowers (AP7)
   bigProps: [],               // later: Swiss chalet, small chalet / hay hut, wooden fence (AP7), placed by hand out of bounds

@@ -31,8 +31,8 @@ export default {
   onTrees: ['roundTree'],     // later: the soft round tree + the tall conifer (AP7, ART_STYLE §6.3)
   offTrees: ['coneTree'],     // later: the cheap round treetop wall (AP7)
   rocks: ['roundBoulder'],
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'hazeHills',  // the soft hazy hills, near ring backNear + far ring backFar (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: grass tufts, buttercup patches, a few red flowers, bushes (AP7)
   bigProps: [],               // later: windmill, cow, wooden fence (AP7), placed by hand out of bounds

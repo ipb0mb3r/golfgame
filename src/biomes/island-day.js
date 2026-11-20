@@ -32,8 +32,8 @@ export default {
   onTrees: ['roundTree'],     // later: palm, monkeypod (AP7, ART_STYLE §6.5)
   offTrees: ['coneTree'],     // later: palm / round treetop wall (AP7)
   rocks: ['roundBoulder'],    // dark lava boulders
-  sky: 'flatSky',             // later: the gradient sky with puffy clouds
-  backdrop: 'roundHills',     // later: the ocean + beach + lava shore, volcanic ridge, far towers (new backdrop piece)
+  sky: 'gradientSky', // the gradient sky (AP6a)
+  backdrop: 'ocean',    // the sea along the course (left + far), beach, lava, volcanic ridge, far island (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
   smallProps: { pieces: [] }, // later: bougainvillea bushes, tropical flowers, grass tufts (AP7)
   bigProps: [],               // later: very tall palm (landmark), beach hut (AP7), placed by hand
