@@ -286,8 +286,8 @@ export function createHud(play) {
 // X26: the course (surfaces, water, sand: the painted course), the trees, the boulders and the flag are in
 // the biome set's colours (core/biome.js minimapColours: a tree's canopy colour, darkened one fixed step
 // when too close to the fairway or rough); the aim line, warning and ball are HUD colours (UI_COLORS).
-// AP6b: shore = the ocean backdrop's drawn shore (scene.js buildScene) or null: the sea and the beach
-// beyond OB are painted over the course map as in 3D (core/backdrop.js shoreMapColour).
+// AP6b: shore = the ocean backdrop's drawn shore (scene.js buildScene) or null: the sea
+// beyond OB on the sea side(s) is painted over the course map (core/backdrop.js shoreMapColour).
 export function createMinimap(hole, courseCanvas, cup, obstacles, biome, shore = null) {
   const mm = $('minimap'), ctx = mm.getContext('2d'), map = hole.map;
   const flagCss = flagColour(biome, LIBRARY); // AP5: the biome set's flag colour ('#rrggbb')
@@ -303,10 +303,10 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome, shore =
     const img = bctx.getImageData(0, 0, base.width, base.height), d = img.data, rgb = new Map();
     const parse = c => rgb.get(c) ?? rgb.set(c, [1, 3, 5].map(i => parseInt(c.slice(i, i + 2), 16))).get(c);
     for (let py = 0; py < base.height; py++) for (let px = 0; px < base.width; px++) {
-      const t = shoreMapColour(shore, biome.palette, map.x0 + (px + 0.5) / sx, map.z0 + (py + 0.5) / sz);
-      if (!t) continue;
-      const c = parse(t.colour), i = (py * base.width + px) * 4;
-      for (let k = 0; k < 3; k++) d[i + k] = Math.round(d[i + k] + (c[k] - d[i + k]) * t.amount);
+      const sea = shoreMapColour(shore, biome.palette, map.x0 + (px + 0.5) / sx, map.z0 + (py + 0.5) / sz);
+      if (!sea) continue;
+      const c = parse(sea), i = (py * base.width + px) * 4;
+      d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2];
     }
     bctx.putImageData(img, 0, 0);
   }

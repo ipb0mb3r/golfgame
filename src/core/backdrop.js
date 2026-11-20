@@ -234,19 +234,15 @@ export function oceanShore({ ob, heightAt, extent, groundY, reach, sides, cx = 0
   return { seaY, bedY, top, outward, drawnY, tint, bands, groundY: Math.min(groundY, bedY - 0.5) };
 }
 
-// AP6b: the minimap's colour at (x, z) on an ocean hole, so the minimap shows what the 3D view shows.
-// shore = oceanShore(...), palette = the set's. → null on land (the painted course as today), else
-// { colour '#rrggbb', amount 0..1 } to paint over the course map: the sea where the drawn ground is
-// under sea level, in the band seen there in 3D (shallow `water`, mid, deep `waterDeep`), and otherwise
-// the beach's sand / lava rock tint.
+// AP6b: the minimap's colour at (x, z) on an ocean hole, so the minimap shows the sea the 3D view shows.
+// shore = oceanShore(...), palette = the set's. → null inside OB and on the land sides (the painted
+// course as today), else the sea colour: on a sea side the minimap is sea from the OB line out (the
+// map is small, so the few metres of grass and beach before the waterline are left out: the OB line
+// reads as the shore), in the band seen there in 3D (shallow `water`, mid, deep `waterDeep`, counted
+// from the beach top as in 3D).
 export function shoreMapColour(shore, palette, x, z, look = OCEAN_LOOK) {
-  const out = shore.outward(x, z);
-  if (out <= 0) return null;
-  if (shore.drawnY(x, z) < shore.seaY) {
-    const colour = out <= look.slope + look.shallow ? palette.water
-      : out <= look.slope + look.shallow + look.mid ? mixHex(palette.water, palette.waterDeep, 0.5) : palette.waterDeep;
-    return { colour, amount: 1 };
-  }
-  const t = shore.tint(x, z);
-  return { colour: palette[t.colour], amount: t.amount };
+  const out = shore.outward(x, z); // m beyond the beach top (the OB line is at −gap)
+  if (out <= -look.gap) return null;
+  return out <= look.slope + look.shallow ? palette.water
+    : out <= look.slope + look.shallow + look.mid ? mixHex(palette.water, palette.waterDeep, 0.5) : palette.waterDeep;
 }
