@@ -329,7 +329,7 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 
 ---
 
-## 8b. Art direction and biome sets ⏳ (owner, 2026-11-19; Phase A)
+## 8b. Art direction and biome sets ⏳ (owner, 2026-11-19; Phase A; the format ✅ AP5)
 **Art direction:** 3D, cartoony, light colours, low-poly, **flat colours with stylised texture** (never photo-realistic; no realistic trees). Reference: Everybody's Golf (learn the idea, copy no look). **Chibi 3D golfers** (rigged, later; rivals are never shown). The **pixel / PS1 effect is a player setting**. Target: a mid-range phone (budget: `reviews/art-tech-lead-followup.md`, confirmed in AP0).
 
 **What a biome set is (owner):** a **file that defines a biome for the game**, which the **course designer applies to a hole**. The goal is to make creating courses simpler: with biomes such as "mountain" already defined, the PM can tell the course designer "use this biome set for the next holes". The **artist** builds the biome sets and makes their assets (textures, trees, backdrops…).
@@ -363,7 +363,30 @@ Random per hole, 0–5.5 m/s, shown with an arrow, and it only affects the ball 
 - **Big props are placed by hand per hole** by the course designer; **small props are scattered by a rule** from the biome set.
 - Biome names (Meadow, Alpine, Island coast) are **internal** for now.
 
-The exact file format is built by the dev as AP5, from the artist's draft (`docs/art/biome-sets/`, PR #73).
+### The biome set format ✅ (AP5, PM on #86)
+A biome set is **one data file**, `src/biomes/<id>.js`, registered in `src/biomes/index.js`. A hole names it with `biome: '<id>'` (required). The game draws **every colour and piece** from the hole's set: the course painter (surfaces, putting grid), sky, fog colour, light colours, far ground, backdrop, trees in and out of play, boulders, flag, tee markers, OB stakes and pond. `validateBiomeSet(set, LIBRARY)` (`src/core/biome.js`) throws an error naming the set and the field; `node tools/biome-check.mjs <id>` prints every readability rule.
+
+| Field | What it is |
+|---|---|
+| `id`, `name`, `description`, `notes` | The id (lower case and dashes), an internal name, one short paragraph, and the gameplay notes for the course designer (may suggest a weather). |
+| `palette` | **Every** key below, each `'#rrggbb'`. A missing or unknown key or a bad colour fails the set. |
+| `textures` | The shared greyscale course textures, recoloured by the palette. None exist yet (AP6): the course is painted in flat palette colours. |
+| `onTrees` | 1–3 looks for the trees in play (collisions stay in the hole's `obstacles`). |
+| `offTrees` | 1–3 scenery tree looks, outside OB only (today the first one is drawn). |
+| `rocks` | The look of the boulders in play (today the first one is drawn). |
+| `sky`, `backdrop` | One sky piece (recoloured), one backdrop piece (tint-only). |
+| `furniture` | `{ flag, teeMarkers, stakes, pond }`: the flag cloth uses `accent`, the tee markers `subAccent`, the stakes are always white, the pond uses `pondSurface`. |
+| `smallProps` | `{ pieces, perHa, on }`: scattered by this rule (none yet). |
+| `bigProps` | The big props the course designer may place by hand (none yet). |
+| `light` (optional) | `{ sunIntensity, hemiIntensity, sunDir }`: when present it **overrides the hole's `scenery` light** (strength and direction; `sunDir` points toward the sun, y > 0). Absent: the hole's values apply. Fog distances always stay in the hole. Today's sets omit it. |
+| `readabilityWaivers` | Rule id → reason. Only today's two looks (`mtn-default`, `proto-default`) use waivers, because AP5 kept their look; **every new set must pass every rule with no waiver**. |
+
+- **Palette keys:** surfaces `tee fairwayA fairwayB edge fringe greenA greenB rough deepRough sand lip water waterDeep bank rock path` (`deepRough` = the ground outside OB) · sky `skyTop skyHorizon cloud fog sun ambient shadow` · backdrop `backFar backNear backCap backCapShade backTrees` · accents `accent subAccent` · models `pine trunk leafTop leaf leafLow leafAlt trunkAlt wood roof propSnow propA propB glass`.
+  - **Engine keys (temporary):** `gridFill gridLine farGround pondSurface boulder`. Today's pieces need them to keep their exact colours; the artist may fold them in at ART1 / once AP6 and AP7 replace those pieces.
+- **The library** (`src/biomes/library.js`) holds every piece once and says which palette key colours each material slot (and how instanced copies are shaded); `src/game/scene.js` has the builder of each piece. Today's pieces: `roundTree`, `coneTree`, `roundBoulder`, `flatSky` (draws `skyHorizon`; a gradient sky using `skyTop` comes later, AP6 / ART1), `roundHills`, `clothFlag`, `ballMarkers`, `whiteStakes`, `flatPond`.
+- **A tree's look:** an optional `look: '<onTrees piece>'` on a tree in the hole's `obstacles`; when the set picks that piece it is used, otherwise the tree gets a seeded pick from the set's `onTrees` (always the same, and it never moves any other random draw). A `look` that is not a library tree piece fails the hole.
+- **Readability** (ART_STYLE §4.4) is checked by rule: the §4.4 table, plus (artist on #86) per stripe `fairwayB/rough` and `greenB/fairwayA`, and the putting grid `gridLine` vs `greenA` and `greenB` (ΔE ≥ 10).
+- **Today's sets:** `mtn-default` (Mountain 9) and `proto-default` (pl-01..03; since AP5 pl-02 and pl-03 use pl-01's red flag and blue tee markers, PM on #86). **`meadow-day`** is the proof set: the artist's Meadow palette (ART_STYLE §4.5) on today's pieces, no waiver. No hole uses it and no menu lists it: **`?biome=<id>`** dresses every hole of the visit in that set (a "BIOME: <id>" badge shows; an unknown id is ignored with a notice).
 
 ### Phone performance budget ✅ (AP0, from `reviews/art-tech-lead-followup.md` + owner decisions 2026-11-19)
 Target: a **mid-range phone** (iPhone 12 / Pixel 6 class) at **60 fps**, never below **30 fps** on an XR-class phone. The owner's S25 Ultra checks the high setting. The numbers live in `PERF_BUDGET` (`src/core/config.js`); the debug overlay, `window.__golf.perf()` and `tools/perf-check.mjs` read them from there.
@@ -413,6 +436,12 @@ src/
     rivals.js              ✅ the 5 rivals, difficulties, seeded per-hole scores, leaderboard with ties (Phase T)
     views.js               ✅ camera views (Phase V): aiming view (main's camera, kept above the meter panel), landing and green-reading views, flight view choice (seeded), hole flyover route and path (tests/views.test.js)
     menu.js                ✅ what the menus list (from SETS / HOLES / SCENARIOS passed in), launches, dev links that skip the menu, settings parsing (Phase 7)
+    biome.js               ✅ biome sets (AP5, §8b): palette keys, pick-list fields, colour maths (CIE76), readability rules, validateBiomeSet; sceneLight, treeLooks, pieceColours (what the game reads)
+  biomes/                  ✅ biome sets as data (AP5, §8b)
+    library.js             ✅ the shared library: every piece once, its material slots → palette keys
+    index.js               ✅ BIOMES registry + resolveBiome(id) (checked)
+    mtn-default.js, proto-default.js ✅ today's looks (with named readability waivers)
+    meadow-day.js          ✅ the proof set (artist's Meadow palette, today's pieces, no waiver; only via ?biome=)
   holes/
     hole1.js, hole2.js     ✅ hole data
     hole3.js               ✅ pl-03, par 4 dogleg with trees, boulders and rock (Phase K prototype)
@@ -423,8 +452,8 @@ src/
   game/                    ← Three.js + DOM only. Reads core state, never owns rules.
     main.js                ✅ the app, for the whole visit: renderer, input, debug overlay, menus, pause, frame loop; starts and ends games, loads hole sessions
     session.js             ✅ one disposable hole: scene, props, camera, HUD bindings, timers; dispose() frees them (Gate A A2)
-    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh (core/terrainMesh.js, AP1b) in one geometry, obstacles + collider outlines (K5), disposeScene; repeated objects instanced (AP1)
-    coursePainter.js       ✅ painted course texture + minimap image
+    scene.js               ✅ renderer (DPR cap + antialias tunables, Gate A C4), lights, sky, terrain mesh (core/terrainMesh.js, AP1b) in one geometry, obstacles + collider outlines (K5), disposeScene; repeated objects instanced (AP1); the builder of each library piece, coloured from the hole's biome set (AP5)
+    coursePainter.js       ✅ painted course texture + minimap image, in the biome set's palette (AP5)
     props.js               ✅ flag, cup, trees, ball mesh, trail, aim dots
     camera.js              ✅ eases the camera toward the view core/views.js gives (Phase V)
     hud.js                 ✅ HUD panel, meter, minimap, cards, flash
@@ -464,11 +493,12 @@ export default {
   surfaceOverrides: { green: { decel: 0.8 } },
   map: { x0: -70, x1: 70, z0: -500, z1: 25 },               // texture/minimap bounds
   number: 2,                                                // shown as "Hole 2"
-  scenery: { ... },                                         // lights, fog, mesh grid, trees, colours, minimap size
+  biome: 'proto-default',                                   // required (AP5, §8b): the biome set; every colour and piece comes from it
+  scenery: { ... },                                         // light strength / direction (a set's `light` overrides), fog distances, mesh grid, scenery-tree area, hills, clouds, paint (no colours since AP5)
   intro: { subtitle, tagline, steps, ... },                 // intro card text; {yards} in the subtitle = holeLength (K12); tagline = one line for the compact hole card (Phase 6); grid = a sentence put in place of {grid} in a step only when the green has a grid (Phase 7)
   playLine: [tee, { x, z }, ..., cup],                      // optional (K12): how a dogleg plays, for its yardage; default tee → cup
   features: { green, bunkers, pond, hills },                // used by the painter & surfaceAt; green { cx, cz } = approach default aim (S18)
-  obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH }, { type: 'boulder', x, z, r, sink }], // optional (Phase K, §4 "Obstacles")
+  obstacles: [{ type: 'tree', x, z, trunkR, trunkH, canopyR, canopyH, look }, { type: 'boulder', x, z, r, sink }], // optional (Phase K, §4 "Obstacles"); look (optional, AP5) = an onTrees piece
   difficulty: 2,                                            // required (Phase 6), 1–5 (HOLE_GUIDELINES §2, rivals)
   heightAt(x, z) { ... },                                   // may use helpers from core/terrain.js
   surfaceAt(x, z) { ... },

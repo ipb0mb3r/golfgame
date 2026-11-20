@@ -4,6 +4,8 @@ import { sweetHalfWidth, swingClicks } from '../core/swing.js';
 import { isAimingState } from '../core/states.js';
 import { minimapTicks } from '../core/play.js';
 import { dist2D, dirFromAim, rightFromAim, holeLength } from '../core/vec.js';
+import { flagColour } from '../core/biome.js';
+import { LIBRARY } from '../biomes/library.js';
 
 const $ = id => document.getElementById(id);
 export const yd = m => Math.round(m * M2Y);
@@ -263,9 +265,9 @@ export function createHud(play) {
 
 // Minimap: the painted course, shrunk once, plus the flag, the ball and the aim line.
 // K5: the trees in play (leaf circles) and boulders are drawn on it, K4: the warning point as a red ×.
-export function createMinimap(hole, courseCanvas, cup, obstacles = []) {
+export function createMinimap(hole, courseCanvas, cup, obstacles, biome) {
   const mm = $('minimap'), ctx = mm.getContext('2d'), map = hole.map;
-  const flagCss = `#${hole.scenery.flagColor.toString(16).padStart(6, '0')}`;
+  const flagCss = flagColour(biome, LIBRARY); // AP5: the biome set's flag colour ('#rrggbb')
   const xy = (x, z) => [(x - map.x0) / (map.x1 - map.x0) * mm.width, (z - map.z0) / (map.z1 - map.z0) * mm.height];
   const base = document.createElement('canvas');
   base.width = mm.width * 2; base.height = mm.height * 2;

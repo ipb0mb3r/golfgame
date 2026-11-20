@@ -33,6 +33,7 @@ test('surfaceAt returning an unknown surface fails at load, not in prepare()', (
 
 test('tee, cup, numbers, map and weather are checked', () => {
   assert.throws(() => validateHole(withChange({ tee: { x: 0, z: NaN } })), /hole "pl-01": tee must be/);
+  assert.throws(() => validateHole(withChange({ biome: undefined })), /hole "pl-01": biome must be a biome set id/); // AP5
   assert.throws(() => validateHole(withChange({ cup: { x: 30, z: -40 } })), /the cup is not on the "green" surface/);
   assert.throws(() => validateHole(withChange({ par: 0 })), /par must be a whole number/);
   assert.throws(() => validateHole(withChange({ maxStrokes: 2 })), /maxStrokes \(2\) is below par/);

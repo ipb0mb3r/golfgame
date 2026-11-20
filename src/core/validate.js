@@ -33,6 +33,8 @@ export function validateHole(hole, { shots = true } = {}) {
   for (const k of ['tee', 'cup']) if (!isPoint(hole[k])) bad(`${k} must be { x, z } with finite numbers`);
   const m = hole.map;
   if (!m || ![m.x0, m.x1, m.z0, m.z1].every(isNum) || m.x0 >= m.x1 || m.z0 >= m.z1) bad('map must be { x0 < x1, z0 < z1 } with finite numbers');
+  // AP5: the biome set's id (src/biomes/index.js checks it exists and resolves it)
+  if (typeof hole.biome !== 'string' || !hole.biome) bad(`biome must be a biome set id (got ${hole.biome})`);
   for (const k of ['heightAt', 'surfaceAt']) if (typeof hole[k] !== 'function') bad(`${k} must be a function`);
 
   if (hole.bag !== undefined) {
@@ -104,6 +106,8 @@ export function validateHole(hole, { shots = true } = {}) {
       if (s === 'tee' || s === 'green' || s === 'fringe') bad(`${where} (${o.x}, ${o.z}) stands on the ${s}`);
       if (s === 'fairway' && o.onFairway !== true) bad(`${where} (${o.x}, ${o.z}) stands on the fairway (set onFairway: true if that is the design)`);
       if (o.onFairway !== undefined && typeof o.onFairway !== 'boolean') bad(`${where}.onFairway must be true or false`);
+      // AP5: a tree may name its look (a library onTrees piece; src/holes/sets.js readyHole checks it exists)
+      if (o.look !== undefined && (o.type !== 'tree' || typeof o.look !== 'string' || !o.look)) bad(`${where}.look must be a tree piece id, on trees only (got ${JSON.stringify(o.look)})`);
     });
   }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {

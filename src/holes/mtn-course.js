@@ -136,10 +136,9 @@ export const boulder = (x, z, r = 1.2) => ({ type: 'boulder', x, z, r });
 
 // ---- shared mountain scenery (looks only) ----
 const SCENERY = {
-  sky: 0xa8d4f5, cameraFar: 2400,
+  cameraFar: 2400, // (AP5: the sky, flag and tee-marker colours are in the biome set, src/biomes/)
   hemi: 1.2, sun: { intensity: 2.0, pos: [-90, 80, 30] },
   paint: { res: 4, stripe: 7, green: 'stripes', border: true },
-  flagColor: 0xff5a36, teeColor: 0xf2f2f2,
   trail: 600,
 };
 
@@ -176,6 +175,7 @@ function mtnMeta(spec) {
     windMax: spec.windMax ?? 4.5,
     weather: { type: 'clear', wetness: 0 },
     surfaceOverrides: spec.surfaceOverrides ?? {},
+    biome: spec.biome ?? 'mtn-default', // AP5: the biome set (src/biomes/), the look only; a light field
     intro: spec.intro,
   };
 }

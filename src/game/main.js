@@ -5,13 +5,14 @@
 // menu (button or Esc) resumes, restarts the hole or quits to the menu.
 // Dev and designer links skip the menu (core/menu.js DEV_PARAMS): ?set=<id> plays a round, ?hole=<id>
 // or ?scenario=<id> one hole (X8), ?tune=NAME:value overrides tunables, ?seed=<n> fixes the wind,
-// ?debug=1 opens the debug overlay (Gate A C5, for phones; ?debug=perf without the collider outlines, AP0). Any of them alone plays hole 1 as before.
+// ?debug=1 opens the debug overlay (Gate A C5, for phones; ?debug=perf without the collider outlines, AP0). Any of them alone plays hole 1 as before. AP5: ?biome=<id> dresses the holes in another biome set (BIOME badge).
 // Phase T: vs AI (Play → vs AI → course → difficulty) plays a round against 5 rivals; ?ai=easy|normal|hard
 // plays the ?set= round (or the first Solo course) vs AI.
 import * as THREE from 'three';
 import { applyTune, tuneSummary } from '../core/tune.js';
 import { MAX_FRAME_DT } from '../core/config.js';
 import { HOLES, SETS, resolveHole, getHole, resolveSet, readyHole } from '../holes/sets.js';
+import { BIOMES, resolveBiome } from '../biomes/index.js';
 import { createRound, isNewBest, toParText, bestId } from '../core/round.js';
 import { resolveDifficulty, DEFAULT_DIFFICULTY } from '../core/rivals.js';
 import { SCENARIOS, resolveScenario } from '../holes/scenarios.js';
@@ -34,6 +35,11 @@ const tune = applyTune(params.get('tune'));
 const paramSeed = () => parseSeed(params.get('seed'));
 const freshSeed = () => paramSeed() ?? (Date.now() >>> 0);
 const settings = loadSettings();
+// AP5: ?biome=<id> dresses every hole of this visit in that biome set instead of its own (a dev and
+// artist preview, never in a menu). Matched case-insensitively; an unknown id is ignored with a notice.
+const requestedBiome = params.get('biome');
+const biomeKey = (requestedBiome ?? '').trim().toLowerCase();
+const biomeOverride = biomeKey && Object.hasOwn(BIOMES, biomeKey) ? biomeKey : null;
 
 // What a dev link asks for (the pre-Phase 7 behaviour), and the notices it needs on the first card
 function launchFromUrl() {
@@ -64,6 +70,10 @@ function launchFromUrl() {
   }
   if (requestedAi != null && single) notices.push('?ai= plays a round, so it is ignored with ?hole= or ?scenario=.');
   else if (requestedAi != null && !resolveDifficulty(requestedAi) && set) notices.push(`There is no difficulty "${requestedAi}", so the rivals play on Normal.`);
+  if (requestedBiome != null && !biomeOverride) {
+    console.warn(`Pocket Links: unknown biome set "${requestedBiome}".`);
+    notices.push(`There is no biome set "${requestedBiome}", so the hole keeps its own look.`);
+  }
   if (tune.rejected.length) {
     console.warn('Pocket Links: ignored tune values', tune.rejected);
     notices.push(`Ignored in ?tune=: ${tune.rejected.map(r => `"${r.text}" (${r.why})`).join(', ')}.`);
@@ -72,6 +82,7 @@ function launchFromUrl() {
   return { launch, notices };
 }
 if (tune.set.length) { const b = $('tuned'); b.textContent = `TUNED · ${tuneSummary(tune)}`; b.hidden = false; }
+if (biomeOverride) { const b = $('biomeBadge'); b.textContent = `BIOME: ${biomeOverride}`; b.hidden = false; }
 
 // Gate A C2: no WebGL → a plain message on the intro card instead of a dead Tee off button
 const canvas = $('game');
@@ -101,12 +112,13 @@ const extraInfo = () => [
   ...(round?.mode === 'ai' ? [`vs AI  ${round.difficulty}  ${round.leaderboard().map(r => `${r.posText} ${r.id} ${toParText(r.toPar)}`).join(' · ')}`] : []),
   ...(round ? [`round  ${round.set.id}  hole ${Math.min(round.index + 1, round.length)}/${round.length}  round seed ${round.seed}  ${toParText(round.totals.toPar)} (${round.totals.strokes})`] : []),
   ...(tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : []),
+  ...(session ? [`biome  ${session.biome.id}${biomeOverride ? ' (?biome=)' : ''}`] : []),
 ];
 function loadHole(h, opts = {}) {
   session?.dispose();
   // X12: holes are built and checked on first use, so only the holes played are paid for
   session = createHoleSession(readyHole(h), {
-    renderer, input, seed: opts.seed, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
+    renderer, input, seed: opts.seed, biome: resolveBiome(biomeOverride ?? h.biome) /* AP5: the look */, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
     // V4: the flyover plays the first time a hole starts from its tee in this game (not from a scenario's spot)
     flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,
@@ -340,6 +352,8 @@ const api = () => session.test;
 window.__golf = {
   get hole() { return api().hole; }, get play() { return api().play; }, get meter() { return api().meter; },
   get scenario() { return game?.launch.kind === 'scenario' ? game.launch.scenarioId : null; }, tune: tune.set,
+  // AP5: the biome set the current hole is drawn with (its id), and the far ground's colour as drawn (tools/session-check.mjs)
+  get biome() { return session?.biome.id ?? null; }, get groundColour() { return '#' + session?.scene.getObjectByName('far ground')?.material.color.getHexString(); },
   get state() { return api().state; }, get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
   get clubIdx() { return api().play.clubIdx; }, set clubIdx(v) { api().play.setClub(v); },
   get aim() { return api().play.aim; }, set aim(v) { api().play.setAim(v); },

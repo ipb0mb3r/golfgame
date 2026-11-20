@@ -170,6 +170,7 @@ const TREES_IN_PLAY = [
 
 export default {
   id: 'pl-02', number: 2, name: 'Pocket Links #2', par: 5, maxStrokes: 12, difficulty: 3,
+  biome: 'proto-default', // AP5: the biome set (src/biomes/), the look only
   tee: { x: 0, z: 0 }, cup: { x: 26, z: -448 },
   // S18: the tee shot's default aim, the dogleg corner in the middle of the fairway (a full Driver
   // carries the big hill and runs out to about here). Approaches aim at the centre of the green.
@@ -190,7 +191,7 @@ export default {
 
   // ---- Looks only (read by src/game, never by the physics) ----
   scenery: {
-    sky: 0x9fd3ff, fog: [260, 760], cameraFar: 2000,
+    fog: [260, 760], cameraFar: 2000,
     // A lower sun and softer fill light than hole 1 so the hills cast visible shading
     hemi: 1.15, sun: { intensity: 2.1, pos: [-90, 70, 30] },
     ground: { size: 2400, y: -3.9 }, // K13: below the lowest terrain (the pond bowl, -3.72 m); it was -0.6 and poked through the hollows
@@ -201,7 +202,6 @@ export default {
     },
     paint: { res: 6, stripe: 6, green: 'grid', border: true },
     water: { ...POND, scale: 1.25, y: WATER_Y },
-    flagColor: 0xffb020, teeColor: 0xe23b3b,
     stakes: { x: 60, z0: 18, z1: -490, step: 12 },
     trees: {
       count: 320, xSpan: 300, zTop: 80, zSpan: 640, sink: 0.2,
