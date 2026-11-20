@@ -4,18 +4,10 @@
 // accent/subAccent (the biome's signature: flag, tee markers, flower beds, trims, signs; owner, 2026-11-19). One palette per biome set:
 // Alpine sunset is its own set with its own full palette (owner, #73). Mock-up data only, not engine code.
 // — Agent: artist
-const meadow = {
-  id: 'meadow', label: 'Meadow',
-  accent: '#D91E5B', subAccent: '#FF9A1F', // poppy pink-red flag / marigold orange: wildflower field
-  tee: '#8DE05A', fairwayA: '#88DA4E', fairwayB: '#79CC42', edge: '#4E9F2E', fringe: '#7DD04A', greenA: '#B6F57C', greenB: '#AAF06C',
-  rough: '#4CAA36', deepRough: '#3A942E', sand: '#FFF0C2', lip: '#C9B27A', water: '#2C8FE3', waterDeep: '#1C66C2', bank: '#9C7A4E',
-  rock: '#A89B8E', path: '#E9D9AE',
-  skyTop: '#1877E8', skyHorizon: '#BDEAFF', cloud: '#FFFFFF', fog: '#CBEBFF',
-  sun: '#FFF4DA', ambient: '#E8F5FF', shadow: '#2F7A4A',
-  backFar: '#7FB0D6', backNear: '#58A85A', backCap: '#8CC96A', backCapShade: '#6DB458', backTrees: '#3E9A44',
-  pine: '#23885A', trunk: '#8A5634', leaf: '#3DB04A', leafTop: '#8EE05C', leafLow: '#24803C', leafAlt: '#69C83A', trunkAlt: '#A87A4E',
-  wood: '#D08B4C', roof: '#E0533E', propSnow: '#FFFFFF', propA: '#FF5C8E', propB: '#FFD83A', glass: '#BFE6FF',
-};
+// Meadow: superseded by the owner-approved ART1 palette (option A "warm", brick-red flag, 2026-11-20).
+// The round-2 values are in git history (and in images 01/06 of this folder). One source of truth:
+import { PALETTES as MEADOW_ART1 } from '../meadow/palettes.js';
+const meadow = { ...MEADOW_ART1['meadow-warm'], id: 'meadow', label: 'Meadow' };
 const alpine = {
   id: 'alpine', label: 'Alpine',
   accent: '#B8143C', subAccent: '#3550D8', // deep mountain red flag (darker than the HUD warning red) / gentian blue: red roofs, mountain flowers

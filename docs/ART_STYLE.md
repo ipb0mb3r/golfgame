@@ -208,6 +208,26 @@ One biome set per artist session, always in this order:
 4. **Approval (owner):** Alexis approves each element (palette, trees, backdrop, props, gameplay notes) or asks for changes. Nothing is final without his yes.
 5. **Record + build:** the approved set is written down (its pick list, palette, notes) and only then are the new assets made, each recorded in `assets/CREDITS.md`.
 
+### 6.3 Meadow (ART1, owner-approved 2026-11-20): the default theme
+**The default, classic theme** (owner): the one players see most and the base the other biomes stand out from. Mood board (owner): a stereotypical video-game meadow park, **lots of trees**, **green but not neon, warmer** grass, **buttercup yellow** in the flowers, **windmills and cows, no barns** ("this is not a farm"). His palette strip: dark green `#376643`, mid `#6A9B4E`, lime `#A8CA5B`, cream `#F1E7CD`, brick red `#BC4749`.
+- **Decided (owner):** palette **A "warm"** (not B "warmer": keep warmer greens for later biomes) with the **brick-red flag** `#BC4749` (it matches the windmill caps); tee markers buttercup yellow `#FFC21A`. Data: `src/biomes/meadow-day.js` (source `docs/art/meadow/palettes.js`), passes every §4.4 rule, no waiver. Images: `docs/art/meadow/01-05`.
+- **Pieces** (✅ in the library today · 🔧 new, needs dev work first):
+
+| Piece | Status | Notes |
+|---|---|---|
+| Palette | ✅ in `meadow-day` | warm yellow-greens, cream sand, brick-red accents |
+| Hills backdrop, flag, tee markers, OB stakes, pond, boulders | ✅ reused | tinted by the palette |
+| Soft round tree (3 blobs, light top / dark bottom), in play | 🔧 AP7 + gradient slots | ~270 tris; replaces `roundTree` |
+| Tall soft conifer (cypress-like) | 🔧 AP7 | ~130 tris, `leafAlt` ramp |
+| Round treetop wall (far trees) | 🔧 AP7 | ~80 tris, instanced, replaces `coneTree` |
+| Buttercup patches, a few red flowers, grass tufts, bushes | 🔧 smallProps (weights + clusters) | ≤ 8-50 tris each; patches of ~10 flowers |
+| Wooden windmill (4 white sails, brick-red cap) | 🔧 bigProps | ~400 tris, 1-3 per hole on the hills out of bounds |
+| Cow, grazing (white with dark patches) | 🔧 bigProps | ~400 tris, a few behind a fence, never in play |
+| Wooden fence (posts + rails) | 🔧 bigProps | ~24 tris per section |
+| Gradient sky + puffy clouds; textured ground (speckle, edge line, lip, bank) | 🔧 AP6 / sky | as in §1.1 |
+
+Budget: the mock-up's golfer view is ~320k triangles, of which ~100k is the mock-up's own dense terrain; the game's terrain (AP1b) is lighter, so the set fits the 300k line. Flowers must stay tiny (≤ 8 tris) or be sprites.
+
 ## 7. Asset list (rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
 |---|---|---|---|
@@ -240,3 +260,5 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 | `05-approach.jpg` | approach views, Alpine and Island coast |
 | `06-palettes.jpg` | the four palettes |
 | `07-accents.jpg` | accent / sub-accent per biome, flag on the green |
+
+**ART1 Meadow:** `docs/art/meadow/mockup.html` (`?set=meadow-warm|meadow-warmer`, `&view=golfer|tee|approach|cows`, `&accent=%23hex`). Images `01-warm-vs-warmer`, `02-views`, `03-flag`, `04-palettes`, `05-in-game-before-after`.

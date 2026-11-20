@@ -14,7 +14,7 @@ You are working on **Pocket Links**, a browser-based 3-click arcade golf game (i
 | Project manager | Claude (PM thread) | No. Maintains `docs/`, plans tasks, writes prompts, reviews PRs against the plan |
 | Engine developer | Dev agent | Yes. Works on `dev/*` branches |
 | Course designer | Agent, one hole at a time, co-designs with the owner | Hole data only (`src/holes/`, scenarios, sets), never engine code. Works on `course/<hole-id>` branches |
-| Artist | Agent, co-designs with the owner | No game code. Art style, palettes, biome kits: `docs/ART_STYLE.md`, `docs/art/`, `assets/` (+ biome set data in `src/biomes/` since AP5). Works on `art/<slug>` branches |
+| Artist | Agent, co-designs with the owner | No game code. Art style, palettes, biome kits: `docs/ART_STYLE.md`, `docs/art/`, `assets/`, and **biome set data files `src/biomes/<id>.js`** (owner, 2026-11-20; not `src/biomes/library.js`, which is engine code; every set must pass `validateBiomeSet`). Works on `art/<slug>` branches |
 | UI designer | Agent, co-designs with the owner | No game code. Menus and HUD (function and look) as specs and clickable mock-ups: `docs/UI.md`, `docs/ui/`. The dev builds them. Works on `ui/<slug>` branches |
 | QA / playtester | Independent agent, after each dev PR | No. Plays the PR build in a headless browser and writes a report in `reviews/` |
 | Reviewers (Security, Scalability, Maintainability, Compatibility, Testing) | Independent agents | No. They write reports in `reviews/` |

@@ -1,39 +1,40 @@
-// AP5 biome set: Meadow (day), the proof that a new look needs only a data file (DESIGN §8b).
-// Built from today's library pieces only, with the artist's round-2 Meadow palette (ART_STYLE §4.5,
-// docs/art/style-r2/palettes.js). It passes every readability rule with no waiver. Not used by any
-// hole and not in any menu: try it on any hole with the dev link ?biome=meadow-day.
-// The five engine keys (temporary, DESIGN §8b) are the dev's picks from the Meadow palette.
+// ART1 biome set: Meadow (day), the DEFAULT theme (owner, 2026-11-20). Approved by the owner from his mood board
+// (docs/art/meadow/): warm yellow-greens, not neon; lots of round trees and a few tall conifers; buttercup
+// yellow; a deep blue sky; wooden windmills and grazing cows out of bounds (no barns: not a farm).
+// Palette: option A "warm" (owner) with the brick-red flag (owner). Source: docs/art/meadow/palettes.js.
+// Until the new pieces exist (AP7 models, AP6 ground, gradient sky) it uses today's library pieces; the
+// pieces it is waiting for are listed in docs/ART_STYLE.md §6.3. — Agent: artist
 export default {
   id: 'meadow-day',
   name: 'Meadow (day)',
-  description: 'A sunny wildflower meadow: bright greens, a pale sky, a poppy pink-red flag and marigold tee markers, round trees in play and pines around.',
+  description: 'The default theme: a warm, sunny meadow park. Yellow-green grass, round trees and tall conifers, buttercups in the rough, a deep blue sky, a brick-red flag and buttercup-yellow tee markers; wooden windmills and grazing cows out of bounds.',
   palette: {
     // surfaces
-    tee: '#8de05a', fairwayA: '#88da4e', fairwayB: '#79cc42', edge: '#4e9f2e', fringe: '#7dd04a', greenA: '#b6f57c', greenB: '#aaf06c',
-    rough: '#4caa36', deepRough: '#3a942e', sand: '#fff0c2', lip: '#c9b27a', water: '#2c8fe3', waterDeep: '#1c66c2', bank: '#9c7a4e',
-    rock: '#a89b8e', path: '#e9d9ae',
+    tee: '#9ad45e', fairwayA: '#98d25a', fairwayB: '#88c44e', edge: '#4e8a30', fringe: '#93cc56', greenA: '#c8f07e', greenB: '#beec72',
+    rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
+    rock: '#a89b8c', path: '#e8d8ae',
     // sky, fog, light
-    skyTop: '#1877e8', skyHorizon: '#bdeaff', cloud: '#ffffff', fog: '#cbebff',
-    sun: '#fff4da', ambient: '#e8f5ff', shadow: '#2f7a4a',
+    skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#ffffff', fog: '#d2ecfa',
+    sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',
     // backdrop
-    backFar: '#7fb0d6', backNear: '#58a85a', backCap: '#8cc96a', backCapShade: '#6db458', backTrees: '#3e9a44',
-    // accents: the flag (poppy), the tee markers (marigold)
-    accent: '#d91e5b', subAccent: '#ff9a1f',
-    // trees and props
-    pine: '#23885a', trunk: '#8a5634', leaf: '#3db04a', leafTop: '#8ee05c', leafLow: '#24803c', leafAlt: '#69c83a', trunkAlt: '#a87a4e',
-    wood: '#d08b4c', roof: '#e0533e', propSnow: '#ffffff', propA: '#ff5c8e', propB: '#ffd83a', glass: '#bfe6ff',
-    // engine keys (temporary): the putting grid (fill = greenA, lines a darker green), the far ground
-    // (= deepRough), the pond surface (= water), the boulders (= rock)
-    gridFill: '#b6f57c', gridLine: '#84cc52', farGround: '#3a942e', pondSurface: '#2c8fe3', boulder: '#a89b8e',
+    backFar: '#86aecb', backNear: '#5e9a4a', backCap: '#7db858', backCapShade: '#629e4a', backTrees: '#4a8a40',
+    // accents: the flag (brick red, owner), the tee markers (buttercup yellow)
+    accent: '#bc4749', subAccent: '#ffc21a',
+    // trees and props (roof = the windmill caps, brick red like the flag; propA = buttercups, propB = red flowers)
+    pine: '#3e7e4a', trunk: '#8a5634', leaf: '#56a040', leafTop: '#a8ca5b', leafLow: '#376643', leafAlt: '#3f7a52', trunkAlt: '#7a4e30',
+    wood: '#c58a52', roof: '#bc4749', propSnow: '#f4ecd8', propA: '#ffd43a', propB: '#e8573e', glass: '#c4e2f2',
+    // engine keys (temporary, DESIGN §8b): the putting grid (fill = greenA, lines a darker green), the far
+    // ground (= deepRough), the pond surface (= water), the boulders (= rock)
+    gridFill: '#c8f07e', gridLine: '#9ad65a', farGround: '#4a8836', pondSurface: '#2c8ad8', boulder: '#a89b8c',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundTree'],
-  offTrees: ['coneTree'],
+  onTrees: ['roundTree'],     // later: the soft round tree + the tall conifer (AP7, ART_STYLE §6.3)
+  offTrees: ['coneTree'],     // later: the cheap round treetop wall (AP7)
   rocks: ['roundBoulder'],
-  sky: 'flatSky',
+  sky: 'flatSky',             // later: the gradient sky with puffy clouds
   backdrop: 'roundHills',
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
-  smallProps: { pieces: [] }, // none yet (grass tufts, flowers: ART1 / AP7)
-  bigProps: [],               // none yet
-  notes: 'Gentle, open holes: wide fairways, a few round trees in play, ponds and flower-edged bunkers. Suggested weather: clear, light to medium wind.',
+  smallProps: { pieces: [] }, // later: grass tufts, buttercup patches, a few red flowers, bushes (AP7)
+  bigProps: [],               // later: windmill, cow, wooden fence (AP7), placed by hand out of bounds
+  notes: 'The default, classic theme: gentle open holes, wide fairways, plenty of trees along the fairways and a few in play, ponds, cream bunkers. Big props out of bounds: 1-3 windmills on the hills, a few cows grazing behind a wooden fence (never in play, no barns). Suggested weather: clear, light to medium wind.',
 };
