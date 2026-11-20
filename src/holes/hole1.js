@@ -48,6 +48,7 @@ const TREES_IN_PLAY = [
 
 export default {
   id: 'pl-01', number: 1, name: 'Pocket Links #1', par: 3, maxStrokes: 10, difficulty: 1,
+  biome: 'proto-default', // AP5: the biome set (src/biomes/), the look only
   tee: { x: 0, z: 0 }, cup: { x: 4, z: -152 },
   bag: ['3w', '5i', '7i', '9i', 'pw', 'sw', 'putter'],
   windMax: 5.5,

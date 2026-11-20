@@ -33,6 +33,8 @@ export function validateHole(hole, { shots = true } = {}) {
   for (const k of ['tee', 'cup']) if (!isPoint(hole[k])) bad(`${k} must be { x, z } with finite numbers`);
   const m = hole.map;
   if (!m || ![m.x0, m.x1, m.z0, m.z1].every(isNum) || m.x0 >= m.x1 || m.z0 >= m.z1) bad('map must be { x0 < x1, z0 < z1 } with finite numbers');
+  // AP5: the biome set's id (src/biomes/index.js checks it exists and resolves it)
+  if (typeof hole.biome !== 'string' || !hole.biome) bad(`biome must be a biome set id (got ${hole.biome})`);
   for (const k of ['heightAt', 'surfaceAt']) if (typeof hole[k] !== 'function') bad(`${k} must be a function`);
 
   if (hole.bag !== undefined) {

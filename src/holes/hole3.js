@@ -90,6 +90,7 @@ function surfaceAt(x, z) {
 
 export default {
   id: 'pl-03', number: 3, name: 'Pocket Links #3', par: 4, maxStrokes: 10, difficulty: 2,
+  biome: 'proto-default', // AP5: the biome set (src/biomes/), the look only
   tee: TEE, cup: CUP,
   // S18: the tee shot's default aim, right of the lone tree in the landing area (the corner). The
   // default Driver flies past the tree, so the aim warning is off for it (tests/obstacles.test.js).

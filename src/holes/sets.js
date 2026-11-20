@@ -14,6 +14,7 @@ import mtn07 from './mtn-07.js';
 import mtn08 from './mtn-08.js';
 import mtn09 from './mtn-09.js';
 import { validateHole } from '../core/validate.js';
+import { resolveBiome } from '../biomes/index.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
 // X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
@@ -58,7 +59,7 @@ export const getHole = id => resolveHole(id).hole;
 // every hole. Returns the hole. The game calls it for every hole it loads (src/game/main.js).
 const ready = new WeakSet();
 export function readyHole(hole) {
-  if (!ready.has(hole)) { validateHole(hole, { shots: false }); ready.add(hole); }
+  if (!ready.has(hole)) { validateHole(hole, { shots: false }); resolveBiome(hole.biome); ready.add(hole); } // AP5: its biome set exists and passes
   return hole;
 }
 

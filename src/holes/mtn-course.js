@@ -176,6 +176,7 @@ function mtnMeta(spec) {
     windMax: spec.windMax ?? 4.5,
     weather: { type: 'clear', wetness: 0 },
     surfaceOverrides: spec.surfaceOverrides ?? {},
+    biome: spec.biome ?? 'mtn-default', // AP5: the biome set (src/biomes/), the look only; a light field
     intro: spec.intro,
   };
 }

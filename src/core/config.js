@@ -141,6 +141,10 @@ export const TIMING = { afterStop: 1300, afterPenalty: 1700, afterHoled: 1600, a
 // constant wobbleDecay s, over after wobbleS s.
 export const FLAG_FX = Object.freeze({ clothW: 0.9, clothH: 0.55, clothDrop: 0.3, minH: 0.01, wobble: 0.09, wobbleHz: 2.5, wobbleDecay: 0.35, wobbleS: 1.6 });
 
+// AP5: the HUD's own colours on the course (aim line, obstacle warning, aim dots). They never come
+// from a biome set; the biome readability rules (core/biome.js, ART_STYLE §4.4) check every palette against them.
+export const UI_COLORS = Object.freeze({ aim: '#ffd447', warn: '#ff4a3a', aimDot: '#ffffff' });
+
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line
 // has a tick where a straight, no-wind shot at each of those powers lands (25/50/75% for 4)
