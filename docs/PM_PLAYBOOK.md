@@ -76,13 +76,15 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 **Also done 2026-11-20:** **X26 + X25** minimap in the biome's colours (trees and rocks darkened one fixed step, minimap readability rules; HUD colours from `UI_COLORS`) (#89, QA #92). **ART1 Meadow** (#90), **Alpine** (#91), **Island coast** (#93, open): the three first biome sets, approved by the owner in his artist session. The artist may register a new set in `src/biomes/index.js`.
 
 **In flight:**
-- **AP3 asset loader + loading screen** (+ X27 test fix) — next dev.
+- ~~AP3 asset loader + loading screen + X27~~ ✅ (#95, QA #96): model pieces in the library (`model` + `fallback`), a cache per visit, the loader imported only when needed, a loading bar on the card, a friendly fallback; AP7 models are palette-only (the gradient as vertex weights mapped to palette keys).
+- **AP6a quick visual wins**, dev next (the artist's notes: `docs/art/ap6a-artist-notes.md`). Then **AP6a quick visual wins** (owner: palettes alone are "too subtle").
+- Island coast merged (#93); the artist switches its `boulder` to dark lava `#3e3a40` now that X27 is in.
 - Artist requests from ART1 → TASKS "Art requests from ART1" (trees, props, backdrops, rendering): they shape AP3 → AP7 → AP6.
 - Owner phone check pending: minimap trees a bit lighter than before (QA: closest to the rough); one more darkening step is a single setting (`MINIMAP_DARKEN`).
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
-2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ (biome sets; flag = `accent`) → ~~X26~~ ✅ → AP3 (asset loader) → AP7 (models; artist's gradient slots + per-pick slot override) → AP6 (ground material). In parallel, the **artist per-biome pass ART1** (✅ Meadow, Alpine, Island coast) (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), Meadow first. **AP8 pixel effect after the art exists.**
+2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ (biome sets; flag = `accent`) → ~~X26~~ ✅ → AP3 (asset loader) → **AP6a quick visual wins** (gradient sky, horn peaks + ocean backdrops, owner 2026-11-20) → AP7 (models; artist's gradient slots + per-pick slot override) → AP6 (ground material). In parallel, the **artist per-biome pass ART1** (✅ Meadow, Alpine, Island coast) (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), Meadow first. **AP8 pixel effect after the art exists.**
 3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
