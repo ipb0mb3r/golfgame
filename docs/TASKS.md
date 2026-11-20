@@ -292,6 +292,9 @@ The models and pieces the first three biome sets need. They shape AP3 → AP7 �
 - [ ] **X24** (QA on #80, Low) At 320x568 the top info panel and the wind badge touch → Phase U.
 - [ ] **X28** (QA B1 on #95, Low) At 320x568 the intro card scrolls and the loading bar is below the fold (only the greyed Tee off shows) → Phase U.
 - [ ] **X29** (dev on #95, Low) `tools/session-check.mjs` serves `.glb` as `text/plain` (harmless); the loading bar counts files, not bytes (one file jumps 0 → 100 %).
+- [ ] **X30** (dev on #99, Low) A ball landing over the `ocean` sea side is drawn at its `heightAt` height (above the lowered beach / sea) for the penalty moment, like the aim marks there; a splash at sea level later.
+- [ ] **X31** (dev on #99, Low) Backdrops (horn peaks) face −z from the hole's middle; a per-hole `backdropFacing` if a dogleg puts them to the side.
+- [ ] **X32** (dev on #99, Low) `tools/perf-check.mjs --breakdown` prints only the first 10 kinds (backdrop pieces cut off); `tools/session-check.mjs` doesn't load the AP6a test sets.
 - [x] **X20** (S) Faster mountain heightAt with identical results (from AP1's aim-cost measurement). *(Dev: `mtn-course.js` skips terms that add exactly nothing and keeps per-blob constants; about 2× faster, the same heights to the bit, `tests/terrain-exact.test.js`.)*
 - [ ] **X21** (idea, not planned) Lighter shaped-preview roll while ◀/▶ is held; owner: centre vs off-centre impact feels the same on his S25 Ultra (PR #77), so only if a mid-range phone shows a difference.
 - [x] **X25** (Low) HUD aim colours duplicated as literals in props.js / hud.js vs UI_COLORS. *(Dev: `UI_COLORS` in config.js gains `capped`, `cappedMap` and `hazard`; props.js (3D aim guide) and hud.js (minimap line and ×) read every aim colour from it, same values, no visual change. The biome test's "no hard-coded colour" list no longer allows them in `src/game`.)*
