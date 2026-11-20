@@ -71,15 +71,16 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-19/20:** **AP2** Three.js r160 → r187 + glTF / Meshopt loaders, pixel-identical (#84, QA #85); PM docs #83.
 
-**In flight:**
-- **AP5 biome set format** (#86): step 1 format + `validateBiomeSet` approved by the PM and reviewed by the artist ("fits"); step 2 (the game reads the sets, no visual change except the proto flags, `meadow-day` proof via `?biome=`) with a fresh dev. Then QA Full; then message the artist session to check meadow-day.
-- **Artist requests for later** (#86): gradient slots leafLow→leaf→leafTop and a per-pick slot override (AP7), smallProps weights + clusters (ART1), a backdrop brightness check (later).
+**Also done 2026-11-20:** **AP5 biome set format** (#86, QA #87): every colour and piece comes from the hole's biome set (`src/biomes/`, `validateBiomeSet` with the artist's readability rules incl. per-stripe and putting-grid), `mtn-default` + `proto-default` (named waivers until ART1), `meadow-day` proof via `?biome=`; the pl-02/03 flag is now red. The artist confirmed meadow-day and its engine keys.
 
-**Owner priority (2026-11-20): X26** (the minimap's trees, rocks, water and sand take the biome set's colours, with a readability rule for the minimap) is **important**: a small dev PR right after AP5 merges, before AP3. TASKS line added after #86 merges (the dev PR edits TASKS). Also backlog X25 (HUD aim colours duplicated in props.js / hud.js vs `UI_COLORS`).
+**In flight:**
+- **X26 minimap in the biome's colours** (+ X25 if small) — fresh dev, 40 min, QA Light.
+- **ART1 per-biome pass:** the artist session knows AP5 is on main; it runs when the owner chats there (Meadow first).
+- **Artist requests for later** (#86): gradient slots and a per-pick slot override (AP7), smallProps weights + clusters (ART1), a backdrop brightness check (later).
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
-2. **B: ready for the art:** ~~AP2~~ ✅ → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
+2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ → **X26** (owner: important) → AP3 / AP7 → AP6 (AP5: biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
 3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
@@ -93,7 +94,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **When something is "undone", check the result against the version the owner liked** (hole 5's revert only undid the last change).
 - **Docs PRs: push everything before the owner merges.** Commits pushed to a docs branch after its merge are lost (the first Phase BC notes were). Check `git log origin/main` after each docs merge.
 - QA tends to overrun its budget: give a short MUST list, a hard stop, and run the slow menu-check yourself.
-- If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
+- **Container restarts and usage limits stop agents mid-task:** tell devs and QA to commit and push early and often. Uncommitted work usually survives in the agent's worktree: resume the same agent with SendMessage. If the usage limit hits, the agent's work is saved in its worktree; resume it after the reset (or schedule a reminder).
 - **Feel choices go to the owner as compare links**, never as code changes first: `?tune=` links for each option (e.g. curve today / +20% / +35%). He picked +15%, between the links, which then cost one 5-minute dev.
 - **Give every agent `isolation: worktree`, including read-only ones.** The tech lead ran in the PM's folder, switched its branch, and the PM's docs commit landed on the report branch (#70 carried both; fixing it would have needed a force push).
 - **The owner can chat with an agent directly** in its own session: `create_session` with `append_system_prompt` = a role override ("you are NOT the PM, you are the artist…") and a standalone first prompt. Its output comes back as a PR.
