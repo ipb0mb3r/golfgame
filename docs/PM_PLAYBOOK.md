@@ -69,11 +69,15 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-19 (evening):** **AP0** perf budget + measuring (#75, QA #76), **AP1** fewer draw calls 83–222 → 20–25 (#77, QA #79), **AP1b + X20** terrain detail by distance (every hole within budget, terrain 54k–189k) + a 2× faster mountain `heightAt`, bit-identical (#80, QA #82). **Art:** ART0a biome concept (#73), ART0b style "Sunny postcard" (#78, in the owner's own artist session), accent colours (#81). Owner phone (S25 Ultra): 60 fps; mountain aiming "a bit less smooth" before #80.
 
-**In flight:** AP2 (dev). This docs PR.
+**Also done 2026-11-19/20:** **AP2** Three.js r160 → r187 + glTF / Meshopt loaders, pixel-identical (#84, QA #85); PM docs #83.
+
+**In flight:**
+- **AP5 biome set format** (#86): step 1 format + `validateBiomeSet` approved by the PM and reviewed by the artist ("fits"); step 2 (the game reads the sets, no visual change except the proto flags, `meadow-day` proof via `?biome=`) with a fresh dev. Then QA Full; then message the artist session to check meadow-day.
+- **Artist requests for later** (#86): gradient slots leafLow→leaf→leafTop and a per-pick slot override (AP7), smallProps weights + clusters (ART1), a backdrop brightness check (later).
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
-2. **B: ready for the art:** AP2 (Three.js upgrade + glTF loader) → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
+2. **B: ready for the art:** ~~AP2~~ ✅ → AP5 (biome set format, from `docs/art/biome-sets/` and `docs/ART_STYLE.md`; **must carry `accent` / `subAccent`, the flag uses `accent`**, #81) → **artist per-biome pass** (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), once AP5 is on main → AP3 → AP7 → AP6. **AP8 pixel effect after the art exists.**
 3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
 4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
