@@ -8,6 +8,10 @@
 //          spread (± half of h, l) around the palette colour. 'multiply': the palette colour is multiplied
 //          by a colour picked in the hsl ranges [from, spread], so copies are drawn darker than the key.
 //   tris:  rough triangle count of one copy (ART_STYLE §5 budget).
+//   model:    (AP3, optional) 'assets/models/<name>.glb': the piece is drawn from that file (its first
+//             mesh's shape; the colours still come from the slots), loaded by src/game/assets.js before
+//             the hole starts and cached for the round. fallback = the procedural piece of the same group
+//             drawn when the file is missing or broken (core/assets.js modelPieceError checks both).
 // Today (AP5) every piece is the procedural one the game already drew before biome sets; new pieces
 // (glTF models, textures, props) are added here by AP6 / AP7 and the artist (ART1).
 export const LIBRARY = Object.freeze({
@@ -36,6 +40,9 @@ export const LIBRARY = Object.freeze({
   furniture: {
     clothFlag: { desc: 'A waving cloth on a white pole (the pole is fixed white: it is gameplay).', slots: { cloth: 'accent' }, tris: 96 },
     ballMarkers: { desc: 'Two balls either side of the tee.', slots: { marker: 'subAccent' }, tris: 160 },
+    // AP3: the loader's proof piece (dev only: picked by the test-models set, ?biome=test-models). A model
+    // piece names its .glb (`model`) and the procedural piece drawn when the file can't load (`fallback`).
+    testCubeMarkers: { desc: 'AP3 test: two cubes from a model file either side of the tee (the AP2 test cube).', slots: { marker: 'subAccent' }, model: 'assets/models/test-cube.glb', fallback: 'ballMarkers', tris: 24 },
     whiteStakes: { desc: 'White out-of-bounds stakes (fixed white: the golf rule colour).', slots: {}, tris: 24 },
     flatPond: { desc: 'A flat, slightly see-through water surface over a pond in a bowl (holes with scenery.water).', slots: { surface: 'pondSurface' }, tris: 48 },
   },

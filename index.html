@@ -154,6 +154,10 @@
   #resultText { text-align: center; font-size: 16px; color: var(--text); }
   .card a { color: var(--accent); }
   .card .notice { margin: 0 0 10px; padding: 8px 10px; border-radius: 8px; background: rgba(255,212,71,.15); color: var(--accent); font-size: 14px; }
+  /* AP3: the loading line on the intro / hole card, shown only while a hole's model files load */
+  .card .loadLine { margin: 10px 0; text-align: center; color: var(--muted); font-size: 14px; }
+  .card .loadBar { height: 8px; border-radius: 4px; background: rgba(255,255,255,.15); overflow: hidden; margin-bottom: 6px; }
+  .card .loadBar i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
   .card .notice.error { background: rgba(255,90,90,.18); color: #ffd6d6; border: 1px solid #ff6b6b; }
   .card .big:disabled { background: #444; border-color: #777; cursor: default; }
   kbd { background: #2c4a37; border-radius: 4px; padding: 1px 6px; font-size: 13px; }
@@ -461,6 +465,8 @@
     <h2 id="introSub"></h2>
     <ol id="introSteps"></ol>
     <p id="introBlurb"></p>
+    <p id="introAssetNotice" class="notice" hidden></p>
+    <div id="introLoad" class="loadLine" hidden><div class="loadBar"><i></i></div><span></span></div>
     <button class="big" id="startBtn">Tee off</button>
     <p style="text-align:center;margin-bottom:0"><a id="introLink" href="#"></a></p>
     <p style="text-align:center;margin:0"><button class="linkBtn" id="introMenuBtn">Back to menu</button></p>
@@ -485,6 +491,8 @@
     <h1 id="holeCardTitle">Hole 2</h1>
     <h2 id="holeCardSub"></h2>
     <p id="holeCardLine"></p>
+    <p id="holeCardAssetNotice" class="notice" hidden></p>
+    <div id="holeCardLoad" class="loadLine" hidden><div class="loadBar"><i></i></div><span></span></div>
     <p class="tapHint">Tap to tee off</p>
   </div>
 </div>

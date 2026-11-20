@@ -78,6 +78,23 @@ export function setupHolePage(hole, round = null, { links = true, green = hole.s
 // landscape screen) may run down to the bottom edge. ⏩ Skip may sit over its corner while the ball
 // moves (PM on PR #53: Skip only shows then; a bigger minimap matters more). Called when a
 // hole loads and on every resize (session.resize). Before S22 a CSS rule capped it at 100vh − 240 px.
+// AP3: the loading line on the hole's card (the intro card, or the compact hole card for holes 2+ of a
+// round) while its model files load: progress = core/assets.js loadingProgress, or null to hide it.
+// The card's start (Tee off / tap) waits until the hole is built. notice = the missing-files text ('' = none).
+export function showLoading(compact, progress) {
+  for (const [card, id] of [['intro', 'introLoad'], ['holeCard', 'holeCardLoad']]) {
+    const el = $(id), on = !!progress && (card === 'holeCard') === compact;
+    el.hidden = !on;
+    if (on) { el.querySelector('i').style.width = `${progress.pct}%`; el.querySelector('span').textContent = progress.text; }
+  }
+  if (progress) { $('intro').classList.toggle('hidden', compact); $('holeCard').classList.toggle('hidden', !compact); }
+  $('startBtn').disabled = !!progress;
+  document.querySelector('#holeCard .tapHint').hidden = !!progress;
+}
+export function showAssetNotice(text) {
+  for (const id of ['introAssetNotice', 'holeCardAssetNotice']) { const el = $(id); el.textContent = text; el.hidden = !text; }
+}
+
 export function fitMinimap() {
   const mm = $('minimap'), bottom = $('bottom');
   if (!mm || !bottom) return;

@@ -26,6 +26,11 @@ import { createHoleSession } from './session.js';
 import { createRoundUi, readBest, writeBest } from './roundUi.js';
 import { createMenus } from './menus.js';
 import { loadSettings, saveSettings } from './settings.js';
+import { createAssetCache } from './assets.js';
+import { setupHolePage, showLoading, showAssetNotice } from './hud.js';
+import { modelFiles, loadingProgress, missingNotice } from '../core/assets.js';
+import { greenStyle } from '../core/menu.js';
+import { LIBRARY } from '../biomes/library.js';
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -114,16 +119,50 @@ const extraInfo = () => [
   ...(tune.set.length ? [`tuned  ${tuneSummary(tune)}`] : []),
   ...(session ? [`biome  ${session.biome.id}${biomeOverride ? ' (?biome=)' : ''}`] : []),
 ];
+// AP3: the model files of the round (core/assets.js, assets.js): loaded before a hole that needs them,
+// kept across the round's holes, freed by endGame() (the round ends, quit to the menu, a new game).
+const assets = createAssetCache();
+let loadToken = 0, loading = null; // loading = { id } while a hole waits for its files (no session yet)
+const biomeOf = h => resolveBiome(biomeOverride ?? h.biome); // AP5: the look
+// Load a hole in place of the current one. When its biome set names model files that are not loaded yet,
+// the hole's card shows a progress bar first and the session is built once they are settled (a missing
+// file: its fallback piece and a notice). Otherwise (every hole today) it is built at once, as before.
+// Returns the session, or null while the files load.
 function loadHole(h, opts = {}) {
   session?.dispose();
+  session = null;
+  const token = ++loadToken;
+  const biome = biomeOf(h), files = modelFiles(biome, LIBRARY);
+  if (assets.ready(files)) return buildHole(h, biome, files, opts);
+  const hole = readyHole(h), compact = !!opts.round && opts.round.number > 1;
+  setupHolePage(hole, opts.round ?? null, { links: !game?.fromMenu, green: greenStyle(hole.scenery.paint.green, settings.puttGrid) });
+  showAssetNotice('');
+  loading = { id: h.id };
+  const progress = (done, total) => { if (token === loadToken) showLoading(compact, loadingProgress(done, total)); };
+  assets.load(files, progress).then(() => {
+    if (token !== loadToken) return; // another hole, a quit or a new game came first
+    buildHole(h, biome, files, opts);
+  });
+  return null;
+}
+function buildHole(h, biome, files, opts) {
+  loading = null;
+  showLoading(false, null);
   // X12: holes are built and checked on first use, so only the holes played are paid for
   session = createHoleSession(readyHole(h), {
-    renderer, input, seed: opts.seed, biome: resolveBiome(biomeOverride ?? h.biome) /* AP5: the look */, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
+    renderer, input, seed: opts.seed, biome, models: assets.geometry /* AP3 */, start: opts.start ?? null, info: extraInfo, round: opts.round ?? null,
     puttGrid: settings.puttGrid, links: !game?.fromMenu,
     // V4: the flyover plays the first time a hole starts from its tee in this game (not from a scenario's spot)
     flyover: settings.flyover && !opts.start && !flown.has(h.id), classicCam: settings.flightCam === 'classic', flightHistory,
   });
   if (!opts.start) flown.add(h.id);
+  // AP3: a file that could not load is named on the card (its fallback piece is drawn)
+  showAssetNotice(missingNotice(assets.failed(files)));
+  // AP3 bonus: in a round, the next hole's files start loading in the background while this one plays
+  if (round && opts.round) {
+    const next = round.holeAt(round.index + 1);
+    if (next) assets.prefetch(modelFiles(biomeOf(next), LIBRARY));
+  }
   perf.resetPeak();
   session.showColliders(outlinesOn()); // K5: collider outlines show while the debug overlay is open
   resize();
@@ -191,6 +230,9 @@ function startGame(launch, { fromMenu = true, notices = [] } = {}) {
 function endGame() {
   session?.dispose();
   session = null; round = null; game = null;
+  // AP3: the round's model files are freed, and a hole still waiting for its files is dropped
+  loadToken++; loading = null; showLoading(false, null); showAssetNotice('');
+  assets.clear();
   setPaused(false);
   roundUi.hide();
   for (const id of ['intro', 'result', 'holeCard']) $(id).classList.add('hidden');
@@ -354,7 +396,7 @@ window.__golf = {
   get scenario() { return game?.launch.kind === 'scenario' ? game.launch.scenarioId : null; }, tune: tune.set,
   // AP5: the biome set the current hole is drawn with (its id), and the far ground's colour as drawn (tools/session-check.mjs)
   get biome() { return session?.biome.id ?? null; }, get groundColour() { return '#' + session?.scene.getObjectByName('far ground')?.material.color.getHexString(); },
-  get state() { return api().state; }, get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
+  get state() { return session ? api().state : loading ? 'loading' : null; }, // AP3: 'loading' while a hole's files load get ball() { return api().play.ball.pos; }, get strokes() { return api().play.strokes; },
   get clubIdx() { return api().play.clubIdx; }, set clubIdx(v) { api().play.setClub(v); },
   get aim() { return api().play.aim; }, set aim(v) { api().play.setAim(v); },
   get wind() { return api().wind; }, swing: () => session.onSwingInput(),
@@ -371,7 +413,9 @@ window.__golf = {
   get view() { return api().view; }, viewTap: () => api().viewTap(), get camFrame() { return api().camFrame; }, cameraAt: () => api().cameraAt(),
   // A2: unload the current hole and load another one in place (tools/session-check.mjs); renderer
   // memory as Three.js counts it (geometries, textures, shader programs)
-  loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return session.hole.id; },
+  loadHole: (id, seedOverride) => { loadHole(getHole(id), { seed: seedOverride ?? game?.seed }); return id; },
+  // AP3: the round's model cache (tools/session-check.mjs): files known, and whether a hole waits for its files
+  get assets() { return { files: assets.size, loading: !!loading }; },
   // Phase 6: the round (null when playing a single hole)
   get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null,
     // Phase T: vs AI (null in solo)
