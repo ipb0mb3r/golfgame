@@ -228,6 +228,29 @@ One biome set per artist session, always in this order:
 
 Budget: the mock-up's golfer view is ~320k triangles, of which ~100k is the mock-up's own dense terrain; the game's terrain (AP1b) is lighter, so the set fits the 300k line. Flowers must stay tiny (≤ 8 tris) or be sprites.
 
+### 6.4 Alpine (ART1, owner-approved 2026-11-20): Swiss Alps
+Mood board (owner): **a Swiss style, really the Alps**. The grass is **warm**, but there are **a lot of colder colours** too. **Prominent peaks** in the background, **mainly pines**, **Swiss chalets** as big props, **Swiss red** as the accent. Photos: Alpine courses under big snowy peaks, hay huts on rolling greens, a chalet village, a cable-car colour palette.
+- **Decided (owner):**
+  - palette **A "warm grass, cool world"** (not B "fresh and cooler", too close to Meadow)
+  - **Swiss-red flag** `#C8102E` (only the colour: never a flag cross or real logos) and **alpine-gold tee markers** `#E0A82E`
+  - **peaks:** stylised, Matterhorn-like **horn peaks** (invented): wide at the base, a leaning hooked summit, faceted blue-grey rock faces, snow on the summit and the ledges (owner: "not just a big triangle", then "wider")
+  - **sky:** a **lighter azure** taken from his photos, `#5CB4F2` → `#B4E4FC` (he chose the lightest of four)
+- **Data:** `src/biomes/alpine-day.js` (source `docs/art/alpine/palettes.js`). It passes every §4.4 rule with no waiver. Images: `docs/art/alpine/01-07`.
+- **Pieces** (✅ in the library today · 🔧 new, needs dev work first):
+
+| Piece | Status | Notes |
+|---|---|---|
+| Palette | ✅ in `alpine-day` | warm lime grass, blue-grey peaks, dark teal pines, Swiss red, gold |
+| Flag, tee markers, OB stakes, pond, boulders | ✅ reused | tinted by the palette |
+| **Horn-peaks backdrop** | 🔧 new backdrop piece | 1 hero horn + 5-6 smaller horns (5-6 sided, ~80 tris each) + a far ridge + dark forested slopes; tint zones `backFar` (rock), `backCap` (snow), `backNear` (slopes) |
+| Soft pine (4 tiers), teal spruce (5 tiers), tall spruce, birch | 🔧 AP7 + gradient slots | ~320 / ~390 / ~130 / ~185 tris; shared with Meadow's conifer |
+| Pine wall (far trees) | 🔧 AP7 | ~56 tris, instanced |
+| White and blue wildflowers, grass tufts | 🔧 smallProps | same system as Meadow's buttercups (`propA` white, `propB` blue) |
+| Swiss chalet (dark wood, white stone base, low grey roof, red shutters and geraniums from `accent`) | 🔧 bigProps | ~700 tris |
+| Small chalet / hay hut | 🔧 bigProps | ~200 tris |
+| Wooden fence | 🔧 bigProps | shared with Meadow |
+| Gradient sky; textured ground | 🔧 AP6 / sky | as in §1.1 |
+
 ## 7. Asset list (rough, nothing made yet)
 | Asset | Used by | Triangles | Notes |
 |---|---|---|---|
@@ -260,5 +283,7 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 | `05-approach.jpg` | approach views, Alpine and Island coast |
 | `06-palettes.jpg` | the four palettes |
 | `07-accents.jpg` | accent / sub-accent per biome, flag on the green |
+
+**ART1 Alpine:** `docs/art/alpine/mockup.html` (`?set=alpine-warm|alpine-fresh`, `&view=golfer|tee|approach|chalets`, `&skyTop=` / `&skyHor=` to try a sky). Images `01-warm-vs-fresh`, `02-views`, `03-palettes`, `04-peaks-before-after`, `05-sky`, `06-approved`, `07-in-game`.
 
 **ART1 Meadow:** `docs/art/meadow/mockup.html` (`?set=meadow-warm|meadow-warmer`, `&view=golfer|tee|approach|cows`, `&accent=%23hex`). Images `01-warm-vs-warmer`, `02-views`, `03-flag`, `04-palettes`, `05-in-game-before-after`.

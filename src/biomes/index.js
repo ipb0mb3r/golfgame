@@ -5,8 +5,9 @@ import { LIBRARY } from './library.js';
 import mtnDefault from './mtn-default.js';
 import protoDefault from './proto-default.js';
 import meadowDay from './meadow-day.js';
+import alpineDay from './alpine-day.js';
 
-export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay].map(b => [b.id, b]));
+export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay].map(b => [b.id, b]));
 
 // The set a hole uses, checked (validateBiomeSet throws with the set and the field). Unknown id → throws.
 export function resolveBiome(id) {
