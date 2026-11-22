@@ -9,7 +9,7 @@ import { SMALL_PROPS, TUNE } from '../core/config.js';
 import { scatterSmallProps, smallPropPart, visibleSmallProps } from '../core/smallProps.js';
 
 // biome = the resolved set (its smallProps normalized), look = pieceColours(biome, LIBRARY), keep(x, z) = an
-// extra test (the ocean's beach). → { update(camPos, ballPos), stats() } or null when the set scatters nothing.
+// extra test (the ocean's beach). → { update(camera, ballPos), stats(ballPos) } or null when the set scatters nothing.
 export function addSmallProps(scene, hole, terrain, biome, look, keep) {
   const rule = biome.smallProps;
   if (!rule?.pieces.length) return null;
@@ -31,13 +31,15 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep) {
     scene.add(mesh);
     return mesh;
   });
-  const lastCam = new THREE.Vector3(Infinity, 0, 0), lastBall = new THREE.Vector3(Infinity, 0, 0);
+  const lastCam = new THREE.Vector3(Infinity, 0, 0), lastBall = new THREE.Vector3(Infinity, 0, 0), lastDir = new THREE.Vector3(), dir = new THREE.Vector3();
   let drawn = 0, lastClear = -1;
-  function update(cam, ball) {
-    const clear = TUNE.PROP_BALL_CLEAR, step = SMALL_PROPS.moveStep;
-    if (clear === lastClear && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2) return;
-    lastCam.copy(cam); lastBall.copy(ball); lastClear = clear;
-    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear });
+  // camera = the hole's camera (its position and view direction), ball = the ball's position
+  function update(camera, ball) {
+    const clear = TUNE.PROP_BALL_CLEAR, step = SMALL_PROPS.moveStep, cam = camera.position;
+    camera.getWorldDirection(dir);
+    if (clear === lastClear && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2 && 1 - dir.dot(lastDir) < SMALL_PROPS.turnStep) return;
+    lastCam.copy(cam); lastBall.copy(ball); lastDir.copy(dir); lastClear = clear;
+    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear, dir });
     for (const mesh of meshes) if (mesh) mesh.count = 0;
     for (const i of shown) {
       const mesh = meshes[props[i].pick];

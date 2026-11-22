@@ -279,7 +279,8 @@ export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryL
 //     ?tune=PROP_BALL_CLEAR); lineClear: m around the line from the ball to the camera where props are hidden too.
 //   drawDist: m from the camera beyond which no prop is drawn; maxTris: the most small-prop triangles drawn in one
 //     frame (the nearest first), so a dense set never pushes a hole over PERF_BUDGET; moveStep: m the camera or
-//     the ball must move before the drawn props are picked again.
+//     the ball must move before the drawn props are picked again; turnStep: the camera turn (1 − cos of the angle)
+//     that picks them again; behind: m behind the camera beyond which none is drawn (the cap is spent on what is seen).
 //   scale: per-copy size [from, spread] (seeded, the scatter's own stream; each copy also gets a random turn).
 export const SMALL_PROPS = Object.freeze({
   seed: 61,
@@ -288,7 +289,7 @@ export const SMALL_PROPS = Object.freeze({
   cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
   margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
   ballClear: 1.2, lineClear: 0.5,
-  drawDist: 45, maxTris: 10000, moveStep: 0.5,
+  drawDist: 45, maxTris: 10000, moveStep: 0.5, behind: 2, turnStep: 0.05,
   scale: Object.freeze([0.8, 0.45]),
 });
 // AP7c: the two PLACEHOLDER small-prop pieces (core/smallProps.js builds them; the artist's real pieces replace

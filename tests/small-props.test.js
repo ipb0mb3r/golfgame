@@ -207,6 +207,11 @@ test('AP7c: the drawn props: nearest first, within drawDist, at most maxTris tri
   assert.ok(!shown.includes(props.indexOf(p0))); // the prop the ball sits on is hidden
   // a dense spot hits the triangle cap; a tighter cap draws fewer
   assert.ok(visibleSmallProps(props, cam, ball, part, { maxTris: 600 }).length <= 600 / 12);
+  // with the camera's view direction (looking at the ball, −z), nothing more than `behind` m behind it is drawn
+  const dir = { x: 0, y: -2.6 / Math.hypot(2.6, 6), z: -6 / Math.hypot(2.6, 6) };
+  const ahead = visibleSmallProps(props, cam, ball, part, { dir });
+  assert.ok(ahead.every(i => (props[i].x - cam.x) * dir.x + (props[i].y - cam.y) * dir.y + (props[i].z - cam.z) * dir.z >= -C.behind));
+  assert.ok(shown.some(i => props[i].z > cam.z + 5) && !ahead.some(i => props[i].z > cam.z + 5));
   // from high above (the flyover) almost nothing is near enough
   assert.ok(visibleSmallProps(props, { x: cam.x, y: cam.y + 200, z: cam.z }, ball, part).length < shown.length / 4);
 });

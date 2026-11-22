@@ -384,7 +384,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
-    smallProps?.update(camera.position, ball.pos); // AP7c: the props to draw from here (never one that could hide the ball)
+    smallProps?.update(camera, ball.pos); // AP7c: the props to draw from here (never one that could hide the ball)
     props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);
     aimLabel();

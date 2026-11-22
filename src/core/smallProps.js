@@ -171,12 +171,14 @@ export function propHidden(p, h, ball, cam, ballClear, lineClear) {
 }
 // The props to draw from this camera: those within drawDist (3D), none that could hide the ball, nearest
 // first, until the next one would pass maxTris triangles. part(pick) = { tris, height } of the pick's piece.
-// → indices into props, nearest first.
-export function visibleSmallProps(props, cam, ball, part, { drawDist = SMALL_PROPS.drawDist, maxTris = SMALL_PROPS.maxTris, ballClear = SMALL_PROPS.ballClear, lineClear = SMALL_PROPS.lineClear } = {}) {
+// dir (optional) = the camera's view direction (unit): props more than `behind` m behind the camera are
+// skipped, so the triangle cap is spent on what can be seen. → indices into props, nearest first.
+export function visibleSmallProps(props, cam, ball, part, { drawDist = SMALL_PROPS.drawDist, maxTris = SMALL_PROPS.maxTris, ballClear = SMALL_PROPS.ballClear, lineClear = SMALL_PROPS.lineClear, dir = null, behind = SMALL_PROPS.behind } = {}) {
   const near = [], D2 = drawDist * drawDist;
   props.forEach((p, i) => {
-    const d2 = (p.x - cam.x) ** 2 + (p.y - cam.y) ** 2 + (p.z - cam.z) ** 2;
-    if (d2 <= D2 && !propHidden(p, part(p.pick).height * p.scale, ball, cam, ballClear, lineClear)) near.push([d2, i]);
+    const dx = p.x - cam.x, dy = p.y - cam.y, dz = p.z - cam.z, d2 = dx * dx + dy * dy + dz * dz;
+    if (d2 > D2 || (dir && dx * dir.x + dy * dir.y + dz * dir.z < -behind)) return;
+    if (!propHidden(p, part(p.pick).height * p.scale, ball, cam, ballClear, lineClear)) near.push([d2, i]);
   });
   near.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const out = [];
