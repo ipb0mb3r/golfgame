@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palm Crown Options</title>
+<!-- AP7b palm redesign, artist mock-up: today's palmTree (the real AP7a piece, from src/core/trees.js) and
+     3 crown options built here with the same part format (unit canopy space: radius 1 across, y -1..1).
+     ?opt=today|A|B|C|D|E  &view=close|far  &collider=1 (show the flatter canopy collider as a faint ring)
+     &label=0. Stand-alone; reads src/core only, never changes it. — Agent: artist -->
+<script type="importmap">{ "imports": { "three": "../../../vendor/three-0.187.0/three.module.js" } }</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #bff2ff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  canvas { display: block; width: 100%; height: 100%; }
+  #tag { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #1d3340; padding: 5px 14px; border-radius: 99px; font-size: 13px; font-weight: 700; white-space: nowrap; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  #tag small { display: block; font-weight: 500; font-size: 11px; color: #4a5a64; }
+  body.nolabel #tag { display: none; }
+</style>
+</head>
+<body>
+<div id="tag"></div>
+<script type="module">
+import * as THREE from 'three';
+import { treeParts, lathe, mergeParts, partBounds, gradientHex, triangles } from '../../../src/core/trees.js';
+import island from '../../../src/biomes/island-day.js';
+
+const q = new URLSearchParams(location.search), OPT = q.get('opt') || 'today', VIEW = q.get('view') || 'close';
+if (q.get('label') === '0') document.body.classList.add('nolabel');
+const P = island.palette, TAU = Math.PI * 2, clamp01 = v => Math.min(1, Math.max(0, v));
+
+// ---- a frond, more shapes than AP7a's: a spine that arches to `peak` then droops to `end` (power `bend`),
+// a width profile (`shape`: 'leaf' pointed, 'paddle' broad with a round tip), a V section (`droop`), an
+// optional tip curl (the last part turns down harder), and a sideways `twist`.
+function frond(F, a, steps) {
+  const positions = [], indices = [], w = [], dx = Math.cos(a), dz = Math.sin(a), px = -dz, pz = dx;
+  const yAt = t => t < F.tp ? F.y0 + (F.peak - F.y0) * Math.sin((Math.PI / 2) * (t / F.tp)) : F.peak + (F.end - F.peak) * Math.pow((t - F.tp) / (1 - F.tp), F.bend ?? 1.6);
+  const widthAt = t => F.shape === 'paddle' ? F.width * Math.pow(Math.sin(Math.PI * Math.min(1, 0.12 + t)), 0.55) : F.width * Math.sin(Math.PI * (0.15 + 0.85 * t)) * (1 - t * 0.2);
+  for (let k = 0; k <= steps; k++) {
+    const t = k / steps, d = t * F.reach * (1 - (F.curl ?? 0) * t * t * 0.25), y = yAt(t) - (F.curl ?? 0) * Math.pow(t, 3) * 0.35, wd = widthAt(t);
+    if (k === steps && F.shape !== 'paddle') { positions.push(d * dx, y, d * dz); w.push(0); break; }
+    for (const side of [-1, 0, 1]) {
+      const off = side * wd * (k === steps ? 0.35 : 1), yy = y - (side ? F.droop * wd : 0);
+      positions.push(d * dx + off * px, yy, d * dz + off * pz); w.push(side ? 0 : 0.08);
+    }
+  }
+  const last = F.shape === 'paddle' ? steps + 1 : steps;
+  for (let k = 0; k < last - 1; k++) { const A = k * 3, B = (k + 1) * 3; indices.push(A, A + 1, B + 1, A, B + 1, B, A + 1, A + 2, B + 2, A + 1, B + 2, B + 1); }
+  if (F.shape !== 'paddle') { const A = (steps - 1) * 3, B = steps * 3; indices.push(A, A + 1, B, A + 1, A + 2, B); }
+  return { positions, indices, w };
+}
+function crown(L) {
+  const parts = [];
+  for (const F of L.fronds) for (let i = 0; i < F.n; i++) parts.push(frond(F, F.turn + (i / F.n) * TAU + (F.jit ? Math.sin(i * 7.3) * F.jit : 0), F.steps));
+  if (L.tuft) parts.push(lathe([[0, L.tuft.h, 1], [L.tuft.r, L.tuft.h * 0.3, 0.8], [L.tuft.r * 0.8, 0, 0.6], [0, -0.1, 0.4]], L.tuft.segs));
+  const c = L.cap; parts.push(lathe([[0, c.r, 0.7], [c.r, 0, 0.5], [0, -c.r * 1.5, 0.3]], c.segs));
+  const m = mergeParts(parts), b = partBounds(m);
+  m.w = m.w.map((_, i) => clamp01((m.positions[i * 3 + 1] - b.y0) / (b.y1 - b.y0)));
+  return m;
+}
+// The 3 options (unit canopy space). The crown must fill a WIDER, FLATTER collider (AP7b): radius 1 across,
+// and most of the leaf mass between y -0.6 and +0.5.
+const OPTIONS = {
+  A: { name: 'A · Fuller starburst', sub: '18 long fronds in 3 layers, a full firework crown', fronds: [
+      { n: 4, reach: 0.6, y0: 0.1, peak: 0.55, tp: 0.5, end: 0.3, width: 0.2, droop: 0.5, steps: 4, turn: 0.2 },
+      { n: 6, reach: 0.9, y0: 0.05, peak: 0.36, tp: 0.32, end: -0.35, width: 0.22, droop: 0.6, steps: 4, turn: 0.75, jit: 0.1 },
+      { n: 8, reach: 1.0, y0: 0, peak: 0.14, tp: 0.22, end: -0.9, width: 0.2, droop: 0.65, steps: 5, turn: 0.25, jit: 0.15, bend: 1.2 }],
+    cap: { r: 0.12, segs: 6 } },
+  B: { name: 'B · Big broad leaves', sub: '8 very wide, deeply folded leaves, round tips', fronds: [
+      { n: 3, reach: 0.72, y0: 0.1, peak: 0.45, tp: 0.4, end: 0.1, width: 0.38, droop: 0.7, steps: 5, turn: 0.5, shape: 'paddle', bend: 1.3 },
+      { n: 5, reach: 1.0, y0: 0.02, peak: 0.26, tp: 0.3, end: -0.5, width: 0.46, droop: 0.75, steps: 5, turn: 0, shape: 'paddle', bend: 1.4, jit: 0.12 }],
+    cap: { r: 0.15, segs: 6 } },
+  C: { name: 'C · Round dome', sub: '12 fronds arch high, then curl down into a round crown', fronds: [
+      { n: 5, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.26, droop: 0.4, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0 },
+      { n: 7, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.28, droop: 0.45, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0 }],
+    tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
+  D: { name: 'C + a little B', sub: 'the round dome, wider leaves (pointed tips)', fronds: [
+      { n: 4, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.33, droop: 0.55, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0 },
+      { n: 7, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.36, droop: 0.6, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0 }],
+    tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
+  E: { name: 'C + more B', sub: 'the round dome, broad folded leaves with round tips', fronds: [
+      { n: 4, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.36, droop: 0.65, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0, shape: 'paddle' },
+      { n: 6, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.42, droop: 0.7, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0, shape: 'paddle' }],
+    tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
+};
+
+// ---- the scene: sand and grass, the island sky, one palm (in-play size), the AP6 toon ramp
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight); document.body.prepend(renderer.domElement);
+const scene = new THREE.Scene(); scene.fog = new THREE.Fog(P.fog, 120, 900);
+const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+  uniforms: { top: { value: new THREE.Color(P.skyTop) }, hor: { value: new THREE.Color(P.skyHorizon) } },
+  vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+  fragmentShader: 'uniform vec3 top; uniform vec3 hor; varying vec3 vp; void main(){ float t = clamp(vp.y*1.9, 0.0, 1.0); gl_FragColor = vec4(mix(hor, top, pow(t, 0.62)), 1.0); }' }));
+scene.add(sky);
+scene.add(new THREE.HemisphereLight(P.ambient, P.shadow, 1.9)); const sun = new THREE.DirectionalLight(P.sun, 2.2); sun.position.set(-60, 80, 40); scene.add(sun);
+const grad = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1); grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.needsUpdate = true;
+const toon = o => new THREE.MeshToonMaterial({ gradientMap: grad, ...o });
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(2000, 2000).rotateX(-Math.PI / 2), toon({ color: P.rough })); scene.add(ground);
+const sea = new THREE.Mesh(new THREE.PlaneGeometry(4000, 1600).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: P.waterDeep })); sea.position.set(0, 0.05, -1000); scene.add(sea);
+const shallow = new THREE.Mesh(new THREE.PlaneGeometry(4000, 60).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: P.water })); shallow.position.set(0, 0.06, -230); scene.add(shallow);
+const beach = new THREE.Mesh(new THREE.PlaneGeometry(4000, 40).rotateX(-Math.PI / 2), toon({ color: P.sand })); beach.position.set(0, 0.04, -185); scene.add(beach);
+
+// a part (unit space) → a mesh at size: trunk radius / height, canopy radius / half-height, on the trunk top
+function mesh(part, colours, sx, sy, sz, y, double) {
+  const g = new THREE.BufferGeometry(), col = [];
+  for (const h of colours) { const c = new THREE.Color(h); col.push(c.r, c.g, c.b); }
+  g.setAttribute('position', new THREE.Float32BufferAttribute(part.positions.map((v, i) => i % 3 === 0 ? v * sx : i % 3 === 1 ? v * sy + y : v * sz), 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(part.indices); g.computeVertexNormals();
+  return new THREE.Mesh(g, toon({ vertexColors: true, side: double ? THREE.DoubleSide : THREE.FrontSide }));
+}
+const today = treeParts('palmTree');
+const can = OPT === 'today' ? today.canopy : crown(OPTIONS[OPT]);
+// in-play size (an Island collider): trunk r 0.3, h 7.5; canopy r 3.4 across. Today's collider is 1.5× taller
+// than wide; the AP7b palm collider is wider and flatter: half-height 1.4 (shown with &collider=1).
+const TR = 0.3, TH = 7.5, CR = 3.4, CH = OPT === 'today' ? 2.6 : 2.0;
+const trunkCol = today.trunk.w.map(wt => gradientHex(P.trunkAlt, P.trunkAlt, P.trunk, wt));
+const canCol = can.w.map(wt => gradientHex(P.leafLow, P.leafAlt, P.leafTop, wt));
+const tree = new THREE.Group();
+tree.add(mesh(today.trunk, trunkCol, TR, TH, TR, 0, false));
+tree.add(mesh(can, canCol, CR, CH, CR, TH, true));
+tree.rotation.y = 0.5; scene.add(tree);
+if (q.get('collider') === '1') {
+  const e = new THREE.Mesh(new THREE.SphereGeometry(1, 24, 12), new THREE.MeshBasicMaterial({ color: '#ffffff', wireframe: true, transparent: true, opacity: 0.25 }));
+  e.scale.set(CR, 1.4, CR); e.position.y = TH; scene.add(e);
+}
+// a few far palms of the same crown, for the silhouette in a group
+for (const [x, z, s, r] of [[-14, -40, 0.9, 1], [12, -55, 1.05, 2.2], [26, -30, 0.85, 4]]) {
+  const t = tree.clone(); t.position.set(x, 0, z); t.scale.setScalar(s); t.rotation.y = r; scene.add(t);
+}
+const camera = new THREE.PerspectiveCamera(52, innerWidth / innerHeight, 0.3, 3000);
+if (VIEW === 'far') { camera.position.set(2, 4, 30); camera.lookAt(4, 7, -20); }
+else { camera.position.set(6, 4.6, 14); camera.lookAt(0, 7.8, 0); }
+const tris = triangles(can) + triangles(today.trunk);
+document.getElementById('tag').innerHTML = OPT === 'today' ? `Today's palm (AP7a)<small>12 fronds in 2 layers · ${tris} triangles</small>` : `${OPTIONS[OPT].name}<small>${OPTIONS[OPT].sub} · ${tris} triangles</small>`;
+renderer.render(scene, camera);
+window.__palm = { tris, crownTris: triangles(can), bounds: partBounds(can) };
+document.title = 'ready';
+</script>
+</body>
+</html>

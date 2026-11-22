@@ -267,7 +267,7 @@ Mood board (owner): **beach, but not the Caribbean and not the US east or west c
 | Flag, tee markers, OB stakes, pond, boulders | ✅ reused | tinted by the palette |
 | **Ocean backdrop** (deep sea, cyan shallow bands along the shore, beach, lava patches at the waterline) | 🔧 new backdrop piece | flat planes, `waterDeep` → `water`; the shore follows the hole's OB |
 | Green volcanic ridge (invented crater shape), far resort towers (fogged, 6-10 boxes) | 🔧 backdrop | tint zones `backFar`, `glass` / cream |
-| Palm (curved banded trunk, drooping fronds, coconuts) | 🔧 AP7 + gradient slots | ~600 tris in the mock-up, **target ≤ 400** |
+| Palm (curved banded trunk; crown redesigned by the owner 2026-11-22: a **round dome** of wide, pointed, curling fronds with a top tuft, "C + a little B") | 🔧 AP7b | spec `docs/art/palm/SPEC.md`, ~330 tris |
 | Very tall palm (landmark big prop) | 🔧 bigProps | the same model, about 2× taller, placed by hand |
 | Monkeypod (wide umbrella canopy) | 🔧 AP7 | ~310 tris |
 | Round treetop wall | 🔧 AP7 | shared with Meadow |
