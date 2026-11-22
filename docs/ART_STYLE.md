@@ -322,3 +322,34 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 **ART1 Alpine:** `docs/art/alpine/mockup.html` (`?set=alpine-warm|alpine-fresh`, `&view=golfer|tee|approach|chalets`, `&skyTop=` / `&skyHor=` to try a sky). Images `01-warm-vs-fresh`, `02-views`, `03-palettes`, `04-peaks-before-after`, `05-sky`, `06-approved`, `07-in-game`.
 
 **ART1 Meadow:** `docs/art/meadow/mockup.html` (`?set=meadow-warm|meadow-warmer`, `&view=golfer|tee|approach|cows`, `&accent=%23hex`). Images `01-warm-vs-warmer`, `02-views`, `03-flag`, `04-palettes`, `05-in-game-before-after`.
+
+## Handoff (2026-11-22)
+State at the end of the first artist session. — Agent: artist
+
+**Done (on main):** the art direction "Sunny postcard" (§1). Meadow (§6.3), Alpine (§6.4) and Island coast (§6.5) are approved and in `src/biomes/` (gradient sky, hazy hills / horn peaks / ocean, AP7a/b trees). The palm redesign spec is in `docs/art/palm/SPEC.md`.
+
+**Open work**
+- **Meadow round scenery trees:** branch `art/meadow-round-scenery` sets `offTrees: ['roundCanopy', 'spruceTree']` in `meadow-day.js`. It was 305k on mtn-07 before #112; the dev measured 287k with #112's 102-triangle scenery round tree. **Re-measure** with `node tools/perf-check.mjs --biome meadow-day --hole mtn-07 --hole mtn-04`, then open "Art: Meadow round scenery trees" if it's ≤ 300k.
+- **Palms in play on Island:** after #112, set `island-day.js` `onTrees: ['palmTree', 'roundCanopy']` (with the owner). PR caveat (PM): `?biome=island-day` previews on today's mountain and prototype holes draw palms inside tall round-tree colliders, so balls can hit air there. The first real Island hole (course designer) brings flat palm colliders (canopyH / 2R ≤ 0.8, enforced by validateHole).
+- **Next biomes:** Alpine sunset (same pieces, its own golden-hour palette, §4.2), then any new mood board (§6.2). The idea list is in §6.6 (Cape Cod with a lighthouse).
+
+**Outstanding dev requests**
+- Tall `roundCanopy`: base row about 10% wider than the dome (backlog).
+- A per-pick slot override, e.g. `{ id: 'roundTree', slots: { canopy: 'leafAlt' } }` (backlog).
+- smallProps with weights and clusters: buttercups, wildflowers, bougainvillea, tufts (AP7, not built yet).
+- Big props: windmill, cow, fence (Meadow); chalet, hay hut (Alpine); beach hut, very tall palm (Island). Specs are in §6.3–6.5.
+- AP6 textured ground (speckle, edge line, lip, bank), §1.1.
+
+**How Alexis works (owner)**
+- He decides from **phone-size pictures side by side**. Give **2–3 options (A/B/C) with a recommendation**, then small blends ("C but a little B"). Text short, plain words, no jargon.
+- He sends **mood boards** (photos, game screenshots, palette strips) plus a few words. Sum them up as "keep / leave out" and a reuse-vs-new library table (§6.2).
+- He iterates fast on one thing at a time ("wider", "lighter still"): show before / after in the next message.
+- **His taste:** colours that pop on believable places; no fantasy props, no muted colours; soft and round; real-world themes with a clear identity per biome; quality trees ("don't skimp on trees"). He doesn't like sticker-white clouds or thin triangle peaks.
+- Approvals are usually one line ("A with the brick red flag"). Confirm what you'll do in one line, then do it.
+
+**Reference pages (artist tools, not game code)**
+- `docs/art/style-r2/mockup.html`: the style direction, plus `palettes.js` and `paint.js` (texture recipe).
+- `docs/art/meadow|alpine|island/mockup.html`: per-biome mock-ups with `?set=`, `&view=` and colour overrides. `hornPeak()` in the Alpine one is the reference for the horn-peaks backdrop.
+- `docs/art/palm/palms.html`: the palm crown options (`?opt=today|A…E`).
+- Screenshots: Playwright with page routing (no local server needed); for the real game, `index.html?hole=…&biome=…` or `?scenario=h3-behind-tree&biome=…` for a tree close-up.
+- Checks before any set PR: `node tools/biome-check.mjs <id>`, `node --test`, `tools/perf-check.mjs --biome <id>` (≤ 300k triangles).
