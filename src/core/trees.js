@@ -95,17 +95,35 @@ const blobs = L => mergeParts(L.blobs.slice(0, L.blobCount ?? L.blobs.length).ma
 // round again instead of stretching one shape into an egg. A taller collider gets more rings.
 function stackedLobes(L, aspect) {
   const S = L.stack, a = aspect, sq = L.squat, out = [];
-  const ring = ([n, r, radial, segs, rows], y, turn) => { // (each lobe a little up or down: no flat layers)
-    for (let i = 0; i < n; i++) { const t = turn + (i / n) * TAU, dy = n > 1 ? S.jitter * (0.5 + 0.5 * Math.sin(2.4 * i + 3 * turn)) : 0; out.push([radial * Math.cos(t), y + dy, radial * Math.sin(t), r, r * sq, segs, rows]); }
+  const ring = ([n, r, radial, segs, rows], y, turn, q = sq) => { // (each lobe a little up or down: no flat layers)
+    for (let i = 0; i < n; i++) { const t = turn + (i / n) * TAU, dy = n > 1 ? S.jitter * (0.5 + 0.5 * Math.sin(2.4 * i + 3 * turn)) : 0; out.push([radial * Math.cos(t), y + dy, radial * Math.sin(t), r, r * q, segs, rows]); }
   };
-  const yb = -a + S.base[1] * sq * L.flat, yt = a - S.top[1] * sq; // base bottoms on the floor, the dome's top at the top
-  const rings = L.midRings ?? Math.max(0, Math.round((yt - yb) / S.step) - 1), sp = (yt - yb) / (rings + 1);
-  ring(S.base, yb, 0);
+  // AP7b (artist on #110): at most S.maxRows rows (no tower of blobs in a very tall collider). With
+  // only the base ring and the dome, the lobes grow instead (the dome first, up to grow[1], then the base
+  // lobes up to grow[0], pulled in to stay within S.reach), until the two rows overlap by S.overlap;
+  // if they still can't, the dome grows a little taller (domeTall) and comes down to meet the base.
+  const want = L.midRings ?? Math.max(0, Math.round((a - S.top[1] * sq - (-a + S.base[1] * sq * L.flat)) / S.step) - 1);
+  const rings = Math.min(want, Math.max(0, (S.maxRows ?? Infinity) - 2)), grows = rings === 0 && !!S.grow;
+  let base = S.base, top = S.top;
+  if (grows) {
+    const need = (2 * a + S.overlap) / (sq * (1 + L.flat)) - (base[1] + top[1]);
+    if (need > 0) {
+      const rt = Math.min(S.grow[1], top[1] + need), rb = Math.min(S.grow[0], base[1] + need - (rt - top[1]));
+      top = [top[0], rt, ...top.slice(2)];
+      base = [base[0], rb, Math.min(base[2], S.reach - rb), ...base.slice(3)];
+    }
+  }
+  // (still short: the dome may be up to domeTall × as tall as wide, a hint of height, never an egg)
+  const qt = grows ? Math.min(S.domeTall ?? sq, Math.max(sq, (2 * a + S.overlap - base[1] * sq * (1 + L.flat)) / (top[1] * (1 + L.flat)))) : sq;
+  const yb = -a + base[1] * sq * L.flat; // the base bottoms on the floor, the dome's top at the top (or down on the base)
+  const yt = grows ? Math.min(a - top[1] * qt, yb + base[1] * sq + top[1] * qt * L.flat - S.overlap) : a - top[1] * sq;
+  const sp = (yt - yb) / (rings + 1);
+  ring(base, yb, 0);
   for (let k = 1; k <= rings; k++) {
     const [n, rMax, ...rest] = S.mid;
     ring([n, Math.min(rMax, Math.max(S.midMin, sp * S.midFill)), ...rest], yb + sp * k, k * S.turn);
   }
-  ring(S.top, yt, 0);
+  ring(top, yt, 0, qt);
   return out.map(([x, y, z, r, h, segs, rows]) => [x, y / a, z, r, h / a, segs, rows]);
 }
 const roundLobes = (L, aspect = L.aspect) => blobs({ ...L, blobs: stackedLobes(L, aspect) });
@@ -140,14 +158,16 @@ function palmTrunk(L) {
   return { positions, indices, w };
 }
 
-// A frond: a strip from the centre out along angle a, arching up to `peak` then drooping to `end`, with a
-// V section (the edges hang `droop` × width under the spine), tapering to a point. 4 triangles per
-// station band, 2 for the last.
+// A frond: a strip from the centre out along angle a, arching up to `peak` then drooping to `end` (power
+// `bend`), with a V section (the edges hang `droop` × width under the spine), tapering to a point.
+// AP7b `curl` (the palm spec, docs/art/palm/SPEC.md): over the outer part the spine is pulled in and
+// down (reach × (1 − curl·t²/4), height − curl·t³·0.35), so the crown reads as a round dome.
+// 4 triangles per station band, 2 for the last.
 function frond(F, a, steps) {
-  const positions = [], indices = [], w = [], dx = Math.cos(a), dz = Math.sin(a), px = -dz, pz = dx;
-  const yAt = t => t < F.tp ? F.y0 + (F.peak - F.y0) * Math.sin((Math.PI / 2) * (t / F.tp)) : F.peak + (F.end - F.peak) * Math.pow((t - F.tp) / (1 - F.tp), 1.6);
+  const positions = [], indices = [], w = [], dx = Math.cos(a), dz = Math.sin(a), px = -dz, pz = dx, curl = F.curl ?? 0;
+  const yAt = t => t < F.tp ? F.y0 + (F.peak - F.y0) * Math.sin((Math.PI / 2) * (t / F.tp)) : F.peak + (F.end - F.peak) * Math.pow((t - F.tp) / (1 - F.tp), F.bend ?? 1.6);
   for (let k = 0; k <= steps; k++) {
-    const t = k / steps, d = t * F.reach, y = yAt(t), wd = F.width * Math.sin(Math.PI * (0.15 + 0.85 * t)) * (1 - t * 0.2);
+    const t = k / steps, d = t * F.reach * (1 - curl * t * t * 0.25), y = yAt(t) - curl * t ** 3 * 0.35, wd = F.width * Math.sin(Math.PI * (0.15 + 0.85 * t)) * (1 - t * 0.2);
     if (k === steps) { positions.push(d * dx, y, d * dz); w.push(wAt(y)); break; }
     for (const side of [-1, 0, 1]) {
       const off = side * wd, yy = y - (side ? F.droop * wd : 0);
@@ -161,17 +181,38 @@ function frond(F, a, steps) {
   }
   return { positions, indices, w };
 }
+// AP7b palm crown ("C + a little B", docs/art/palm/SPEC.md): a dome of wide, pointed fronds in two layers
+// that arch up and curl down, a small round tuft over the cap where they meet. The crown is scaled across
+// so its widest frond reaches `fit` of the canopy radius (the drawn leaves reach the collider's edge);
+// its height stays as built (−0.57 … +0.70), made for a flat palm collider (TREE_LOOK.palmTree.collider).
 function palmCrown(L) {
   const parts = [];
   for (const F of L.fronds) for (let i = 0; i < F.n; i++) parts.push(frond(F, F.turn + (i / F.n) * TAU, L.frondSteps ?? F.steps));
-  const c = L.cap;
+  const t = L.tuft, c = L.cap;
+  if (t) parts.push(lathe([[0, t.h, 1], [t.r, t.h * 0.3, 0.8], [t.r * 0.8, 0, 0.6], [0, -0.1, 0.4]], t.segs));
   parts.push(lathe([[0, c.r, 0.7], [c.r, 0, 0.5], [0, -c.r * 1.5, 0.3]], c.segs));
-  // the crown is flat (it keeps to the middle of its collider): its gradient runs over its own height,
-  // the drooping tips leafLow, the top leafTop
-  const crown = mergeParts(parts), b = partBounds(crown);
+  // the gradient runs over the crown's own height: the drooping tips leafLow, the tuft leafTop
+  const crown = mergeParts(parts), b = partBounds(crown), k = L.fit ? L.fit / b.rMax : 1;
   crown.w = crown.w.map((_, i) => clamp01((crown.positions[i * 3 + 1] - b.y0) / (b.y1 - b.y0)));
+  crown.positions = crown.positions.map((v, i) => (i % 3 === 1 ? v : v * k));
   return crown;
 }
+
+// AP7b palm collider rule (no "hitting air", owner: no blind shots). The crown is flat, so a palm must
+// stand on a wide, flat canopy collider: its half-height / radius (canopyH / (2 × canopyR)) at most
+// collider.maxAspect (the spec's 0.65 + slack). Returns the problem (a string) or null. In-play palms
+// are drawn in their collider (palmCanopyRy); one in a collider this rule rejects keeps the spec's
+// proportion (aspect), so a dev set on today's tall colliders still shows the right crown.
+export function palmColliderError(o) {
+  const C = TREE_LOOK.palmTree.collider, a = o.canopyH / (2 * o.canopyR);
+  return a > C.maxAspect ? `a palm's canopy collider must be wide and flat: canopyH / (2 × canopyR) = ${a.toFixed(2)}, at most ${C.maxAspect} (palm spec ${C.aspect}: e.g. canopyH ${(2 * C.aspect * o.canopyR).toFixed(1)} for canopyR ${o.canopyR}); a taller collider lets the ball hit air above and under the crown` : null;
+}
+// The drawn half-height of a canopy (in play): the collider's, except a palm in a collider the rule
+// rejects, drawn at the spec's proportion (look only: the collisions stay the collider's)
+export const canopyDrawRy = (id, rx, ry) => {
+  const C = TREE_LOOK[id]?.collider;
+  return C && ry / rx > C.maxAspect ? C.aspect * rx : ry;
+};
 
 // The builders, by library id: (look, aspect?) → { trunk, canopy, doubleSide (the palm's fronds are seen
 // from both sides) }. look = TREE_LOOK[id] (in play) or the same with its `lod` (scenery); aspect = the
