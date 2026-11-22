@@ -30,8 +30,8 @@ export default {
     gridFill: '#c2ee78', gridLine: '#96d25e', farGround: '#438a3a', pondSurface: '#2a9ad8', boulder: '#9aa2ac',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundTree'],     // later: soft pines, a tall spruce and a few birches (AP7, ART_STYLE §6.4)
-  offTrees: ['coneTree'],     // later: the cheap pine wall (AP7)
+  onTrees: ['pineTree', 'spruceTree', 'birchTree'], // soft pines, teal spruces (leafAlt) and a few birches (AP7a)
+  offTrees: ['spruceTree', 'pineTree'], // spruce and pine forest; no birches off course (triangle budget)
   rocks: ['roundBoulder'],
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'hornPeaks',  // the wide stylised horn peaks + forested slopes (AP6a, from docs/art/alpine/)

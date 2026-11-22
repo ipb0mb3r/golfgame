@@ -28,8 +28,8 @@ export default {
     gridFill: '#c8f07e', gridLine: '#9ad65a', farGround: '#4a8836', pondSurface: '#2c8ad8', boulder: '#a89b8c',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundTree'],     // later: the soft round tree + the tall conifer (AP7, ART_STYLE §6.3)
-  offTrees: ['coneTree'],     // later: the cheap round treetop wall (AP7)
+  onTrees: ['roundCanopy', 'pineTree'], // the soft round tree + a soft pine (AP7a)
+  offTrees: ['spruceTree', 'pineTree'], // conifer forest for now: round scenery trees go over the triangle budget on mtn-07 (321k) until the cheap far tree wall (AP7b)
   rocks: ['roundBoulder'],
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'hazeHills',  // the soft hazy hills, near ring backNear + far ring backFar (AP6a)
