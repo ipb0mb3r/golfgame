@@ -29,8 +29,8 @@ export default {
     gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#3e3a40',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundTree'],     // later: palm, monkeypod (AP7, ART_STYLE §6.5)
-  offTrees: ['coneTree'],     // later: palm / round treetop wall (AP7)
+  onTrees: ['roundCanopy'], // round canopy trees in play; palms in play after AP7b (colliders)
+  offTrees: ['palmTree', 'roundCanopy'], // palms (leafAlt fronds) and round trees as scenery (AP7a)
   rocks: ['roundBoulder'],    // dark lava boulders
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'ocean',    // the sea along the course (left + far), beach, lava, volcanic ridge, far island (AP6a)
