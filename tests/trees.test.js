@@ -1,8 +1,8 @@
 // AP7a: the gradient tree pieces (core/trees.js): the phone budget, the fit to the collider, the gradient.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TREE_IDS, treeParts, sceneryTree, triangles, partBounds, gradientHex, treeColours, lathe } from '../src/core/trees.js';
-import { TREE_LOOK, PERF_BUDGET } from '../src/core/config.js';
+import { TREE_IDS, treeParts, sceneryTree, triangles, partBounds, gradientHex, treeColours, lathe, canopyAspect, isFarTree } from '../src/core/trees.js';
+import { TREE_LOOK, TREE_FAR, PERF_BUDGET } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';
 import { minimapColours, minimapShade, pieceColours } from '../src/core/biome.js';
@@ -96,4 +96,41 @@ test('lathe: faces point outward (a closed shape has a positive signed volume)',
   }
   assert.ok(vol > 0, `volume ${vol}`);
   assert.equal(triangles(p), 16);
+});
+
+test('AP7b: the round canopy is built per collider proportion, stacked (more rings when taller), never past the collider, within budget', () => {
+  const L = TREE_LOOK.roundCanopy;
+  assert.equal(canopyAspect('roundCanopy', 2.6, 3.25), 1.25); // the mountain holes
+  assert.equal(canopyAspect('roundCanopy', 2.33, 3.5), 1.5);  // pl-01 / pl-02
+  assert.equal(canopyAspect('roundCanopy', 4.5, 4), 0.9);     // pl-03
+  assert.equal(canopyAspect('pineTree', 2.6, 3.25), null);    // the other pieces: one shape, fitted
+  let lobes = 0;
+  for (const a of L.aspects) {
+    const p = treeParts('roundCanopy', a), c = partBounds(p.canopy), n = triangles(p.trunk) + triangles(p.canopy);
+    assert.ok(n <= PERF_BUDGET.modelTriangles, `aspect ${a}: ${n} triangles`);
+    assert.ok(c.y0 >= -1.001 && c.y1 <= 1.001 && c.rMax <= 1.1, `aspect ${a} inside the collider`);
+    // fills it: from its floor (the canopy starts at the collider's bottom, ~30 % of the tree: no lollipop) to its top
+    assert.ok(c.y0 <= -0.97 && c.y1 >= 0.97 && c.x1 - c.x0 >= 1.6, `aspect ${a} fills the collider: ${JSON.stringify(c)}`);
+    assert.ok(p.canopy.positions.length >= lobes, `aspect ${a}: at least as many lobes as a shorter collider`);
+    lobes = p.canopy.positions.length;
+  }
+  assert.deepEqual(treeParts('roundCanopy'), treeParts('roundCanopy', L.aspect));
+});
+
+test('AP7b: the far scenery trees: cheaper than the scenery version, the same size; only beyond TREE_FAR.from outside the OB box; the palm has none', () => {
+  for (const [id, p] of Object.entries(LIBRARY.offTrees).filter(([, q]) => q.gradient)) {
+    const near = sceneryTree(id), far = sceneryTree(id, true);
+    if (!TREE_LOOK[id].far) { assert.equal(p.farTris, undefined, id); assert.deepEqual(far, near, `${id}: no far version`); continue; }
+    assert.equal(p.farTris, triangles(far), `${id} farTris`);
+    assert.ok(triangles(far) <= 0.7 * triangles(near), `${id}: far ${triangles(far)} vs ${triangles(near)}`);
+    const a = partBounds(near), b = partBounds(far);
+    assert.ok(Math.abs(a.y1 - b.y1) < 0.05 * a.y1 && b.rMax >= 0.8 * a.rMax, `${id}: the same size`);
+  }
+  assert.equal(TREE_LOOK.palmTree.far, undefined);
+  const stakes = { xs: [-40, 40], z0: 10, z1: -300 }, d = TREE_FAR.from;
+  assert.equal(isFarTree('pineTree', stakes, 40 + d - 1, -100), false);
+  assert.equal(isFarTree('pineTree', stakes, 40 + d + 1, -100), true);
+  assert.equal(isFarTree('pineTree', stakes, 0, -300 - d - 1), true);
+  assert.equal(isFarTree('pineTree', { x: 55, z0: 15, z1: -200 }, -55 - d - 1, 0), true); // the { x } stakes form
+  assert.equal(isFarTree('palmTree', stakes, 500, 0), false);
 });
