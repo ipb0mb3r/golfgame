@@ -79,9 +79,12 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-20:** **AP6b** polish (#101, QA #102); the artist's three sets use the new sky and backdrops (#104: Meadow hazeHills, Alpine hornPeaks, Island ocean); **AP7a trees** (#105, QA #106): the leafLow → mid → leafTop gradient, pineTree / spruceTree / palmTree / roundCanopy / birchTree (spruce and palm on `leafAlt`, artist), within budget. Owner: "don't skimp on trees"; token-conscious otherwise (smaller slices, QA Light where possible).
 
+**Also done 2026-11-22:** the artist's tree picks in the three sets (#107; Meadow 303k on mtn-07, accepted until AP7b), PM docs #108.
+
 **In flight:**
-- The artist picks the new trees in alpine-day / island-day / meadow-day with the owner (palms off-course only until AP7b).
-- **Owner to choose next:** AP7b (tree polish + palm colliders + far tree wall) or Phase MP (main menu, ui-designer first).
+- **AP7b tree polish, parts 2–3** (dev, `dev/AP7b-tree-polish`): shorter trunks / fuller canopies, a far tree wall, all three artist sets under 300k. Palms are NOT touched.
+- **Palm redesign** (owner 2026-11-22: "the shape, especially the top part"): the artist runs a 2–3 crown option round with the owner, then a build spec PR (`docs/art/palm/`); then the dev builds it as the AP7b palm part (with the palm collider rule).
+- Phase MP (main menu, ui-designer) after AP7b.
 
 **Next (owner order, 2026-11-19: A → B → C):**
 1. ~~A: finish performance~~ ✅ (#80).
