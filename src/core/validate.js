@@ -7,6 +7,7 @@ import { CLUBS } from './clubs.js';
 import { createHolePlay } from './play.js';
 import { meshAxis } from './terrain.js';
 import { parseSeaSide } from './backdrop.js';
+import { palmColliderError } from './trees.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
@@ -109,6 +110,8 @@ export function validateHole(hole, { shots = true } = {}) {
       if (o.onFairway !== undefined && typeof o.onFairway !== 'boolean') bad(`${where}.onFairway must be true or false`);
       // AP5: a tree may name its look (a library onTrees piece; src/holes/sets.js readyHole checks it exists)
       if (o.look !== undefined && (o.type !== 'tree' || typeof o.look !== 'string' || !o.look)) bad(`${where}.look must be a tree piece id, on trees only (got ${JSON.stringify(o.look)})`);
+      // AP7b palm collider rule (no "hitting air"): a palm look needs a wide, flat canopy collider
+      if (o.type === 'tree' && o.look === 'palmTree' && isNum(o.canopyH) && isNum(o.canopyR)) { const e = palmColliderError(o); if (e) bad(`${where}: ${e}`); }
     });
   }
   for (let i = 0; i <= SAMPLES; i++) for (let j = 0; j <= SAMPLES; j++) {

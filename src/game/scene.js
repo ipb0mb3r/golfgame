@@ -7,7 +7,7 @@ import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
-import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect } from '../core/trees.js';
+import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -238,7 +238,8 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
       if (LIBRARY.onTrees[id].gradient) { // AP7a: its own seeded stream, so today's pieces draw exactly as before
         const yaw = rg() * TAU, tint = shadeOf(LIBRARY.onTrees[id].shade, g.colours.canopy, rg, new THREE.Color());
         g.trunks.push(posed(o.x, o.y0 - SINK, o.z, o.r, h, o.r, yaw, 0, 0));
-        g.leaves.push(posed(c.x, c.y, c.z, c.rx, c.ry, c.rx, yaw + rg() * 0.8, rg() * TAU, rg() * TREE_VARIETY.canopyLean));
+        // (AP7b: a palm in a collider its rule rejects is drawn at the spec's flat proportion, core/trees.js canopyDrawRy)
+        g.leaves.push(posed(c.x, c.y, c.z, c.rx, canopyDrawRy(id, c.rx, c.ry), c.rx, yaw + rg() * 0.8, rg() * TAU, rg() * TREE_VARIETY.canopyLean));
         g.leafColors.push(tint);
         trunkLines.push(at(o.x, o.y0, o.z, o.r, o.top - o.y0, o.r));
         leafLines.push(at(c.x, c.y, c.z, c.rx, c.ry, c.rx));

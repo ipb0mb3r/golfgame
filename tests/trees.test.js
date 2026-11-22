@@ -1,7 +1,7 @@
 // AP7a: the gradient tree pieces (core/trees.js): the phone budget, the fit to the collider, the gradient.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { TREE_IDS, treeParts, sceneryTree, triangles, partBounds, gradientHex, treeColours, lathe, canopyAspect, isFarTree } from '../src/core/trees.js';
+import { TREE_IDS, palmColliderError, canopyDrawRy, treeParts, sceneryTree, triangles, partBounds, gradientHex, treeColours, lathe, canopyAspect, isFarTree } from '../src/core/trees.js';
 import { TREE_LOOK, TREE_FAR, PERF_BUDGET } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';
@@ -110,14 +110,16 @@ test('AP7b: the round canopy is built per collider proportion, stacked (more rin
     assert.ok(n <= PERF_BUDGET.modelTriangles, `aspect ${a}: ${n} triangles`);
     assert.ok(c.y0 >= -1.001 && c.y1 <= 1.001 && c.rMax <= 1.1, `aspect ${a} inside the collider`);
     // fills it: from its floor (the canopy starts at the collider's bottom, ~30 % of the tree: no lollipop) to its top
-    assert.ok(c.y0 <= -0.97 && c.y1 >= 0.97 && c.x1 - c.x0 >= 1.6, `aspect ${a} fills the collider: ${JSON.stringify(c)}`);
-    assert.ok(p.canopy.positions.length >= lobes, `aspect ${a}: at least as many lobes as a shorter collider`);
+    // (AP7b cap: in the tallest, 1.5, the two rows reach ≥ 95 % of the collider's height, a little air at the very top)
+    assert.ok(c.y0 <= -0.97 && c.y1 >= (a > 1.4 ? 0.9 : 0.97) && c.x1 - c.x0 >= 1.6, `aspect ${a} fills the collider: ${JSON.stringify(c)}`);
+    // AP7b (artist on #110): at most 2 rows of lobes (3 on the floor + the dome) whatever the proportion: no tower
+    if (lobes) assert.equal(p.canopy.positions.length, lobes, `aspect ${a}: the same lobes as a shorter collider (they grow, never stack)`);
     lobes = p.canopy.positions.length;
   }
   assert.deepEqual(treeParts('roundCanopy'), treeParts('roundCanopy', L.aspect));
 });
 
-test('AP7b: the far scenery trees: cheaper than the scenery version, the same size; only beyond TREE_FAR.from outside the OB box; the palm has none', () => {
+test('AP7b: the far scenery trees: cheaper than the scenery version, the same size; only beyond TREE_FAR.from outside the OB box', () => {
   for (const [id, p] of Object.entries(LIBRARY.offTrees).filter(([, q]) => q.gradient)) {
     const near = sceneryTree(id), far = sceneryTree(id, true);
     if (!TREE_LOOK[id].far) { assert.equal(p.farTris, undefined, id); assert.deepEqual(far, near, `${id}: no far version`); continue; }
@@ -126,11 +128,52 @@ test('AP7b: the far scenery trees: cheaper than the scenery version, the same si
     const a = partBounds(near), b = partBounds(far);
     assert.ok(Math.abs(a.y1 - b.y1) < 0.05 * a.y1 && b.rMax >= 0.8 * a.rMax, `${id}: the same size`);
   }
-  assert.equal(TREE_LOOK.palmTree.far, undefined);
   const stakes = { xs: [-40, 40], z0: 10, z1: -300 }, d = TREE_FAR.from;
   assert.equal(isFarTree('pineTree', stakes, 40 + d - 1, -100), false);
   assert.equal(isFarTree('pineTree', stakes, 40 + d + 1, -100), true);
   assert.equal(isFarTree('pineTree', stakes, 0, -300 - d - 1), true);
   assert.equal(isFarTree('pineTree', { x: 55, z0: 15, z1: -200 }, -55 - d - 1, 0), true); // the { x } stakes form
-  assert.equal(isFarTree('palmTree', stakes, 500, 0), false);
+  assert.equal(isFarTree('palmTree', stakes, 500, 0), true); // (the palm has one since AP7b)
+  assert.equal(isFarTree('roundTree', stakes, 500, 0), false); // (a piece without one)
+});
+
+test('AP7b palm crown (docs/art/palm/SPEC.md, "C + a little B"): 11 fronds + tuft + cap, ~234 / 330 triangles, a round dome reaching 0.95 of the radius', () => {
+  const p = treeParts('palmTree'), c = partBounds(p.canopy), L = TREE_LOOK.palmTree;
+  assert.equal(triangles(p.canopy), 234);
+  assert.equal(triangles(p.trunk) + triangles(p.canopy), 330);
+  assert.equal(L.fronds.reduce((n, F) => n + F.n, 0), 11);
+  assert.ok(Math.abs(c.rMax - 0.95) < 1e-9, `fit ${c.rMax}`);
+  assert.ok(Math.abs(c.y0 + 0.57) < 0.02 && Math.abs(c.y1 - 0.7) < 0.02, `spans −0.57 … +0.70: ${c.y0} … ${c.y1}`);
+  const s = sceneryTree('palmTree'), f = sceneryTree('palmTree', true);
+  assert.ok(triangles(s) <= 170 && triangles(f) <= 90, `scenery ${triangles(s)}, far ${triangles(f)}`);
+  // the scenery palm has the in-play proportion (a flat canopy: canopyH = 2 × collider.aspect × canopyR)
+  assert.ok(Math.abs(L.scenery.canopyH / (2 * L.scenery.canopyR) - L.collider.aspect) < 0.02);
+});
+
+test('AP7b palm collider rule: a palm needs a wide, flat canopy collider (half-height ≤ 0.8 × radius)', () => {
+  const tree = (canopyR, canopyH) => ({ type: 'tree', canopyR, canopyH });
+  assert.equal(palmColliderError(tree(3.4, 4.4)), null);           // the spec's 0.65
+  assert.equal(palmColliderError(tree(3.4, 5.44)), null);          // 0.8: the limit
+  assert.match(palmColliderError(tree(2.33, 7)), /wide and flat.*1\.50, at most 0\.8/); // pl-01's round-tree colliders
+  // drawn: in its own collider when it passes; at the spec's proportion in one the rule rejects
+  assert.equal(canopyDrawRy('palmTree', 3.4, 2.2), 2.2);
+  assert.ok(Math.abs(canopyDrawRy('palmTree', 2.33, 3.5) - 0.65 * 2.33) < 1e-9);
+  assert.equal(canopyDrawRy('roundCanopy', 2.33, 3.5), 3.5); // the other pieces: their collider
+});
+
+test('AP7b birch (artist on #110): 5 lobes in two rows, the canopy from ~40–45 % of a mountain tree, wider', () => {
+  const L = TREE_LOOK.birchTree, c = partBounds(treeParts('birchTree').canopy);
+  assert.equal(L.blobs.length, 5);
+  const rows = new Set(L.blobs.map(b => (b[1] > 0 ? 'up' : 'low')));
+  assert.deepEqual([...rows].sort(), ['low', 'up']);
+  // a mountain collider: the canopy ellipsoid starts at 30 % of the tree, so canopy y maps to 0.65 + 0.35 y
+  const start = 0.65 + 0.35 * c.y0;
+  assert.ok(start >= 0.4 && start <= 0.45, `canopy starts at ${(start * 100).toFixed(0)} %`);
+  assert.ok(c.rMax >= 0.92 && c.rMax <= 1.05, `width ${c.rMax}`);
+});
+
+test('AP7b (artist via PM): the scenery round canopy is lighter (~100 triangles) and still reads round', () => {
+  const s = sceneryTree('roundCanopy'), b = partBounds(s);
+  assert.ok(triangles(s) <= 102, `${triangles(s)}`);
+  assert.ok(b.rMax >= 0.9 * TREE_LOOK.roundCanopy.scenery.canopyR, 'as wide as before');
 });

@@ -38,9 +38,9 @@ export const LIBRARY = Object.freeze({
     // The same pieces can be offTrees (below); `tris` = one tree in play (trunk + canopy).
     pineTree: { desc: 'Soft pine: a tapered trunk and 4 stacked, overlapping tiers (AP7b), each with a rounded shoulder and a drooping, gently wavy skirt, toon shaded with the leafLow → pine → leafTop gradient.', slots: PINE_SLOTS, gradient: true, shade: TREE_TINT, tris: 332 },
     spruceTree: { desc: 'Spruce: narrower and taller-looking than the pine, 5 tiers, the leafLow → leafAlt → leafTop gradient, toon shaded.', slots: SPRUCE_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
-    palmTree: { desc: 'Palm: a bowed trunk (trunkAlt) with darker ring grooves (trunk), a crown of 12 drooping fronds in two layers, the leafLow → leafAlt → leafTop gradient running down the fronds.', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 372 },
-    roundCanopy: { desc: 'The artist\'s round tree: round lobes stacked to fill its collider (AP7b: 3 low lobes on its floor, a ring of 3 between in a tall collider, a round top dome; never stretched into an egg), flat-ish bottoms, the leafLow → leaf → leafTop gradient, toon shaded.', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 466 },
-    birchTree: { desc: 'Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (trunk) and a light, airy canopy of 5 small lobes.', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 400 },
+    palmTree: { desc: 'Palm: a bowed trunk (trunkAlt) with darker ring grooves (trunk), a round dome crown (AP7b, owner "C + a little B") of 11 wide, pointed fronds in two layers that arch up and curl down, a small tuft on top, the leafLow → leafAlt → leafTop gradient. Needs a wide, flat canopy collider (half-height ≤ 0.8 × radius, validateHole).', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 330 },
+    roundCanopy: { desc: 'The artist\'s round tree: round lobes filling its collider (AP7b: 3 low lobes on its floor and a round top dome, at most 2 rows; in a tall collider the lobes grow instead of stacking; never stretched into an egg), flat-ish bottoms, the leafLow → leaf → leafTop gradient, toon shaded.', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 340 },
+    birchTree: { desc: 'Birch (Alpine): a slim pale trunk (trunkAlt) with dark bark marks (trunk) and a light, airy canopy of 5 lobes in two rows (AP7b: lower and wider, from ~40–45 % of its height).', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 408 },
   },
   // Scenery trees outside OB (never in play)
   offTrees: {
@@ -51,11 +51,11 @@ export const LIBRARY = Object.freeze({
     // AP7b, the cheap far tree wall: farTris = one tree of the piece's far version (config TREE_LOOK[id].far:
     // 2 tiers / 2-3 lobes), drawn instead beyond TREE_FAR.from m outside the course's OB box (one more draw
     // call per piece), so the big forests stay as dense within the budget. Automatic: a set picks nothing.
-    // The palm has no far version (on hold, owner).
+    // The palm's far version since AP7b (3 + 5 fronds of 2 stations).
     pineTree: { desc: 'The soft pine as scenery (3 tiers, fewer sides, a simpler tier outline).', slots: PINE_SLOTS, gradient: true, shade: TREE_TINT, tris: 96, farTris: 66 },
     spruceTree: { desc: 'The spruce as scenery (3 tiers, fewer sides).', slots: SPRUCE_SLOTS, gradient: true, shade: TREE_TINT, tris: 96, farTris: 66 },
-    palmTree: { desc: 'The palm as scenery (fewer sides).', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 164 },
-    roundCanopy: { desc: 'The round tree as scenery (fewer sides, no middle ring).', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 170, farTris: 102 },
+    palmTree: { desc: 'The palm as scenery (3 stations per frond, fewer sides).', slots: PALM_SLOTS, gradient: true, shade: TREE_TINT, tris: 166, farTris: 82 },
+    roundCanopy: { desc: 'The round tree as scenery (AP7b lighter: 3 five-sided base lobes and a six-sided dome).', slots: TREE_GRADIENT_SLOTS, gradient: true, shade: TREE_TINT, tris: 102, farTris: 70 },
     birchTree: { desc: 'The birch as scenery (3 lobes, 2 bark marks, fewer sides).', slots: BIRCH_SLOTS, gradient: true, shade: TREE_TINT, tris: 144, farTris: 66 },
   },
   // Boulders in play: the look only; their collision sphere stays in the hole's `obstacles`

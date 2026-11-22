@@ -92,13 +92,17 @@ const st = await page.evaluate(() => [window.__golf.state, window.__golf.strokes
 if (st[0] !== 'aim' || st[1] !== 0) fail(`a timer from the old hole changed the new one (state ${st[0]}, strokes ${st[1]})`);
 
 // 3b. AP5: a hole dressed in another biome set (?biome=meadow-day) draws with that set's colours and
-// frees like any other: mtn-07 three times (no growth), then pl-01 must be back to its own memory.
+// frees like any other: pl-01 dressed (its level), mtn-07 three times (no growth), then pl-01 must be back
+// to its own dressed level. X34: like with like (pl-01 meadow-day vs pl-01 meadow-day): plain pl-01
+// legitimately holds other pieces since #107 (meadow-day picks gradient trees).
 {
   await page.goto('http://golf.test/index.html?hole=mtn-07&biome=meadow-day&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');
   await startHole(); await frames(3);
   const { BIOMES } = await import('../src/biomes/index.js');
   const got = await page.evaluate(() => ({ biome: window.__golf.biome, ground: window.__golf.groundColour, badge: document.getElementById('biomeBadge').textContent }));
   if (got.biome !== 'meadow-day' || got.ground !== BIOMES['meadow-day'].palette.farGround || got.badge !== 'BIOME: meadow-day') fail(`?biome=meadow-day: drawn with ${JSON.stringify(got)}`);
+  await page.evaluate(() => window.__golf.loadHole('pl-01')); await startHole(); await frames(3);
+  const ref = await page.evaluate(() => window.__golf.renderInfo());
   const seen = [];
   for (let i = 0; i < 3; i++) {
     await page.evaluate(() => window.__golf.loadHole('mtn-07')); await startHole(); await frames(3);
@@ -106,9 +110,9 @@ if (st[0] !== 'aim' || st[1] !== 0) fail(`a timer from the old hole changed the 
   }
   for (const k of ['geometries', 'textures']) if (seen[2][k] > seen[0][k]) fail(`?biome=meadow-day mtn-07: ${k} grew from ${seen[0][k]} to ${seen[2][k]}`);
   await page.evaluate(() => window.__golf.loadHole('pl-01')); await startHole(); await frames(3);
-  const back = await page.evaluate(() => window.__golf.renderInfo()), plain = rows.filter(r => r.hole === 'pl-01').at(-1);
-  if (back.geometries !== plain.geometries || back.textures !== plain.textures) fail(`?biome=meadow-day: after mtn-07, pl-01 holds ${back.geometries} geometries / ${back.textures} textures (${plain.geometries} / ${plain.textures} without it): mtn-07 not freed`);
-  console.log(`biome: mtn-07 ?biome=meadow-day drawn with ${got.biome} (far ground ${got.ground}), 3 loads ${seen.map(s => s.geometries).join('/')} geometries, then pl-01 ${back.geometries} (same as without ?biome=)`);
+  const back = await page.evaluate(() => window.__golf.renderInfo());
+  if (back.geometries !== ref.geometries || back.textures !== ref.textures) fail(`?biome=meadow-day: after mtn-07, pl-01 holds ${back.geometries} geometries / ${back.textures} textures (${ref.geometries} / ${ref.textures} before it, same set): mtn-07 not freed`);
+  console.log(`biome: mtn-07 ?biome=meadow-day drawn with ${got.biome} (far ground ${got.ground}), 3 loads ${seen.map(s => s.geometries).join('/')} geometries, then pl-01 ${back.geometries} (same as pl-01 meadow-day before mtn-07: ${ref.geometries})`);
 }
 
 // 4. The loaders (AP2): no game feature loads models yet (AP3 / AP7), so this is the only place they run.

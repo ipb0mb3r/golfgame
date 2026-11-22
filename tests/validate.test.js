@@ -63,3 +63,29 @@ test('S18: the default aim data is checked (green centre, aimTarget when given)'
   assert.throws(() => validateHole(withChange({ features: {} })), /features\.green must be/);
   assert.equal(validateHole(withChange({ aimTarget: undefined })).id, 'pl-01', 'a par 3 needs no aimTarget');
 });
+
+// AP7b palm collider rule (no "hitting air", owner: no blind shots). A test-only fixture: pl-01 with its
+// first tree drawn as a palm (no real hole uses palms in play today).
+test('AP7b: a palm look needs a wide, flat canopy collider (half-height ≤ 0.8 × radius); a tall one fails', () => {
+  const palmAt = (canopyR, canopyH) => withChange({ obstacles: hole1.obstacles.map((o, i) => (i === 0 ? { ...o, look: 'palmTree', canopyR, canopyH } : o)) });
+  assert.equal(validateHole(palmAt(3.4, 4.4), { shots: false }).id, 'pl-01');   // the spec's 0.65
+  assert.equal(validateHole(palmAt(3.4, 5.44), { shots: false }).id, 'pl-01');  // 0.8, the limit
+  assert.throws(() => validateHole(palmAt(2.8, 8.4), { shots: false }), /hole "pl-01".*obstacles\[0\]: a palm's canopy collider must be wide and flat: canopyH \/ \(2 × canopyR\) = 1\.50, at most 0\.8/);
+  assert.throws(() => validateHole(palmAt(3.4, 5.8), { shots: false }), /must be wide and flat/);
+  // the same collider with another look (or none) is fine: the rule is the palm's
+  assert.equal(validateHole(withChange({ obstacles: hole1.obstacles.map((o, i) => (i === 0 ? { ...o, look: 'roundCanopy' } : o)) }), { shots: false }).id, 'pl-01');
+});
+
+// AP7b: every real hole whose own biome set may draw a tree as a palm passes the palm rule (none today;
+// this guards the artist's later island-day palms)
+test('AP7b: no real hole draws a palm on a tall collider', async () => {
+  const { BIOMES } = await import('../src/biomes/index.js');
+  const { palmColliderError } = await import('../src/core/trees.js');
+  for (const h of Object.values(HOLES)) {
+    const on = BIOMES[h.biome]?.onTrees ?? [];
+    for (const o of h.obstacles ?? []) {
+      if (o.type !== 'tree' || !(o.look === 'palmTree' || (on.includes('palmTree') && !on.includes(o.look)))) continue;
+      assert.equal(palmColliderError(o), null, `${h.id} (${o.x}, ${o.z})`);
+    }
+  }
+});
