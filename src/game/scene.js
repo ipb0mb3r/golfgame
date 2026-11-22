@@ -7,7 +7,7 @@ import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
-import { treeParts, sceneryTree, treeColours } from '../core/trees.js';
+import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect } from '../core/trees.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -116,7 +116,7 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     }
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
-  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon);
+  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
   return { scene, camera, colliderOutlines, shore }; // AP6b: shore (or null) for the minimap's sea
@@ -231,9 +231,10 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
   };
   for (const o of obstacles) { // in the data's order, so the random shades and turns are the same as before
     if (o.type === 'tree') {
-      const id = looks.get(o);
-      if (!byLook.has(id)) byLook.set(id, { colours: look('onTrees', id), trunks: [], leaves: [], leafColors: [] });
-      const g = byLook.get(id), h = o.top - o.y0 + SINK, c = o.canopy;
+      // AP7b: a piece built per collider proportion (the round canopy's stacked lobes) gets one group per proportion
+      const id = looks.get(o), aspect = LIBRARY.onTrees[id].gradient ? canopyAspect(id, o.canopy.rx, o.canopy.ry) : null, key = aspect ? `${id}@${aspect}` : id;
+      if (!byLook.has(key)) byLook.set(key, { id, aspect, colours: look('onTrees', id), trunks: [], leaves: [], leafColors: [] });
+      const g = byLook.get(key), h = o.top - o.y0 + SINK, c = o.canopy;
       if (LIBRARY.onTrees[id].gradient) { // AP7a: its own seeded stream, so today's pieces draw exactly as before
         const yaw = rg() * TAU, tint = shadeOf(LIBRARY.onTrees[id].shade, g.colours.canopy, rg, new THREE.Color());
         g.trunks.push(posed(o.x, o.y0 - SINK, o.z, o.r, h, o.r, yaw, 0, 0));
@@ -254,10 +255,11 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
     }
   }
   const several = byLook.size > 1; // the names say which look only when there are several
-  for (const [id, g] of byLook) {
-    const tag = several ? `, ${id}` : '';
+  const aspects = new Set([...byLook.values()].filter(g => g.aspect).map(g => g.aspect)).size > 1;
+  for (const { id, aspect, ...g } of byLook.values()) {
+    const tag = several ? `, ${id}${aspects && aspect ? ` ×${aspect}` : ''}` : '';
     if (LIBRARY.onTrees[id].gradient) { // AP7a: toon, painted per vertex (core/trees.js)
-      const parts = treeParts(id), ramp = toon();
+      const parts = treeParts(id, aspect), ramp = toon();
       scene.add(instanced(treeGeometry(parts.trunk, g.colours, true), toonTreeMaterial(ramp), g.trunks, `tree trunks (in play, toon, instanced${tag})`, g.leafColors));
       scene.add(instanced(treeGeometry(parts.canopy, g.colours, false), toonTreeMaterial(ramp, parts.doubleSide), g.leaves, `tree canopies (in play, toon, instanced${tag})`, g.leafColors));
       continue;
@@ -284,7 +286,7 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
 // Decoration trees (instanced so hundreds are cheap), standing on the ground. K8: only outside the
 // OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
 // AP5: the look is the set's first offTrees piece (more looks: later).
-function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon) {
+function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes) {
   const r = createRng(42);
   const spots = [];
   let guard = 0;
@@ -296,7 +298,7 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon) {
   for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
   // AP6a: no scenery tree on the beach or in the sea (only with the ocean backdrop)
   if (shore) for (let i = spots.length - 1; i >= 0; i--) if (shore.outward(spots[i][0], spots[i][1]) > -OCEAN_LOOK.gap / 2) spots.splice(i, 1);
-  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon); return; }
+  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return; }
   const id = biome.offTrees[0], b = builder(OFF_TREES, id), colours = look('offTrees', id), shade = LIBRARY.offTrees[id].shade;
   const trunks = new THREE.InstancedMesh(b.trunk(), new THREE.MeshLambertMaterial({ color: colours.trunk }), spots.length);
   const leaves = new THREE.InstancedMesh(b.canopy(), shadedMaterial(shade, colours.canopy, { flatShading: true }), spots.length);
@@ -336,19 +338,21 @@ function treeGeometry(part, colours, trunk, isTrunk = () => trunk) {
 const toonTreeMaterial = (ramp, doubleSide = false) => new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: ramp, side: doubleSide ? THREE.DoubleSide : THREE.FrontSide });
 // Scenery trees from the set's gradient offTrees: each spot gets one of them (seeded pick, so neighbours
 // differ), its own size (the spot's), width, turn, lean and tint; one draw call per piece (trunk + canopy merged)
-function gradientScenery(scene, spots, t, heightAt, biome, look, toon) {
+// AP7b: a spot more than TREE_FAR.from m outside the OB stakes' box is drawn with the piece's cheap far
+// version (core/trees.js isFarTree): one more draw call per piece, the same random draws per spot.
+function gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes) {
   const V = TREE_VARIETY, r = createRng(V.seed + 1), ids = biome.offTrees.filter(id => LIBRARY.offTrees[id].gradient);
-  const by = new Map(ids.map(id => [id, { matrices: [], tints: [] }]));
+  const by = new Map(ids.flatMap(id => [false, true].map(far => [`${id}${far ? ' far' : ''}`, { id, far, matrices: [], tints: [] }])));
   for (const [x, z, s] of spots) {
-    const id = ids[Math.floor(r() * ids.length) % ids.length], g = by.get(id), wide = V.width[0] + r() * V.width[1];
+    const id = ids[Math.floor(r() * ids.length) % ids.length], g = by.get(`${id}${isFarTree(id, stakes, x, z) ? ' far' : ''}`), wide = V.width[0] + r() * V.width[1];
     const lean = (TREE_LOOK[id].lean ?? V.sceneryLean) * r();
     g.matrices.push(posed(x, heightAt(x, z) - t.sink, z, s * wide, s, s * wide, r() * TAU, r() * TAU, lean));
     g.tints.push(shadeOf(LIBRARY.offTrees[id].shade, look('offTrees', id).canopy, r, new THREE.Color()));
   }
-  for (const [id, g] of by) {
+  for (const { id, far, ...g } of by.values()) {
     if (!g.matrices.length) continue;
-    const part = sceneryTree(id), mat = toonTreeMaterial(toon(), part.doubleSide);
-    scene.add(instanced(treeGeometry(part, look('offTrees', id), false, i => part.trunk[i]), mat, g.matrices, `scenery trees: ${id} (toon, instanced)`, g.tints));
+    const part = sceneryTree(id, far), mat = toonTreeMaterial(toon(), part.doubleSide);
+    scene.add(instanced(treeGeometry(part, look('offTrees', id), false, i => part.trunk[i]), mat, g.matrices, `scenery trees: ${id}${far ? ' far' : ''} (toon, instanced)`, g.tints));
   }
 }
 

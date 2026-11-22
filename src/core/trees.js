@@ -7,7 +7,7 @@
 //   canopy in the canopy ellipsoid's space: radius 1 across, y −1 → 1 (centred on the trunk top)
 // A part = { positions: [x, y, z, ...], indices: [...], w: [weight per vertex] }. Canopy w = the vertical
 // gradient (0 leafLow → 0.5 leaf → 1 leafTop, gradientHex); trunk w = 0 the trunk colour, 1 the bark mark.
-import { TREE_LOOK } from './config.js';
+import { TREE_LOOK, TREE_FAR } from './config.js';
 import { mixHex } from './backdrop.js';
 
 const TAU = Math.PI * 2;
@@ -89,6 +89,33 @@ function blob([x, y, z, r, h, segs, rows], L, twist) {
 // (scenery lod: segScale × the sides, rowsLess fewer rows, only the first blobCount lobes)
 const blobs = L => mergeParts(L.blobs.slice(0, L.blobCount ?? L.blobs.length).map((b, k) => blob(L.segScale ? [...b.slice(0, 5), Math.max(5, Math.round(b[5] * L.segScale)), Math.max(4, b[6] - (L.rowsLess ?? 0))] : b, L, k * 1.7)));
 
+// AP7b: the round canopy's lobes stacked for a collider `aspect` tall (its half-height / radius, config
+// TREE_LOOK.roundCanopy.stack): built round in the collider's proportions (in canopy radii, y −aspect →
+// aspect), then squeezed into the unit canopy space (y ÷ aspect), so the instance's scale makes them
+// round again instead of stretching one shape into an egg. A taller collider gets more rings.
+function stackedLobes(L, aspect) {
+  const S = L.stack, a = aspect, sq = L.squat, out = [];
+  const ring = ([n, r, radial, segs, rows], y, turn) => { // (each lobe a little up or down: no flat layers)
+    for (let i = 0; i < n; i++) { const t = turn + (i / n) * TAU, dy = n > 1 ? S.jitter * (0.5 + 0.5 * Math.sin(2.4 * i + 3 * turn)) : 0; out.push([radial * Math.cos(t), y + dy, radial * Math.sin(t), r, r * sq, segs, rows]); }
+  };
+  const yb = -a + S.base[1] * sq * L.flat, yt = a - S.top[1] * sq; // base bottoms on the floor, the dome's top at the top
+  const rings = L.midRings ?? Math.max(0, Math.round((yt - yb) / S.step) - 1), sp = (yt - yb) / (rings + 1);
+  ring(S.base, yb, 0);
+  for (let k = 1; k <= rings; k++) {
+    const [n, rMax, ...rest] = S.mid;
+    ring([n, Math.min(rMax, Math.max(S.midMin, sp * S.midFill)), ...rest], yb + sp * k, k * S.turn);
+  }
+  ring(S.top, yt, 0);
+  return out.map(([x, y, z, r, h, segs, rows]) => [x, y / a, z, r, h / a, segs, rows]);
+}
+const roundLobes = (L, aspect = L.aspect) => blobs({ ...L, blobs: stackedLobes(L, aspect) });
+// The collider proportion an in-play tree of this piece is built for: the nearest of its `aspects`
+// (canopy ry / rx), or null for a piece drawn the same in every collider (one shape, stretched)
+export function canopyAspect(id, rx, ry) {
+  const list = TREE_LOOK[id]?.aspects, a = ry / rx;
+  return list ? list.reduce((b, x) => (Math.abs(x - a) < Math.abs(b - a) ? x : b)) : null;
+}
+
 // Birch trunk: a slim taper with dark bark bands (each band its own pair of rings, so the marks are crisp)
 function birchTrunk(L) {
   const prof = [[L.trunkTop, 1, 0]];
@@ -146,29 +173,40 @@ function palmCrown(L) {
   return crown;
 }
 
-// The builders, by library id: (look) → { trunk, canopy, doubleSide (the palm's fronds are seen from
-// both sides) }. look = TREE_LOOK[id] (in play) or the same with its `lod` (scenery).
+// The builders, by library id: (look, aspect?) → { trunk, canopy, doubleSide (the palm's fronds are seen
+// from both sides) }. look = TREE_LOOK[id] (in play) or the same with its `lod` (scenery); aspect = the
+// canopy collider's half-height / radius (only the round canopy uses it, AP7b).
 const BUILD = {
   pineTree: L => ({ trunk: straightTrunk(L), canopy: tiered(L), doubleSide: false }),
   spruceTree: L => ({ trunk: straightTrunk(L), canopy: tiered(L), doubleSide: false }),
   palmTree: L => ({ trunk: palmTrunk(L), canopy: palmCrown(L), doubleSide: true }),
-  roundCanopy: L => ({ trunk: straightTrunk(L), canopy: blobs(L), doubleSide: false }),
+  roundCanopy: (L, aspect) => ({ trunk: straightTrunk(L), canopy: roundLobes(L, aspect), doubleSide: false }),
   birchTree: L => ({ trunk: birchTrunk(L), canopy: blobs(L), doubleSide: false }),
 };
 export const TREE_IDS = Object.keys(BUILD);
-// One tree in play (fitted to its collider by the game)
-export const treeParts = id => BUILD[id](TREE_LOOK[id]);
+// One tree in play (fitted to its collider by the game); aspect: canopyAspect (default: the mountain's)
+export const treeParts = (id, aspect) => BUILD[id](TREE_LOOK[id], aspect ?? undefined);
 
 // A part moved by scale (sx, sy, sz) then lifted by y (to place the unit parts at a tree's size)
 const placed = (p, sx, sy, sz, y) => ({ ...p, positions: p.positions.map((v, i) => (i % 3 === 0 ? v * sx : i % 3 === 1 ? v * sy + y : v * sz)) });
 // A scenery tree (offTrees) as ONE part at its TREE_LOOK size, with the lighter `lod` (the trunk from
 // y 0, as a collider would fit it), so the whole tree is one draw call. trunk = a per-vertex flag (true:
 // a trunk vertex, its w the bark mark).
-export function sceneryTree(id) {
-  const L = TREE_LOOK[id], parts = BUILD[id]({ ...L, ...L.lod }), s = L.scenery;
+// far (AP7b): the piece's cheaper far version (TREE_LOOK[id].far over its lod), when it has one.
+export function sceneryTree(id, far = false) {
+  const L = TREE_LOOK[id], s = L.scenery, parts = BUILD[id]({ ...L, ...L.lod, ...(far ? L.far : {}) }, s.canopyH / (2 * s.canopyR));
   const trunk = placed(parts.trunk, s.trunkR, s.trunkH, s.trunkR, 0), canopy = placed(parts.canopy, s.canopyR, s.canopyH / 2, s.canopyR, s.trunkH);
   const merged = mergeParts([trunk, canopy]);
   return { ...merged, trunk: merged.w.map((_, i) => i < trunk.w.length), doubleSide: parts.doubleSide };
+}
+
+// AP7b: does this scenery spot get the far version? Its distance outside the course's box (the OB
+// stakes' box: { xs } or { x }, z0, z1) is more than TREE_FAR.from, and the piece has a far version.
+export function isFarTree(id, stakes, x, z) {
+  if (!TREE_LOOK[id]?.far || !stakes) return false;
+  const xs = stakes.xs ?? [-stakes.x, stakes.x], x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const z0 = Math.min(stakes.z0, stakes.z1), z1 = Math.max(stakes.z0, stakes.z1);
+  return Math.hypot(Math.max(x0 - x, 0, x - x1), Math.max(z0 - z, 0, z - z1)) > TREE_FAR.from;
 }
 
 // Per-vertex colours '#rrggbb' from a piece's slot colours ({ low, canopy, top, trunk, mark? }).
