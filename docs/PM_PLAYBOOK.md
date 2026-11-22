@@ -79,10 +79,12 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-20/22:** **AP6b** polish (#101, QA #102); the artist's three sets use the new sky and backdrops (#104: Meadow hazeHills, Alpine hornPeaks, Island ocean); **AP7a trees** (#105, QA #106): the leafLow → mid → leafTop gradient, pineTree / spruceTree / palmTree / roundCanopy / birchTree (spruce and palm mid = `leafAlt`); the artist's tree picks (#107); **AP7b parts 2–3** (#110, QA #111): fuller pine and round canopy (no "lollipop"), cheap far trees beyond 35 m outside OB, all three sets under 300k; **palm redesign spec** (#109, the owner's "C + a little B" dome crown, `docs/art/palm/SPEC.md`). Owner: "don't skimp on trees".
 
-**In flight (handoff 2026-11-22, end of the second Claude Code PM session):**
-- **#112 "AP7b: New palm, birch, round-tree cap (+ X34)"**: the palm from the spec (330 tris), the palm collider rule (`palmColliderError`, canopyH / 2R ≤ 0.8 in `validateHole`), a 2-row birch, the roundCanopy 2-row cap, a lighter round scenery tree (102 tris), the session-check §3b fix (X34). PM-reviewed, the artist says "OK to merge"; **QA Light passed, no bugs (#113)**. QA feel: the palms and birches read well but are small from the tee; the owner checks close up. The owner merges #112 + #113.
-- **The artist's next PRs** (in the owner's artist session): "Art: Meadow round scenery trees" (roundCanopy + spruceTree scenery: 287k on mtn-07 after #112) and palms as onTrees in island-day (the PR must say the `?biome=` preview on today's holes isn't representative for palms in play: only holes with palm-shaped colliders play fair).
-- **Backlog from #110/#112:** X33 per-pick slot override (only when a real set needs it), X35 a minimum for the palm collider rule (a very flat collider squashes the crown), widen the tall roundCanopy's base row ~10 % (artist), birch / round-canopy fine-tuning by the artist.
+**Also done 2026-11-22:** **AP7b part 1 + X34** (#112, QA Light #113, no bugs): the palm from the spec, the palm collider rule, 2-row birch, round-canopy cap, lighter round scenery tree. Artist handoff (#115), PM handoff (#114).
+
+**In flight (third Claude Code PM session, 2026-11-22). Owner picked "A + X33": small props reusable on every course.**
+- **Dev: AP7c + X33** (branch `dev/AP7c-X33-small-props`, budget 90 min): the smallProps format (weights, clusters, perHa, `on`), a deterministic scatter (listed surfaces only, clear radii, a prop never hides the ball), instancing, X33 per-pick slot override `{ id, slots: {...} }`, two placeholder pieces (`grassTuft`, `flowerPatch`) in the dev-only set `test-small-props`. The real sets stay untouched. Then PM review → QA Light.
+- **Fresh artist session** `session_01Rv6NgBhDn3JiGCnqrtYQhJ` ("Pocket Links: Artist (small props)"): designs the real small props with the owner → `docs/art/small-props/SPEC.md` (PR "Art: small props spec"); optionally the Meadow round scenery trees and palms on Island (handoff open work). After both merge: a small dev job builds the spec's pieces (sonnet), then the artist sets each biome's smallProps.
+- **Backlog from #110/#112:** X35 a minimum for the palm collider rule, widen the tall roundCanopy's base row ~10 % (artist), birch / round-canopy fine-tuning by the artist.
 
 **Next (owner's choice, ask him):**
 1. **Phase MP: main menu pass** (`ui-designer` designs MP0 with the owner in its own session, like the artist → dev builds MP1–MP5), then Phase U for the HUD (X18, X19, X24, X28; keep the red tree warning prominent: QA on #106).
@@ -93,7 +95,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **The owner's sessions:**
 - **Artist session:** `session_01Rv6Ng9ELhLTGiLwq6qRntd` ("Pocket Links: Artist (style talk ART0b)"). The owner chats with it directly. The PM reaches it with the claude-code-remote `send_message` tool (session_id above); it replies by `send_message` too (read them with ReadNotifications). Its PRs are data / docs only: PM review → merge (no QA unless it changes pieces).
-- **Fresh artist session (owner, 2026-11-22):** the old artist session writes a short handoff into `docs/ART_STYLE.md` (PR "Art: artist handoff") and stops. The new PM then opens a fresh artist session with `create_session` (source_url the repo; `append_system_prompt` = the role override: "you are NOT the PM, you are the artist; read .claude/agents/artist.md, docs/ART_STYLE.md incl. its Handoff section, docs/AGENT_PROMPTS.md Artist"; a first prompt that picks up the open work), tells the owner its name, and records its session id here.
+- **Current artist session (2026-11-22):** `session_01Rv6NgBhDn3JiGCnqrtYQhJ` ("Pocket Links: Artist (small props)"), opened by the PM with `create_session` (role override in `append_system_prompt`). The old artist session above wrote its handoff (#115) and stopped. Reach the new one with `send_message`.
 
 **Token budget (owner, 2026-11-22: "we are rapidly maxing our 5 hr windows"):**
 - **Start a fresh PM session when this one gets long** (the playbook is the handoff). A long PM conversation costs more on every reply, even "merged".
