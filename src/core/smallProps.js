@@ -56,16 +56,17 @@ export function smallPropsRuleError(sp) {
 // ---- The placeholder pieces (SMALL_PROP_LOOK) ----
 // → { positions: [x, y, z, ...] (non-indexed triangles, metres, foot at y 0), slots: [slot per vertex], tris, height }
 // The game paints each vertex in its slot's colour (the pick's colours) and gives every vertex an up normal,
-// so a prop is lit like the ground it stands on.
+// so a prop is lit like the ground it stands on. A flat blade or stem is two triangles back to back (one per
+// side, drawn front-side only: a double-sided material would flip the up normal on the back and draw it dark).
 const golden = i => (i * 0.618034) % 1;
+const bothSides = (pos, slots, a, b, c, sa, sb, sc) => { pos.push(...a, ...b, ...c, ...b, ...a, ...c); slots.push(sa, sb, sc, sb, sa, sc); };
 const PARTS = {
   grassTuft(L) {
     const pos = [], slots = [];
     for (let i = 0; i < L.blades; i++) {
       const a = (i / L.blades) * TAU + golden(i) * 0.6, c = Math.cos(a), s = Math.sin(a), h = L.height[0] + golden(i + 3) * L.height[1];
       const bx = c * L.ring, bz = s * L.ring, w = L.width / 2;
-      pos.push(bx - s * w, 0, bz + c * w, bx + s * w, 0, bz - c * w, c * (L.ring + L.lean), h, s * (L.ring + L.lean));
-      slots.push('base', 'base', 'tip');
+      bothSides(pos, slots, [bx - s * w, 0, bz + c * w], [bx + s * w, 0, bz - c * w], [c * (L.ring + L.lean), h, s * (L.ring + L.lean)], 'base', 'base', 'tip');
     }
     return { pos, slots };
   },
@@ -73,11 +74,11 @@ const PARTS = {
     const pos = [], slots = [];
     L.spots.forEach(([x, z, h], i) => {
       const a = i * 1.1, c = Math.cos(a) * L.stemW / 2, s = Math.sin(a) * L.stemW / 2;
-      pos.push(x - c, 0, z - s, x + c, 0, z + s, x, h, z); slots.push('stem', 'stem', 'stem');
+      bothSides(pos, slots, [x - c, 0, z - s], [x + c, 0, z + s], [x, h, z], 'stem', 'stem', 'stem');
       const ring = [0, 1, 2].map(k => [x + Math.cos(a + k * TAU / 3) * L.headR, h, z + Math.sin(a + k * TAU / 3) * L.headR]);
       for (let k = 0; k < 3; k++) {
         const p = ring[k], q = ring[(k + 1) % 3];
-        pos.push(...p, ...q, x, h + L.headH, z, ...q, ...p, x, h - L.headH, z);
+        pos.push(...q, ...p, x, h + L.headH, z, ...p, ...q, x, h - L.headH, z); // wound outward (front faces out)
         slots.push(...Array(6).fill(L.heads[i]));
       }
     });

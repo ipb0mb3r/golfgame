@@ -16,7 +16,7 @@ export default {
       { id: 'flowerPatch', weight: 2, slots: { headB: 'propA' }, cluster: { count: 10, radius: 1.5 } }, // buttercup patches (X33)
       { id: 'flowerPatch', weight: 0.6 },                                      // a few mixed flowers (propA + propB red)
     ],
-    perHa: 1200,
+    perHa: 2500,
     on: ['rough', 'ob'],
   },
 };

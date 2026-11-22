@@ -284,7 +284,7 @@ export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryL
 export const SMALL_PROPS = Object.freeze({
   seed: 61,
   surfaces: Object.freeze(['rough', 'ob']),
-  maxPerHa: 4000, maxProps: 8000,
+  maxPerHa: 4000, maxProps: 20000,
   cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
   margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
   ballClear: 1.2, lineClear: 0.5,
@@ -292,12 +292,13 @@ export const SMALL_PROPS = Object.freeze({
   scale: Object.freeze([0.8, 0.45]),
 });
 // AP7c: the two PLACEHOLDER small-prop pieces (core/smallProps.js builds them; the artist's real pieces replace
-// them). Sizes in m. grassTuft: `blades` one-triangle blades on a ring of radius `ring`, each `width` wide at the
-// foot, `height` [from, spread] tall, leaning out by `lean` m (slot `base` at the foot, `tip` at the tip).
+// them). Sizes in m. grassTuft: `blades` blades on a ring of radius `ring`, each `width` wide at the
+// foot, `height` [from, spread] tall, leaning out by `lean` m (slot `base` at the foot, `tip` at the tip; 2 triangles
+// each, back to back).
 // flowerPatch: one flower per spot [x, z, stem height]: a 1-triangle stem (`stemW` wide, slot `stem`) and a
 // 6-triangle head (a 3-sided double pyramid, radius `headR`, half-height `headH`) in the slot heads[i].
 export const SMALL_PROP_LOOK = Object.freeze({
-  grassTuft: Object.freeze({ blades: 6, ring: 0.05, width: 0.06, height: Object.freeze([0.2, 0.14]), lean: 0.1 }),
+  grassTuft: Object.freeze({ blades: 6, ring: 0.05, width: 0.1, height: Object.freeze([0.2, 0.14]), lean: 0.1 }),
   flowerPatch: Object.freeze({
     stemW: 0.025, headR: 0.05, headH: 0.035,
     spots: Object.freeze([Object.freeze([0, 0, 0.28]), Object.freeze([0.11, 0.06, 0.22]), Object.freeze([-0.06, 0.1, 0.24])]),

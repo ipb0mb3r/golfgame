@@ -92,8 +92,8 @@ export const LIBRARY = Object.freeze({
   // nearest first. tris = one copy (ART_STYLE §5: a small prop ≤ 50).
   // PLACEHOLDERS (AP7c, dev only: test-small-props): the artist's real pieces replace them.
   smallProps: {
-    grassTuft: { desc: 'Placeholder: a tuft of 6 thin blades, rough-coloured at the foot, lighter at the tips.', slots: { base: 'rough', tip: 'leafTop' }, tris: 6 },
-    flowerPatch: { desc: 'Placeholder: 3 little flowers, each a thin stem and a round-ish head (two in propA, one in propB).', slots: { stem: 'leafLow', headA: 'propA', headB: 'propB' }, tris: 21 },
+    grassTuft: { desc: 'Placeholder: a tuft of 6 thin blades, rough-coloured at the foot, lighter at the tips (each blade 2 triangles, one per side).', slots: { base: 'rough', tip: 'leafTop' }, tris: 12 },
+    flowerPatch: { desc: 'Placeholder: 3 little flowers, each a thin stem and a round-ish head (two in propA, one in propB): a 2-triangle stem and a 6-triangle head each.', slots: { stem: 'leafLow', headA: 'propA', headB: 'propB' }, tris: 24 },
   },
   // Placed by hand in the hole data; the set lists which are available. None yet (ART1 / AP7).
   bigProps: {},

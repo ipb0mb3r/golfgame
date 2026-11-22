@@ -306,8 +306,10 @@ function picksOf(set, group) {
   });
 }
 // The slot override of a set's pick of piece `id` in `group` ({} = none). A resolved set (normalizeBiomeSet)
-// keeps them in slotOverrides; a set as written has them on its picks.
+// keeps them in slotOverrides; a set as written has them on its picks. Small props may pick one piece twice
+// with different colours, so theirs come from the pick object itself (never looked up by id).
 function overridesFor(set, group, id) {
+  if (group === 'smallProps') return {};
   if (set.slotOverrides) return set.slotOverrides[group]?.[id] ?? {};
   return picksOf(set, group).find(p => typeof p === 'object' && p?.id === id)?.slots ?? {};
 }

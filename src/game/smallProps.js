@@ -19,7 +19,7 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep) {
   // each copy's matrix, once
   const mats = new Float32Array(props.length * 16), m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
   props.forEach((p, i) => m.compose(v.set(p.x, p.y, p.z), q.setFromAxisAngle(up, p.yaw), s.setScalar(p.scale)).toArray(mats, i * 16));
-  const material = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide });
+  const material = new THREE.MeshLambertMaterial({ vertexColors: true }); // front side: thin parts are two-sided in the shape
   const meshes = rule.pieces.map((pick, k) => {
     const n = props.filter(p => p.pick === k).length;
     const cap = Math.min(n, Math.floor(SMALL_PROPS.maxTris / parts[k].tris));
@@ -48,8 +48,8 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep) {
     for (const mesh of meshes) if (mesh) mesh.instanceMatrix.needsUpdate = true;
     drawn = meshes.reduce((n, mesh) => n + (mesh?.count ?? 0), 0);
   }
-  // For tools / tests (window.__golf.smallProps()): how many were scattered and drawn, and the props drawn now
-  // nearest the ball (3D distance from its centre to the prop's middle)
+  // For tools / tests (window.__golf.smallProps()): how many were scattered and drawn, their triangles, and the
+  // drawn prop nearest the ball (3D distance from the ball's centre to the prop's foot)
   function stats(ball) {
     let nearest = Infinity;
     for (const mesh of meshes) if (mesh) for (let j = 0; j < mesh.count; j++) {
