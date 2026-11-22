@@ -418,6 +418,7 @@ window.__golf = {
   // AP3: the round's model cache (tools/session-check.mjs): files known, and whether a hole waits for its files
   get assets() { return { files: assets.size, loading: !!loading }; },
   objectNames: () => session?.scene.children.map(o => o.name) ?? [],
+  smallProps: () => api().smallProps(), // AP7c: { scattered, drawn, drawCalls, tris, nearestToBall } or null
   // Phase 6: the round (null when playing a single hole)
   get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null,
     // Phase T: vs AI (null in solo)

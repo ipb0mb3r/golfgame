@@ -265,6 +265,45 @@ export const TREE_LOOK = Object.freeze({
 // keep their density within the 300k budget. Every gradient piece has one (the palm since AP7b).
 export const TREE_FAR = Object.freeze({ from: 35 });
 export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryLean: 0.07, width: Object.freeze([0.86, 0.28]) });
+// AP7c: small props scattered by a biome set's rule (DESIGN §8b "Small props", core/smallProps.js). Looks only:
+// no physics, no effect on the aim line or the warnings. Every number of the scatter and the drawing is here.
+//   surfaces: the ONLY surfaces a prop may stand on, whatever the set's `on` says (never tee, fairway, fringe,
+//     green, sand, water, rock / paths); validateBiomeSet rejects any other id in `on`.
+//   maxPerHa / maxProps: the most a set may ask for (props per hectare) / the most one hole scatters.
+//   cluster: the limits of a pick's `cluster` ({ count, radius }).
+//   margin: m the scatter area reaches beyond the OB box (for props `on: ['ob']`), clipped to the hole's map.
+//   edgeClear: m a prop keeps from any surface it may not stand on (4 samples around it).
+//   teeClear: m around the tee; cupClear: m around the cup (the putting area); greenClear: m from the green and
+//     fringe, checked within greenReach m of the cup (6 samples), so a big green keeps its apron clear.
+//   ballClear: m around the ball (3D) where every prop is hidden (owner: no blind shots; live value
+//     ?tune=PROP_BALL_CLEAR); lineClear: m around the line from the ball to the camera where props are hidden too.
+//   drawDist: m from the camera beyond which no prop is drawn; maxTris: the most small-prop triangles drawn in one
+//     frame (the nearest first), so a dense set never pushes a hole over PERF_BUDGET; moveStep: m the camera or
+//     the ball must move before the drawn props are picked again.
+//   scale: per-copy size [from, spread] (seeded, the scatter's own stream; each copy also gets a random turn).
+export const SMALL_PROPS = Object.freeze({
+  seed: 61,
+  surfaces: Object.freeze(['rough', 'ob']),
+  maxPerHa: 4000, maxProps: 8000,
+  cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
+  margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
+  ballClear: 1.2, lineClear: 0.5,
+  drawDist: 45, maxTris: 10000, moveStep: 0.5,
+  scale: Object.freeze([0.8, 0.45]),
+});
+// AP7c: the two PLACEHOLDER small-prop pieces (core/smallProps.js builds them; the artist's real pieces replace
+// them). Sizes in m. grassTuft: `blades` one-triangle blades on a ring of radius `ring`, each `width` wide at the
+// foot, `height` [from, spread] tall, leaning out by `lean` m (slot `base` at the foot, `tip` at the tip).
+// flowerPatch: one flower per spot [x, z, stem height]: a 1-triangle stem (`stemW` wide, slot `stem`) and a
+// 6-triangle head (a 3-sided double pyramid, radius `headR`, half-height `headH`) in the slot heads[i].
+export const SMALL_PROP_LOOK = Object.freeze({
+  grassTuft: Object.freeze({ blades: 6, ring: 0.05, width: 0.06, height: Object.freeze([0.2, 0.14]), lean: 0.1 }),
+  flowerPatch: Object.freeze({
+    stemW: 0.025, headR: 0.05, headH: 0.035,
+    spots: Object.freeze([Object.freeze([0, 0, 0.28]), Object.freeze([0.11, 0.06, 0.22]), Object.freeze([-0.06, 0.1, 0.24])]),
+    heads: Object.freeze(['headA', 'headB', 'headA']),
+  }),
+});
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({
@@ -448,6 +487,8 @@ export const TUNABLES = Object.freeze({
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones
+  // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
+  PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

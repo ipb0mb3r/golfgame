@@ -48,11 +48,12 @@ test('the pick list: every piece exists in the library', () => {
   assert.throws(() => validateBiomeSet(withChange({ bigProps: ['windmill'] }), LIBRARY), /bigProps: unknown piece "windmill" \(the library's bigProps: none yet\)/);
   assert.throws(() => validateBiomeSet(withChange({ textures: ['grassDabs'] }), LIBRARY), /textures: unknown piece "grassDabs"/);
   assert.throws(() => validateBiomeSet(withChange({ furniture: { ...base.furniture, flag: 'banner' } }), LIBRARY), /furniture\.flag: unknown piece "banner"/);
-  assert.throws(() => validateBiomeSet(withChange({ smallProps: { pieces: ['grassTuft'] } }), LIBRARY), /smallProps: unknown piece "grassTuft"/);
+  // (AP7c: grassTuft is a library piece now, so the unknown piece is a buttercup)
+  assert.throws(() => validateBiomeSet(withChange({ smallProps: { pieces: ['buttercup'] } }), LIBRARY), /smallProps: unknown piece "buttercup"/);
   // a piece added to the library can be picked; small props need their scatter rule
-  const lib = { ...LIBRARY, smallProps: { grassTuft: { slots: { blades: 'rough' } } } };
-  assert.throws(() => validateBiomeSet(withChange({ smallProps: { pieces: ['grassTuft'] } }), lib), /smallProps\.perHa must be a number/);
-  assert.ok(validateBiomeSet(withChange({ smallProps: { pieces: ['grassTuft'], perHa: 40, on: ['rough'] } }), lib));
+  const lib = { ...LIBRARY, smallProps: { buttercup: { slots: { blades: 'rough' } } } };
+  assert.throws(() => validateBiomeSet(withChange({ smallProps: { pieces: ['buttercup'] } }), lib), /smallProps\.perHa must be a number/);
+  assert.ok(validateBiomeSet(withChange({ smallProps: { pieces: ['buttercup'], perHa: 40, on: ['rough'] } }), lib));
   // a library piece whose slot names a missing palette key is a library error
   const badLib = { ...LIBRARY, skies: { flatSky: { slots: { sky: 'skyMiddle' } } } };
   assert.throws(() => validateBiomeSet(base, badLib), /sky: piece "flatSky" slot sky uses an unknown palette key "skyMiddle"/);

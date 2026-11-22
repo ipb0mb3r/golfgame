@@ -1,6 +1,6 @@
 // AP5: every biome set, by id (DESIGN §8b). A hole names its set with `biome: '<id>'`.
 // Adding a biome set = add a file next to this one and one line here.
-import { validateBiomeSet } from '../core/biome.js';
+import { validateBiomeSet, normalizeBiomeSet } from '../core/biome.js';
 import { LIBRARY } from './library.js';
 import mtnDefault from './mtn-default.js';
 import protoDefault from './proto-default.js';
@@ -15,11 +15,15 @@ import testMeadowLook from './test-meadow-look.js';
 // AP7a: dev only, the gradient trees (?biome=test-trees, ?biome=test-island-trees)
 import testTrees from './test-trees.js';
 import testIslandTrees from './test-island-trees.js';
+// AP7c: dev only, the small-prop scatter (?biome=test-small-props)
+import testSmallProps from './test-small-props.js';
 
-export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook, testTrees, testIslandTrees].map(b => [b.id, b]));
+export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook, testTrees, testIslandTrees, testSmallProps].map(b => [b.id, b]));
 
 // The set a hole uses, checked (validateBiomeSet throws with the set and the field). Unknown id → throws.
+// X33 / AP7c: returned as the game reads it (core/biome.js normalizeBiomeSet): every pick as its piece id,
+// slot overrides in slotOverrides, smallProps with every pick { id, weight, slots, cluster }.
 export function resolveBiome(id) {
   if (!Object.hasOwn(BIOMES, id)) throw new Error(`unknown biome set "${id}" (known: ${Object.keys(BIOMES).join(', ')})`);
-  return validateBiomeSet(BIOMES[id], LIBRARY);
+  return normalizeBiomeSet(validateBiomeSet(BIOMES[id], LIBRARY));
 }
