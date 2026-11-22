@@ -29,7 +29,7 @@ export default {
   },
   textures: [],               // none yet (AP6): flat painted colours
   onTrees: ['roundCanopy', 'pineTree'], // the soft round tree + a soft pine (AP7a)
-  offTrees: ['spruceTree', 'pineTree'], // conifer forest for now: round scenery trees go over the triangle budget on mtn-07 (321k) until the cheap far tree wall (AP7b)
+  offTrees: ['roundCanopy', 'spruceTree'], // round trees with dark spruces (owner: lots of round trees); needs the lighter roundCanopy scenery LOD (AP7b palm PR) to fit mtn-07
   rocks: ['roundBoulder'],
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'hazeHills',  // the soft hazy hills, near ring backNear + far ring backFar (AP6a)
