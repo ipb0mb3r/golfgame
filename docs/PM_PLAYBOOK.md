@@ -77,19 +77,30 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-20:** **AP6a** gradient sky, horn peaks, ocean, haze hills (#99, QA #100), with dev-only looks `test-alpine-look` / `test-island-look` / `test-meadow-look`; QA: "Alpine clearly reads as a different place". Island dark-lava boulders (#98).
 
-**Also done 2026-11-20:** **AP6b** polish (#101, QA #102); the artist's three sets use the new sky and backdrops (#104: Meadow hazeHills, Alpine hornPeaks, Island ocean); **AP7a trees** (#105, QA #106): the leafLow → mid → leafTop gradient, pineTree / spruceTree / palmTree / roundCanopy / birchTree (spruce and palm on `leafAlt`, artist), within budget. Owner: "don't skimp on trees"; token-conscious otherwise (smaller slices, QA Light where possible).
+**Also done 2026-11-20/22:** **AP6b** polish (#101, QA #102); the artist's three sets use the new sky and backdrops (#104: Meadow hazeHills, Alpine hornPeaks, Island ocean); **AP7a trees** (#105, QA #106): the leafLow → mid → leafTop gradient, pineTree / spruceTree / palmTree / roundCanopy / birchTree (spruce and palm mid = `leafAlt`); the artist's tree picks (#107); **AP7b parts 2–3** (#110, QA #111): fuller pine and round canopy (no "lollipop"), cheap far trees beyond 35 m outside OB, all three sets under 300k; **palm redesign spec** (#109, the owner's "C + a little B" dome crown, `docs/art/palm/SPEC.md`). Owner: "don't skimp on trees".
 
-**In flight:**
-- The artist picks the new trees in alpine-day / island-day / meadow-day with the owner (palms off-course only until AP7b).
-- **Owner to choose next:** AP7b (tree polish + palm colliders + far tree wall) or Phase MP (main menu, ui-designer first).
+**In flight (handoff 2026-11-22, end of the second Claude Code PM session):**
+- **#112 "AP7b: New palm, birch, round-tree cap (+ X34)"**: the palm from the spec (330 tris), the palm collider rule (`palmColliderError`, canopyH / 2R ≤ 0.8 in `validateHole`), a 2-row birch, the roundCanopy 2-row cap, a lighter round scenery tree (102 tris), the session-check §3b fix (X34). PM-reviewed, the artist says "OK to merge"; QA Light → see the QA PR "QA report: AP7b palm (PR #112)". Then the owner merges.
+- **The artist's next PRs** (in the owner's artist session): "Art: Meadow round scenery trees" (roundCanopy + spruceTree scenery: 287k on mtn-07 after #112) and palms as onTrees in island-day (the PR must say the `?biome=` preview on today's holes isn't representative for palms in play: only holes with palm-shaped colliders play fair).
+- **Backlog from #110/#112:** X33 per-pick slot override (only when a real set needs it), X35 a minimum for the palm collider rule (a very flat collider squashes the crown), widen the tall roundCanopy's base row ~10 % (artist), birch / round-canopy fine-tuning by the artist.
 
-**Next (owner order, 2026-11-19: A → B → C):**
-1. ~~A: finish performance~~ ✅ (#80).
-2. **B: ready for the art:** ~~AP2~~ ✅ → ~~AP5~~ ✅ (biome sets; flag = `accent`) → ~~X26~~ ✅ → ~~AP3~~ ✅ → ~~AP6a~~ ✅ → ~~AP6b~~ ✅ → ~~artist picks sky/backdrops~~ ✅ → ~~AP7a trees~~ ✅ → AP7b → AP7 (models; artist's gradient slots + per-pick slot override) → AP6 (ground material). In parallel, the **artist per-biome pass ART1** (✅ Meadow, Alpine, Island coast) (ART_STYLE §6.2: mood board → library check → proposals → owner approves → build), Meadow first. **AP8 pixel effect after the art exists.**
-3. **C: Phase MP main menu pass** (`ui-designer` designs with the owner → dev builds), then Phase U for the HUD (X18, X19).
-4. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
-5. **Real courses** (a genre talk per theme first, dressed with biome sets) and **Phase 5: rain** (DESIGN §7; then a weather option in MP).
-6. Small, whenever: X17 (pin chip spot text).
+**Next (owner's choice, ask him):**
+1. **Phase MP: main menu pass** (`ui-designer` designs MP0 with the owner in its own session, like the artist → dev builds MP1–MP5), then Phase U for the HUD (X18, X19, X24, X28; keep the red tree warning prominent: QA on #106).
+2. More art: AP7 props (windmill, chalet, huts, fences, cow; small props: wildflowers, bougainvillea) → AP6 ground material → AP8 pixel setting (after the art exists).
+3. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
+4. **Real courses** (a genre talk per theme first, dressed with biome sets; island holes need flat palm colliders and a wide `hole.map`, HOLE_GUIDELINES) and **Phase 5: rain**.
+5. Small, whenever: X17 (pin chip spot text).
+
+**The owner's sessions:**
+- **Artist session:** `session_01Rv6Ng9ELhLTGiLwq6qRntd` ("Pocket Links: Artist (style talk ART0b)"). The owner chats with it directly. The PM reaches it with the claude-code-remote `send_message` tool (session_id above); it replies by `send_message` too (read them with ReadNotifications). Its PRs are data / docs only: PM review → merge (no QA unless it changes pieces).
+
+**Token budget (owner, 2026-11-22: "we are rapidly maxing our 5 hr windows"):**
+- **Start a fresh PM session when this one gets long** (the playbook is the handoff). A long PM conversation costs more on every reply, even "merged".
+- **Cheaper model for small dev jobs** (fixes, data, tests): `model: "sonnet"` on the Agent call. Keep the strong model for real engine work.
+- **Fold small follow-ups into the next dev step** instead of a separate dev each time (e.g. the birch notes went into the palm PR).
+- **QA Light by default**; Full only for big systems. QA is already on the cheaper model.
+- **Fewer screenshots in PM reviews:** look at one key before/after, not every image.
+- Agent costs seen: dev 150k–260k tokens per task, QA 40k–80k.
 
 **Lessons from the 2026-11-18/19 session (keep doing this):**
 - **Fresh agent per task.** Don't keep resuming one dev for many tweaks: its history grows (one reached ~440k tokens) and every resume reloads it, which is slow and burns the 5-hour usage limit. My prompts stand alone; small follow-ups can go to a fresh dev too.
@@ -115,7 +126,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - From Phase T (low): 320 px "Next hole" wraps; 320 px scorecard personal-best line under the sticky buttons; rival lines during the round and best per difficulty (owner: not now).
 - Engine wishlist D2–D7 (TASKS; D1 dropped, D3 done as V4, D4 → BC1). Drag aiming on touch → Phase U.
 - **Before the real courses:** a genre talk per course theme. Real courses get more sloped and sometimes larger greens (GENRE_NOTES). Tree rules depend on the biome (forest/mountain: lots of trees).
-- **Later:** save a round in progress; more settings (seaside, desert, tropical); the Three.js upgrade (X6); "stay on Three.js?" at Gate B (DESIGN §11).
+- **Later:** save a round in progress; "stay on Three.js?" at Gate B (DESIGN §11; the tech lead said yes, #70). The Three.js upgrade (X6) is done (AP2).
 
 ### Prompts that worked
 The Phase BC dev prompts (core first with a stop for PM review, then a fresh dev for the UI, then small fresh devs for fixes and tuning) are on PR #68 and in this file's git history. Reuse that shape for new systems: **build the core, stop, PM answers, then the rest.**
