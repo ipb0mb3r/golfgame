@@ -6,7 +6,7 @@
 <title>Palm Crown Options</title>
 <!-- AP7b palm redesign, artist mock-up: today's palmTree (the real AP7a piece, from src/core/trees.js) and
      3 crown options built here with the same part format (unit canopy space: radius 1 across, y -1..1).
-     ?opt=today|A|B|C  &view=close|far  &collider=1 (show the flatter canopy collider as a faint ring)
+     ?opt=today|A|B|C|D|E  &view=close|far  &collider=1 (show the flatter canopy collider as a faint ring)
      &label=0. Stand-alone; reads src/core only, never changes it. — Agent: artist -->
 <script type="importmap">{ "imports": { "three": "../../../vendor/three-0.187.0/three.module.js" } }</script>
 <style>
@@ -72,6 +72,14 @@ const OPTIONS = {
   C: { name: 'C · Round dome', sub: '12 fronds arch high, then curl down into a round crown', fronds: [
       { n: 5, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.26, droop: 0.4, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0 },
       { n: 7, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.28, droop: 0.45, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0 }],
+    tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
+  D: { name: 'C + a little B', sub: 'the round dome, wider leaves (pointed tips)', fronds: [
+      { n: 4, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.33, droop: 0.55, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0 },
+      { n: 7, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.36, droop: 0.6, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0 }],
+    tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
+  E: { name: 'C + more B', sub: 'the round dome, broad folded leaves with round tips', fronds: [
+      { n: 4, reach: 0.78, y0: 0.14, peak: 0.75, tp: 0.5, end: 0.2, width: 0.36, droop: 0.65, steps: 5, turn: 0.6, curl: 0.8, bend: 1.0, shape: 'paddle' },
+      { n: 6, reach: 1.0, y0: 0.06, peak: 0.58, tp: 0.5, end: -0.25, width: 0.42, droop: 0.7, steps: 5, turn: 0.15, curl: 0.9, bend: 1.0, shape: 'paddle' }],
     tuft: { r: 0.16, h: 0.32, segs: 6 }, cap: { r: 0.13, segs: 6 } },
 };
 
