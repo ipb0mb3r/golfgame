@@ -6,7 +6,7 @@ import { ALL_PALETTE_KEYS, parseColour } from '../src/core/biome.js';
 import { BIOMES } from '../src/biomes/index.js';
 import { HOLES } from '../src/holes/sets.js';
 import {
-  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKinds, groundKindsAA, nearestPoints, baseKinds,
+  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKindsAA, nearestPoints, baseKinds,
   groundColour, surfaceMask, treeShadows, shadowColour, waterColour, fairwayStripe,
 } from '../src/core/ground.js';
 
@@ -55,29 +55,6 @@ function patch() {
   fill(60, 45, 100, 70, KIND.water);
   return { res, W, H, base };
 }
-
-test('groundKinds: the edge line outside the fairway, the lip inside the bunker, the bank round water; physics kinds kept', () => {
-  const { res, W, H, base } = patch(), { kinds, depth } = groundKinds(base, W, H, res);
-  const at = (i, j) => KINDS[kinds[j * W + i]];
-  // edge: on the rough side, ~0.6 m (2–3 px at 4 px / m), never on the fairway itself
-  assert.equal(at(49, 40), 'fairway'); assert.equal(at(50, 40), 'edge'); assert.equal(at(51, 40), 'edge'); assert.equal(at(52, 40), 'rough');
-  assert.equal(at(9, 40), 'edge'); assert.equal(at(6, 40), 'rough');
-  // lip: inside the sand, ~0.5 m
-  assert.equal(at(60, 20), 'lip'); assert.equal(at(61, 20), 'lip'); assert.equal(at(63, 20), 'sand');
-  // bank: on the land round the water; the water keeps its pixels, deeper toward the middle
-  assert.equal(at(59, 55), 'bank'); assert.equal(at(55, 55), 'bank'); assert.equal(at(53, 55), 'rough');
-  assert.equal(at(60, 55), 'water'); assert.equal(at(80, 57), 'water');
-  assert.ok(depth[57 * W + 80] > depth[57 * W + 61]);
-  // a band only ever replaces a pixel's colour: fairway, green, tee, water and sand cells never become rough, and vice versa
-  for (let i = 0; i < W * H; i++) {
-    const b = KINDS[base[i]], k = KINDS[kinds[i]];
-    if (k !== b) assert.ok((k === 'edge' && ['rough', 'ob'].includes(b)) || (k === 'lip' && b === 'sand') || (k === 'bank' && ['rough', 'ob', 'fairway', 'fringe'].includes(b)), `${b} → ${k}`);
-  }
-});
-
-test('GROUND_EDGE_AA: a tunable 0..1, default 1 (smooth edges); 0 = the hard per-pixel edges (compare switch)', () => {
-  assert.deepEqual(TUNABLES.GROUND_EDGE_AA, { def: 1, min: 0, max: 1 });
-});
 
 test('baseKinds: the same physics kind per map pixel as asking every pixel, with about a third of the calls', () => {
   for (const id of ['pl-03', 'mtn-03', 'mtn-06']) {
@@ -133,9 +110,6 @@ test('groundKindsAA: smooth edges, the same bands and widths as the hard rule, e
   // the edge ring round the fairway, minus where the bunker covers it (sand cuts the fairway's outline)
   const edgeArea = Math.PI * ((t.R + e) ** 2 - t.R ** 2) * px2;
   assert.ok(A[KIND.edge] < edgeArea && A[KIND.edge] > edgeArea * 0.8, `edge ${A[KIND.edge]} vs ${edgeArea}`);
-  // the same pixels change kind as with the hard rule, give or take the blended rim
-  const hard = groundKinds(base, W, H, res), Ah = shares({ ...hard, mix: { at: new Int32Array(W * H).fill(-1) } }, W, H);
-  for (const k of ['edge', 'lip', 'sand', 'fairway']) assert.ok(Math.abs(A[KIND[k]] - Ah[KIND[k]]) / Ah[KIND[k]] < 0.12, k);
   // a pixel far from any boundary is one kind, exactly as before
   assert.equal(g.mix.at[30 * W + 48], -1); assert.equal(KINDS[g.kinds[30 * W + 48]], 'fairway');
   assert.equal(g.mix.at[30 * W + 90], -1); assert.equal(KINDS[g.kinds[30 * W + 90]], 'rough');
@@ -174,7 +148,8 @@ test('groundColour: the palette colour times the texture; level 1 paints the str
 });
 
 test('surfaceMask: stripe weights and texture amounts per kind, at maskScale of the map, rows from the tee end', () => {
-  const { res, W, H, base } = patch(), { kinds } = groundKinds(base, W, H, res), m = surfaceMask(kinds, W, H);
+  const { res, W, H, base } = patch(), sampleKind = (u, v) => base[Math.min(H - 1, Math.floor(v)) * W + Math.min(W - 1, Math.floor(u))];
+  const { kinds } = groundKindsAA(base, W, H, res, sampleKind), m = surfaceMask(kinds, W, H);
   const n = Math.round(1 / GROUND_LOOK.maskScale);
   assert.equal(m.width, Math.ceil(W / n)); assert.equal(m.height, Math.ceil(H / n));
   const px = (i, j) => [...m.data.slice(((m.height - 1 - Math.floor(j / n)) * m.width + Math.floor(i / n)) * 4).slice(0, 4)];
