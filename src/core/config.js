@@ -303,6 +303,7 @@ export const GROUND_LOOK = Object.freeze({
   }),
 });
 
+// X43c (owner on #133: "a little less prominent, more stylized: the bottom texture, and a transparent layer on the surface"): the web is fainter and thinner (WATER_LINES .35, WATER_WIDTH .45, WATER_LINE_PX 1.2, WATER_CELL 3.6) over a faint even sheen (WATER_TINT .05), option B of three.
 // X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
 //   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
 //   at least; drop: m a body's flat level sits under its lowest shore point.
@@ -325,7 +326,7 @@ export const GROUND_LOOK = Object.freeze({
 //   a cell over which the borders blend (a smooth minimum), so the cells are rounded and the lines thicken where they meet.
 //   Far water (owner on #131: "no web at all, just the blurred ground" from the tee): no fade by distance. Where a
 //   web's cells get small on screen, a coarser web takes over instead: coarse: [scale, strength]: its cells are
-//   × WATER_CELL (2.4 m → 8.4 m) and its lines × this strength. cellPx: [gone, full]: a web is fully drawn while
+//   × WATER_CELL (3.6 m → 12.6 m) and its lines × this strength. cellPx: [gone, full]: a web is fully drawn while
 //   its cells are at least `full` px on screen (along the most squashed screen direction) and gone at `gone` px; the
 //   main web hands over to the coarse one over the same range (the fainter drifting web goes with the main one).
 //   dim: [strength, px]: lines whose cells are small on screen are this much weaker, back to full when the cells
@@ -336,7 +337,7 @@ export const GROUND_LOOK = Object.freeze({
 export const WATER_LOOK = Object.freeze({
   step: 1, lift: 0.08, drop: 0.05,
   edge: Object.freeze([0.5, 0.9]), hug: 0.06, bisect: 4,
-  line: Object.freeze([0.5, 0.035]), linePx: 2,
+  line: Object.freeze([0.5, 0.035]),
   layer2: Object.freeze([0.62, 0.45, 0.12]),
   wander: Object.freeze([0.36, 0.35]), warp: Object.freeze([0.06, 4.5]), round: 0.12,
   coarse: Object.freeze([3.5, 0.8]), cellPx: Object.freeze([8, 20]), dim: Object.freeze([0.55, 60]),
@@ -595,9 +596,14 @@ export const TUNABLES = Object.freeze({
   // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
   // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
   // WATER_SPEED = × how fast the web moves (0 = still).
-  WATER_LINES:           { def: 0.85, min: 0,     max: 1 },
-  WATER_CELL:            { def: 2.4,  min: 0.8,   max: 8 },
+  WATER_LINES:           { def: 0.35, min: 0,     max: 1 },
+  WATER_CELL:            { def: 3.6,  min: 0.8,   max: 8 },
   WATER_SPEED:           { def: 1,    min: 0,     max: 3 },
+  // X43c: WATER_LINE_PX = the thinnest a line is drawn (CSS px), WATER_WIDTH = × the lines' width close up (share of a
+  // cell), WATER_TINT = the even, see-through sheen over the whole surface (0 = none; its alpha, in the line colour).
+  WATER_LINE_PX:         { def: 1.2,   min: 0.5,   max: 4 },
+  WATER_WIDTH:           { def: 0.45,   min: 0.2,   max: 2 },
+  WATER_TINT:            { def: 0.05,   min: 0,     max: 0.3 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

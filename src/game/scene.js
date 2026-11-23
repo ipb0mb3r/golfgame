@@ -167,7 +167,7 @@ function addWaterSurface(scene, hole, terrain, P) {
   const mat = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
       uLine: { value: new THREE.Color(c.line) }, uLines: { value: TUNE.WATER_LINES }, uCell: { value: TUNE.WATER_CELL },
-      uWidth: { value: new THREE.Vector2(L.line[1], L.linePx) }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
+      uWidth: { value: new THREE.Vector2(L.line[1] * TUNE.WATER_WIDTH, TUNE.WATER_LINE_PX) }, uTint: { value: TUNE.WATER_TINT }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
       uWander: { value: new THREE.Vector2(...L.wander) }, uWarp: { value: new THREE.Vector2(...L.warp) }, uRound: { value: L.round },
       uLod: { value: new THREE.Vector4(...L.coarse, ...L.cellPx) }, uDim: { value: new THREE.Vector2(...L.dim) }, uEdge: { value: new THREE.Vector2(...L.edge) },
       uBall: { value: new THREE.Vector3(0, -1e4, 0) }, uBallClear: { value: new THREE.Vector2(...L.ballClear) },
@@ -179,7 +179,7 @@ function addWaterSurface(scene, hole, terrain, P) {
   });
   const mesh = new THREE.Mesh(geo, mat);
   mesh.name = 'water surface'; mesh.renderOrder = L.renderOrder;
-  mesh.visible = TUNE.WATER_LINES > 0; // 0 = no web: nothing left to draw (the bed and the soft edge are the ground's)
+  mesh.visible = TUNE.WATER_LINES > 0 || TUNE.WATER_TINT > 0; // 0 = no web: nothing left to draw (the bed and the soft edge are the ground's)
   const speed = TUNE.WATER_SPEED;
   mesh.onBeforeRender = renderer => { // the screen sizes (linePx, cellPx, dim) are CSS pixels: × the canvas's pixel ratio
     mat.uniforms.uTime.value = (performance.now() / 1000 * speed) % 3600;
@@ -210,7 +210,7 @@ void main() {
 const WATER_FRAG = /* glsl */ `
 uniform vec3 uLine, uLayer2, uBall;
 uniform vec4 uLod;
-uniform float uLines, uCell, uTime, uRound, uDpr;
+uniform float uLines, uCell, uTime, uRound, uDpr, uTint;
 uniform vec2 uWidth, uWander, uWarp, uEdge, uBallClear, uDim;
 varying vec3 vWorld;
 varying float vShore;
@@ -264,7 +264,8 @@ void main() {
   float a0 = max(waterWeb(vWorld.xz, uCell, uTime, mpp), uLayer2.y * waterWeb(vWorld.xz + drift, uCell * uLayer2.x, uTime * 1.3 + 17.0, mpp));
   float a1 = uLod.y * waterWeb(vWorld.xz, coarse, uTime * 0.5 + 5.0, mpp);
   float a = max(a0 * waterShown(px0), a1 * (1.0 - near) * waterShown(coarse / cssM));
-  gl_FragColor = vec4(uLine, clamp(a * uLines * edge * ball, 0.0, 1.0));
+  float web = a * uLines * ball;
+  gl_FragColor = vec4(uLine, clamp(max(web, uTint) * edge, 0.0, 1.0)); // the web, over an even faint sheen
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
   #include <fog_fragment>

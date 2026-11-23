@@ -13,18 +13,19 @@ const surf = id => { if (!cache.has(id)) cache.set(id, waterSurface(HOLES[id], t
 const WET = ['pl-01', 'pl-02', 'mtn-01', 'mtn-03', 'mtn-04', 'mtn-05', 'mtn-06', 'mtn-07', 'mtn-08', 'mtn-09'];
 
 test('the look switches: WATER_LINES (0 = no web), WATER_CELL (m), WATER_SPEED; the old tint switches are gone', () => {
-  assert.deepEqual([TUNABLES.WATER_LINES.def, TUNABLES.WATER_LINES.min], [0.85, 0]);
-  assert.equal(TUNABLES.WATER_CELL.def, 2.4); assert.ok(TUNABLES.WATER_CELL.min > 0);
+  assert.deepEqual([TUNABLES.WATER_LINES.def, TUNABLES.WATER_LINES.min], [0.35, 0]);
+  assert.equal(TUNABLES.WATER_CELL.def, 3.6); assert.ok(TUNABLES.WATER_CELL.min > 0);
   assert.equal(TUNABLES.WATER_SPEED.def, 1); assert.equal(TUNABLES.WATER_SPEED.min, 0);
   for (const gone of ['WATER_SURFACE', 'WATER_OPACITY', 'WATER_SHEEN']) assert.equal(TUNABLES[gone], undefined, gone);
   // visible from the tee without shimmer (owner on #131): lines 1.5-2.5 px on screen at any distance, no fade by
   // distance (only the fog), a coarser web (~6-10 m cells) where the main cells get small on screen, dimmer far away
   assert.equal(WATER_LOOK.fade, undefined);
-  assert.ok(WATER_LOOK.linePx >= 1.5 && WATER_LOOK.linePx <= 2.5);
+  assert.ok(TUNABLES.WATER_LINE_PX.def >= 1 && TUNABLES.WATER_LINE_PX.def <= 2.5);
+  assert.ok(TUNABLES.WATER_TINT.def >= 0 && TUNABLES.WATER_TINT.def <= 0.1 && TUNABLES.WATER_WIDTH.def <= 1);
   const coarse = TUNABLES.WATER_CELL.def * WATER_LOOK.coarse[0];
-  assert.ok(coarse >= 6 && coarse <= 10, String(coarse));
+  assert.ok(coarse >= 6 && coarse <= 14, String(coarse));
   assert.ok(WATER_LOOK.coarse[1] > 0 && WATER_LOOK.coarse[1] <= 1);
-  assert.ok(WATER_LOOK.cellPx[0] >= 4 * WATER_LOOK.linePx && WATER_LOOK.cellPx[0] < WATER_LOOK.cellPx[1]);
+  assert.ok(WATER_LOOK.cellPx[0] >= 4 * TUNABLES.WATER_LINE_PX.def && WATER_LOOK.cellPx[0] < WATER_LOOK.cellPx[1]);
   assert.ok(WATER_LOOK.dim[0] > 0 && WATER_LOOK.dim[0] < 1 && WATER_LOOK.dim[1] > WATER_LOOK.cellPx[1]);
   assert.ok(WATER_LOOK.ballClear[1] >= 1.5 && WATER_LOOK.ballClear[0] < WATER_LOOK.ballClear[1]);
 });
