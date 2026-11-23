@@ -305,8 +305,12 @@ export const GROUND_LOOK = Object.freeze({
 
 // X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
 //   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
-//   at least; drop: m a body's flat level sits under its lowest shore point; dive: m under the ground the shore
-//   ring is put, so the ground cuts the surface at the edge.
+//   at least; drop: m a body's flat level sits under its lowest shore point.
+//   The soft edge (owner 2026-11-23: "it should blend better, even if the surface ends up a little bit on the rock"):
+//   edge: [out, in] m: the surface fades from fully drawn `in` m inside the water's edge to nothing `out` m onto the
+//   bank (smooth, per pixel, from each vertex's distance to the real edge); hug: m over the ground the mesh lies
+//   where it reaches onto the bank (never under it, so the ground never cuts it); bisect: halvings of a grid step
+//   that find the water's edge between a wet and a dry grid point (1 m / 2^4 ≈ 6 cm).
 //   tint: how far the surface colour goes from the palette's `water` toward `skyHorizon` (lighter than the bed).
 //   fresnel: [power, strength] the sky (`skyHorizon`) reflected at a grazing angle, and how much more opaque the
 //   surface gets there; sheen: [shininess, strength] the sun's soft highlight (× WATER_SHEEN), sun direction from the
@@ -315,7 +319,8 @@ export const GROUND_LOOK = Object.freeze({
 //   renderOrder: drawn first among the see-through things (the aim marks, rings and the ball's shadow come after,
 //   so they read on top); the ball is drawn after the water too (props.js).
 export const WATER_LOOK = Object.freeze({
-  step: 1, lift: 0.08, drop: 0.05, dive: 0.15,
+  step: 1, lift: 0.08, drop: 0.05,
+  edge: Object.freeze([0.5, 0.9]), hug: 0.06, bisect: 4,
   tint: 0.3,
   fresnel: Object.freeze([4, 0.35]),
   sheen: Object.freeze([60, 0.5]),
@@ -571,11 +576,9 @@ export const TUNABLES = Object.freeze({
   // AP7e follow-up (owner: big props hard to notice; looks only, default 2.5 = owner pick 2026-11-23): BIG_PROP_SCALE = one multiplier on every big prop's size, on top of its own scale (0.9–1.15);
   // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
   BIG_PROP_SCALE:        { def: 2.5,    min: 0.5,   max: 4 },
-  // X43 (owner: "a simple semi-transparent surface on the water"; looks only): WATER_SURFACE 1 = the see-through surface over
-  // every water area (the old opaque pond surface is not drawn), 0 = before X43 (the painted bed, plus the old pond
-  // surface on holes that have one); WATER_OPACITY = its opacity looking straight down (more at a grazing angle);
-  // WATER_SHEEN = × the sun's highlight (0 = none). Rounded / read when the hole is built.
-  WATER_SURFACE:         { def: 1,    min: 0,     max: 1 },
+  // X43 (owner: "a simple semi-transparent surface on the water"; looks only): WATER_OPACITY = the see-through water
+  // surface's opacity looking straight down (more at a grazing angle; default 0.5 = owner pick 2026-11-23);
+  // WATER_SHEEN = × the sun's highlight (0 = none). Read when the hole is built.
   WATER_OPACITY:         { def: 0.5,  min: 0.1,   max: 0.9 },
   WATER_SHEEN:           { def: 1,    min: 0,     max: 3 },
 });

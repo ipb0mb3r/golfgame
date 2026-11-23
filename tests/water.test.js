@@ -5,19 +5,17 @@ import { WATER_LOOK, TUNABLES } from '../src/core/config.js';
 import { lab } from '../src/core/biome.js';
 import { BIOMES } from '../src/biomes/index.js';
 import { HOLES } from '../src/holes/sets.js';
-import { waterSurface, waterColours, waterSurfaceOn } from '../src/core/water.js';
+import { waterSurface, waterColours, shoreFade } from '../src/core/water.js';
 
 const terrainOf = h => ({ heightAt: h.heightAt.bind(h), surfaceAt: h.surfaceAt.bind(h) });
 const cache = new Map();
 const surf = id => { if (!cache.has(id)) cache.set(id, waterSurface(HOLES[id], terrainOf(HOLES[id]))); return cache.get(id); };
 const WET = ['pl-01', 'pl-02', 'mtn-01', 'mtn-03', 'mtn-04', 'mtn-05', 'mtn-06', 'mtn-07', 'mtn-08', 'mtn-09'];
 
-test('the compare switches: WATER_SURFACE 0/1 (default 1), WATER_OPACITY, WATER_SHEEN', () => {
-  assert.deepEqual(TUNABLES.WATER_SURFACE, { def: 1, min: 0, max: 1 });
+test('the look switches: WATER_OPACITY (default 0.5, owner pick 2026-11-23), WATER_SHEEN; no WATER_SURFACE switch any more', () => {
   assert.equal(TUNABLES.WATER_OPACITY.def, 0.5);
   assert.equal(TUNABLES.WATER_SHEEN.def, 1);
-  assert.equal(waterSurfaceOn(1), true); assert.equal(waterSurfaceOn(0), false);
-  assert.equal(waterSurfaceOn(0.6), true); assert.equal(waterSurfaceOn(0.4), false);
+  assert.equal(TUNABLES.WATER_SURFACE, undefined);
 });
 
 test('a hole without water gets no surface', () => {
@@ -25,17 +23,18 @@ test('a hole without water gets no surface', () => {
   assert.equal(surf('mtn-02'), null);
 });
 
-test('every hole with water gets one mesh; every wet point is drawn at least `lift` over its bed, the shore ring under the ground', () => {
+test('every hole with water gets one mesh; every wet point is drawn at least `lift` over its bed, the bank points `hug` over the ground', () => {
   for (const id of WET) {
     const h = HOLES[id], w = surf(id);
     assert.ok(w, id);
     const s = WATER_LOOK.step, n = w.positions.length / 3;
     let wet = 0, ring = 0;
+    assert.equal(w.shore.length, n);
     for (let v = 0; v < n; v++) {
       const x = w.positions[v * 3], y = w.positions[v * 3 + 1], z = w.positions[v * 3 + 2];
       const bed = h.heightAt(x, z);
-      if (h.surfaceAt(x, z) === 'water') { wet++; assert.ok(y >= bed + WATER_LOOK.lift - 1e-4, `${id} (${x}, ${z}): ${y} vs bed ${bed}`); } else {
-        ring++; assert.ok(Math.abs(y - (bed - WATER_LOOK.dive)) < 1e-4, `${id} shore (${x}, ${z})`);
+      if (h.surfaceAt(x, z) === 'water') { wet++; assert.ok(y >= bed + WATER_LOOK.lift - 1e-4, `${id} (${x}, ${z}): ${y} vs bed ${bed}`); assert.ok(w.shore[v] >= 0, `${id} wet shore`); } else {
+        ring++; assert.ok(Math.abs(y - (bed + WATER_LOOK.hug)) < 1e-4, `${id} bank (${x}, ${z})`); assert.ok(w.shore[v] <= 0, `${id} dry shore`);
       }
       assert.ok(Number.isInteger((x - h.map.x0) / s) && Number.isInteger((z - h.map.z0) / s));
     }
@@ -43,6 +42,36 @@ test('every hole with water gets one mesh; every wet point is drawn at least `li
     assert.ok(ring > 0, id);
     assert.equal(w.index.length, w.tris * 3);
     for (const i of w.index) assert.ok(i < n);
+  }
+});
+
+test('the soft edge: the fade is 0 at edge[0] m onto the bank, 1 from edge[1] m inside, smooth and rising between', () => {
+  const [out, inn] = WATER_LOOK.edge;
+  assert.ok(out + inn >= 0.5 && out + inn <= 1.5, 'a short band (owner: 0.5–1.5 m)');
+  assert.equal(shoreFade(-out), 0); assert.equal(shoreFade(-out - 1), 0);
+  assert.equal(shoreFade(inn), 1); assert.equal(shoreFade(inn + 3), 1);
+  let last = 0;
+  for (let d = -out; d <= inn; d += 0.05) { const f = shoreFade(d); assert.ok(f >= last - 1e-12); last = f; }
+  // a vertex's distance to the edge is close to its true distance: a grid point next to the shore is less than
+  // one step from it, and a wet point at the shore's grid neighbour reads within the step
+  for (const id of ['pl-01', 'mtn-04', 'mtn-07']) {
+    const w = surf(id), s = WATER_LOOK.step;
+    let edgeBand = 0;
+    for (let v = 0; v < w.shore.length; v++) {
+      assert.ok(Math.abs(w.shore[v]) <= Math.max(out, inn) + s + 1e-4, `${id} ${w.shore[v]}`);
+      if (Math.abs(w.shore[v]) < s) edgeBand++;
+    }
+    assert.ok(edgeBand > 0, id);
+  }
+});
+
+test('the mesh reaches onto the bank only as far as the fade: every drawn cell has a corner the fade still shows', () => {
+  for (const id of WET) {
+    const w = surf(id);
+    for (let t = 0; t < w.tris; t += 2) { // two triangles per cell, the first one holds 3 of its 4 corners
+      const a = w.index[t * 3], b = w.index[t * 3 + 1], c = w.index[t * 3 + 2], d = w.index[t * 3 + 5];
+      assert.ok(Math.max(w.shore[a], w.shore[b], w.shore[c], w.shore[d]) > -WATER_LOOK.edge[0], id);
+    }
   }
 });
 
@@ -61,7 +90,7 @@ test('a pond is flat at its level: pl-01 (flat ground) at lift, pl-02 near its W
   assert.equal(a.bodies.length, 1);
   for (let v = 0; v < a.positions.length / 3; v++) {
     const y = a.positions[v * 3 + 1];
-    assert.ok(Math.abs(y - WATER_LOOK.lift) < 1e-6 || Math.abs(y + WATER_LOOK.dive) < 1e-6, String(y));
+    assert.ok(Math.abs(y - WATER_LOOK.lift) < 1e-6 || Math.abs(y - WATER_LOOK.hug) < 1e-6, String(y));
   }
   const b = surf('pl-02');
   assert.equal(b.bodies.length, 1);
@@ -88,7 +117,7 @@ test('phone budget: the water mesh stays small (≤ 20k triangles on every hole,
 
 test('deterministic: the same hole gives the same mesh', () => {
   const h = HOLES['mtn-03'], a = waterSurface(h, terrainOf(h)), b = waterSurface(h, terrainOf(h));
-  assert.deepEqual(a.positions, b.positions); assert.deepEqual(a.index, b.index);
+  assert.deepEqual(a.positions, b.positions); assert.deepEqual(a.index, b.index); assert.deepEqual(a.shore, b.shore);
 });
 
 test('the colours come from the palette: a tint lighter than the bed (water → skyHorizon), the sky, the sun', () => {
