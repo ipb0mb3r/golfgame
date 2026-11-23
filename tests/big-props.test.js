@@ -5,9 +5,10 @@ import assert from 'node:assert/strict';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
 import { ALL_PALETTE_KEYS } from '../src/core/biome.js';
-import { BIG_PROPS } from '../src/core/config.js';
+import { BIG_PROPS, TUNABLES } from '../src/core/config.js';
+import { parseTune } from '../src/core/tune.js';
 import { bigPropShape, BIG_PROP_PIECES } from '../src/core/bigPropShapes.js';
-import { bigPropsFormatError, bigPropsError, bigPropsFor, placeBigProps, bigPropsClear, footprintOf, obBoxOf } from '../src/core/bigProps.js';
+import { bigPropsFormatError, bigPropsError, bigPropsFor, placeBigProps, bigPropsClear, footprintOf, obBoxOf, scaleBigProps } from '../src/core/bigProps.js';
 import { validateHole } from '../src/core/validate.js';
 import { HOLES, checkHoleLooks } from '../src/holes/sets.js';
 import { DEV_BIG_PROPS, DEV_BIG_PROPS_SET, holeBigProps } from '../src/holes/dev-big-props.js';
@@ -151,4 +152,20 @@ test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07
   const { id, name, description, bigProps, ...rest } = BIOMES[DEV_BIG_PROPS_SET];
   const { id: _i, name: _n, description: _d, bigProps: none, ...meadow } = BIOMES['meadow-day'];
   assert.deepEqual(rest, meadow); assert.deepEqual(none, []);
+});
+
+test('BIG_PROP_SCALE: a tunable (default 1, 0.5–4); scales every prop, clips what would reach inside OB + 5 m, the demo fits up to 2.5', () => {
+  assert.deepEqual(TUNABLES.BIG_PROP_SCALE, { def: 1, min: 0.5, max: 4 });
+  assert.deepEqual(parseTune('BIG_PROP_SCALE:9').set, [{ name: 'BIG_PROP_SCALE', value: 4, asked: 9 }]);
+  const demo = DEV_BIG_PROPS['mtn-07'];
+  assert.equal(scaleBigProps(mtn07, demo, 1).keep, demo);                            // default: untouched
+  for (const m of [0.5, 1.5, 2, 2.5]) {
+    const { keep, clipped } = scaleBigProps(mtn07, demo, m);
+    assert.equal(clipped.length, 0, `x${m}`);
+    keep.forEach((q, i) => assert.ok(Math.abs(q.scale - demo[i].scale * m) < 1e-9));
+  }
+  const { keep, clipped } = scaleBigProps(mtn07, demo, 4);                           // a bigger one is skipped, not an error
+  assert.ok(clipped.length > 0 && keep.length + clipped.length === demo.length);
+  assert.ok(clipped.every(p => demo.includes(p)));                                   // reported as asked
+  assert.ok(footprintOf(keep[0]) > footprintOf(demo[0]));                            // the footprint (trees, drop) is the scaled one
 });

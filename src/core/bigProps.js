@@ -54,6 +54,19 @@ export function bigPropsError(hole, list, set, library) {
   return null;
 }
 
+// The BIG_PROP_SCALE tunable (looks only): every prop's scale × mult, and a prop whose scaled footprint would come
+// within BIG_PROPS.obClear m of the OB box is left out (the static check, bigPropsError, is at mult 1 only).
+// → { keep: [props with the scaled scale], clipped: [the props left out, as asked] }
+export function scaleBigProps(hole, list, mult) {
+  if (mult === 1 || !list.length) return { keep: list, clipped: [] };
+  const box = obBoxOf(hole.scenery.stakes), keep = [], clipped = [];
+  for (const p of list) {
+    const q = { ...p, scale: (p.scale ?? 1) * mult };
+    if (toBox(box, q.x, q.z) < footprintOf(q) + BIG_PROPS.obClear) clipped.push(p); else keep.push(q);
+  }
+  return { keep, clipped };
+}
+
 // The props to draw with this set: the ones it offers. A dev ?biome= override to a set that doesn't offer a hole's
 // prop skips that prop (never fails the visit). → { keep: [props], skipped: [props] }
 export function bigPropsFor(list, offered) {

@@ -6,13 +6,14 @@
 export const DEV_BIG_PROPS_SET = 'test-big-props';
 export const DEV_BIG_PROPS = Object.freeze({
   // mtn-07 (OB box x −70…72, z −475…16): the rough's trees in play line the left side and the back of the green, so
+  // (spaced and kept off OB so they still fit at BIG_PROP_SCALE up to 2.5; a bigger scale clips what would reach inside OB + 5 m)
   // all four stand beyond the open right rough of the first 160 m, each front turned toward the tee (turn 0 = the
   // front faces +z): from the tee, aim right (▶) to see them all; on a phone they also show as the ball flies.
   'mtn-07': Object.freeze([
     Object.freeze({ id: 'chalet', x: 124, z: -50, turn: -1.3, scale: 1 }),
-    Object.freeze({ id: 'chaletTall', x: 108, z: -84, turn: -1.0, scale: 0.95 }),
-    Object.freeze({ id: 'windmill', x: 96, z: -112, turn: -0.8, scale: 1 }),
-    Object.freeze({ id: 'beachHut', x: 82, z: -160, turn: -0.6, scale: 1.15 }),
+    Object.freeze({ id: 'chaletTall', x: 118, z: -100, turn: -1.0, scale: 0.95 }),
+    Object.freeze({ id: 'windmill', x: 100, z: -150, turn: -0.8, scale: 1 }),
+    Object.freeze({ id: 'beachHut', x: 96, z: -198, turn: -0.6, scale: 1.15 }),
   ]),
 });
 

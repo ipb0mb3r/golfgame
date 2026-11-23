@@ -13,7 +13,7 @@ import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDra
 import { addSmallProps } from './smallProps.js';
 import { addBigProps } from './bigProps.js';
 import { holeBigProps } from '../holes/dev-big-props.js';
-import { bigPropsFor, bigPropsClear, footprintOf } from '../core/bigProps.js';
+import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
 import { clearOf, stakeThings } from '../core/smallProps.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
@@ -126,7 +126,9 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   }
   // AP7e: the big props this set draws (the hole's own, plus the dev overlay with ?biome=test-big-props): no
   // scenery tree within BIG_PROPS.treeClear m of their footprints, nor in each one's sight corridor to the tee
-  const bigList = holeBigProps(hole, biome.id), bigKept = bigPropsFor(bigList, biome.bigProps).keep;
+  const bigAsked = holeBigProps(hole, biome.id), { keep: bigList, clipped: bigClipped } = scaleBigProps(hole, bigAsked, TUNE.BIG_PROP_SCALE);
+  if (bigClipped.length) console.info(`Pocket Links: BIG_PROP_SCALE ${TUNE.BIG_PROP_SCALE} would put ${bigClipped.length} big prop(s) of ${hole.id} (${bigClipped.map(p => p.id).join(', ')}) within ${BIG_PROPS.obClear} m of OB, so they are not drawn.`);
+  const bigKept = bigPropsFor(bigList, biome.bigProps).keep;
   const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes, bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee));
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
