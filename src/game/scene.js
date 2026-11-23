@@ -1,7 +1,7 @@
 // Renderer, lights, sky, the terrain mesh (built from the hole's heightAt) and the scenery.
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
-import { TUNE } from '../core/config.js';
+import { TUNE, SMALL_PROPS } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
 import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
@@ -9,6 +9,7 @@ import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaS
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
 import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
 import { addSmallProps } from './smallProps.js';
+import { clearOf, stakeThings } from '../core/smallProps.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -117,11 +118,19 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     }
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
-  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
+  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
-  // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea
-  const smallProps = addSmallProps(scene, hole, terrain, biome, look, shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : undefined);
+  // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea.
+  // AP7d: and none within 1 m of a tree trunk (in play or scenery) or an OB stake.
+  let keep;
+  if (biome.smallProps.pieces.length) {
+    const things = [...(hole.obstacles ?? []).filter(o => o.type === 'tree').map(o => ({ x: o.x, z: o.z, r: o.trunkR ?? SMALL_PROPS.sceneryTrunkR })),
+      ...sceneryTrees.map(([x, z]) => ({ x, z, r: SMALL_PROPS.sceneryTrunkR })), ...stakeThings(sc.stakes)];
+    const clear = clearOf(things), onLand = shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : () => true;
+    keep = (x, z) => onLand(x, z) && clear(x, z);
+  }
+  const smallProps = addSmallProps(scene, hole, terrain, biome, look, keep, toon);
   return { scene, camera, colliderOutlines, shore, smallProps }; // AP6b: shore (or null) for the minimap's sea
 }
 
@@ -290,6 +299,7 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
 // Decoration trees (instanced so hundreds are cheap), standing on the ground. K8: only outside the
 // OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
 // AP5: the look is the set's first offTrees piece (more looks: later).
+// AP7d: returns the spots (x, z, size), so the small props keep clear of the trunks.
 function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes) {
   const r = createRng(42);
   const spots = [];
@@ -302,7 +312,7 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stake
   for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
   // AP6a: no scenery tree on the beach or in the sea (only with the ocean backdrop)
   if (shore) for (let i = spots.length - 1; i >= 0; i--) if (shore.outward(spots[i][0], spots[i][1]) > -OCEAN_LOOK.gap / 2) spots.splice(i, 1);
-  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return; }
+  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return spots; }
   const id = biome.offTrees[0], b = builder(OFF_TREES, id), colours = look('offTrees', id), shade = LIBRARY.offTrees[id].shade;
   const trunks = new THREE.InstancedMesh(b.trunk(), new THREE.MeshLambertMaterial({ color: colours.trunk }), spots.length);
   const leaves = new THREE.InstancedMesh(b.canopy(), shadedMaterial(shade, colours.canopy, { flatShading: true }), spots.length);
@@ -316,6 +326,7 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stake
   });
   trunks.name = 'scenery trees: trunks (instanced)'; leaves.name = 'scenery trees: leaves (instanced)';
   scene.add(trunks, leaves);
+  return spots;
 }
 
 // ---- AP7a: the gradient trees (core/trees.js builds the shapes, config TREE_LOOK / TREE_VARIETY) ----
