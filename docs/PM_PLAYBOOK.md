@@ -81,7 +81,7 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 **Also done 2026-11-22:** **AP7b part 1 + X34** (#112, QA Light #113, no bugs): the palm from the spec, the palm collider rule, 2-row birch, round-canopy cap, lighter round scenery tree. Artist handoff (#115), PM handoff (#114).
 
-**In flight (third Claude Code PM session, 2026-11-22). Owner picked "A + X33": small props reusable on every course.**
+**Third Claude Code PM session (2026-11-22/23), handoff:** everything below is merged unless it says otherwise; no PR is open at the end except this docs PR. Owner picked "A + X33" (small props), then AP6 textured ground, big props and the water surface (X43).
 - **Dev: AP7c + X33** (branch `dev/AP7c-X33-small-props`, budget 90 min): the smallProps format (weights, clusters, perHa, `on`), a deterministic scatter (listed surfaces only, clear radii, a prop never hides the ball), instancing, X33 per-pick slot override `{ id, slots: {...} }`, two placeholder pieces (`grassTuft`, `flowerPatch`) in the dev-only set `test-small-props`. The real sets stay untouched. Then PM review → QA Light.
 - **Fresh artist session** `session_01Rv6NgBhDn3JiGCnqrtYQhJ` ("Pocket Links: Artist (small props)"): designs the real small props with the owner → `docs/art/small-props/SPEC.md` (PR "Art: small props spec"); optionally the Meadow round scenery trees and palms on Island (handoff open work). After both merge: a small dev job builds the spec's pieces (sonnet), then the artist sets each biome's smallProps.
 - **Merged 2026-11-23 (owner):** #116 AP7c + X33 (+ `PROP_DRAW_DIST` tunable), QA #117, artist #118 small props spec (`docs/art/small-props/SPEC.md`: grassTuft, flowerPatch, flowerBush, pebbles, flatStone, reeds), #119 Meadow round scenery trees, #120 Island palms in play. Main: 583 tests pass. Real sets list their trees; their smallProps are still empty.
@@ -101,8 +101,9 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Backlog from #110/#112:** X35 a minimum for the palm collider rule, widen the tall roundCanopy's base row ~10 % (artist), birch / round-canopy fine-tuning by the artist.
 
 **Next (owner's choice, ask him):**
+0. **Recommended next (PM, 2026-11-23): the first real course** (Meadow, Alpine or Island) with the course designer: all the art (ground, small / big props, water) only shows on real holes; follow HOLE_GUIDELINES incl. the big-prop placement rules. Other open picks: AP8 pixel setting, Phase MP menus.
 1. **Phase MP: main menu pass** (`ui-designer` designs MP0 with the owner in its own session, like the artist → dev builds MP1–MP5), then Phase U for the HUD (X18, X19, X24, X28; keep the red tree warning prominent: QA on #106).
-2. More art: AP7 props (windmill, chalet, huts, fences, cow; small props: wildflowers, bougainvillea) → AP6 ground material → AP8 pixel setting (after the art exists).
+2. More art: ~~AP7 small / big props~~ ✅, ~~AP6 ground~~ ✅ (2026-11-23) → AP8 pixel setting; later big props (fence, cow, hay hut, very tall palm), Alpine sunset biome.
 3. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 4. **Real courses** (a genre talk per theme first, dressed with biome sets; island holes need flat palm colliders and a wide `hole.map`, HOLE_GUIDELINES) and **Phase 5: rain**.
 5. Small, whenever: X17 (pin chip spot text).
