@@ -48,6 +48,6 @@ export default {
       { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
     ],
   },
-  bigProps: [],               // later: very tall palm (landmark), beach hut (AP7), placed by hand
+  bigProps: ['beachHut'],     // the thatched stilt hut (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: very tall palm
   notes: 'The course follows the ocean: run fairways along the beach, the sea on one side (often the left), waste bunkers and lava-rock edges, a few really tall palms as landmarks. Low, near sea level. No lighthouse. Suggested weather: sunny, sea wind.',
 };

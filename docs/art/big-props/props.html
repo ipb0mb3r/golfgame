@@ -90,13 +90,20 @@ const CAM = {
   chalet: { close: [[31, 3.5, -47], [52, 4.5, -72]], tee: [[4, 1.8, 30], [30, 6, -70]] },
   hut: { close: [[42, 2.2, -62], [52, 2.0, -72]], tee: [[4, 1.8, 30], [30, 4, -70]] },
 }[kind];
+// &scales=2.5,1.8,1.5 &opt=A: one look at several sizes (the game's BIG_PROP_SCALE), a 1.8 m golfer beside it
+const scales = q.get('scales') ? q.get('scales').split(',').map(Number) : null;
+const golfer = scene => { const m = toon({ color: '#2a4a7a' }), skin = toon({ color: '#f0c8a0' });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 1.5, 8), m); body.position.set(AT.x - 9, 0.75, AT.z + 9);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), skin); head.position.set(AT.x - 9, 1.65, AT.z + 9); scene.add(body, head); };
 const panels = [];
-for (const opt of (q.get('opts') || 'A,B,C').split(',')) {
-  const look = PIECES[kind][opt], parts = look.build();
+for (const col of scales ? scales.map(s => [q.get('opt') || 'A', s]) : (q.get('opts') || 'A,B,C').split(',').map(o => [o, 1])) {
+  const [opt, sc] = col, look = PIECES[kind][opt], parts = look.build().map(p => ({ ...p, positions: p.positions.map(v => v * sc) }));
   for (const view of ['close', 'tee']) {
     const scene = world();
     scene.add(new THREE.Mesh(geometryOf(parts, look.slots, AT), toon({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
-    panels.push({ scene, view, cam: CAM[view], tag: view === 'close' ? `${look.name}<small>${look.sub} · ${tris(parts)} triangles</small>` : '', row: view === 'close' ? `close-up · ${look.size}` : 'from the fairway, ~100 m' });
+    if (scales) golfer(scene);
+    const d = 15 + 5 * sc * (kind === 'hut' ? 0.8 : 1.6), cam = view === 'close' && scales ? [[AT.x - d, 2.2 + sc * 0.6, AT.z + d], [AT.x - 2, 1.2 + sc * (kind === 'hut' ? 0.8 : 1.6), AT.z]] : CAM[view];
+    panels.push({ scene, view, cam, tag: view === 'close' ? (scales ? `${look.name} at ${sc}×<small>beside a 1.8 m golfer · ${tris(parts)} triangles</small>` : `${look.name}<small>${look.sub} · ${tris(parts)} triangles</small>`) : '', row: view === 'close' ? `close-up · ${look.size}${scales ? ' × ' + sc : ''}` : 'from the fairway, ~100 m' });
   }
 }
 const cols = panels.length / 2, grid = document.getElementById('grid');

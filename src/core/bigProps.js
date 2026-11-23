@@ -48,20 +48,22 @@ export function bigPropsError(hole, list, set, library) {
     if (!offered.includes(p.id)) return `${where}: biome set "${set.id}" does not offer it (its bigProps: ${offered.join(', ') || 'none'})`;
     const s = p.scale ?? 1, [lo, hi] = piece.scale;
     if (s < lo || s > hi) return `${where}.scale must be ${lo}–${hi} (got ${s})`;
-    const r = footprintOf({ ...p, scale: s * TUNABLES.BIG_PROP_SCALE.def }), d = toBox(box, p.x, p.z); // at the default BIG_PROP_SCALE, so a placement that would be clipped at runtime fails here
+    const r = footprintOf({ ...p, scale: s * piece.size * TUNABLES.BIG_PROP_SCALE.def }), d = toBox(box, p.x, p.z); // at the piece's size × the default BIG_PROP_SCALE, so a placement that would be clipped at runtime fails here
     if (d < r + BIG_PROPS.obClear) return `${where} at (${p.x}, ${p.z}): its footprint (${r.toFixed(1)} m) comes within ${BIG_PROPS.obClear} m of the OB box (it is ${d.toFixed(1)} m from it; needs ${(r + BIG_PROPS.obClear).toFixed(1)})`;
   }
   return null;
 }
 
-// The BIG_PROP_SCALE tunable (looks only): every prop's scale × mult, and a prop whose scaled footprint would come
-// within BIG_PROPS.obClear m of the OB box is left out (the static check, bigPropsError, uses the default mult).
-// → { keep: [props with the scaled scale], clipped: [the props left out, as asked] }
-export function scaleBigProps(hole, list, mult) {
-  if (mult === 1 || !list.length) return { keep: list, clipped: [] };
+// The drawn size (looks only): every prop's scale × its piece's `size` (library.bigProps.<id>.size, the owner's
+// per-piece pick) × mult (the BIG_PROP_SCALE tunable, a multiplier on the piece sizes, default 1). A prop whose
+// scaled footprint would come within BIG_PROPS.obClear m of the OB box is left out (the static check,
+// bigPropsError, uses the default mult). library = src/biomes/library.js LIBRARY (passed in, core stays free of data).
+// → { keep: [props with the effective scale], clipped: [the props left out, as asked] }
+export function scaleBigProps(hole, list, mult, library) {
+  if (!list.length) return { keep: list, clipped: [] };
   const box = obBoxOf(hole.scenery.stakes), keep = [], clipped = [];
   for (const p of list) {
-    const q = { ...p, scale: (p.scale ?? 1) * mult };
+    const q = { ...p, scale: (p.scale ?? 1) * library.bigProps[p.id].size * mult };
     if (toBox(box, q.x, q.z) < footprintOf(q) + BIG_PROPS.obClear) clipped.push(p); else keep.push(q);
   }
   return { keep, clipped };

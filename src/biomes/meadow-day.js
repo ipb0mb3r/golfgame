@@ -47,6 +47,6 @@ export default {
       { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
     ],
   },
-  bigProps: [],               // later: windmill, cow, wooden fence (AP7), placed by hand out of bounds
+  bigProps: ['windmill'],     // the white smock mill (docs/art/big-props/SPEC.md); placed by hand beyond OB, high on a hill (course designer). Later: cow, fence
   notes: 'The default, classic theme: gentle open holes, wide fairways, plenty of trees along the fairways and a few in play, ponds, cream bunkers. Big props out of bounds: 1-3 windmills on the hills, a few cows grazing behind a wooden fence (never in play, no barns). Suggested weather: clear, light to medium wind.',
 };

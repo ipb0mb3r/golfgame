@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
-import { ALL_PALETTE_KEYS } from '../src/core/biome.js';
+import { ALL_PALETTE_KEYS, validateBiomeSet } from '../src/core/biome.js';
 import { BIG_PROPS, TUNABLES } from '../src/core/config.js';
 import { parseTune } from '../src/core/tune.js';
 import { bigPropShape, BIG_PROP_PIECES } from '../src/core/bigPropShapes.js';
@@ -84,18 +84,19 @@ test('scenery.bigProps format: { id, x, z, turn, scale }, turn and scale optiona
 test('placement rules: the set must offer the id, the scale in range, the footprint clear of the OB box + 5 m', () => {
   const box = obBoxOf(mtn07.scenery.stakes); // x −70…72, z −475…16
   assert.deepEqual(box, { x0: -70, x1: 72, z0: -475, z1: 16 });
-  const D = TUNABLES.BIG_PROP_SCALE.def, r = footprintOf({ id: 'windmill', scale: D }), edge = box.x1 + BIG_PROPS.obClear + r;
+  const D = TUNABLES.BIG_PROP_SCALE.def * LIBRARY.bigProps.windmill.size, r = footprintOf({ id: 'windmill', scale: D }), edge = box.x1 + BIG_PROPS.obClear + r;
   assert.equal(bigPropsError(withProps([]).scenery, [], offerAll, LIBRARY), null);
   assert.equal(bigPropsError(withProps([]), [{ id: 'windmill', x: edge + 0.01, z: -150 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: edge - 0.01, z: -150 }], offerAll, LIBRARY), /footprint .* comes within 5 m of the OB box/);
-  assert.equal(D, 2.5);                                                              // the static check uses the default scale
+  assert.equal(D, 2.5);                                                              // the static check uses the piece's size × the default multiplier
   // scale grows the footprint
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: edge + 0.01, z: -150, scale: 1.1 }], offerAll, LIBRARY), /comes within/);
   // beyond the far end (behind the green) and inside the box
-  assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet', scale: D }) - 0.01 }], offerAll, LIBRARY), null);
+  assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet', scale: LIBRARY.bigProps.chalet.size }) - 0.01 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -200 }], offerAll, LIBRARY), /comes within/);
-  // the set must offer it (meadow-day offers none today)
-  assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), /biome set "meadow-day" does not offer it \(its bigProps: none\)/);
+  // the set must offer it (meadow-day offers only the windmill)
+  assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), /biome set "meadow-day" does not offer it \(its bigProps: windmill\)/);
+  assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['mtn-default'], LIBRARY), /biome set "mtn-default" does not offer it \(its bigProps: none\)/);
   assert.match(bigPropsError(withProps([]), [{ id: 'cow', x: 200, z: -150 }], offerAll, LIBRARY), /not a big-prop piece/);
   // the scale range; the beach hut never below 0.9
   assert.match(bigPropsError(withProps([]), [{ id: 'beachHut', x: 200, z: -150, scale: 0.85 }], offerAll, LIBRARY), /scale must be 0\.9–1\.15 \(got 0\.85\)/);
@@ -103,10 +104,10 @@ test('placement rules: the set must offer the id, the scale in range, the footpr
 });
 
 test('checkHoleLooks (readyHole) fails a hole whose set does not offer its prop; a hole with none is normal', () => {
-  const h = { ...mtn07, id: 'mtn-07', biome: 'meadow-day', scenery: { ...mtn07.scenery, bigProps: [{ id: 'windmill', x: 150, z: -150 }] } };
-  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.bigProps\[0\] \(windmill\): biome set "meadow-day" does not offer it/);
+  const h = { ...mtn07, id: 'mtn-07', biome: 'meadow-day', scenery: { ...mtn07.scenery, bigProps: [{ id: 'chalet', x: 150, z: -150 }] } };
+  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.bigProps\[0\] \(chalet\): biome set "meadow-day" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_BIG_PROPS_SET }));
-  // every real hole today has none, and passes
+  // every real hole today places none, and passes
   for (const hole of Object.values(HOLES)) { assert.equal(hole.scenery.bigProps, undefined, hole.id); assert.doesNotThrow(() => checkHoleLooks(hole)); }
 });
 
@@ -149,24 +150,43 @@ test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07
     assert.equal(bigPropsFormatError(list), null, id);
     assert.equal(bigPropsError(HOLES[id], list, BIOMES[DEV_BIG_PROPS_SET], LIBRARY), null, id);
   }
-  // the dev set is meadow-day plus the four props, nothing else changed
+  // the dev set is meadow-day plus all four props, nothing else changed
   const { id, name, description, bigProps, ...rest } = BIOMES[DEV_BIG_PROPS_SET];
-  const { id: _i, name: _n, description: _d, bigProps: none, ...meadow } = BIOMES['meadow-day'];
-  assert.deepEqual(rest, meadow); assert.deepEqual(none, []);
+  const { id: _i, name: _n, description: _d, bigProps: meadowProps, ...meadow } = BIOMES['meadow-day'];
+  assert.deepEqual(rest, meadow); assert.deepEqual(bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut']); assert.deepEqual(meadowProps, ['windmill']);
 });
 
-test('BIG_PROP_SCALE: a tunable (default 2.5, 0.5–4); scales every prop, clips what would reach inside OB + 5 m, the demo fits up to 2.5', () => {
-  assert.deepEqual(TUNABLES.BIG_PROP_SCALE, { def: 2.5, min: 0.5, max: 4 });
-  assert.deepEqual(parseTune('BIG_PROP_SCALE:9').set, [{ name: 'BIG_PROP_SCALE', value: 4, asked: 9 }]);
+test('per-piece sizes (owner pick 2026-11-23): windmill 2.5, chalet / chaletTall / beachHut 1.8, in the library', () => {
+  assert.deepEqual(Object.fromEntries(Object.entries(LIBRARY.bigProps).map(([id, p]) => [id, p.size])), { windmill: 2.5, chalet: 1.8, chaletTall: 1.8, beachHut: 1.8 });
+  const at = (id, scale, mult) => scaleBigProps(mtn07, [{ id, x: 200, z: -150, scale }], mult, LIBRARY).keep[0].scale;
+  assert.ok(Math.abs(at('windmill', 1, 1) - 2.5) < 1e-9);
+  assert.ok(Math.abs(at('beachHut', 1.15, 1) - 1.8 * 1.15) < 1e-9);                   // × the hand-placed scale
+  assert.ok(Math.abs(at('chalet', 1, 0.5) - 0.9) < 1e-9);                             // × the tunable
+  assert.ok(Math.abs(footprintOf(scaleBigProps(mtn07, [{ id: 'chalet', x: 200, z: -150 }], 1, LIBRARY).keep[0]) - bigPropShape('chalet').radius * 1.8) < 1e-9);
+});
+
+test('BIG_PROP_SCALE: a tunable multiplier on the piece sizes (default 1, 0.2–1.6); clips what would reach inside OB + 5 m, the demo fits at the default', () => {
+  assert.deepEqual(TUNABLES.BIG_PROP_SCALE, { def: 1, min: 0.2, max: 1.6 });
+  assert.deepEqual(parseTune('BIG_PROP_SCALE:9').set, [{ name: 'BIG_PROP_SCALE', value: 1.6, asked: 9 }]);
   const demo = DEV_BIG_PROPS['mtn-07'];
-  assert.equal(scaleBigProps(mtn07, demo, 1).keep, demo);                            // mult 1: untouched
-  for (const m of [0.5, 1.5, 2, 2.5]) {
-    const { keep, clipped } = scaleBigProps(mtn07, demo, m);
-    assert.equal(clipped.length, 0, `x${m}`);
-    keep.forEach((q, i) => assert.ok(Math.abs(q.scale - demo[i].scale * m) < 1e-9));
+  for (const m of [0.5, 1]) {
+    const { keep, clipped } = scaleBigProps(mtn07, demo, m, LIBRARY);
+    assert.equal(clipped.length, 0, `x${m}`);                                         // every demo spot still draws
+    keep.forEach((q, i) => assert.ok(Math.abs(q.scale - demo[i].scale * LIBRARY.bigProps[q.id].size * m) < 1e-9));
   }
-  const { keep, clipped } = scaleBigProps(mtn07, demo, 4);                           // a bigger one is skipped, not an error
-  assert.ok(clipped.length > 0 && keep.length + clipped.length === demo.length);
+  const { keep, clipped } = scaleBigProps(mtn07, demo, 1.6, LIBRARY);                // the windmill's spot is the tightest; a bigger one is skipped, not an error
+  assert.equal(keep.length + clipped.length, demo.length);
   assert.ok(clipped.every(p => demo.includes(p)));                                   // reported as asked
   assert.ok(footprintOf(keep[0]) > footprintOf(demo[0]));                            // the footprint (trees, drop) is the scaled one
+});
+
+test('the real sets: each validates, offers only library pieces of its biome; mtn-default / proto-default offer none', () => {
+  const want = { 'meadow-day': ['windmill'], 'alpine-day': ['chalet', 'chaletTall'], 'island-day': ['beachHut'], 'mtn-default': [], 'proto-default': [] };
+  for (const [id, ids] of Object.entries(want)) {
+    assert.deepEqual((BIOMES[id].bigProps ?? []).map(p => p.id ?? p), ids, id);
+    for (const pid of ids) assert.ok(LIBRARY.bigProps[pid], `${id}: ${pid} is a library piece`);
+  }
+  for (const id of Object.keys(want)) assert.doesNotThrow(() => validateBiomeSet(BIOMES[id], LIBRARY), id);
+  // the piece names say their biome (SPEC): Meadow / Alpine / Island
+  for (const id of ['meadow-day', 'alpine-day', 'island-day']) for (const p of BIOMES[id].bigProps) assert.match(LIBRARY.bigProps[p.id ?? p].desc, new RegExp(`^${id.split('-')[0]}`, 'i'), id);
 });
