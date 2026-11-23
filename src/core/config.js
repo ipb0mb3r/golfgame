@@ -486,6 +486,13 @@ export const TUNABLES = Object.freeze({
   PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
   // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
   PROP_DRAW_DIST:        { def: 45,   min: 20,    max: 100 },
+  // AP7d follow-up (owner: "too subtle"; looks only, defaults = today): PROP_SCALE = one multiplier on every small prop's size (on top of the copy's own scale; the ball clearance grows with it);
+  // beyond PROP_THIN_FROM m from the camera only the share PROP_FAR_KEEP of the props is drawn (fixed per copy, no flicker; PROP_THIN_FROM >= PROP_DRAW_DIST = off);
+  // PROP_MAX_TRIS = the triangle cap of the small props (read when the hole is built)
+  PROP_SCALE:            { def: 1,    min: 0.5,   max: 3 },
+  PROP_THIN_FROM:        { def: 45,   min: 5,     max: 100 },
+  PROP_FAR_KEEP:         { def: 1,    min: 0.1,   max: 1 },
+  PROP_MAX_TRIS:         { def: 10000, min: 1000, max: 60000 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

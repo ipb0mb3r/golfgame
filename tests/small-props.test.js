@@ -3,7 +3,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateBiomeSet, normalizeBiomeSet, pieceColours, checkMinimap, minimapColours, flagColour, pickId, PICKS } from '../src/core/biome.js';
 import { pickedPieces } from '../src/core/assets.js';
-import { normalizeSmallProps, scatterSmallProps, scatterArea, propHidden, visibleSmallProps, smallPropPart, SMALL_PROP_PIECES, holeSeed, propSpotOk, shoreline, clearOf, stakeThings } from '../src/core/smallProps.js';
+import { propRank, normalizeSmallProps, scatterSmallProps, scatterArea, propHidden, visibleSmallProps, smallPropPart, SMALL_PROP_PIECES, holeSeed, propSpotOk, shoreline, clearOf, stakeThings } from '../src/core/smallProps.js';
 import { SMALL_PROPS } from '../src/core/config.js';
 import { makeTerrain } from '../src/core/terrain.js';
 import { LIBRARY } from '../src/biomes/library.js';
@@ -399,4 +399,57 @@ test('AP7d: the Meadow set uses all six pieces and fills the triangle cap near t
   const shown = visibleSmallProps(props, cam, ball, k => parts[k]);
   const tris = shown.reduce((s, i) => s + parts[props[i].pick].tris, 0);
   assert.ok(tris <= SMALL_PROPS.maxTris && tris > SMALL_PROPS.maxTris * 0.5, `${tris}`);
+});
+
+test('AP7d follow-up: PROP_SCALE / PROP_FAR_KEEP / PROP_MAX_TRIS are tunables with the asked ranges, defaults = today', async () => {
+  const { TUNABLES } = await import('../src/core/config.js');
+  assert.deepEqual([TUNABLES.PROP_SCALE.def, TUNABLES.PROP_SCALE.min, TUNABLES.PROP_SCALE.max], [1, 0.5, 3]);
+  assert.deepEqual([TUNABLES.PROP_FAR_KEEP.def, TUNABLES.PROP_FAR_KEEP.min, TUNABLES.PROP_FAR_KEEP.max], [1, 0.1, 1]);
+  assert.equal(TUNABLES.PROP_THIN_FROM.def, TUNABLES.PROP_DRAW_DIST.def); // thinning is off by default
+  assert.equal(TUNABLES.PROP_MAX_TRIS.def, SMALL_PROPS.maxTris);
+  const { parseTune } = await import('../src/core/tune.js');
+  const r = parseTune('PROP_SCALE:5,PROP_FAR_KEEP:0.05,PROP_THIN_FROM:30,PROP_MAX_TRIS:20000');
+  assert.deepEqual(r.set.map(s => [s.name, s.value]), [['PROP_SCALE', 3], ['PROP_FAR_KEEP', 0.1], ['PROP_THIN_FROM', 30], ['PROP_MAX_TRIS', 20000]]);
+});
+
+test('AP7d follow-up: far thinning keeps a fixed share beyond thinFrom, the same copies every call; near props are untouched', () => {
+  const { props } = scatter('mtn-07');
+  const parts = normalizeSmallProps(rule).pieces.map(p => smallPropPart(p.id)), part = k => parts[k];
+  const p0 = props[Math.floor(props.length / 2)], ball = { x: p0.x, y: p0.y + 0.02, z: p0.z }, cam = { x: p0.x, y: p0.y + 2.6, z: p0.z + 6 };
+  const opts = { drawDist: 70, maxTris: 1e9 };
+  const all = visibleSmallProps(props, cam, ball, part, opts);
+  const thin = visibleSmallProps(props, cam, ball, part, { ...opts, thinFrom: 30, farKeep: 0.4 });
+  const d = i => Math.hypot(props[i].x - cam.x, props[i].y - cam.y, props[i].z - cam.z);
+  const far = all.filter(i => d(i) > 30), farKept = thin.filter(i => d(i) > 30);
+  assert.ok(far.length > 200);
+  assert.ok(Math.abs(farKept.length / far.length - 0.4) < 0.08, `${farKept.length}/${far.length}`);
+  assert.deepEqual(thin.filter(i => d(i) <= 30), all.filter(i => d(i) <= 30));
+  assert.deepEqual(visibleSmallProps(props, cam, ball, part, { ...opts, thinFrom: 30, farKeep: 0.4 }), thin); // deterministic
+  // a copy's draw is its own fixed number (not the camera's): propRank is the same every call and spreads evenly
+  assert.equal(propRank(123), propRank(123));
+  const ranks = props.map((_, i) => propRank(i));
+  assert.ok(ranks.every(x => x >= 0 && x < 1));
+  assert.ok(Math.abs(ranks.filter(x => x < 0.4).length / ranks.length - 0.4) < 0.03);
+  // the boost keeps more of a pick
+  const boosted = visibleSmallProps(props, cam, ball, part, { ...opts, thinFrom: 30, farKeep: 0.4, farBoost: () => 2 });
+  assert.ok(boosted.length > thin.length);
+  // off by default: thinFrom unset or keep 1 draws everything
+  assert.deepEqual(visibleSmallProps(props, cam, ball, part, { ...opts, thinFrom: 30, farKeep: 1 }), all);
+});
+
+test('AP7d follow-up: scale 2 grows the height and the ball clearance (a scaled bush or reeds never reach over the ball from outside it)', () => {
+  const { props } = scatter('mtn-07');
+  const parts = normalizeSmallProps(rule).pieces.map(p => smallPropPart(p.id)), part = k => parts[k];
+  const ball = { x: 0, y: 0, z: 0 }, cam = { x: 0, y: 2.6, z: 6 };
+  // the widest piece is the bush: radius 0.68 × its biggest copy 1.25 × PROP_SCALE 2 = 1.7 m; the clearance is 1.2 × 2 = 2.4 m
+  const bush = smallPropPart('flowerBush');
+  const reach = 0.68 * 1.25 * 2;
+  assert.ok(reach < SMALL_PROPS.ballClear * 2);
+  assert.ok(reach > SMALL_PROPS.ballClear); // so at scale 2 the plain 1.2 m would not have been enough
+  const one = { x: 2.0, y: 0, z: 0, scale: 1 };
+  const at = (scale) => visibleSmallProps([one], cam, ball, k => ({ tris: 1, height: bush.height }), { scale, maxTris: 1e9, dir: null });
+  assert.equal(at(1).length, 1);
+  assert.equal(at(2).length, 0); // 2.0 m away: fine at scale 1, hidden at scale 2
+  assert.equal(at(0.5).length, 1); // a smaller prop keeps today's clearance, not less
+  void props;
 });

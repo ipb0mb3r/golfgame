@@ -23,15 +23,17 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep, toon) {
   // each copy's matrix and tint, once
   const mats = new Float32Array(props.length * 16), tints = new Float32Array(props.length * 3);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0), c = new THREE.Color();
+  let builtScale = TUNE.PROP_SCALE; // PROP_SCALE: every copy's size × this (looks only); the matrices are redone if it changes
+  const fillMats = () => props.forEach((p, i) => m.compose(v.set(p.x, p.y, p.z), q.setFromAxisAngle(up, p.yaw), s.setScalar(p.scale * builtScale)).toArray(mats, i * 16));
+  fillMats();
   props.forEach((p, i) => {
-    m.compose(v.set(p.x, p.y, p.z), q.setFromAxisAngle(up, p.yaw), s.setScalar(p.scale)).toArray(mats, i * 16);
     const shade = LIBRARY.smallProps[rule.pieces[p.pick].id].shade;
     if (shade) tintColour(shade, p.tint, c).toArray(tints, i * 3);
   });
   const ramp = toon();
   const meshes = rule.pieces.map((pick, k) => {
     const n = props.filter(p => p.pick === k).length;
-    const cap = Math.min(n, Math.floor(SMALL_PROPS.maxTris / parts[k].tris));
+    const cap = Math.min(n, Math.floor(TUNE.PROP_MAX_TRIS / parts[k].tris));
     if (!cap) return null;
     const shade = LIBRARY.smallProps[pick.id].shade;
     const mesh = new THREE.InstancedMesh(propGeometry(parts[k], look('smallProps', pick), shade), propMaterial(ramp, parts[k].doubleSide, !!shade), cap);
@@ -43,14 +45,16 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep, toon) {
     return mesh;
   });
   const lastCam = new THREE.Vector3(Infinity, 0, 0), lastBall = new THREE.Vector3(Infinity, 0, 0), lastDir = new THREE.Vector3(), dir = new THREE.Vector3();
-  let drawn = 0, lastClear = -1, lastDist = -1;
+  let drawn = 0, lastKey = '';
+  const boost = pick => rule.pieces[pick].id === 'flowerPatch' ? 2 : 1; // far thinning: the flat flowers keep twice the share
   // camera = the hole's camera (its position and view direction), ball = the ball's position
   function update(camera, ball) {
-    const clear = TUNE.PROP_BALL_CLEAR, dist = TUNE.PROP_DRAW_DIST, step = SMALL_PROPS.moveStep, cam = camera.position;
+    const clear = TUNE.PROP_BALL_CLEAR, dist = TUNE.PROP_DRAW_DIST, scale = TUNE.PROP_SCALE, key = `${clear} ${dist} ${scale} ${TUNE.PROP_THIN_FROM} ${TUNE.PROP_FAR_KEEP}`, step = SMALL_PROPS.moveStep, cam = camera.position;
     camera.getWorldDirection(dir);
-    if (clear === lastClear && dist === lastDist && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2 && 1 - dir.dot(lastDir) < SMALL_PROPS.turnStep) return;
-    lastCam.copy(cam); lastBall.copy(ball); lastDir.copy(dir); lastClear = clear; lastDist = dist;
-    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear, drawDist: dist, dir });
+    if (key === lastKey && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2 && 1 - dir.dot(lastDir) < SMALL_PROPS.turnStep) return;
+    lastCam.copy(cam); lastBall.copy(ball); lastDir.copy(dir); lastKey = key;
+    if (scale !== builtScale) { builtScale = scale; fillMats(); }
+    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear, drawDist: dist, dir, scale, maxTris: TUNE.PROP_MAX_TRIS, thinFrom: TUNE.PROP_THIN_FROM, farKeep: TUNE.PROP_FAR_KEEP, farBoost: boost });
     for (const mesh of meshes) if (mesh) mesh.count = 0;
     for (const i of shown) {
       const mesh = meshes[props[i].pick];

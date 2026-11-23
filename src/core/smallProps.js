@@ -256,12 +256,18 @@ export function propHidden(p, h, ball, cam, ballClear, lineClear) {
 // first, until the next one would pass maxTris triangles. part(pick) = { tris, height } of the pick's piece.
 // dir (optional) = the camera's view direction (unit): props more than `behind` m behind the camera are
 // skipped, so the triangle cap is spent on what can be seen. → indices into props, nearest first.
-export function visibleSmallProps(props, cam, ball, part, { drawDist = SMALL_PROPS.drawDist, maxTris = SMALL_PROPS.maxTris, ballClear = SMALL_PROPS.ballClear, lineClear = SMALL_PROPS.lineClear, dir = null, behind = SMALL_PROPS.behind } = {}) {
-  const near = [], D2 = drawDist * drawDist;
+// scale = PROP_SCALE: the props are drawn that much bigger, so their height and the two clearances grow with it
+// (never below 1: a smaller prop keeps today's clearance). Beyond thinFrom m only a share `farKeep` is drawn:
+// the copy's own fixed draw (propRank, so nothing flickers as the camera moves); farBoost(pick) (optional)
+// multiplies that share for a pick (the ground-hugging flowers keep priority over the tufts).
+export const propRank = i => { const h = Math.imul(i + 1, 2654435761) >>> 0; return ((h ^ (h >>> 15)) >>> 0) % 10007 / 10007; };
+export function visibleSmallProps(props, cam, ball, part, { drawDist = SMALL_PROPS.drawDist, maxTris = SMALL_PROPS.maxTris, ballClear = SMALL_PROPS.ballClear, lineClear = SMALL_PROPS.lineClear, dir = null, behind = SMALL_PROPS.behind, scale = 1, thinFrom = Infinity, farKeep = 1, farBoost = null } = {}) {
+  const near = [], D2 = drawDist * drawDist, T2 = thinFrom * thinFrom, grow = Math.max(1, scale);
   props.forEach((p, i) => {
     const dx = p.x - cam.x, dy = p.y - cam.y, dz = p.z - cam.z, d2 = dx * dx + dy * dy + dz * dz;
     if (d2 > D2 || (dir && dx * dir.x + dy * dir.y + dz * dir.z < -behind)) return;
-    if (!propHidden(p, part(p.pick).height * p.scale, ball, cam, ballClear, lineClear)) near.push([d2, i]);
+    if (d2 > T2 && farKeep < 1 && propRank(i) >= farKeep * (farBoost ? farBoost(p.pick) : 1)) return;
+    if (!propHidden(p, part(p.pick).height * p.scale * scale, ball, cam, ballClear * grow, lineClear * grow)) near.push([d2, i]);
   });
   near.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const out = [];
