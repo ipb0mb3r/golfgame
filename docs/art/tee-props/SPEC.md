@@ -62,7 +62,9 @@ scenery: {
      - **Keep the camera's spot clear:** nothing within 4 m either side of the aim line from the tee to 12 m behind it, because the aim camera sits 7 m behind the ball and turns as the player aims.
      - Not on the tee box itself (≥ 1.5 m from its edge).
      - Flags 4–8 m to the side of the tee centre, up to 4 m ahead of the tee line (at the tee box's front corners) or behind it. The tent 6–12 m to the side, level with or behind the tee. Turn the fronts toward the tee box.
-  2. **The side of the course (owner):** a tent or a few flags along a hole, **at the outer edge of the rough or beyond OB**, so they never stand where a normal shot lands. Good spots: by a landing area seen from the tee, at a dogleg, on a slope above the fairway. Turn them toward the fairway.
+  2. **The side of the course (owner):** a tent or a few flags along a hole, so they never stand where a normal shot lands. Good spots: by a landing area seen from the tee, at a dogleg, on a slope above the fairway. Turn them toward the fairway.
+     - **featherFlag:** at the outer edge of the rough or beyond OB.
+     - **popupTent (owner: "not too close to the playing area"):** never in the rough. Fully outside play: beyond OB, or with its whole scaled footprint at least **5 m outside the rough's outer edge**. (Tents at the tee follow zone 1.)
   3. **Near the green (owner: "a couple of flags close to the green"):** **1–2 flags only, beside or behind the green, never in front of it** (the approach line from the fairway stays clear). At least **8 m from the green's edge** and outside the fringe; behind the green they also frame the hole flag nicely in the approach view. No tent at the green.
 - **Which holes (owner):** not every hole. **Most important on the first and last hole of a course** (holes 1 and 9 of a 9-hole round; a course can have any length, so "first and last"). Others are optional.
 - **Which courses (owner):** flags close to the tee belong to **"tournament" courses**, not every course. The biome set says whether it uses them (see request 2); a set without them can still be given a tent on hole 1.
@@ -82,7 +84,8 @@ scenery: {
    - the footprint (scaled) is on the tee box or closer than 1.5 m to it;
    - it is inside the tee camera's clear zone (±4 m from the tee's aim line, from 12 m behind the tee to the tee) or in front of the tee box beyond 4 m ahead **while within 15 m of the tee**;
    - it is on the fairway, a bunker, water, the fringe or the green, or closer than 8 m to the green's edge;
-   - it is a `popupTent` within 25 m of the green.
+   - it is a `popupTent` within 25 m of the green;
+   - it is a `popupTent` outside the tee zone (more than 15 m from the tee) whose scaled footprint is within 5 m of any in-play surface (fairway, rough, fringe, green, bunker, water). Beyond OB is fine as long as that 5 m holds.
    The course designer keeps them out of the landing areas and the approach line by eye (HOLE_GUIDELINES); if this proves hard, a later check can test a few normal shot lines.
 4. **No collider** (look only). A tee shot starts beside them and leaves upward; nothing needs to hit them.
 5. **Drawing:** flat-shaded toon, fogged, banner and roof double-sided; instanced per piece (1–2 draw calls per hole). The flag stays still; keep the banner a separate part so a wind sway could be added later.
