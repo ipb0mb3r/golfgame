@@ -152,7 +152,8 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
 // flat at a pond's level, just over a creek's bed, fading out softly onto the bank at the edge), so the painted bed and
 // its deep-to-light gradient show through. On it, a stylized caustic web (owner 2026-11-23, "a sunny swimming pool
 // seen from above"): thin near-white wavy lines (core/water.js waterColours) round irregular cells, see-through
-// between them, two layers drifting past each other, faded with distance and near the ball. Fogged. No depth written;
+// between them, two layers drifting past each other; a coarser web where the cells get small on screen (far water),
+// faded only in the fog and near the ball. No depth written;
 // drawn first of the see-through things (WATER_LOOK.renderOrder). Returns { update(ballPos) } (or null: no water).
 function addWaterSurface(scene, hole, terrain, P) {
   const w = waterSurface(hole, terrain);
@@ -166,11 +167,11 @@ function addWaterSurface(scene, hole, terrain, P) {
   const mat = new THREE.ShaderMaterial({
     uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
       uLine: { value: new THREE.Color(c.line) }, uLines: { value: TUNE.WATER_LINES }, uCell: { value: TUNE.WATER_CELL },
-      uWidth: { value: new THREE.Vector2(L.line[1], L.minPx) }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
+      uWidth: { value: new THREE.Vector2(L.line[1], L.linePx) }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
       uWander: { value: new THREE.Vector2(...L.wander) }, uWarp: { value: new THREE.Vector2(...L.warp) }, uRound: { value: L.round },
-      uFade: { value: new THREE.Vector3(...L.fade, L.cellPx) }, uEdge: { value: new THREE.Vector2(...L.edge) },
+      uLod: { value: new THREE.Vector4(...L.coarse, ...L.cellPx) }, uDim: { value: new THREE.Vector2(...L.dim) }, uEdge: { value: new THREE.Vector2(...L.edge) },
       uBall: { value: new THREE.Vector3(0, -1e4, 0) }, uBallClear: { value: new THREE.Vector2(...L.ballClear) },
-      uTime: { value: 0 },
+      uTime: { value: 0 }, uDpr: { value: 1 },
     }]),
     vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
     transparent: true, depthWrite: false, fog: true,
@@ -180,7 +181,10 @@ function addWaterSurface(scene, hole, terrain, P) {
   mesh.name = 'water surface'; mesh.renderOrder = L.renderOrder;
   mesh.visible = TUNE.WATER_LINES > 0; // 0 = no web: nothing left to draw (the bed and the soft edge are the ground's)
   const speed = TUNE.WATER_SPEED;
-  mesh.onBeforeRender = () => { mat.uniforms.uTime.value = (performance.now() / 1000 * speed) % 3600; };
+  mesh.onBeforeRender = renderer => { // the screen sizes (linePx, cellPx, dim) are CSS pixels: × the canvas's pixel ratio
+    mat.uniforms.uTime.value = (performance.now() / 1000 * speed) % 3600;
+    mat.uniforms.uDpr.value = renderer.getPixelRatio();
+  };
   scene.add(mesh);
   return { mesh, update(ball) { mat.uniforms.uBall.value.set(ball.x, ball.y, ball.z); } };
 }
@@ -199,11 +203,15 @@ void main() {
 }`;
 // The web: for each pixel, the distance to the nearest border of a Voronoi cell (two passes, the cells' points
 // wander slowly), on a gently sine-bent plane so the lines are wavy; a line where that distance is under half the
-// line width (at least minPx / 2 pixels, antialiased by fwidth).
+// line width: a share of the cell close up, never under linePx screen pixels (the distance's own screen derivative,
+// so the line is ~2 px and antialiased at any distance). Where the main cells get small on screen, a coarser web
+// takes over (uLod), so far water keeps a calm pattern; it fades out only in the fog. WebGL2 (three r187): the
+// derivatives are built in.
 const WATER_FRAG = /* glsl */ `
-uniform vec3 uLine, uLayer2, uBall, uFade;
-uniform float uLines, uCell, uTime, uRound;
-uniform vec2 uWidth, uWander, uWarp, uEdge, uBallClear;
+uniform vec3 uLine, uLayer2, uBall;
+uniform vec4 uLod;
+uniform float uLines, uCell, uTime, uRound, uDpr;
+uniform vec2 uWidth, uWander, uWarp, uEdge, uBallClear, uDim;
 varying vec3 vWorld;
 varying float vShore;
 #include <fog_pars_fragment>
@@ -231,26 +239,38 @@ float waterBorder(vec2 x, float t) { // distance (in cells) to the nearest cell 
   }
   return max(md, 0.0);
 }
-float waterWeb(vec2 p, float cell, float t) { // 0..1 line coverage, p in m
+// 0..1 line coverage, p in m; mpp = m per pixel along the most squashed screen direction (caps a derivative spike)
+float waterWeb(vec2 p, float cell, float t, float mpp) {
   vec2 x = p / cell;
   x += uWarp.x * sin(x.yx * uWarp.y + vec2(0.7, 1.3) * t * 0.5);
-  float d = waterBorder(x, t) * cell;            // m
-  float px = max(fwidth(d), 1e-4);                // m per pixel
-  float half_ = max(0.5 * uWidth.x * cell, 0.5 * uWidth.y * px);
-  float k = 1.0 - smoothstep(half_ - 0.5 * px, half_ + 0.5 * px, d);
-  return k * (1.0 - smoothstep(cell / (2.0 * uFade.z), cell / uFade.z, px)); // too small on screen: gone
+  float d = waterBorder(x, t) * cell;                                      // m
+  float px = clamp(length(vec2(dFdx(d), dFdy(d))), 1e-4, mpp);            // m per pixel across this line
+  float half_ = max(0.5 * uWidth.x * cell, 0.5 * uWidth.y * uDpr * px);
+  return 1.0 - smoothstep(half_ - 0.6 * px, half_ + 0.6 * px, d);
+}
+float waterShown(float cellPx) { // a web's weight by its cells' size on screen (CSS px): gone .. full, dimmer while small
+  return smoothstep(uLod.z, uLod.w, cellPx) * mix(uDim.x, 1.0, smoothstep(uLod.w, uDim.y, cellPx));
 }
 void main() {
-  float dist = length(cameraPosition - vWorld);
-  float far = 1.0 - smoothstep(uFade.x, uFade.y, dist);
   float edge = smoothstep(-uEdge.x, uEdge.y, vShore); // the soft shore: 0 on the bank, 1 inside the water
   float ball = smoothstep(uBallClear.x, uBallClear.y, length(vWorld - uBall)); // the white ball stays clear
-  vec2 drift = vec2(0.6, 0.8) * uLayer2.z * uTime; // no branch around it: fwidth needs every pixel
-  float a = max(waterWeb(vWorld.xz, uCell, uTime), uLayer2.y * waterWeb(vWorld.xz + drift, uCell * uLayer2.x, uTime * 1.3 + 17.0));
-  gl_FragColor = vec4(uLine, clamp(a * uLines * far * edge * ball, 0.0, 1.0));
+  // m per pixel: along the most squashed screen direction (caps the lines' derivative) and on average (the cells'
+  // size on screen: at a grazing angle the cells are flat but their lines across the view still read)
+  float mx = length(dFdx(vWorld.xz)), my = length(dFdy(vWorld.xz));
+  float mpp = max(max(mx, my), 1e-4), cssM = max(sqrt(mx * my), 1e-4) * uDpr;
+  float px0 = uCell / cssM, coarse = uCell * uLod.x;
+  float near = smoothstep(uLod.z, uLod.w, px0);    // the main web, handing over to the coarse one
+  vec2 drift = vec2(0.6, 0.8) * uLayer2.z * uTime; // no branch around the webs: the derivatives need every pixel
+  float a0 = max(waterWeb(vWorld.xz, uCell, uTime, mpp), uLayer2.y * waterWeb(vWorld.xz + drift, uCell * uLayer2.x, uTime * 1.3 + 17.0, mpp));
+  float a1 = uLod.y * waterWeb(vWorld.xz, coarse, uTime * 0.5 + 5.0, mpp);
+  float a = max(a0 * waterShown(px0), a1 * (1.0 - near) * waterShown(coarse / cssM));
+  gl_FragColor = vec4(uLine, clamp(a * uLines * edge * ball, 0.0, 1.0));
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
   #include <fog_fragment>
+  #ifdef USE_FOG
+    gl_FragColor.a *= 1.0 - fogFactor; // the web is gone only in the fog / at the horizon
+  #endif
 }`;
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
