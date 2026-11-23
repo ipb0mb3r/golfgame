@@ -265,6 +265,41 @@ export const TREE_LOOK = Object.freeze({
 // keep their density within the 300k budget. Every gradient piece has one (the palm since AP7b).
 export const TREE_FAR = Object.freeze({ from: 35 });
 export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryLean: 0.07, width: Object.freeze([0.86, 0.28]) });
+// AP6: the ground material (DESIGN §8b "The ground material"), after the artist's recipe docs/art/style-r2/paint.js.
+// Looks only: the physics surfaces (surfaceAt) never change. Widths in m; amounts multiply the palette colour.
+//   edge: the darker `edge` line drawn on the rough (or ob) side of the fairway, tee and fringe; lip: the darker
+//   `lip` band just inside a bunker's edge; bank: the `bank` band on the land round water (not on green, tee, sand,
+//   rock); deep: m from the shore at which water is full `waterDeep`.
+//   sparkle: the water's ripple highlights ([threshold, share toward white], recipe).
+//   shadow: a soft painted shadow under every tree in play: radius × canopyR, offset × canopyR away from the sun,
+//   the colour = `shadow` mixed toward white by `light`, strength at the centre / at `mid` of the radius.
+//   texture: the shared tiling greyscale detail texture (seeded, made in code): `size` px for `tile` m, speckle
+//   cells per m, dab cells (m) and dab size (m), and the turn (rad) of its world mapping.
+//   kinds: per drawn ground kind, the recipe's base multiplier (`base`), its soft large patches (`patch`: amount,
+//   scale m), the fine speckle (`speck`) and brush dabs (`dab`) amounts.
+export const GROUND_LOOK = Object.freeze({
+  seed: 66,
+  edge: 0.6, lip: 0.5, bank: 1.4, deep: 6,
+  sparkle: Object.freeze([[0.8, 0.45], [0.6, 0.15]]),
+  shadow: Object.freeze({ radius: 1.15, offset: 0.55, light: 0.45, centre: 0.95, mid: 0.75, midAt: 0.7, stretch: 1.25, squash: 0.9 }),
+  texture: Object.freeze({ size: 512, tile: 16, speck: 3, dabCell: 2, dabLen: 0.8, dabWid: 0.22, turn: 0.4 }),
+  maskScale: 0.5,                 // the shader's surface mask: × the course map's resolution
+  kinds: Object.freeze({
+    fairway:   Object.freeze({ base: 0.97, speck: 0.04, dab: 0.03 }),
+    tee:       Object.freeze({ base: 0.97, speck: 0.04, dab: 0.03 }),
+    fringe:    Object.freeze({ base: 0.98, speck: 0.04, dab: 0 }),
+    edge:      Object.freeze({ base: 0.98, speck: 0.04, dab: 0 }),
+    green:     Object.freeze({ base: 0.99, speck: 0.025, dab: 0 }),
+    rough:     Object.freeze({ base: 0.9, patch: Object.freeze([0.1, 22]), speck: 0.05, dab: 0.05 }),
+    ob:        Object.freeze({ base: 0.88, patch: Object.freeze([0.12, 28]), speck: 0.05, dab: 0.06 }),
+    sand:      Object.freeze({ base: 0.98, patch: Object.freeze([0.02, 3]), speck: 0.05, dab: 0 }),
+    lip:       Object.freeze({ base: 0.96, speck: 0.06, dab: 0 }),
+    bank:      Object.freeze({ base: 0.96, speck: 0.06, dab: 0 }),
+    rock:      Object.freeze({ base: 0.88, bands: Object.freeze([0.16, 2.4, 3]), speck: 0, dab: 0 }),
+    water:     Object.freeze({ base: 1, speck: 0, dab: 0 }),
+  }),
+});
+
 // AP7c: small props scattered by a biome set's rule (DESIGN §8b "Small props", core/smallProps.js). Looks only:
 // no physics, no effect on the aim line or the warnings. Every number of the scatter and the drawing is here.
 //   surfaces: the ONLY surfaces a prop may stand on, whatever the set's `on` says (never tee, fairway, fringe,
@@ -482,6 +517,10 @@ export const TUNABLES = Object.freeze({
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones
+  // AP6 (looks only): the ground material. 0 = the flat painted course of before AP6, 1 = low (edge lines, lip, bank,
+  // water, rough patches and tree shadows painted into the course map, no extra texture or shader work), 2 = full
+  // (1 + the tiling detail texture, mowing stripes and putting grid drawn by the shader). Rounded to a whole level.
+  GROUND_DETAIL:         { def: 2,    min: 0,     max: 2 },
   // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
   PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
   // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
