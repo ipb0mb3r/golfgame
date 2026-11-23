@@ -90,28 +90,6 @@ export function distanceTo(W, H, isSrc) {
   return d;
 }
 
-// base = the physics kinds per pixel (Uint8Array, kindOf), W × H at `res` px per m →
-// { kinds (with edge / lip / bank), depth (m from the shore, water pixels only) }.
-// A pixel is in a band when the nearest source pixel's edge is less than the band's width away.
-export function groundKinds(base, W, H, res, look = GROUND_LOOK) {
-  const K = KIND, kinds = Uint8Array.from(base), depth = new Float32Array(W * H);
-  const within = (d, w) => d - 0.5 < w * res, n = W * H;
-  const flags = test => { const f = new Uint8Array(n); for (let i = 0; i < n; i++) f[i] = test(base[i]) ? 1 : 0; return f; };
-  const dCourse = distanceTo(W, H, flags(b => b === K.fairway || b === K.tee || b === K.fringe));
-  const water = base.includes(K.water), sand = base.includes(K.sand);
-  const dWater = water ? distanceTo(W, H, flags(b => b === K.water)) : null;
-  const dShore = water ? distanceTo(W, H, flags(b => b !== K.water)) : null;
-  const dNotSand = sand ? distanceTo(W, H, flags(b => b !== K.sand)) : null;
-  for (let i = 0; i < W * H; i++) {
-    const b = base[i];
-    if (b === K.water) { depth[i] = (dShore[i] - 0.5) / res; continue; }
-    if (dWater && (b === K.rough || b === K.ob || b === K.fairway || b === K.fringe) && within(dWater[i], look.bank)) { kinds[i] = K.bank; continue; }
-    if ((b === K.rough || b === K.ob) && within(dCourse[i], look.edge)) kinds[i] = K.edge;
-    else if (b === K.sand && within(dNotSand[i], look.lip)) kinds[i] = K.lip;
-  }
-  return { kinds, depth };
-}
-
 // The physics kind at every map pixel centre, kindAt(u, v) in pixel units. Faster than asking every pixel: the
 // even pixels are asked first; a 2 × 2 block whose 4 × 4 even neighbours all agree takes their kind, the others
 // ask kindAt themselves. The same map unless a surface is narrower than 2 px (0.5 m at 4 px / m): none is.
@@ -131,8 +109,8 @@ export function baseKinds(W, H, kindAt) {
   return base;
 }
 
-// ---- anti-aliased bands and boundaries (AP6 follow-up, ?tune=GROUND_EDGE_AA, default on) ----
-// The hard version above decides each pixel by its centre, so a 0.6 m line at 4 px / m shows its stair-steps.
+// ---- anti-aliased bands and boundaries (AP6 follow-up; the only path since AP7e, owner on #125) ----
+// Deciding each pixel by its centre (before #125) showed a 0.6 m line's stair-steps at 4 px / m.
 // The smooth version keeps the same rule but measures it below the pixel: the pixels where the surfaces change
 // (an 8-neighbour of another kind) are sampled look.aa.sub² times (sampleKind), the band distances are true
 // sub-pixel distances to the surface boundaries found there, and every pixel near a boundary or a band's
@@ -196,7 +174,7 @@ export function nearestPoints(W, H, seed, px, pz, limit) {
   return near;
 }
 
-// base = the physics kinds at the pixel centres (as groundKinds), sampleKind(u, v) = the physics kind at a point
+// base = the physics kinds at the pixel centres (baseKinds), sampleKind(u, v) = the physics kind at a point
 // in pixel units (u = i + fraction) → { kinds (the main kind per pixel), depth, mix }. mix.at[k] = −1 (pixel k
 // is all kinds[k]) or a row of mix.w: the share of each drawn kind (KINDS order, sums to 1).
 export function groundKindsAA(base, W, H, res, sampleKind, look = GROUND_LOOK) {
@@ -267,7 +245,7 @@ export function groundKindsAA(base, W, H, res, sampleKind, look = GROUND_LOOK) {
     return sign * d;
   };
   const [fCourse, fWater, fSand] = fields;
-  // the rule (as groundKinds): b = the physics kind, sc / sw / ss = the signed distances (px) to the course,
+  // the rule: b = the physics kind, sc / sw / ss = the signed distances (px) to the course,
   // the water and the sand
   const rule = (b, sc, sw, ss) => {
     if (b === K.water) return b;

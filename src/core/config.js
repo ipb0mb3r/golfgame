@@ -284,7 +284,7 @@ export const GROUND_LOOK = Object.freeze({
   shadow: Object.freeze({ radius: 1.15, offset: 0.55, light: 0.45, centre: 0.95, mid: 0.75, midAt: 0.7, stretch: 1.25, squash: 0.9 }),
   texture: Object.freeze({ size: 512, tile: 16, speck: 3, dabCell: 2, dabLen: 0.8, dabWid: 0.22, turn: 0.4 }),
   maskScale: 0.5,                 // the shader's surface mask: × the course map's resolution
-  // the smooth edges (GROUND_EDGE_AA 1): a pixel where the surfaces change is sampled sub × sub times; a pixel
+  // the smooth edges (AP6 follow-up): a pixel where the surfaces change is sampled sub × sub times; a pixel
   // whose centre is less than `near` px from a band's outer line is blended too (a sample is ≤ 0.53 px away)
   aa: Object.freeze({ sub: 4, near: 0.75 }),
   kinds: Object.freeze({
@@ -336,6 +336,18 @@ export const SMALL_PROPS = Object.freeze({
   shore: Object.freeze({ reach: 1, step: 0.5, coarse: 2, land: Object.freeze(['rough', 'ob']) }),
   trunkClear: 1,                               // AP7d: m from a tree trunk's edge or an OB stake (nothing stands closer)
   stakeR: 0.05, sceneryTrunkR: 0.3,            // m: an OB stake's radius; a scenery tree's trunk (its real radius is not stored)
+});
+// AP7e: the big props placed by hand in a hole's scenery.bigProps (DESIGN §8b "Big props", core/bigProps.js). Looks only.
+//   obClear: m a prop's footprint (its piece's radius × scale) must stay outside the OB stakes' box (validation).
+//   drop: the prop stands at the lowest ground under its footprint (never floats; a sunk foot is fine): heightAt is
+//     read at the centre and on rings at these fractions of the footprint radius, `perRing` points each.
+//   maxTris: one piece's triangles (ART_STYLE §5: a big prop ≤ 1,500; tests/big-props.test.js).
+//   treeClear: m beyond a prop's footprint where no scenery tree stands (so none pokes through a roof; only on a hole
+//     with props: the other trees keep their places). Small props keep SMALL_PROPS.trunkClear from the footprint.
+export const BIG_PROPS = Object.freeze({
+  obClear: 5, treeClear: 3,
+  drop: Object.freeze({ rings: Object.freeze([0.5, 1]), perRing: 12 }),
+  maxTris: 1500,
 });
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
@@ -524,10 +536,6 @@ export const TUNABLES = Object.freeze({
   // water, rough patches and tree shadows painted into the course map, no extra texture or shader work), 2 = full
   // (1 + the tiling detail texture, mowing stripes and putting grid drawn by the shader). Rounded to a whole level.
   GROUND_DETAIL:         { def: 2,    min: 0,     max: 2 },
-  // AP6 follow-up (owner: "less pixelated" edges): 1 = the painted edge / lip / bank lines and the surface boundaries
-  // are anti-aliased (measured below the map pixel, core/ground.js groundKindsAA); 0 = the hard per-pixel edges
-  // (the compare switch, for one PR). Levels 1 and 2 only; level 0 is always the old flat look.
-  GROUND_EDGE_AA:        { def: 1,    min: 0,     max: 1 },
   // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
   PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
   // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
@@ -539,6 +547,9 @@ export const TUNABLES = Object.freeze({
   PROP_THIN_FROM:        { def: 30,   min: 5,     max: 100 },
   PROP_FAR_KEEP:         { def: 0.5,  min: 0.1,   max: 1 },
   PROP_MAX_TRIS:         { def: 10000, min: 1000, max: 60000 },
+  // AP7e follow-up (owner: big props hard to notice; looks only, default 2.5 = owner pick 2026-11-23): BIG_PROP_SCALE = one multiplier on every big prop's size, on top of its own scale (0.9–1.15);
+  // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
+  BIG_PROP_SCALE:        { def: 2.5,    min: 0.5,   max: 4 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

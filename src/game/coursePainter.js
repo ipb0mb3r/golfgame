@@ -2,7 +2,7 @@
 import { createRng } from '../core/rng.js';
 import { parseColour, sceneLight } from '../core/biome.js';
 import { TUNE, GROUND_LOOK } from '../core/config.js';
-import { groundLevel, kindOf, KIND, KINDS, baseKinds, groundKinds, groundKindsAA, groundColour, surfaceMask, treeShadows, shadowColour } from '../core/ground.js';
+import { groundLevel, kindOf, KIND, KINDS, baseKinds, groundKindsAA, groundColour, surfaceMask, treeShadows, shadowColour } from '../core/ground.js';
 
 // AP5: every colour comes from the hole's biome set (DESIGN §8b): surface → palette key.
 // A surface not listed is painted as rough; the ground outside OB is deepRough.
@@ -29,8 +29,8 @@ export function paintGround(hole, surfaceAt, biome, { green: greenOverride = nul
   // the physics kind at a point in map pixels (u, v); the plain border is OB
   const kindAt = (u, v) => (border && (u < 2 || v < 2 || u >= W - 2 || v >= H - 2)) ? KIND.ob : kindOf(surfaceAt(map.x0 + u / res, map.z0 + v / res));
   const base = baseKinds(W, H, kindAt);
-  // AP6 follow-up: smooth edges (GROUND_EDGE_AA 1, default) or the hard per-pixel ones (0, the compare switch)
-  const { kinds, depth, mix = null } = Math.round(TUNE.GROUND_EDGE_AA) ? groundKindsAA(base, W, H, res, kindAt) : groundKinds(base, W, H, res);
+  // AP6 follow-up: smooth edges (owner on #125; the hard per-pixel path and its switch went in AP7e)
+  const { kinds, depth, mix } = groundKindsAA(base, W, H, res, kindAt);
   const p = Object.fromEntries(Object.entries(biome.palette).map(([k, c]) => [k, parseColour(c)]));
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
