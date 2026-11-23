@@ -317,7 +317,7 @@ export const GROUND_LOOK = Object.freeze({
 export const WATER_LOOK = Object.freeze({
   step: 1, lift: 0.08, drop: 0.05, dive: 0.15,
   tint: 0.3,
-  fresnel: Object.freeze([3, 0.55]),
+  fresnel: Object.freeze([4, 0.35]),
   sheen: Object.freeze([60, 0.5]),
   ripple: Object.freeze([Object.freeze([7, 0.35, 0.4, 0.05]), Object.freeze([4.3, 0.25, 2.1, 0.035]), Object.freeze([2.6, 0.18, -1.2, 0.02])]),
   fade: Object.freeze([25, 90]),
