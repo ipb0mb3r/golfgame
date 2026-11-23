@@ -303,6 +303,7 @@ export const GROUND_LOOK = Object.freeze({
   }),
 });
 
+// X43c (owner on #133: "a little less prominent, more stylized: the bottom texture, and a transparent layer on the surface"): the web is fainter and thinner (WATER_LINES .35, WATER_WIDTH .45, WATER_LINE_PX 1.2, WATER_CELL 3.6) over a faint even sheen (WATER_TINT .05), option B of three.
 // X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
 //   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
 //   at least; drop: m a body's flat level sits under its lowest shore point.
@@ -317,23 +318,29 @@ export const GROUND_LOOK = Object.freeze({
 //   between them, so the painted bed reads. Two layers: the main web (WATER_CELL m cells) and a fainter, smaller one
 //   that drifts past it; the cells' points wander slowly (× WATER_SPEED). The strength is WATER_LINES.
 //   line: [sun share, width]: the lines' colour is the palette's `cloud` mixed this share toward `sun`; each line's
-//   width as a share of the cell (never thinner than minPx pixels, so it never breaks up into flicker).
+//   width as a share of the cell (close up), but never thinner than linePx pixels on screen (antialiased with fwidth
+//   on the distance to the border, so a line is the same clean ~2 px at any distance and never breaks into flicker).
 //   layer2: [scale, strength, drift m/s]: the second web's cell size (× WATER_CELL), strength (× the main web's) and drift.
 //   wander: [amplitude, rad/s]: how far (share of a cell) and how fast each cell's point moves; warp: [amplitude,
 //   frequency] a slow sine bend of the pattern (shares of a cell) so the lines are wavy, not straight; round: share of
 //   a cell over which the borders blend (a smooth minimum), so the cells are rounded and the lines thicken where they meet.
-//   fade: [from, to] m from the camera: the lines are crisp up to `from` and gone by `to`; they also fade when a cell
-//   gets smaller than cellPx pixels on screen (grazing angle), so nothing shimmers far away.
+//   Far water (owner on #131: "no web at all, just the blurred ground" from the tee): no fade by distance. Where a
+//   web's cells get small on screen, a coarser web takes over instead: coarse: [scale, strength]: its cells are
+//   × WATER_CELL (3.6 m → 12.6 m) and its lines × this strength. cellPx: [gone, full]: a web is fully drawn while
+//   its cells are at least `full` px on screen (along the most squashed screen direction) and gone at `gone` px; the
+//   main web hands over to the coarse one over the same range (the fainter drifting web goes with the main one).
+//   dim: [strength, px]: lines whose cells are small on screen are this much weaker, back to full when the cells
+//   are `px` px or more, so far water reads as a calm pattern, not a sparkle. The web is gone only in the fog.
 //   ballClear: [from, to] m: the lines are gone within `from` m of the ball and full beyond `to` m (the ball is white).
 //   renderOrder: drawn first among the see-through things (the aim marks, rings and the ball's shadow come after,
 //   so they read on top); the ball is drawn after the water too (props.js).
 export const WATER_LOOK = Object.freeze({
   step: 1, lift: 0.08, drop: 0.05,
   edge: Object.freeze([0.5, 0.9]), hug: 0.06, bisect: 4,
-  line: Object.freeze([0.5, 0.035]), minPx: 1.5,
+  line: Object.freeze([0.5, 0.035]),
   layer2: Object.freeze([0.62, 0.45, 0.12]),
   wander: Object.freeze([0.36, 0.35]), warp: Object.freeze([0.06, 4.5]), round: 0.12,
-  fade: Object.freeze([35, 75]), cellPx: 14,
+  coarse: Object.freeze([3.5, 0.8]), cellPx: Object.freeze([8, 20]), dim: Object.freeze([0.55, 60]),
   ballClear: Object.freeze([0.7, 1.5]),
   renderOrder: -0.2,
 });
@@ -589,9 +596,14 @@ export const TUNABLES = Object.freeze({
   // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
   // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
   // WATER_SPEED = × how fast the web moves (0 = still).
-  WATER_LINES:           { def: 0.85, min: 0,     max: 1 },
-  WATER_CELL:            { def: 2.4,  min: 0.8,   max: 8 },
+  WATER_LINES:           { def: 0.35, min: 0,     max: 1 },
+  WATER_CELL:            { def: 3.6,  min: 0.8,   max: 8 },
   WATER_SPEED:           { def: 1,    min: 0,     max: 3 },
+  // X43c: WATER_LINE_PX = the thinnest a line is drawn (CSS px), WATER_WIDTH = × the lines' width close up (share of a
+  // cell), WATER_TINT = the even, see-through sheen over the whole surface (0 = none; its alpha, in the line colour).
+  WATER_LINE_PX:         { def: 1.2,   min: 0.5,   max: 4 },
+  WATER_WIDTH:           { def: 0.45,   min: 0.2,   max: 2 },
+  WATER_TINT:            { def: 0.05,   min: 0,     max: 0.3 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.
