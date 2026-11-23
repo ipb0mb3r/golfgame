@@ -5,7 +5,7 @@ import { GROUND_LOOK, PERF_BUDGET, TUNABLES } from '../src/core/config.js';
 import { ALL_PALETTE_KEYS, parseColour } from '../src/core/biome.js';
 import { BIOMES } from '../src/biomes/index.js';
 import {
-  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKinds,
+  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKinds, groundKindsAA, nearestPoints,
   groundColour, surfaceMask, treeShadows, shadowColour, waterColour, fairwayStripe,
 } from '../src/core/ground.js';
 
@@ -72,6 +72,69 @@ test('groundKinds: the edge line outside the fairway, the lip inside the bunker,
     const b = KINDS[base[i]], k = KINDS[kinds[i]];
     if (k !== b) assert.ok((k === 'edge' && ['rough', 'ob'].includes(b)) || (k === 'lip' && b === 'sand') || (k === 'bank' && ['rough', 'ob', 'fairway', 'fringe'].includes(b)), `${b} → ${k}`);
   }
+});
+
+test('GROUND_EDGE_AA: a tunable 0..1, default 1 (smooth edges); 0 = the hard per-pixel edges (compare switch)', () => {
+  assert.deepEqual(TUNABLES.GROUND_EDGE_AA, { def: 1, min: 0, max: 1 });
+});
+
+test('nearestPoints: each pixel finds its nearest boundary point, within the limit only', () => {
+  const W = 20, H = 5, seed = new Int32Array(W * H).fill(-1);
+  for (let j = 0; j < H; j++) seed[j * W + 5] = j;          // a vertical line at x = 5.3 px
+  const px = Array(H).fill(5.3), pz = Array.from({ length: H }, (_, j) => j + 0.5);
+  const near = nearestPoints(W, H, seed, px, pz, 6);
+  for (let i = 0; i < W; i++) {
+    const p = near[2 * W + i], d = Math.abs(i + 0.5 - 5.3);
+    if (d < 6) { assert.equal(p, 2); } else assert.equal(p, -1);
+  }
+});
+
+// A smooth test patch: a round fairway (r 6 m) and a round bunker (r 3 m), its exact shape known below the pixel
+function roundPatch() {
+  const res = 4, W = 100, H = 60, fx = 12, fz = 7.5, sx = 18.5, sz = 7.5, R = 6, r = 3;
+  const kindAtM = (x, z) => Math.hypot(x - sx, z - sz) < r ? KIND.sand : Math.hypot(x - fx, z - fz) < R ? KIND.fairway : KIND.rough;
+  const sampleKind = (u, v) => kindAtM(u / res, v / res), base = new Uint8Array(W * H);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) base[j * W + i] = sampleKind(i + 0.5, j + 0.5);
+  return { res, W, H, base, sampleKind, fx, fz, R, sx, sz, r };
+}
+const shares = (g, W, H) => { const a = new Float64Array(KINDS.length);
+  for (let k = 0; k < W * H; k++) { const m = g.mix.at[k]; if (m < 0) a[g.kinds[k]]++; else for (let q = 0; q < KINDS.length; q++) a[q] += g.mix.w[m * KINDS.length + q]; }
+  return a; };
+
+test('groundKindsAA: smooth edges, the same bands and widths as the hard rule, each pixel shared out by area', () => {
+  const t = roundPatch(), { res, W, H, base } = t, g = groundKindsAA(base, W, H, res, t.sampleKind);
+  // each mixed row sums to 1 and only holds kinds a band rule allows for that pixel
+  const NK = KINDS.length;
+  let mixed = 0;
+  for (let k = 0; k < W * H; k++) {
+    const m = g.mix.at[k]; if (m < 0) continue; mixed++;
+    let sum = 0; for (let q = 0; q < NK; q++) sum += g.mix.w[m * NK + q];
+    assert.ok(Math.abs(sum - 1) < 1e-6);
+  }
+  assert.ok(mixed > 100, 'the boundaries are blended');
+  // the area of each band is its true one (an annulus, in px²) within a few %: the widths are kept
+  const A = shares(g, W, H), px2 = res * res, e = GROUND_LOOK.edge, l = GROUND_LOOK.lip;
+  const sandArea = Math.PI * t.r ** 2 * px2, lipArea = Math.PI * (t.r ** 2 - (t.r - l) ** 2) * px2;
+  assert.ok(Math.abs(A[KIND.sand] + A[KIND.lip] - sandArea) / sandArea < 0.01, 'the sand plays where it is');
+  assert.ok(Math.abs(A[KIND.lip] - lipArea) / lipArea < 0.06, `lip ${A[KIND.lip]} vs ${lipArea}`);
+  // the edge ring round the fairway, minus where the bunker covers it (sand cuts the fairway's outline)
+  const edgeArea = Math.PI * ((t.R + e) ** 2 - t.R ** 2) * px2;
+  assert.ok(A[KIND.edge] < edgeArea && A[KIND.edge] > edgeArea * 0.8, `edge ${A[KIND.edge]} vs ${edgeArea}`);
+  // the same pixels change kind as with the hard rule, give or take the blended rim
+  const hard = groundKinds(base, W, H, res), Ah = shares({ ...hard, mix: { at: new Int32Array(W * H).fill(-1) } }, W, H);
+  for (const k of ['edge', 'lip', 'sand', 'fairway']) assert.ok(Math.abs(A[KIND[k]] - Ah[KIND[k]]) / Ah[KIND[k]] < 0.12, k);
+  // a pixel far from any boundary is one kind, exactly as before
+  assert.equal(g.mix.at[30 * W + 48], -1); assert.equal(KINDS[g.kinds[30 * W + 48]], 'fairway');
+  assert.equal(g.mix.at[30 * W + 90], -1); assert.equal(KINDS[g.kinds[30 * W + 90]], 'rough');
+});
+
+test('groundKindsAA: water keeps its pixels, the bank round it, the depth from the shore', () => {
+  const { res, W, H, base } = patch(), sampleKind = (u, v) => base[Math.min(H - 1, Math.floor(v)) * W + Math.min(W - 1, Math.floor(u))];
+  const g = groundKindsAA(base, W, H, res, sampleKind), at = (i, j) => KINDS[g.kinds[j * W + i]];
+  assert.equal(at(80, 57), 'water'); assert.equal(at(57, 55), 'bank'); assert.equal(at(50, 55), 'edge'); assert.equal(at(30, 40), 'fairway');
+  assert.ok(g.depth[57 * W + 80] > g.depth[57 * W + 61]);
+  // the straight block edges of this patch fall on pixel borders: nothing to blend there
+  assert.equal(g.mix.at[40 * W + 49], -1); assert.equal(at(49, 40), 'fairway'); assert.equal(at(50, 40), 'edge');
 });
 
 const P = Object.fromEntries(Object.entries(BIOMES['meadow-day'].palette).map(([k, c]) => [k, parseColour(c)]));

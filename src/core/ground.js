@@ -112,6 +112,160 @@ export function groundKinds(base, W, H, res, look = GROUND_LOOK) {
   return { kinds, depth };
 }
 
+// ---- anti-aliased bands and boundaries (AP6 follow-up, ?tune=GROUND_EDGE_AA, default on) ----
+// The hard version above decides each pixel by its centre, so a 0.6 m line at 4 px / m shows its stair-steps.
+// The smooth version keeps the same rule but measures it below the pixel: the pixels where the surfaces change
+// (an 8-neighbour of another kind) are sampled look.aa.sub² times (sampleKind), the band distances are true
+// sub-pixel distances to the surface boundaries found there, and every pixel near a boundary or a band's
+// outer line gets the share of each kind it covers (mix), which the painter blends. Same widths, same colours.
+
+// Nearest-boundary-point transform: seed[k] ≥ 0 = pixel k holds a boundary point (px, pz in pixel units, the
+// centre of pixel (i, j) is (i + 0.5, j + 0.5)). Two sweeps pass each pixel's nearest point on (8 neighbours).
+// Only points nearer than `limit` px are kept (beyond, near[k] = −1), so only the seeds' box grown by `limit`
+// is swept. → near: the point index per pixel.
+export function nearestPoints(W, H, seed, px, pz, limit) {
+  const n = W * H, near = new Int32Array(n).fill(-1), best = new Float32Array(n).fill(limit * limit);
+  let i0 = W, i1 = -1, j0 = H, j1 = -1;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const k = j * W + i, s = seed[k]; if (s < 0) continue;
+    near[k] = s; const dx = px[s] - i - 0.5, dz = pz[s] - j - 0.5; best[k] = dx * dx + dz * dz;
+    if (i < i0) i0 = i; if (i > i1) i1 = i; if (j < j0) j0 = j; if (j > j1) j1 = j;
+  }
+  if (i1 < 0) return near;
+  const g = Math.ceil(limit) + 1;
+  i0 = Math.max(0, i0 - g); i1 = Math.min(W - 1, i1 + g); j0 = Math.max(0, j0 - g); j1 = Math.min(H - 1, j1 + g);
+  const relax = (k, m, cx, cz) => {
+    const s = near[m]; if (s < 0) return;
+    const dx = px[s] - cx, dz = pz[s] - cz, q = dx * dx + dz * dz;
+    if (q < best[k]) { best[k] = q; near[k] = s; }
+  };
+  for (let j = j0; j <= j1; j++) {
+    const cz = j + 0.5;
+    for (let i = i0; i <= i1; i++) {
+      const k = j * W + i, cx = i + 0.5;
+      if (i > i0) relax(k, k - 1, cx, cz);
+      if (j > j0) { relax(k, k - W, cx, cz); if (i > i0) relax(k, k - W - 1, cx, cz); if (i < i1) relax(k, k - W + 1, cx, cz); }
+    }
+    for (let i = i1 - 1; i >= i0; i--) relax(j * W + i, j * W + i + 1, i + 0.5, cz);
+  }
+  for (let j = j1; j >= j0; j--) {
+    const cz = j + 0.5;
+    for (let i = i1; i >= i0; i--) {
+      const k = j * W + i, cx = i + 0.5;
+      if (i < i1) relax(k, k + 1, cx, cz);
+      if (j < j1) { relax(k, k + W, cx, cz); if (i < i1) relax(k, k + W + 1, cx, cz); if (i > i0) relax(k, k + W - 1, cx, cz); }
+    }
+    for (let i = i0 + 1; i <= i1; i++) relax(j * W + i, j * W + i - 1, i + 0.5, cz);
+  }
+  return near;
+}
+
+// base = the physics kinds at the pixel centres (as groundKinds), sampleKind(u, v) = the physics kind at a point
+// in pixel units (u = i + fraction) → { kinds (the main kind per pixel), depth, mix }. mix.at[k] = −1 (pixel k
+// is all kinds[k]) or a row of mix.w: the share of each drawn kind (KINDS order, sums to 1).
+export function groundKindsAA(base, W, H, res, sampleKind, look = GROUND_LOOK) {
+  const K = KIND, NK = KINDS.length, n = W * H, S = look.aa.sub, SS = S * S;
+  // 1. the pixels where the surfaces change: sampled S × S
+  const subAt = new Int32Array(n).fill(-1), mixedList = [];
+  for (let j = 0; j < H; j++) {
+    const up = j > 0 ? -W : 0, dn = j < H - 1 ? W : 0;
+    for (let i = 0; i < W; i++) {
+      const k = j * W + i, b = base[k], l = i > 0 ? -1 : 0, r = i < W - 1 ? 1 : 0;
+      if (base[k + l] !== b || base[k + r] !== b || base[k + up] !== b || base[k + dn] !== b || base[k + up + l] !== b
+        || base[k + up + r] !== b || base[k + dn + l] !== b || base[k + dn + r] !== b) { subAt[k] = mixedList.length; mixedList.push(k); }
+    }
+  }
+  const subs = new Uint8Array(mixedList.length * SS);
+  mixedList.forEach((k, r) => {
+    const i = k % W, j = (k - i) / W;
+    for (let b = 0; b < S; b++) for (let a = 0; a < S; a++) subs[r * SS + b * S + a] = sampleKind(i + (a + 0.5) / S, j + (b + 0.5) / S);
+  });
+  // a sample of pixel (i, j), a / b may step one pixel out (−1 or S): that neighbour's sample
+  const subKind = (i, j, a, b) => {
+    if (a < 0) { i--; a += S; } else if (a >= S) { i++; a -= S; }
+    if (b < 0) { j--; b += S; } else if (b >= S) { j++; b -= S; }
+    i = Math.max(0, Math.min(W - 1, i)); j = Math.max(0, Math.min(H - 1, j));
+    const k = j * W + i, r = subAt[k];
+    return r < 0 ? base[k] : subs[r * SS + b * S + a];
+  };
+  // 2. a field per boundary (course, water, sand): the boundary points found between the samples (the one
+  // nearest each mixed pixel's centre), then each pixel's nearest point (nearestPoints)
+  const flag = test => Uint8Array.from(KINDS, (_, i) => test(i) ? 1 : 0);
+  const isLand = flag(i => i === K.rough || i === K.ob || i === K.fairway || i === K.fringe);
+  const isBare = flag(i => i === K.rough || i === K.ob);
+  const wEdge = look.edge * res, wLip = look.lip * res, wBank = look.bank * res, T = look.aa.near;
+  const fields = [
+    { inside: flag(i => i === K.fairway || i === K.tee || i === K.fringe), limit: wEdge + 2 },
+    base.includes(K.water) ? { inside: flag(i => i === K.water), limit: Math.max(wBank, look.deep * res) + 2 } : null,
+    base.includes(K.sand) ? { inside: flag(i => i === K.sand), limit: wLip + 2 } : null,
+  ];
+  const live = fields.filter(Boolean);
+  for (const f of live) { f.seed = new Int32Array(n).fill(-1); f.px = []; f.pz = []; }
+  const bq = new Float64Array(3), bx = new Float64Array(3), bz = new Float64Array(3);
+  for (const k of mixedList) {
+    const i = k % W, j = (k - i) / W, cx = i + 0.5, cz = j + 0.5;
+    bq.fill(Infinity);
+    const pair = (k0, k1, x, z) => {
+      if (k0 === k1) return;
+      const q = (x - cx) * (x - cx) + (z - cz) * (z - cz);
+      for (let f = 0; f < live.length; f++) {
+        const ins = live[f].inside;
+        if (ins[k0] !== ins[k1] && q < bq[f]) { bq[f] = q; bx[f] = x; bz[f] = z; }
+      }
+    };
+    for (let b = 0; b < S; b++) for (let a = -1; a < S; a++) pair(subKind(i, j, a, b), subKind(i, j, a + 1, b), i + (a + 1) / S, j + (b + 0.5) / S);
+    for (let a = 0; a < S; a++) for (let b = -1; b < S; b++) pair(subKind(i, j, a, b), subKind(i, j, a, b + 1), i + (a + 0.5) / S, j + (b + 1) / S);
+    for (let f = 0; f < live.length; f++) if (bq[f] < Infinity) { const F = live[f]; F.seed[k] = F.px.length; F.px.push(bx[f]); F.pz.push(bz[f]); }
+  }
+  for (const f of live) { f.near = nearestPoints(W, H, f.seed, f.px, f.pz, f.limit); f.seed = null; }
+  // the signed distance (px, > 0 outside the region) from pixel k's centre; with nrm, also the way it grows (the
+  // unit normal, into nrm), so a sample's distance is s + n · offset (exact for a straight boundary)
+  const nrm = [0, 0];
+  const signed = (f, k, i, j, withNormal) => {
+    if (!f) return Infinity;
+    const sign = f.inside[base[k]] ? -1 : 1, p = f.near[k];
+    if (withNormal) { nrm[0] = 0; nrm[1] = 0; }
+    if (p < 0) return sign * f.limit;
+    const dx = i + 0.5 - f.px[p], dz = j + 0.5 - f.pz[p], d = Math.sqrt(dx * dx + dz * dz);
+    if (withNormal && d > 1e-6) { nrm[0] = sign * dx / d; nrm[1] = sign * dz / d; }
+    return sign * d;
+  };
+  const [fCourse, fWater, fSand] = fields;
+  // the rule (as groundKinds): b = the physics kind, sc / sw / ss = the signed distances (px) to the course,
+  // the water and the sand
+  const rule = (b, sc, sw, ss) => {
+    if (b === K.water) return b;
+    if (fWater && isLand[b] && sw < wBank) return K.bank;
+    if (isBare[b] && sc < wEdge) return K.edge;
+    if (b === K.sand && -ss < wLip) return K.lip;
+    return b;
+  };
+  // 3. every pixel: its centre's kind; near a boundary or a band's outer line, the share of each kind
+  const kinds = new Uint8Array(n), depth = new Float32Array(n), at = new Int32Array(n).fill(-1), rows = [];
+  const cnt = new Float32Array(NK), N = new Float64Array(6);
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const k = j * W + i, b = base[k];
+    const sc = signed(fCourse, k, i, j), sw = signed(fWater, k, i, j), ss = signed(fSand, k, i, j);
+    if (b === K.water) depth[k] = Math.max(0, -sw) / res;
+    const near = subAt[k] >= 0 || (isBare[b] && Math.abs(sc - wEdge) < T) || (fWater && isLand[b] && Math.abs(sw - wBank) < T)
+      || (b === K.sand && Math.abs(-ss - wLip) < T);
+    if (!near) { kinds[k] = rule(b, sc, sw, ss); continue; }
+    fields.forEach((f, q) => { signed(f, k, i, j, true); N[q * 2] = nrm[0]; N[q * 2 + 1] = nrm[1]; });
+    cnt.fill(0);
+    for (let sb = 0; sb < S; sb++) for (let sa = 0; sa < S; sa++) {
+      const ox = (sa + 0.5) / S - 0.5, oz = (sb + 0.5) / S - 0.5;
+      cnt[rule(subKind(i, j, sa, sb), sc + N[0] * ox + N[1] * oz, sw + N[2] * ox + N[3] * oz, ss + N[4] * ox + N[5] * oz)]++;
+    }
+    let top = 0, main = 0;
+    for (let c = 0; c < NK; c++) if (cnt[c] > top) { top = cnt[c]; main = c; }
+    kinds[k] = main;
+    if (top === SS) continue;
+    at[k] = rows.length / NK;
+    for (let c = 0; c < NK; c++) rows.push(cnt[c] / SS);
+  }
+  return { kinds, depth, mix: { at, w: Float32Array.from(rows) } };
+}
+
 // ---- colours ----
 const CACHES = {}; // per kind: the last noise cell (the result never depends on it)
 // The low-frequency part of a kind's texture (base + soft patches / rock bands): painted into the course map
@@ -164,7 +318,8 @@ export function groundColour(P, kind, x, z, { level, stripe, green, depth = 0, l
 // (stripes or grid), B = speckle amount, A = dab amount (each ÷ 0.1). Each mask pixel averages the map pixels
 // it covers. Rows run from z1 (near the tee) to z0, so the mask reads with the terrain's uv as it is.
 export const MASK_AMOUNT = 0.1;
-export function surfaceMask(kinds, W, H, look = GROUND_LOOK) {
+// mix (optional, groundKindsAA): a mixed pixel counts each kind by its share.
+export function surfaceMask(kinds, W, H, look = GROUND_LOOK, mix = null) {
   const n = Math.max(1, Math.round(1 / look.maskScale)), mW = Math.ceil(W / n), mH = Math.ceil(H / n);
   const data = new Uint8Array(mW * mH * 4);
   const rows = KINDS.map(k => { const g = look.kinds[k] ?? { speck: 0, dab: 0 };
@@ -173,7 +328,13 @@ export function surfaceMask(kinds, W, H, look = GROUND_LOOK) {
     const acc = [0, 0, 0, 0]; let cnt = 0;
     for (let dj = 0; dj < n; dj++) for (let di = 0; di < n; di++) {
       const i = mi * n + di, j = mj * n + dj; if (i >= W || j >= H) continue;
-      const r = rows[kinds[j * W + i]]; for (let c = 0; c < 4; c++) acc[c] += r[c]; cnt++;
+      const k = j * W + i, m = mix ? mix.at[k] : -1;
+      if (m < 0) { const r = rows[kinds[k]]; for (let c = 0; c < 4; c++) acc[c] += r[c]; }
+      else for (let q = 0; q < KINDS.length; q++) {
+        const w = mix.w[m * KINDS.length + q]; if (!w) continue;
+        for (let c = 0; c < 4; c++) acc[c] += rows[q][c] * w;
+      }
+      cnt++;
     }
     const o = ((mH - 1 - mj) * mW + mi) * 4;
     for (let c = 0; c < 4; c++) data[o + c] = Math.round(acc[c] / cnt);
