@@ -1,6 +1,6 @@
-# Tee props: feather flag + pop-up tent, build spec (owner picks 2026-11-23)
+# Event props (tee props): feather flag + pop-up tent, build spec (owner picks 2026-11-23)
 
-Two reusable pieces that make a tee feel like **tournament day**, from the owner's photos (an event tent with a feather flag on a golf course; a feather flag on a beach). Each is built **once** in the shared library and coloured from the **biome's accent colours** (owner), so every course gets its own colours. Look only: no physics.
+Two reusable pieces that make a course feel like **tournament day**, mostly at the tee but also along the course and by the green (owner), from the owner's photos (an event tent with a feather flag on a golf course; a feather flag on a beach). Each is built **once** in the shared library and coloured from the **biome's accent colours** (owner), so every course gets its own colours. Look only: no physics.
 
 The reference geometry is `docs/art/tee-props/pieces.js` (`PIECES.flag.F1`, `PIECES.tent.T1`; the other looks stay as alternatives). Parts use the big-props format (`{ positions, indices, w, lo, hi }`, colour = mix(slot lo, slot hi, w)), metres, foot centre at the origin, the front facing +z. The mock-up page is `tee.html?kind=flag|tent&opts=…` and `tee.html?dress=F1,T1&scale=1.3&biomes=meadow-day,alpine-day,island-day`.
 
@@ -48,7 +48,7 @@ Hand-placed, like the big props, but **near the tee**:
 
 ```js
 scenery: {
-  teeProps: [
+  eventProps: [
     { id: 'popupTent',   x: -9,  z: 25, turn: 1.2 },     // beside and behind the tee, front toward the tee box
     { id: 'featherFlag', x: 5.2, z: 15.5, turn: -0.35 },  // at the tee box's side
     { id: 'featherFlag', x: 6,   z: 27,   turn: -0.6 },   // behind
@@ -57,28 +57,34 @@ scenery: {
 ```
 (x, z relative to the hole like other scenery; the example's tee is at (0, 20) and the hole plays toward −z.)
 
-- **Where (owner):** behind the tee and at its sides. Never in front of the tee box toward the fairway.
-  - **Keep the camera's spot clear:** nothing within 4 m either side of the aim line from the tee to 12 m behind it, because the aim camera sits 7 m behind the ball and turns as the player aims.
-  - Not on the tee box itself (≥ 1.5 m from its edge).
-  - Flags 4–8 m to the side of the tee centre, up to 4 m ahead of the tee line (at the tee box's front corners) or behind it. The tent 6–12 m to the side, level with or behind the tee. Turn the fronts toward the tee box.
+- **Where (owner): three zones.** Every spot is **outside play**: the ball never has to fly or roll through a prop. A ball that rolls through one by bad luck is acceptable (no collider), but placements must make that rare.
+  1. **The tee (main zone):** behind the tee and at its sides, never in front of the tee box toward the fairway.
+     - **Keep the camera's spot clear:** nothing within 4 m either side of the aim line from the tee to 12 m behind it, because the aim camera sits 7 m behind the ball and turns as the player aims.
+     - Not on the tee box itself (≥ 1.5 m from its edge).
+     - Flags 4–8 m to the side of the tee centre, up to 4 m ahead of the tee line (at the tee box's front corners) or behind it. The tent 6–12 m to the side, level with or behind the tee. Turn the fronts toward the tee box.
+  2. **The side of the course (owner):** a tent or a few flags along a hole, **at the outer edge of the rough or beyond OB**, so they never stand where a normal shot lands. Good spots: by a landing area seen from the tee, at a dogleg, on a slope above the fairway. Turn them toward the fairway.
+  3. **Near the green (owner: "a couple of flags close to the green"):** **1–2 flags only, beside or behind the green, never in front of it** (the approach line from the fairway stays clear). At least **8 m from the green's edge** and outside the fringe; behind the green they also frame the hole flag nicely in the approach view. No tent at the green.
 - **Which holes (owner):** not every hole. **Most important on the first and last hole of a course** (holes 1 and 9 of a 9-hole round; a course can have any length, so "first and last"). Others are optional.
 - **Which courses (owner):** flags close to the tee belong to **"tournament" courses**, not every course. The biome set says whether it uses them (see request 2); a set without them can still be given a tent on hole 1.
-- **How many:** 1 tent + 2–4 flags on a dressed tee. Triangle cost ~ 1 × 104 + 4 × 45 ≈ 300: nothing against the 300k budget.
-- **The aim view (finding, `03`):** in phone portrait, the aim camera's view is narrow, so props *beside* the tee don't show while aiming. They show in the hole intro / flyover, in landscape and as the ball flies. If the owner wants one in the aim view, a flag pair at the tee box's front corners (±5 m, 4 m ahead) is the only spot that comes close. Check it on the phone once built.
+- **How many:** a dressed tee has 1 tent + 2–4 flags; along the course 0–3 pieces; at the green 1–2 flags. A fully dressed hole (2 tents + 8 flags) is ~570 triangles: nothing against the 300k budget.
+- **The aim view (finding, `03`; owner: "it's ok"):** in phone portrait, the aim camera's view is narrow, so props *beside* the tee don't show while aiming. They show in the hole intro / flyover, in landscape and as the ball flies. The course-side and green flags are what the player sees while aiming down the hole.
 
 ## 5. Done when
-- `featherFlag` and `popupTent` are in the library (e.g. `LIBRARY.teeProps`) with `tris`, `slots` and `desc`; their shapes match `pieces.js`.
-- A dev test set (e.g. `test-tee-props`) dresses pl-01's tee as in `03`.
-- Then the artist adds the `teeProps` lists to the sets that use them, and the course designer dresses hole 1 and the last hole of the first course.
+- `featherFlag` and `popupTent` are in the library (e.g. `LIBRARY.eventProps`) with `tris`, `slots` and `desc`; their shapes match `pieces.js`.
+- A dev test set (e.g. `test-event-props`) dresses pl-01's tee as in `03`, plus a tent at the side of the course and two flags behind the green.
+- Then the artist adds the `eventProps` lists to the sets that use them, and the course designer dresses hole 1 and the last hole of the first course.
 
 ## 6. Requests for dev / QA
-1. **Pieces in the library:** `featherFlag` (F1) and `popupTent` (T1) from `pieces.js`, slots as §3, drawn at `TEE_PROP_SCALE` 1.3 (a tunable, like the big props' per-piece size). A test checks each ≤ 300 triangles.
-2. **Allowed ids per biome set:** a new optional `teeProps: ['featherFlag', 'popupTent']` list in the biome set (`validateBiomeSet`), like `bigProps`. The artist writes the lists. If a set doesn't list them, a hole in that set can't use them.
-3. **Placement in hole data:** `scenery.teeProps: [{ id, x, z, turn, scale? }]`, dropped on the ground like big props (lowest ground under the footprint). `validateHole` should fail if:
-   - the id isn't in the set's `teeProps` list;
-   - the footprint (scaled) is closer than 1.5 m to the tee box;
-   - it is inside the camera's clear zone (±4 m from the tee's aim line, from 12 m behind the tee to the tee) or in front of the tee box beyond 4 m ahead.
+1. **Pieces in the library:** `featherFlag` (F1) and `popupTent` (T1) from `pieces.js`, slots as §3, drawn at `EVENT_PROP_SCALE` 1.3 (a tunable, like the big props' per-piece size). A test checks each ≤ 300 triangles.
+2. **Allowed ids per biome set:** a new optional `eventProps: ['featherFlag', 'popupTent']` list in the biome set (`validateBiomeSet`), like `bigProps`. The artist writes the lists. If a set doesn't list them, a hole in that set can't use them.
+3. **Placement in hole data:** `scenery.eventProps: [{ id, x, z, turn, scale? }]`, dropped on the ground like big props (lowest ground under the footprint). The zone is worked out from the spot; no zone field is needed. `validateHole` should fail if:
+   - the id isn't in the set's `eventProps` list;
+   - the footprint (scaled) is on the tee box or closer than 1.5 m to it;
+   - it is inside the tee camera's clear zone (±4 m from the tee's aim line, from 12 m behind the tee to the tee) or in front of the tee box beyond 4 m ahead **while within 15 m of the tee**;
+   - it is on the fairway, a bunker, water, the fringe or the green, or closer than 8 m to the green's edge;
+   - it is a `popupTent` within 25 m of the green.
+   The course designer keeps them out of the landing areas and the approach line by eye (HOLE_GUIDELINES); if this proves hard, a later check can test a few normal shot lines.
 4. **No collider** (look only). A tee shot starts beside them and leaves upward; nothing needs to hit them.
 5. **Drawing:** flat-shaded toon, fogged, banner and roof double-sided; instanced per piece (1–2 draw calls per hole). The flag stays still; keep the banner a separate part so a wind sway could be added later.
 6. **Scenery trees** are cleared off their footprints, as for big props.
-7. **QA Light:** the test tee in portrait and landscape; the aim view never looks through a tent or flag while aiming left / right; perf-check unchanged.
+7. **QA Light:** the test tee in portrait and landscape; the aim view never looks through a tent or flag while aiming left / right; the green flags don't hide the hole flag or the ball in the approach and putting views; perf-check unchanged.
