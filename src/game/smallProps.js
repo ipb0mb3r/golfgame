@@ -32,14 +32,14 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep) {
     return mesh;
   });
   const lastCam = new THREE.Vector3(Infinity, 0, 0), lastBall = new THREE.Vector3(Infinity, 0, 0), lastDir = new THREE.Vector3(), dir = new THREE.Vector3();
-  let drawn = 0, lastClear = -1;
+  let drawn = 0, lastClear = -1, lastDist = -1;
   // camera = the hole's camera (its position and view direction), ball = the ball's position
   function update(camera, ball) {
-    const clear = TUNE.PROP_BALL_CLEAR, step = SMALL_PROPS.moveStep, cam = camera.position;
+    const clear = TUNE.PROP_BALL_CLEAR, dist = TUNE.PROP_DRAW_DIST, step = SMALL_PROPS.moveStep, cam = camera.position;
     camera.getWorldDirection(dir);
-    if (clear === lastClear && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2 && 1 - dir.dot(lastDir) < SMALL_PROPS.turnStep) return;
-    lastCam.copy(cam); lastBall.copy(ball); lastDir.copy(dir); lastClear = clear;
-    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear, dir });
+    if (clear === lastClear && dist === lastDist && lastCam.distanceTo(cam) < step && lastBall.distanceTo(ball) < step / 2 && 1 - dir.dot(lastDir) < SMALL_PROPS.turnStep) return;
+    lastCam.copy(cam); lastBall.copy(ball); lastDir.copy(dir); lastClear = clear; lastDist = dist;
+    const shown = visibleSmallProps(props, cam, ball, part, { ballClear: clear, drawDist: dist, dir });
     for (const mesh of meshes) if (mesh) mesh.count = 0;
     for (const i of shown) {
       const mesh = meshes[props[i].pick];
@@ -53,12 +53,13 @@ export function addSmallProps(scene, hole, terrain, biome, look, keep) {
   // For tools / tests (window.__golf.smallProps()): how many were scattered and drawn, their triangles, and the
   // drawn prop nearest the ball (3D distance from the ball's centre to the prop's foot)
   function stats(ball) {
-    let nearest = Infinity;
+    let nearest = Infinity, farthest = 0;
     for (const mesh of meshes) if (mesh) for (let j = 0; j < mesh.count; j++) {
       const e = mesh.instanceMatrix.array, x = e[j * 16 + 12], y = e[j * 16 + 13], z = e[j * 16 + 14];
       nearest = Math.min(nearest, Math.hypot(x - ball.x, y - ball.y, z - ball.z));
+      farthest = Math.max(farthest, Math.hypot(x - lastCam.x, y - lastCam.y, z - lastCam.z));
     }
-    return { scattered: props.length, drawn, drawCalls: meshes.filter(Boolean).length, nearestToBall: nearest, tris: meshes.reduce((n, mesh, k) => n + (mesh?.count ?? 0) * parts[k].tris, 0) };
+    return { scattered: props.length, drawn, drawCalls: meshes.filter(Boolean).length, nearestToBall: nearest, farthestFromCamera: farthest, tris: meshes.reduce((n, mesh, k) => n + (mesh?.count ?? 0) * parts[k].tris, 0) };
   }
   return { update, stats };
 }

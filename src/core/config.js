@@ -491,6 +491,8 @@ export const TUNABLES = Object.freeze({
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones
   // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
   PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
+  // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
+  PROP_DRAW_DIST:        { def: 45,   min: 20,    max: 100 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.
