@@ -17,7 +17,7 @@ import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from 
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
-import { paintCourse } from './coursePainter.js';
+import { paintGround } from './coursePainter.js';
 import { buildScene, disposeScene } from './scene.js';
 import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
@@ -49,12 +49,12 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   const compact = !!round && round.number > 1;
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
-  const courseCanvas = paintCourse(hole, terrain.surfaceAt, biome, { green });
-  const { scene, camera, colliderOutlines, shore, smallProps } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
+  const ground = paintGround(hole, terrain.surfaceAt, biome, { green }); // AP6: the course map + the shader's surface mask
+  const { scene, camera, colliderOutlines, shore, smallProps } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
-  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles, biome, shore);
+  const drawMinimap = createMinimap(hole, ground.canvas, cup, play.obstacles, biome, shore);
 
   // Game state (core/states.js GAME_STATES): intro | flyover | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';

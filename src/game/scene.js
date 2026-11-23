@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
 import { TUNE, SMALL_PROPS } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
+import { detailTexture, MASK_AMOUNT, GRID } from '../core/ground.js';
+import { GROUND_LOOK } from '../core/config.js';
 import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
@@ -45,7 +47,8 @@ const FIXED_WHITE = 0xffffff; // the OB stakes (the golf rule colour, library wh
 // obstacles = play.obstacles (core/obstacles.js colliders): drawn from exactly the shapes the ball hits (K5)
 // models (AP3) = path → the loaded model geometry or null (assets.js cache.geometry): a model piece whose
 // file is not there is drawn as its procedural fallback (library `fallback`).
-export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, biome, models = () => null) {
+// painted (AP6) = the painted ground (coursePainter.js paintGround): { canvas, mask, level, stripe, green }
+export function buildScene(renderer, hole, terrain, painted, obstacles, biome, models = () => null) {
   const sc = hole.scenery, map = hole.map, P = biome.palette, look = pieceColours(biome, LIBRARY);
   const shapeOf = pieceShape(models);
   let ramp = null; const toon = () => (ramp ??= toonRamp()); // AP7a: the gradient trees' toon ramp, made only when one is drawn
@@ -83,12 +86,12 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     geo.setAttribute('uv', new THREE.BufferAttribute(m.uvs, 2));
     geo.setIndex(new THREE.BufferAttribute(m.index, 1));
     if (tint) geo.setAttribute('shoreTint', new THREE.BufferAttribute(tint, 4));
-    const tex = new THREE.CanvasTexture(courseCanvas);
+    const tex = new THREE.CanvasTexture(painted.canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     tex.userData.courseMap = true; // AP1: the perf overlay shows this one apart ("map (AP6)"), unrated until AP6
     const mat = new THREE.MeshLambertMaterial({ map: tex });
-    if (tint) shoreTinted(mat);
+    groundMaterial(mat, renderer, painted, P, tint);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.name = 'terrain'; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
     scene.add(mesh);
@@ -512,7 +515,7 @@ function obBox(hole) {
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: st.z1, z1: st.z0 };
 }
 // Lower the drawn terrain beyond the beach top (positions and normals, in place) → the shore tint per
-// vertex (rgb linear + amount), painted over the course map by shoreTinted
+// vertex (rgb linear + amount), painted over the course map by groundMaterial
 function lowerShore(m, shore, P) {
   const pos = m.positions, nor = m.normals, n = pos.length / 3, tint = new Float32Array(n * 4), E = 1;
   const rgb = { sand: new THREE.Color(P.sand).toArray(), rock: new THREE.Color(P.rock).toArray() };
@@ -528,13 +531,69 @@ function lowerShore(m, shore, P) {
   }
   return tint;
 }
-// The terrain material with the shore tint: the beach's sand and lava rock painted over the course map
-function shoreTinted(mat) {
+// The terrain material (AP6, DESIGN §8b "The ground material"): at level 2 the shader draws the mowing stripes,
+// the green's stripes or putting grid (box-filtered, so they stay crisp near and smooth far away) and the shared
+// tiling detail texture (speckle + brush dabs, amounts per kind from the surface mask); with the ocean backdrop,
+// the shore tint (the beach's sand and lava rock) is painted over it all. Levels 0 and 1 draw the map as it is.
+function groundMaterial(mat, renderer, ground, P, tint) {
+  const full = ground.level === 2 && !!ground.mask;
+  if (!full && !tint) return;
+  const uniforms = {};
+  if (full) {
+    const lin = k => new THREE.Color(P[k]);
+    const ratio = (a, b) => { const A = lin(a), B = lin(b); return new THREE.Vector3(B.r / Math.max(A.r, 1e-4), B.g / Math.max(A.g, 1e-4), B.b / Math.max(A.b, 1e-4)); };
+    const d = detailTexture(), t = GROUND_LOOK.texture;
+    const detail = new THREE.DataTexture(d.data, d.size, d.size);
+    detail.wrapS = detail.wrapT = THREE.RepeatWrapping;
+    detail.magFilter = THREE.LinearFilter; detail.minFilter = THREE.LinearMipmapLinearFilter; detail.generateMipmaps = true;
+    detail.anisotropy = renderer.capabilities.getMaxAnisotropy(); detail.needsUpdate = true;
+    const m = ground.mask, mask = new THREE.DataTexture(m.data, m.width, m.height);
+    mask.magFilter = THREE.LinearFilter; mask.minFilter = THREE.LinearMipmapLinearFilter; mask.generateMipmaps = true; mask.needsUpdate = true;
+    mask.userData.courseMap = true; // the course map's data: shown with it in the perf overlay
+    mat.groundDetail = detail; mat.groundMask = mask; // material fields, so disposeScene (and the perf count) find them
+    const gl = lin('gridLine');
+    Object.assign(uniforms, {
+      groundDetail: { value: detail }, groundMask: { value: mask },
+      groundStripe: { value: ground.stripe }, groundFairwayRatio: { value: ratio('fairwayA', 'fairwayB') }, groundGreenRatio: { value: ratio('greenA', 'greenB') },
+      groundGrid: { value: ground.green === 'grid' ? 1 : 0 }, groundGridLine: { value: new THREE.Vector3(gl.r, gl.g, gl.b) },
+      groundTile: { value: t.tile }, groundTurn: { value: new THREE.Vector2(Math.cos(t.turn), Math.sin(t.turn)) },
+    });
+  }
   mat.onBeforeCompile = s => {
-    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 shoreTint;\nvarying vec4 vShoreTint;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvShoreTint = shoreTint;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vShoreTint;')
-      .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vShoreTint.rgb, vShoreTint.a);');
+    Object.assign(s.uniforms, uniforms);
+    let vh = '', vb = '', fh = '', fb = '';
+    if (full) {
+      vh += 'varying vec2 vGroundXZ;\n'; vb += 'vGroundXZ = position.xz;\n';
+      fh += `varying vec2 vGroundXZ;
+uniform sampler2D groundDetail; uniform sampler2D groundMask; uniform float groundStripe; uniform vec3 groundFairwayRatio;
+uniform vec3 groundGreenRatio; uniform float groundGrid; uniform vec3 groundGridLine; uniform float groundTile; uniform vec2 groundTurn;
+float groundOddF(float t) { return floor(t * 0.5) + clamp(t - 2.0 * floor(t * 0.5) - 1.0, 0.0, 1.0); }
+float groundOdd(float t) { float w = max(fwidth(t), 1e-4) * 0.5; return (groundOddF(t + w) - groundOddF(t - w)) / (2.0 * w); }
+float groundLineF(float u, float a) { return floor(u) * a + min(fract(u), a); }
+float groundLine(float u, float a) { float w = max(fwidth(u), 1e-4) * 0.5; return (groundLineF(u + w, a) - groundLineF(u - w, a)) / (2.0 * w); }
+`;
+      fb += `{
+  vec4 gm = texture2D(groundMask, vMapUv);
+  vec2 gw = vGroundXZ;
+  diffuseColor.rgb *= mix(vec3(1.0), groundFairwayRatio, (1.0 - groundOdd(gw.y / groundStripe)) * gm.r);
+  if (groundGrid < 0.5) diffuseColor.rgb *= mix(vec3(1.0), groundGreenRatio, (1.0 - groundOdd((gw.x - gw.y) / 2.5)) * gm.g);
+  vec2 gq = vec2(groundTurn.x * gw.x - groundTurn.y * gw.y, groundTurn.y * gw.x + groundTurn.x * gw.y) / groundTile;
+  vec4 gd = texture2D(groundDetail, gq);
+  diffuseColor.rgb *= 1.0 + ${MASK_AMOUNT.toFixed(3)} * (gm.b * (gd.r - 0.5) + gm.a * (gd.g * 2.0 - 1.0));
+  if (groundGrid > 0.5) {
+    float ga = ${(GRID.line / GRID.step).toFixed(4)};
+    float gl = max(groundLine(gw.x / ${GRID.step.toFixed(1)}, ga), groundLine(gw.y / ${GRID.step.toFixed(1)}, ga));
+    diffuseColor.rgb = mix(diffuseColor.rgb, groundGridLine, clamp(gl, 0.0, 1.0) * gm.g);
+  }
+}
+`;
+    }
+    if (tint) {
+      vh += 'attribute vec4 shoreTint;\nvarying vec4 vShoreTint;\n'; vb += 'vShoreTint = shoreTint;\n';
+      fh += 'varying vec4 vShoreTint;\n'; fb += 'diffuseColor.rgb = mix(diffuseColor.rgb, vShoreTint.rgb, vShoreTint.a);\n';
+    }
+    s.vertexShader = s.vertexShader.replace('#include <common>', `#include <common>\n${vh}`).replace('#include <begin_vertex>', `#include <begin_vertex>\n${vb}`);
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>\n${fh}`).replace('#include <map_fragment>', `#include <map_fragment>\n${fb}`);
   };
-  mat.customProgramCacheKey = () => 'shoreTint';
+  mat.customProgramCacheKey = () => `ground${full ? 2 : 0}${tint ? '+shore' : ''}`;
 }
