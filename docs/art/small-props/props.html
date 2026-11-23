@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Small Props Options</title>
+<!-- Small props, artist mock-up (docs/art/small-props/SPEC.md). Geometry: pieces.js. Stand-alone; reads
+     src/core and src/biomes only, never changes them.
+     ?piece=tuft|flowers|bush|pebbles|reeds  &biome=meadow-day|alpine-day|island-day
+        → 3 columns (looks A B C) × 2 rows (close-up, view from the fairway)
+     ?mix=tuft:A,flowers:A,bush:B,pebbles:A,reeds:A  &biomes=meadow-day,alpine-day,island-day
+        → the chosen looks scattered together, one column per biome
+     &opts=C,C1,C2 (which looks)  &petal=propB (flowers in the second prop colour)  &label=0  — Agent: artist -->
+<script type="importmap">{ "imports": { "three": "../../../vendor/three-0.187.0/three.module.js" } }</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+  #grid { position: fixed; inset: 0; display: grid; pointer-events: none; }
+  .cell { position: relative; border: 2px solid #fff; box-sizing: border-box; }
+  .tag { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,.92); color: #1d3340; padding: 4px 11px; border-radius: 99px; font-size: 12px; font-weight: 700; white-space: nowrap; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .tag small { display: block; font-weight: 500; font-size: 10px; color: #4a5a64; }
+  .row { position: absolute; bottom: 6px; left: 8px; color: #fff; font-size: 11px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  body.nolabel .tag { display: none; }
+</style>
+</head>
+<body>
+<div id="grid"></div>
+<script type="module">
+import * as THREE from 'three';
+import { PIECES, rng, tris } from './pieces.js';
+import { mixHex } from '../../../src/core/backdrop.js';
+import meadow from '../../../src/biomes/meadow-day.js';
+import alpine from '../../../src/biomes/alpine-day.js';
+import island from '../../../src/biomes/island-day.js';
+const SETS = { 'meadow-day': meadow, 'alpine-day': alpine, 'island-day': island };
+const q = new URLSearchParams(location.search);
+if (q.get('label') === '0') document.body.classList.add('nolabel');
+const TAU = Math.PI * 2;
+
+// the mock scatter (per hectare; light sprinkle, owner 2026-11-22). cluster = copies per patch, spread m
+const SCATTER = {
+  tuft:    { perHa: 1200, cluster: [1, 3], spread: 1.2, scale: [0.8, 1.3], on: 'rough' },
+  flowers: { perHa: 300, cluster: [3, 6], spread: 2.0, scale: [0.8, 1.2], on: 'rough' },
+  bush:    { perHa: 30,  cluster: [1, 3], spread: 2.5, scale: [0.8, 1.25], on: 'deep' },
+  pebbles: { perHa: 90,  cluster: [1, 3], spread: 1.0, scale: [0.8, 1.4], on: 'rough' },
+  reeds:   { perHa: 0,   cluster: [2, 4], spread: 0.8, scale: [0.85, 1.2], on: 'pond' },
+};
+
+const grad = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1);
+grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.needsUpdate = true;
+const toon = o => new THREE.MeshToonMaterial({ gradientMap: grad, ...o });
+
+// one look → a merged geometry of many copies (placements: [x, z, scale, turn])
+function geometryOf(look, P, places, overrides = {}) {
+  const pos = [], col = [], idx = []; const slots = { ...look.slots, ...overrides };
+  places.forEach(([x, z, s, t], k) => {
+    const parts = look.build(1 + (k % 5) * 7919), c = Math.cos(t), sn = Math.sin(t);
+    for (const p of parts) {
+      const base = pos.length / 3, lo = P[slots[p.lo]], hi = P[slots[p.hi]];
+      for (let i = 0; i < p.positions.length; i += 3) {
+        const px = p.positions[i] * s, py = p.positions[i + 1] * s, pz = p.positions[i + 2] * s;
+        pos.push(x + px * c - pz * sn, py, z + px * sn + pz * c);
+        const cc = new THREE.Color(mixHex(lo, hi, p.w[i / 3])); col.push(cc.r, cc.g, cc.b);
+      }
+      for (const i of p.indices) idx.push(i + base);
+    }
+  });
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals(); return g;
+}
+
+// a stretch of a real hole: fairway down the middle (x −12 … 12), rough, deeper rough past x ±32, a pond on the right
+const POND = { x: 24, z: -26, r: 5 };
+function world(P) {
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(P.fog, 60, 700);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(800, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(P.skyTop) }, hor: { value: new THREE.Color(P.skyHorizon) } },
+    vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 hor; varying vec3 vp; void main(){ float t = clamp(vp.y*1.9, 0.0, 1.0); gl_FragColor = vec4(mix(hor, top, pow(t, 0.62)), 1.0); }' }));
+  scene.add(sky);
+  scene.add(new THREE.HemisphereLight(P.ambient, P.shadow, 1.9)); const sun = new THREE.DirectionalLight(P.sun, 2.2); sun.position.set(-60, 80, 40); scene.add(sun);
+  const flat = (w, d, c, x, z, y = 0) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), toon({ color: c })); m.position.set(x, y, z); scene.add(m); return m; };
+  flat(2000, 2000, P.deepRough, 0, 0);
+  flat(64, 2000, P.rough, 0, 0, 0.005);
+  flat(26, 2000, P.fringe, 0, 0, 0.01); flat(24, 2000, P.fairwayA, 0, 0, 0.015);
+  for (let z = -6; z > -400; z -= 12) flat(24, 6, P.fairwayB, 0, z, 0.02);
+  const bank = new THREE.Mesh(new THREE.CircleGeometry(POND.r + 0.5, 28).rotateX(-Math.PI / 2), toon({ color: P.bank })); bank.position.set(POND.x, 0.025, POND.z); scene.add(bank);
+  const pond = new THREE.Mesh(new THREE.CircleGeometry(POND.r, 28).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: P.water })); pond.position.set(POND.x, 0.03, POND.z); scene.add(pond);
+  return scene;
+}
+const ball = (scene, x, z) => { const b = new THREE.Mesh(new THREE.SphereGeometry(0.0214 * 2.2, 16, 10), toon({ color: '#ffffff' })); b.position.set(x, 0.047, z); scene.add(b); };
+
+// placements: patches by density on a surface band; plus a hand-placed hero group for the close-up
+function scatter(kind, seed, area) {
+  const S = SCATTER[kind], r = rng(seed), out = [];
+  const add = (x, z) => out.push([x, z, S.scale[0] + r() * (S.scale[1] - S.scale[0]), r() * TAU]);
+  if (S.on === 'pond') { for (let i = 0; i < 9; i++) { const a = -0.6 + i * 0.55 + r() * 0.3, n = S.cluster[0] + Math.floor(r() * (S.cluster[1] - S.cluster[0] + 1));
+      for (let k = 0; k < n; k++) { const aa = a + (r() - 0.5) * 0.25, d = POND.r - 0.1 + r() * 0.9; add(POND.x + Math.cos(aa) * d, POND.z + Math.sin(aa) * d); } } return out; }
+  const [x0, x1] = S.on === 'deep' ? [28, 55] : [13, 32], [z0, z1] = area, ha = 2 * (x1 - x0) * (z1 - z0) / 10000;
+  const avg = (S.cluster[0] + S.cluster[1]) / 2, patches = Math.round(S.perHa * ha / avg);
+  for (let p = 0; p < patches; p++) {
+    const side = r() < 0.5 ? -1 : 1, cx = side * (x0 + r() * (x1 - x0)), cz = z0 + r() * (z1 - z0);
+    if (Math.hypot(cx - POND.x, cz - POND.z) < POND.r + 2) continue;
+    const n = S.cluster[0] + Math.floor(r() * (S.cluster[1] - S.cluster[0] + 1));
+    for (let k = 0; k < n; k++) add(cx + (r() - 0.5) * 2 * S.spread, cz + (r() - 0.5) * 2 * S.spread);
+  }
+  return out;
+}
+// the close-up hero group (around x 16, z −10), the ball in the rough beside it
+const HERO = { x: 16, z: -10 };
+function hero(kind, seed) {
+  const r = rng(seed), out = [], p = (x, z, s = 1) => out.push([HERO.x + x, HERO.z + z, s, r() * TAU]);
+  if (kind === 'tuft') { p(0, 0); p(0.7, -0.4, 0.9); p(-0.5, -0.9, 1.2); p(1.1, -1.4); p(-0.2, -1.8, 0.85); }
+  if (kind === 'flowers') { p(0, -0.3); p(0.8, -0.8, 0.9); p(-0.6, -1.1, 1.1); p(0.3, -1.7); }
+  if (kind === 'bush') { p(0.6, -2.6); p(-1.0, -3.6, 0.85); }
+  if (kind === 'pebbles') { p(0.2, -0.3); p(-0.7, -1.0, 1.2); p(0.9, -1.2, 0.8); }
+  return out;
+}
+const CAM = {
+  close: { tuft: [[HERO.x - 0.6, 0.75, HERO.z + 1.7], [HERO.x + 0.2, 0.1, HERO.z - 0.8]],
+           flowers: [[HERO.x - 0.6, 0.85, HERO.z + 1.7], [HERO.x + 0.1, 0.05, HERO.z - 0.9]],
+           bush: [[HERO.x - 1.8, 1.6, HERO.z + 2.2], [HERO.x, 0.4, HERO.z - 3.0]],
+           pebbles: [[HERO.x - 0.5, 0.8, HERO.z + 1.6], [HERO.x + 0.1, 0.05, HERO.z - 0.8]],
+           reeds: [[POND.x - 7.5, 1.5, POND.z + 2.5], [POND.x - 3, 0.6, POND.z - 1]] },
+  tee: [[21, 2.2, 6], [19, 0, -22]],
+  teeBush: [[22, 2.4, 9], [22, 0, -20]],
+};
+
+// in the mix view: which pieces a biome leaves out, and the bush flower colour per biome
+// owner 2026-11-23: the bush flowers on Island only; Meadow and Alpine get light-green spots (X33 slot override)
+const SCENE_SKIP = { }, BUSH_FLOWER = { 'meadow-day': 'leafTop', 'alpine-day': 'leafTop', 'island-day': 'propA' };
+// in the mix close-up, each piece's hero group sits in its own spot so they don't overlap
+const HERO_OFF = { tuft: [-1.2, 0.6], flowers: [0.6, 0.4], bush: [1.6, 0], pebbles: [-1.6, -1.6], pebbles2: [0.2, -2.6] };
+
+// ---- the panels
+const panels = [];
+const pieceKind = q.get('piece'), mix = q.get('mix');
+if (pieceKind) {
+  const set = SETS[q.get('biome') || 'meadow-day'], P = set.palette, ov = q.get('petal') ? { petal: q.get('petal'), flower: q.get('petal') } : {};
+  for (const opt of (q.get('opts') || 'A,B,C').split(',')) {
+    const look = PIECES[pieceKind][opt];
+    for (const view of ['close', 'tee']) {
+      const scene = world(P);
+      const places = [...hero(pieceKind, 5), ...scatter(pieceKind, 11, view === 'close' ? [-60, 4] : [-140, 16])];
+      scene.add(new THREE.Mesh(geometryOf(look, P, places, ov), toon({ vertexColors: true, side: THREE.DoubleSide })));
+      ball(scene, HERO.x + 0.45, HERO.z + 0.2); ball(scene, 20, -6);
+      panels.push({ scene, view, cam: view === 'close' ? CAM.close[pieceKind] : (pieceKind === 'bush' ? CAM.teeBush : CAM.tee),
+        tag: view === 'close' ? `${look.name}<small>${look.sub} · ${tris(look.build(1))} triangles</small>` : '' , row: view === 'close' ? 'close-up' : 'from the fairway' });
+    }
+  }
+} else {
+  const picks = Object.fromEntries((mix || 'tuft:A,flowers:C,bush:D2,pebbles:A,pebbles2:B,reeds:B').split(',').map(s => s.split(':')));
+  const biomes = (q.get('biomes') || 'meadow-day,alpine-day,island-day').split(',');
+  for (const id of biomes) {
+    const set = SETS[id], P = set.palette;
+    // per-biome flower colours: half the patches in propA, half in propB (the X33 slot override)
+    for (const view of ['close', 'tee']) {
+      const scene = world(P);
+      for (const [key, opt] of Object.entries(picks)) {
+        const kind = key.replace(/\d$/, ''), look = PIECES[kind][opt]; if (!look) continue;
+        const [ox, oz] = HERO_OFF[key] || [0, 0], seed = 11 + key.length * 3;
+        if (SCENE_SKIP[id]?.includes(kind)) continue;
+        let places = [...hero(kind, 5).map(([x, z, s, t]) => [x + ox, z + oz, s, t]), ...scatter(kind, seed, view === 'close' ? [-60, 4] : [-140, 16])];
+        if (kind === 'flowers') { const a = places.filter((_, i) => Math.floor(i / 4) % 2 === 0), b = places.filter((_, i) => Math.floor(i / 4) % 2 === 1);
+          scene.add(new THREE.Mesh(geometryOf(look, P, a), toon({ vertexColors: true, side: THREE.DoubleSide })));
+          scene.add(new THREE.Mesh(geometryOf(look, P, b, { petal: 'propB' }), toon({ vertexColors: true, side: THREE.DoubleSide }))); continue; }
+        scene.add(new THREE.Mesh(geometryOf(look, P, places, kind === 'bush' && BUSH_FLOWER[id] ? { flower: BUSH_FLOWER[id] } : {}), toon({ vertexColors: true, side: THREE.DoubleSide })));
+      }
+      ball(scene, HERO.x + 0.45, HERO.z + 0.2); ball(scene, 18, -34);
+      panels.push({ scene, view, cam: view === 'close' ? [[HERO.x - 2.0, 1.7, HERO.z + 3.4], [HERO.x + 0.6, 0.2, HERO.z - 2.2]] : CAM.tee,
+        tag: view === 'close' ? `${set.name}` : '', row: view === 'close' ? 'close-up' : 'from the fairway' });
+    }
+  }
+}
+
+const cols = panels.length / 2, grid = document.getElementById('grid');
+grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`; grid.style.gridTemplateRows = '1fr 1fr';
+const order = []; for (const view of ['close', 'tee']) panels.forEach(p => p.view === view && order.push(p));
+for (const p of order) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = (p.tag ? `<div class="tag">${p.tag}</div>` : '') + `<div class="row">${p.row}</div>`; grid.appendChild(d); }
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight); renderer.setScissorTest(true); document.body.prepend(renderer.domElement);
+const W = innerWidth / cols, H = innerHeight / 2;
+order.forEach((p, i) => {
+  const c = i % cols, r = Math.floor(i / cols), cam = new THREE.PerspectiveCamera(p.view === 'close' ? 50 : 42, W / H, 0.05, 3000);
+  cam.position.set(...p.cam[0]); cam.lookAt(...p.cam[1]);
+  renderer.setViewport(c * W, (1 - r) * H, W, H); renderer.setScissor(c * W, (1 - r) * H, W, H); renderer.render(p.scene, cam);
+});
+document.title = 'ready';
+</script>
+</body>
+</html>
