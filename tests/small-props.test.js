@@ -111,6 +111,16 @@ test('AP7c: the smallProps format: a bare id = weight 1, weights, clusters; { pi
   assert.deepEqual([a.petal, b.petal], [meadow.palette.propA, meadow.palette.propB]);
 });
 
+test('the bush dome shades low at the foot to top at the crown, like the trees (SPEC)', () => {
+  const p = smallPropPart('flowerBush');
+  const dome = []; // the first 30 triangles are the dome; its vertices come first
+  const used = new Set(p.indices.slice(0, 30 * 3));
+  for (const v of used) dome.push([p.positions[v * 3 + 1], p.w[v]]);
+  const ys = dome.map(d => d[0]), lo = Math.min(...ys), hi = Math.max(...ys);
+  for (const [y, w] of dome) { if (y - lo < 1e-6) assert.ok(Math.abs(w) < 1e-6, 'foot w = 0'); if (hi - y < 1e-6) assert.ok(Math.abs(w - 1) < 1e-6, 'crown w = 1'); }
+  assert.ok(hi - lo > 0.5);
+  assert.ok(dome.some(d => d[0] - lo < 1e-6) && dome.some(d => hi - d[0] < 1e-6));
+});
 test('AP7d: the six pieces: ids, ≤ 50 triangles, the artist\'s counts, the library slots, valid shapes', () => {
   const ids = ['grassTuft', 'flowerPatch', 'flowerBush', 'pebbles', 'flatStone', 'reeds'];
   assert.deepEqual(SMALL_PROP_PIECES.slice().sort(), ids.slice().sort());

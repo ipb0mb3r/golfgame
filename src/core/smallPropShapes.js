@@ -72,9 +72,9 @@ const SHAPES = {
       return part(head(Math.cos(a) * d, 0.03, Math.sin(a) * d * 0.8, 0.075, 5, r() * 3), 'petal', 'petal');
     });
   },
-  // a green dome (crown 'low', foot 'top', as in the approved mock-up) with 4 raised flower clumps (30 + 4 × 4 = 46 triangles)
+  // a green dome (foot 'low' → crown 'top', like the trees, per the SPEC) with 4 raised flower clumps (30 + 4 × 4 = 46 triangles)
   flowerBush(r) {
-    const d = dome(6, r() * 3); d.w = d.w.map(v => 1 - v);
+    const d = dome(6, r() * 3);
     const out = [part(d, 'low', 'top')];
     for (let i = 0; i < 4; i++) out.push(part(spot(0.3 + r() * 0.8, (i / 4) * TAU + r() * 0.8, 0.19, 4, 1.12, 0.55), 'flower', 'flower'));
     return out;
