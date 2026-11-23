@@ -114,4 +114,23 @@ export const LIBRARY = Object.freeze({
     chaletTall: { desc: 'Alpine: the tall chalet, 10 × 9 m, 11 m tall: stone and two wood floors, two balconies with 2 geranium boxes each, a steeper roof.', slots: { stone: 'propSnow', wood: 'wood', roof: 'roof', shut: 'accent', flower: 'accent', leaf: 'leaf', glass: 'glass' }, scale: [0.9, 1.15], size: 1.8, tris: 404 },
     beachHut: { desc: 'Island: a thatched stilt hut, 3.6 × 3.6 m (+ deck), 4.7 m tall: 4 short stilts, a wooden deck and room, a steep thatch pyramid roof, a turquoise door and side shutter, a step. Never below scale 0.9 (its door reads door-sized next to the golfer).', slots: { wall: 'wood', post: 'trunk', roof: 'roof', door: 'water', trim: 'propSnow' }, scale: [0.9, 1.15], size: 1.8, tris: 114 },
   },
+  // AP7f: fence looks laid along a line in the hole data (scenery.fences: [{ id, points }], beyond OB + 2 m only); the
+  // set lists which it offers (`fences`). The artist's owner-approved spec docs/art/fence/SPEC.md; shapes in
+  // core/fenceShapes.js (a post part and a span part, repeated along the line). Flat-shaded toon, fogged, one merged
+  // mesh per look per hole. No collider, no physics. tris = one segment (a post + a span; ≤ 100, tested); spacing = m
+  // between posts at 1× (× the FENCE_SCALE tunable, default 1.5, like the size). Each slot pair is lo (foot / underside)
+  // → hi (top).
+  fences: {
+    railFence: { desc: 'Meadow, Alpine: a tidy paddock fence, square posts (0.16 m, 1.2 m tall) and two flat rails at 0.45 and 0.95 m on the posts\' front face, dark at the foot / underside, lighter on top.', slots: { post: 'trunk', postTop: 'wood', rail: 'trunk', railTop: 'wood' }, spacing: 3, tris: 36 },
+    ropeFence: { desc: 'Island: crooked 5-sided driftwood posts (1.0 m, leaning, each turned its own way) and two sagging ropes at 0.85 and 0.45 m, lighter on top.', slots: { post: 'trunk', postTop: 'bank', rope: 'lip', ropeTop: 'propSnow' }, spacing: 2.6, tris: 63 },
+  },
+  // AP7g: event props placed by hand in the hole data (scenery.eventProps: [{ id, x, z, turn, scale }]: at the tee,
+  // the side of the course, behind the green; core/eventProps.js checks the zones); the set lists which it offers
+  // (`eventProps`). The artist's owner-approved spec docs/art/tee-props/SPEC.md; shapes in core/eventPropShapes.js.
+  // Coloured from the biome's accents. Flat-shaded toon, fogged, double-sided, one instanced draw call per piece per
+  // hole, drawn at the EVENT_PROP_SCALE tunable (default 1.3). No collider, no physics. tris = one copy (≤ 300, tested).
+  eventProps: {
+    featherFlag: { desc: 'A tall feather flag, 0.75 × 3.4 m: a banner with a rounded top on a thin white pole in a small stone base; body accent, a white stripe, the top cap subAccent. Still (no wind sway yet).', slots: { pole: 'propSnow', body: 'accent', top: 'subAccent', stripe: 'propSnow', base: 'rock' }, tris: 45 },
+    popupTent: { desc: 'An open pop-up tent, 3 × 3 m, 3.2 m tall: 4 thin white legs, an accent pyramid roof and a subAccent valance on all four sides, no walls.', slots: { leg: 'propSnow', roof: 'accent', valance: 'subAccent' }, tris: 104 },
+  },
 });
