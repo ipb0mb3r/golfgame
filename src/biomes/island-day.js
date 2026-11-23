@@ -29,7 +29,7 @@ export default {
     gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#3e3a40',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundCanopy'], // round canopy trees in play; palms in play after AP7b (colliders)
+  onTrees: ['palmTree', 'roundCanopy'], // palms (AP7b dome crown) and round trees in play; real Island holes give palms flat colliders (canopyH / 2R ≤ 0.8)
   offTrees: ['palmTree', 'roundCanopy'], // palms (leafAlt fronds) and round trees as scenery (AP7a)
   rocks: ['roundBoulder'],    // dark lava boulders
   sky: 'gradientSky', // the gradient sky (AP6a)
