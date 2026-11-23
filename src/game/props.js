@@ -1,6 +1,7 @@
 // Flag, cup, ball, shadow, flight trail and the aim guide.
 import * as THREE from 'three';
 import { CUP_R, BALL_R, HUD, TUNE, FLAG_FX, UI_COLORS } from '../core/config.js';
+import { waterSurfaceOn } from '../core/water.js';
 import { flagColour } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 
@@ -39,7 +40,10 @@ export function createProps(scene, hole, terrain, cup, biome) {
   let stickShown = hasStick, wobbleT0 = -1, wobbleX = 0, wobbleZ = 0; // wobble: start time, direction the top leans
 
   // Ball, shadow, flight trail
-  const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 20, 14), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333333 }));
+  // X43: the ball is drawn after the see-through water surface (a see-through draw of its own, opacity 1),
+  // so a ball in or under the water always reads
+  const ballMesh = new THREE.Mesh(new THREE.SphereGeometry(BALL_R, 20, 14), new THREE.MeshLambertMaterial({ color: 0xffffff, emissive: 0x333333, transparent: waterSurfaceOn(TUNE.WATER_SURFACE) }));
+  ballMesh.renderOrder = ballMesh.material.transparent ? 1 : 0;
   scene.add(ballMesh);
   const shadow = new THREE.Mesh(new THREE.CircleGeometry(BALL_R * 1.1, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }));
   shadow.rotation.x = -Math.PI / 2; scene.add(shadow);

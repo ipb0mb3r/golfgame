@@ -303,6 +303,27 @@ export const GROUND_LOOK = Object.freeze({
   }),
 });
 
+// X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
+//   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
+//   at least; drop: m a body's flat level sits under its lowest shore point; dive: m under the ground the shore
+//   ring is put, so the ground cuts the surface at the edge.
+//   tint: how far the surface colour goes from the palette's `water` toward `skyHorizon` (lighter than the bed).
+//   fresnel: [power, strength] the sky (`skyHorizon`) reflected at a grazing angle, and how much more opaque the
+//   surface gets there; sheen: [shininess, strength] the sun's soft highlight (× WATER_SHEEN), sun direction from the
+//   scene's light; ripple: [[wavelength m, speed m/s, angle rad, slope], ...] a few slow sine waves that tilt the
+//   normal (no texture), faded to flat between fade[0] and fade[1] m from the camera so nothing shimmers far away.
+//   renderOrder: drawn first among the see-through things (the aim marks, rings and the ball's shadow come after,
+//   so they read on top); the ball is drawn after the water too (props.js).
+export const WATER_LOOK = Object.freeze({
+  step: 1, lift: 0.08, drop: 0.05, dive: 0.15,
+  tint: 0.3,
+  fresnel: Object.freeze([3, 0.55]),
+  sheen: Object.freeze([60, 0.5]),
+  ripple: Object.freeze([Object.freeze([7, 0.35, 0.4, 0.05]), Object.freeze([4.3, 0.25, 2.1, 0.035]), Object.freeze([2.6, 0.18, -1.2, 0.02])]),
+  fade: Object.freeze([25, 90]),
+  renderOrder: -0.2,
+});
+
 // AP7c: small props scattered by a biome set's rule (DESIGN §8b "Small props", core/smallProps.js). Looks only:
 // no physics, no effect on the aim line or the warnings. Every number of the scatter and the drawing is here.
 //   surfaces: the ONLY surfaces a prop may stand on, whatever the set's `on` says (never tee, fairway, fringe,
@@ -550,6 +571,13 @@ export const TUNABLES = Object.freeze({
   // AP7e follow-up (owner: big props hard to notice; looks only, default 2.5 = owner pick 2026-11-23): BIG_PROP_SCALE = one multiplier on every big prop's size, on top of its own scale (0.9–1.15);
   // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
   BIG_PROP_SCALE:        { def: 2.5,    min: 0.5,   max: 4 },
+  // X43 (owner: "a simple semi-transparent surface on the water"; looks only): WATER_SURFACE 1 = the see-through surface over
+  // every water area (the old opaque pond surface is not drawn), 0 = before X43 (the painted bed, plus the old pond
+  // surface on holes that have one); WATER_OPACITY = its opacity looking straight down (more at a grazing angle);
+  // WATER_SHEEN = × the sun's highlight (0 = none). Rounded / read when the hole is built.
+  WATER_SURFACE:         { def: 1,    min: 0,     max: 1 },
+  WATER_OPACITY:         { def: 0.5,  min: 0.1,   max: 0.9 },
+  WATER_SHEEN:           { def: 1,    min: 0,     max: 3 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

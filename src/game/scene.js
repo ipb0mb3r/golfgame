@@ -15,6 +15,8 @@ import { addBigProps } from './bigProps.js';
 import { holeBigProps } from '../holes/dev-big-props.js';
 import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
 import { clearOf, stakeThings } from '../core/smallProps.js';
+import { waterSurface, waterColours, waterSurfaceOn } from '../core/water.js';
+import { WATER_LOOK } from '../core/config.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -100,8 +102,10 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
     scene.add(mesh);
   }
 
-  // Water surface (holes whose pond sits in a bowl)
-  if (sc.water) {
+  // Water surface (holes whose pond sits in a bowl). X43/X42: with WATER_SURFACE on, the see-through surface
+  // below replaces it (it hid the painted bed's deep-to-light gradient).
+  if (waterSurfaceOn(TUNE.WATER_SURFACE)) addWaterSurface(scene, hole, terrain, P, light);
+  else if (sc.water) {
     const w = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshLambertMaterial({ color: look('furniture', biome.furniture.pond).surface, transparent: true, opacity: 0.88 }));
     w.rotation.x = -Math.PI / 2; w.scale.set(sc.water.rx * sc.water.scale, sc.water.rz * sc.water.scale, 1);
     w.position.set(sc.water.cx, sc.water.y, sc.water.cz); w.name = 'water';
@@ -153,6 +157,77 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
 // with one geometry and one material. `matrices` = the instances' local matrices (matrixOf below),
 // `colors` (optional) = a THREE.Color per instance, multiplied with the material's colour.
+// X43 (DESIGN §8b "The water surface"): one see-through mesh over every water area of the hole (core/water.js:
+// flat at a pond's level, just over a creek's bed, running under the bank at the edge), so the painted bed and
+// its deep-to-light gradient show through. Colours from the palette (core/water.js waterColours): a lighter tint
+// of `water`, the sky (`skyHorizon`) at a grazing angle, a soft sheen of `sun`; a few slow sine ripples near the
+// camera. Fogged. No depth written; drawn first of the see-through things (WATER_LOOK.renderOrder).
+function addWaterSurface(scene, hole, terrain, P, light) {
+  const w = waterSurface(hole, terrain);
+  if (!w) return null;
+  const L = WATER_LOOK, c = waterColours(P);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(w.positions, 3));
+  geo.setIndex(new THREE.BufferAttribute(w.index, 1));
+  geo.computeBoundingSphere();
+  const waves = L.ripple.map(([len, speed, angle, slope]) => {
+    const k = 2 * Math.PI / len;
+    return new THREE.Vector4(Math.cos(angle) * k, Math.sin(angle) * k, k * speed, slope);
+  });
+  const mat = new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
+      uTint: { value: new THREE.Color(c.tint) }, uSky: { value: new THREE.Color(c.sky) }, uSun: { value: new THREE.Color(c.sun) },
+      uSunDir: { value: new THREE.Vector3(...light.sunPos).normalize() }, uOpacity: { value: TUNE.WATER_OPACITY },
+      uSheen: { value: L.sheen[1] * TUNE.WATER_SHEEN }, uShine: { value: L.sheen[0] },
+      uFres: { value: new THREE.Vector2(...L.fresnel) }, uFade: { value: new THREE.Vector2(...L.fade) },
+      uTime: { value: 0 }, uWaves: { value: waves },
+    }]),
+    vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, fog: true,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'water surface'; mesh.renderOrder = L.renderOrder;
+  mesh.onBeforeRender = () => { mat.uniforms.uTime.value = (performance.now() / 1000) % 3600; };
+  scene.add(mesh);
+  return mesh;
+}
+const WATER_VERT = /* glsl */ `
+varying vec3 vWorld;
+#include <fog_pars_vertex>
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vec4 mvPosition = viewMatrix * wp;
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
+}`;
+const WATER_FRAG = /* glsl */ `
+uniform vec3 uTint, uSky, uSun, uSunDir;
+uniform float uOpacity, uSheen, uShine, uTime;
+uniform vec2 uFres, uFade;
+uniform vec4 uWaves[3];
+varying vec3 vWorld;
+#include <fog_pars_fragment>
+void main() {
+  vec3 toCam = cameraPosition - vWorld;
+  float dist = length(toCam);
+  vec3 V = toCam / dist;
+  float amp = 1.0 - smoothstep(uFade.x, uFade.y, dist);
+  vec2 g = vec2(0.0);
+  for (int i = 0; i < 3; i++) {
+    vec4 w = uWaves[i];
+    g += w.w * cos(dot(w.xy, vWorld.xz) - w.z * uTime) * normalize(w.xy);
+  }
+  vec3 N = normalize(vec3(-g.x * amp, 1.0, -g.y * amp));
+  float f = pow(1.0 - clamp(dot(N, V), 0.0, 1.0), uFres.x) * uFres.y;
+  float spec = pow(max(dot(N, normalize(uSunDir + V)), 0.0), uShine) * uSheen;
+  gl_FragColor = vec4(mix(uTint, uSky, f) + uSun * spec, clamp(uOpacity + f * (1.0 - uOpacity) + spec, 0.0, 1.0));
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #include <fog_fragment>
+}`;
+
 function instanced(geo, mat, matrices, name, colors = null) {
   const m = new THREE.InstancedMesh(geo, mat, matrices.length);
   matrices.forEach((x, i) => m.setMatrixAt(i, x));
