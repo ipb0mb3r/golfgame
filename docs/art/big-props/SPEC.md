@@ -74,3 +74,6 @@ Because these are slots, another biome can reuse a piece with its own colours. E
 
 ## 7. Requests for course designer
 - On the next Meadow, Alpine and Island holes, place 1–3 props as in §4, and check each hole stays ≤ 300k triangles (`tools/perf-check.mjs`).
+
+## 8. Size in the game (owner 2026-11-23)
+`BIG_PROP_SCALE` 2.5 (#128) draws every big prop at 2.5× the sizes above, so it is easy to notice from the tee. Close up, the beach hut's door then stands about twice a golfer's height and the chalet's about three times (`04-hut-sizes.jpg`, `05-chalet-sizes.jpg`: 2.5 / 1.8 / 1.5× beside a 1.8 m golfer). **Owner's pick:** the **beach hut and both chalets at 1.8×**, the **windmill at 2.5×**. This needs a per-piece cap or factor; see the dev request on the "Art: big props in Meadow, Alpine, Island" PR.
