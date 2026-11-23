@@ -17,7 +17,7 @@ import { createMeter, resetMeter, pressMeterAt, tickMeterTo, swingClicks } from 
 import { isSwinging, isAimingState, isBallMoving, isShotEnd } from '../core/states.js';
 import { resultName, resultText } from '../core/scoring.js';
 import { dist2D, dirFromAim } from '../core/vec.js';
-import { paintCourse } from './coursePainter.js';
+import { paintGround } from './coursePainter.js';
 import { buildScene, disposeScene } from './scene.js';
 import { createProps } from './props.js';
 import { createCameraRig } from './camera.js';
@@ -49,12 +49,12 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   const compact = !!round && round.number > 1;
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
-  const courseCanvas = paintCourse(hole, terrain.surfaceAt, biome, { green });
-  const { scene, camera, colliderOutlines, shore } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
+  const ground = paintGround(hole, terrain.surfaceAt, biome, { green }); // AP6: the course map + the shader's surface mask
+  const { scene, camera, colliderOutlines, shore, smallProps, bigProps, water } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
-  const drawMinimap = createMinimap(hole, courseCanvas, cup, play.obstacles, biome, shore);
+  const drawMinimap = createMinimap(hole, ground.canvas, cup, play.obstacles, biome, shore);
 
   // Game state (core/states.js GAME_STATES): intro | flyover | aim | power | grace | nopower | accuracy | flight | roll | wait | holed | result
   let state = 'intro';
@@ -384,6 +384,8 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
+    water?.update(ball.pos); // X43: the caustic web stays clear of the white ball
+    smallProps?.update(camera, ball.pos); // AP7c: the props to draw from here (never one that could hide the ball)
     props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);
     aimLabel();
@@ -511,6 +513,8 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     get view() { return view; }, viewTap() { onViewInput(true); onViewInput(false); return view; },
     get camFrame() { return camFrame; }, cameraAt() { return { pos: camera.position.clone(), fov: camera.fov, aspect: camera.aspect }; },
     get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
+    bigProps: () => ({ drawn: bigProps.drawn.length, skipped: bigProps.skipped.length, drawCalls: bigProps.drawCalls, tris: bigProps.tris, props: bigProps.drawn }), // AP7e (tools)
+    smallProps: () => smallProps?.stats(ball.pos) ?? null, // AP7c (tools): scattered / drawn, the drawn prop nearest the ball
   };
 
   return {

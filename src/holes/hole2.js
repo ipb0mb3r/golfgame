@@ -201,7 +201,6 @@ export default {
       zs: [[-760, -500, 10], [-500, -468, 1], [-468, -418, 0.5], [-418, 25, 1], [25, 165, 10]],
     },
     paint: { res: 6, stripe: 6, green: 'grid', border: true },
-    water: { ...POND, scale: 1.25, y: WATER_Y },
     stakes: { x: 60, z0: 18, z1: -490, step: 12 },
     trees: {
       count: 320, xSpan: 300, zTop: 80, zSpan: 640, sink: 0.2,

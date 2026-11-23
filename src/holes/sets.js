@@ -16,6 +16,7 @@ import mtn09 from './mtn-09.js';
 import { validateHole } from '../core/validate.js';
 import { resolveBiome } from '../biomes/index.js';
 import { LIBRARY } from '../biomes/library.js';
+import { bigPropsError } from '../core/bigProps.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
 // X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
@@ -67,7 +68,10 @@ export function readyHole(hole) {
 // AP5: the hole's biome set exists and passes (validateBiomeSet), and every tree `look` is a library
 // onTrees piece (a look the set doesn't pick falls back to the set's own pick, core/biome.js treeLooks)
 export function checkHoleLooks(hole) {
-  resolveBiome(hole.biome);
+  const set = resolveBiome(hole.biome);
+  // AP7e: every big prop is offered by the hole's own set, in its scale range, its footprint clear of OB + 5 m
+  const e = bigPropsError(hole, hole.scenery?.bigProps, set, LIBRARY);
+  if (e) throw new Error(`hole "${hole.id}": ${e}`);
   (hole.obstacles ?? []).forEach((o, i) => {
     if (o.look !== undefined && !Object.hasOwn(LIBRARY.onTrees, o.look)) throw new Error(`hole "${hole.id}": obstacles[${i}].look "${o.look}" is not a tree piece (the library's onTrees: ${Object.keys(LIBRARY.onTrees).join(', ')})`);
   });

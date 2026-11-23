@@ -95,12 +95,19 @@ if (st[0] !== 'aim' || st[1] !== 0) fail(`a timer from the old hole changed the 
 // frees like any other: pl-01 dressed (its level), mtn-07 three times (no growth), then pl-01 must be back
 // to its own dressed level. X34: like with like (pl-01 meadow-day vs pl-01 meadow-day): plain pl-01
 // legitimately holds other pieces since #107 (meadow-day picks gradient trees).
-{
-  await page.goto('http://golf.test/index.html?hole=mtn-07&biome=meadow-day&seed=7&tune=ANTIALIAS:0,DPR_CAP:1');
+// AP7c: the same for the dev set test-small-props (its small props drawn on mtn-07, then freed with the hole).
+for (const biomeId of ['meadow-day', 'test-small-props', 'test-big-props']) {
+  await page.goto(`http://golf.test/index.html?hole=mtn-07&biome=${biomeId}&seed=7&tune=ANTIALIAS:0,DPR_CAP:1`);
   await startHole(); await frames(3);
   const { BIOMES } = await import('../src/biomes/index.js');
   const got = await page.evaluate(() => ({ biome: window.__golf.biome, ground: window.__golf.groundColour, badge: document.getElementById('biomeBadge').textContent }));
-  if (got.biome !== 'meadow-day' || got.ground !== BIOMES['meadow-day'].palette.farGround || got.badge !== 'BIOME: meadow-day') fail(`?biome=meadow-day: drawn with ${JSON.stringify(got)}`);
+  if (got.biome !== biomeId || got.ground !== BIOMES[biomeId].palette.farGround || got.badge !== `BIOME: ${biomeId}`) fail(`?biome=${biomeId}: drawn with ${JSON.stringify(got)}`);
+  // AP7c: the small props are drawn (since #124 meadow-day has them too; they are freed with the hole, see the memory checks below)
+  const props = await page.evaluate(() => window.__golf.smallProps());
+  if (biomeId !== 'test-big-props' && !props?.drawn) fail(`?biome=${biomeId} mtn-07: no small props drawn ${JSON.stringify(props)}`);
+  // AP7e: the big props of test-big-props are drawn on mtn-07 (and freed with the hole, same memory checks)
+  const big = await page.evaluate(() => window.__golf.bigProps());
+  if (biomeId === 'test-big-props' && !big?.drawn) fail(`?biome=${biomeId} mtn-07: no big props drawn ${JSON.stringify(big)}`);
   await page.evaluate(() => window.__golf.loadHole('pl-01')); await startHole(); await frames(3);
   const ref = await page.evaluate(() => window.__golf.renderInfo());
   const seen = [];
@@ -108,11 +115,11 @@ if (st[0] !== 'aim' || st[1] !== 0) fail(`a timer from the old hole changed the 
     await page.evaluate(() => window.__golf.loadHole('mtn-07')); await startHole(); await frames(3);
     seen.push(await page.evaluate(() => window.__golf.renderInfo()));
   }
-  for (const k of ['geometries', 'textures']) if (seen[2][k] > seen[0][k]) fail(`?biome=meadow-day mtn-07: ${k} grew from ${seen[0][k]} to ${seen[2][k]}`);
+  for (const k of ['geometries', 'textures']) if (seen[2][k] > seen[0][k]) fail(`?biome=${biomeId} mtn-07: ${k} grew from ${seen[0][k]} to ${seen[2][k]}`);
   await page.evaluate(() => window.__golf.loadHole('pl-01')); await startHole(); await frames(3);
   const back = await page.evaluate(() => window.__golf.renderInfo());
-  if (back.geometries !== ref.geometries || back.textures !== ref.textures) fail(`?biome=meadow-day: after mtn-07, pl-01 holds ${back.geometries} geometries / ${back.textures} textures (${ref.geometries} / ${ref.textures} before it, same set): mtn-07 not freed`);
-  console.log(`biome: mtn-07 ?biome=meadow-day drawn with ${got.biome} (far ground ${got.ground}), 3 loads ${seen.map(s => s.geometries).join('/')} geometries, then pl-01 ${back.geometries} (same as pl-01 meadow-day before mtn-07: ${ref.geometries})`);
+  if (back.geometries !== ref.geometries || back.textures !== ref.textures) fail(`?biome=${biomeId}: after mtn-07, pl-01 holds ${back.geometries} geometries / ${back.textures} textures (${ref.geometries} / ${ref.textures} before it, same set): mtn-07 not freed`);
+  console.log(`biome: mtn-07 ?biome=${biomeId} drawn with ${got.biome} (far ground ${got.ground}), 3 loads ${seen.map(s => s.geometries).join('/')} geometries, then pl-01 ${back.geometries} (same as pl-01 ${biomeId} before mtn-07: ${ref.geometries})${props ? `; small props ${props.drawn} of ${props.scattered} drawn, ${props.drawCalls} draw calls` : ''}${biomeId === 'test-big-props' ? `; big props ${big?.drawn} drawn, ${big?.drawCalls} draw calls` : ''}`);
 }
 
 // 4. The loaders (AP2): no game feature loads models yet (AP3 / AP7), so this is the only place they run.

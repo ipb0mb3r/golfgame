@@ -36,7 +36,19 @@ export default {
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'hornPeaks',  // the wide stylised horn peaks + forested slopes (AP6a, from docs/art/alpine/)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
-  smallProps: { pieces: [] }, // later: grass tufts, white and blue wildflowers (AP7)
-  bigProps: [],               // later: Swiss chalet, small chalet / hay hut, wooden fence (AP7), placed by hand out of bounds
+  // small props (docs/art/small-props/SPEC.md §4, at about half the spec's density: since AP7d they are drawn 2× size)
+  // tufts, white (propA) and blue (propB) wildflowers, more stones than Meadow, plain green bushes beyond OB, reeds by the water
+  smallProps: {
+    pieces: [
+      { id: 'grassTuft', perHa: 300, cluster: { count: [1, 3], radius: 2 }, on: ['rough', 'ob'] },
+      { id: 'flowerPatch', perHa: 50, cluster: { count: [3, 5], radius: 3 }, on: ['rough', 'ob'] },                               // white
+      { id: 'flowerPatch', slots: { petal: 'propB' }, perHa: 30, cluster: { count: [2, 4], radius: 3 }, on: ['rough', 'ob'] },  // blue
+      { id: 'pebbles', perHa: 35, cluster: { count: [1, 3], radius: 1.5 }, on: ['rough', 'ob'] },
+      { id: 'flatStone', perHa: 15, cluster: { count: [1, 2], radius: 1.5 }, on: ['rough', 'ob'] },
+      { id: 'flowerBush', slots: { flower: 'leafTop' }, perHa: 10, cluster: { count: [1, 2], radius: 4 }, on: ['ob'] },  // plain green
+      { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
+    ],
+  },
+  bigProps: ['chalet', 'chaletTall'], // the classic and the tall chalet (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: hay hut, fence
   notes: 'Swiss Alps: rolling, elevated holes with raised tees and greens, creeks and small ponds, pines along the fairways, the big peaks always in view. Big props out of bounds: chalets on the slopes, hay huts dotted near the holes, never in play. Suggested weather: clear, light wind.',
 };

@@ -265,6 +265,132 @@ export const TREE_LOOK = Object.freeze({
 // keep their density within the 300k budget. Every gradient piece has one (the palm since AP7b).
 export const TREE_FAR = Object.freeze({ from: 35 });
 export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryLean: 0.07, width: Object.freeze([0.86, 0.28]) });
+// AP6: the ground material (DESIGN §8b "The ground material"), after the artist's recipe docs/art/style-r2/paint.js.
+// Looks only: the physics surfaces (surfaceAt) never change. Widths in m; amounts multiply the palette colour.
+//   edge: the darker `edge` line drawn on the rough (or ob) side of the fairway, tee and fringe; lip: the darker
+//   `lip` band just inside a bunker's edge; bank: the `bank` band on the land round water (not on green, tee, sand,
+//   rock); deep: m from the shore at which water is full `waterDeep`.
+//   sparkle: the water's ripple highlights ([threshold, share toward white], recipe).
+//   shadow: a soft painted shadow under every tree in play: radius × canopyR, offset × canopyR away from the sun,
+//   the colour = `shadow` mixed toward white by `light`, strength at the centre / at `mid` of the radius.
+//   texture: the shared tiling greyscale detail texture (seeded, made in code): `size` px for `tile` m, speckle
+//   cells per m, dab cells (m) and dab size (m), and the turn (rad) of its world mapping.
+//   kinds: per drawn ground kind, the recipe's base multiplier (`base`), its soft large patches (`patch`: amount,
+//   scale m), the fine speckle (`speck`) and brush dabs (`dab`) amounts.
+export const GROUND_LOOK = Object.freeze({
+  seed: 66,
+  edge: 0.6, lip: 0.5, bank: 1.4, deep: 6,
+  sparkle: Object.freeze([[0.8, 0.45], [0.6, 0.15]]),
+  shadow: Object.freeze({ radius: 1.15, offset: 0.55, light: 0.45, centre: 0.95, mid: 0.75, midAt: 0.7, stretch: 1.25, squash: 0.9 }),
+  texture: Object.freeze({ size: 512, tile: 16, speck: 3, dabCell: 2, dabLen: 0.8, dabWid: 0.22, turn: 0.4 }),
+  maskScale: 0.5,                 // the shader's surface mask: × the course map's resolution
+  // the smooth edges (AP6 follow-up): a pixel where the surfaces change is sampled sub × sub times; a pixel
+  // whose centre is less than `near` px from a band's outer line is blended too (a sample is ≤ 0.53 px away)
+  aa: Object.freeze({ sub: 4, near: 0.75 }),
+  kinds: Object.freeze({
+    fairway:   Object.freeze({ base: 0.97, speck: 0.04, dab: 0.03 }),
+    tee:       Object.freeze({ base: 0.97, speck: 0.04, dab: 0.03 }),
+    fringe:    Object.freeze({ base: 0.98, speck: 0.04, dab: 0 }),
+    edge:      Object.freeze({ base: 0.98, speck: 0.04, dab: 0 }),
+    green:     Object.freeze({ base: 0.99, speck: 0.025, dab: 0 }),
+    rough:     Object.freeze({ base: 0.9, patch: Object.freeze([0.1, 22]), speck: 0.05, dab: 0.05 }),
+    ob:        Object.freeze({ base: 0.88, patch: Object.freeze([0.12, 28]), speck: 0.05, dab: 0.06 }),
+    sand:      Object.freeze({ base: 0.98, patch: Object.freeze([0.02, 3]), speck: 0.05, dab: 0 }),
+    lip:       Object.freeze({ base: 0.96, speck: 0.06, dab: 0 }),
+    bank:      Object.freeze({ base: 0.96, speck: 0.06, dab: 0 }),
+    rock:      Object.freeze({ base: 0.88, bands: Object.freeze([0.16, 2.4, 3]), speck: 0, dab: 0 }),
+    water:     Object.freeze({ base: 1, speck: 0, dab: 0 }),
+  }),
+});
+
+// X43c (owner on #133: "a little less prominent, more stylized: the bottom texture, and a transparent layer on the surface"): the web is fainter and thinner (WATER_LINES .35, WATER_WIDTH .45, WATER_LINE_PX 1.2, WATER_CELL 3.6) over a faint even sheen (WATER_TINT .05), option B of three.
+// X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
+//   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
+//   at least; drop: m a body's flat level sits under its lowest shore point.
+//   The soft edge (owner 2026-11-23: "it should blend better, even if the surface ends up a little bit on the rock"):
+//   edge: [out, in] m: the surface fades from fully drawn `in` m inside the water's edge to nothing `out` m onto the
+//   bank (smooth, per pixel, from each vertex's distance to the real edge); hug: m over the ground the mesh lies
+//   where it reaches onto the bank (never under it, so the ground never cuts it); bisect: halvings of a grid step
+//   that find the water's edge between a wet and a dry grid point (1 m / 2^4 ≈ 6 cm).
+//   The caustic web (owner 2026-11-23: "something like a sunny swimming pool seen from above ... stylized and
+//   see-through ... some kind of white see-through grid as the water surface"): thin, near-white wavy lines forming
+//   irregular rounded cells (the distance to a Voronoi cell's border, in the shader, no texture), fully see-through
+//   between them, so the painted bed reads. Two layers: the main web (WATER_CELL m cells) and a fainter, smaller one
+//   that drifts past it; the cells' points wander slowly (× WATER_SPEED). The strength is WATER_LINES.
+//   line: [sun share, width]: the lines' colour is the palette's `cloud` mixed this share toward `sun`; each line's
+//   width as a share of the cell (close up), but never thinner than linePx pixels on screen (antialiased with fwidth
+//   on the distance to the border, so a line is the same clean ~2 px at any distance and never breaks into flicker).
+//   layer2: [scale, strength, drift m/s]: the second web's cell size (× WATER_CELL), strength (× the main web's) and drift.
+//   wander: [amplitude, rad/s]: how far (share of a cell) and how fast each cell's point moves; warp: [amplitude,
+//   frequency] a slow sine bend of the pattern (shares of a cell) so the lines are wavy, not straight; round: share of
+//   a cell over which the borders blend (a smooth minimum), so the cells are rounded and the lines thicken where they meet.
+//   Far water (owner on #131: "no web at all, just the blurred ground" from the tee): no fade by distance. Where a
+//   web's cells get small on screen, a coarser web takes over instead: coarse: [scale, strength]: its cells are
+//   × WATER_CELL (3.6 m → 12.6 m) and its lines × this strength. cellPx: [gone, full]: a web is fully drawn while
+//   its cells are at least `full` px on screen (along the most squashed screen direction) and gone at `gone` px; the
+//   main web hands over to the coarse one over the same range (the fainter drifting web goes with the main one).
+//   dim: [strength, px]: lines whose cells are small on screen are this much weaker, back to full when the cells
+//   are `px` px or more, so far water reads as a calm pattern, not a sparkle. The web is gone only in the fog.
+//   ballClear: [from, to] m: the lines are gone within `from` m of the ball and full beyond `to` m (the ball is white).
+//   renderOrder: drawn first among the see-through things (the aim marks, rings and the ball's shadow come after,
+//   so they read on top); the ball is drawn after the water too (props.js).
+export const WATER_LOOK = Object.freeze({
+  step: 1, lift: 0.08, drop: 0.05,
+  edge: Object.freeze([0.5, 0.9]), hug: 0.06, bisect: 4,
+  line: Object.freeze([0.5, 0.035]),
+  layer2: Object.freeze([0.62, 0.45, 0.12]),
+  wander: Object.freeze([0.36, 0.35]), warp: Object.freeze([0.06, 4.5]), round: 0.12,
+  coarse: Object.freeze([3.5, 0.8]), cellPx: Object.freeze([8, 20]), dim: Object.freeze([0.55, 60]),
+  ballClear: Object.freeze([0.7, 1.5]),
+  renderOrder: -0.2,
+});
+
+// AP7c: small props scattered by a biome set's rule (DESIGN §8b "Small props", core/smallProps.js). Looks only:
+// no physics, no effect on the aim line or the warnings. Every number of the scatter and the drawing is here.
+//   surfaces: the ONLY surfaces a prop may stand on, whatever the set's `on` says (never tee, fairway, fringe,
+//     green, sand, water, rock / paths); validateBiomeSet rejects any other id in `on`.
+//   maxPerHa / maxProps: the most a set may ask for (props per hectare) / the most one hole scatters.
+//   cluster: the limits of a pick's `cluster` ({ count, radius }).
+//   margin: m the scatter area reaches beyond the OB box (for props `on: ['ob']`), clipped to the hole's map.
+//   edgeClear: m a prop keeps from any surface it may not stand on (4 samples around it).
+//   teeClear: m around the tee; cupClear: m around the cup (the putting area); greenClear: m from the green and
+//     fringe, checked within greenReach m of the cup (6 samples), so a big green keeps its apron clear.
+//   ballClear: m around the ball (3D) where every prop is hidden (owner: no blind shots; live value
+//     ?tune=PROP_BALL_CLEAR); lineClear: m around the line from the ball to the camera where props are hidden too.
+//   drawDist: m from the camera beyond which no prop is drawn; maxTris: the most small-prop triangles drawn in one
+//     frame (the nearest first), so a dense set never pushes a hole over PERF_BUDGET; moveStep: m the camera or
+//     the ball must move before the drawn props are picked again; turnStep: the camera turn (1 − cos of the angle)
+//     that picks them again; behind: m behind the camera beyond which none is drawn (the cap is spent on what is seen).
+//   scale: per-copy size [from, spread] (seeded, the scatter's own stream; each copy also gets a random turn).
+export const SMALL_PROPS = Object.freeze({
+  seed: 61,
+  surfaces: Object.freeze(['rough', 'ob']),   // the ground a prop may stand on (a pick's `on`)
+  waterEdge: 'waterEdge',                      // AP7d: the extra `on` name of a shore pick (reeds): land beside water (below)
+  maxPerHa: 4000, maxProps: 20000, maxPerTenM: 20,
+  cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
+  margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
+  ballClear: 1.2, lineClear: 0.5,
+  drawDist: 60, maxTris: 10000, moveStep: 0.5, behind: 2, turnStep: 0.05,
+  scale: Object.freeze([0.8, 0.45]),           // a piece without its own range: from, spread (× 0.8–1.25)
+  areaStep: 2,                                 // m, the grid that measures a pick's surfaces (per-pick perHa)
+  // AP7d: the water-edge surface. A shore patch's centre stands on land `reach` m or less outside the water's
+  // edge; `step` m is the grid that finds the shoreline (each boundary point stands for `step` m of it).
+  shore: Object.freeze({ reach: 1, step: 0.5, coarse: 2, land: Object.freeze(['rough', 'ob']) }),
+  trunkClear: 1,                               // AP7d: m from a tree trunk's edge or an OB stake (nothing stands closer)
+  stakeR: 0.05, sceneryTrunkR: 0.3,            // m: an OB stake's radius; a scenery tree's trunk (its real radius is not stored)
+});
+// AP7e: the big props placed by hand in a hole's scenery.bigProps (DESIGN §8b "Big props", core/bigProps.js). Looks only.
+//   obClear: m a prop's footprint (its piece's radius × scale) must stay outside the OB stakes' box (validation).
+//   drop: the prop stands at the lowest ground under its footprint (never floats; a sunk foot is fine): heightAt is
+//     read at the centre and on rings at these fractions of the footprint radius, `perRing` points each.
+//   maxTris: one piece's triangles (ART_STYLE §5: a big prop ≤ 1,500; tests/big-props.test.js).
+//   treeClear: m beyond a prop's footprint where no scenery tree stands (so none pokes through a roof; only on a hole
+//     with props: the other trees keep their places). Small props keep SMALL_PROPS.trunkClear from the footprint.
+export const BIG_PROPS = Object.freeze({
+  obClear: 5, treeClear: 3,
+  drop: Object.freeze({ rings: Object.freeze([0.5, 1]), perRing: 12 }),
+  maxTris: 1500,
+});
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({
@@ -448,6 +574,36 @@ export const TUNABLES = Object.freeze({
   // Render quality (Gate A C4), game layer only: never affects the physics
   DPR_CAP:               { def: 2,    min: 0.5,   max: 3 },    // the 3D canvas renders at most this many pixels per CSS pixel
   ANTIALIAS:             { def: 1,    min: 0,     max: 1 },    // MSAA on (1) or off (0); off is faster on weak phones
+  // AP6 (looks only): the ground material. 0 = the flat painted course of before AP6, 1 = low (edge lines, lip, bank,
+  // water, rough patches and tree shadows painted into the course map, no extra texture or shader work), 2 = full
+  // (1 + the tiling detail texture, mowing stripes and putting grid drawn by the shader). Rounded to a whole level.
+  GROUND_DETAIL:         { def: 2,    min: 0,     max: 2 },
+  // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
+  PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
+  // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
+  PROP_DRAW_DIST:        { def: 60,   min: 20,    max: 100 },
+  // AP7d follow-up (owner: "too subtle"; looks only, defaults = today): PROP_SCALE = one multiplier on every small prop's size (on top of the copy's own scale; the ball clearance grows with it);
+  // beyond PROP_THIN_FROM m from the camera only the share PROP_FAR_KEEP of the props is drawn (fixed per copy, no flicker; PROP_THIN_FROM >= PROP_DRAW_DIST = off);
+  // PROP_MAX_TRIS = the triangle cap of the small props (read when the hole is built)
+  PROP_SCALE:            { def: 2,    min: 0.5,   max: 3 },
+  PROP_THIN_FROM:        { def: 30,   min: 5,     max: 100 },
+  PROP_FAR_KEEP:         { def: 0.5,  min: 0.1,   max: 1 },
+  PROP_MAX_TRIS:         { def: 10000, min: 1000, max: 60000 },
+  // AP7e follow-up (owner: big props hard to notice; looks only): each big piece has its own size in the library (`size`, owner pick 2026-11-23:
+  // windmill 2.5, chalets and beach hut 1.8); BIG_PROP_SCALE = one multiplier on those sizes (default 1, for comparing), on top of the hand-placed scale (0.9–1.15);
+  // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
+  BIG_PROP_SCALE:        { def: 1,      min: 0.2,   max: 1.6 },
+  // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
+  // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
+  // WATER_SPEED = × how fast the web moves (0 = still).
+  WATER_LINES:           { def: 0.35, min: 0,     max: 1 },
+  WATER_CELL:            { def: 3.6,  min: 0.8,   max: 8 },
+  WATER_SPEED:           { def: 1,    min: 0,     max: 3 },
+  // X43c: WATER_LINE_PX = the thinnest a line is drawn (CSS px), WATER_WIDTH = × the lines' width close up (share of a
+  // cell), WATER_TINT = the even, see-through sheen over the whole surface (0 = none; its alpha, in the line colour).
+  WATER_LINE_PX:         { def: 1.2,   min: 0.5,   max: 4 },
+  WATER_WIDTH:           { def: 0.45,   min: 0.2,   max: 2 },
+  WATER_TINT:            { def: 0.05,   min: 0,     max: 0.3 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

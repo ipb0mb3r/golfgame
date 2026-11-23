@@ -22,6 +22,8 @@ const SPRUCE_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt' }
 const PALM_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt', trunk: 'trunkAlt', mark: 'trunk' });
 const BIRCH_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, trunk: 'trunkAlt', mark: 'trunk' });
 const TREE_TINT =Object.freeze({ slot: 'canopy', mode: 'tint', h: [0.2, 0.15], s: 0.25, l: [0.84, 0.16] });
+// AP7d: a small prop's per-copy tint: the trees' tint at half the spread, on the listed (green) slots only
+const smallTint = slots => Object.freeze({ ...TREE_TINT, slot: undefined, slots: Object.freeze(slots), half: 0.5 });
 export const LIBRARY = Object.freeze({
   // Course textures: the same greyscale textures in every biome, recoloured by the palette. None exist
   // yet (AP6): with none picked, the course is painted in flat palette colours, as today.
@@ -84,10 +86,32 @@ export const LIBRARY = Object.freeze({
     // piece names its .glb (`model`) and the procedural piece drawn when the file can't load (`fallback`).
     testCubeMarkers: { desc: 'AP3 test: two cubes from a model file either side of the tee (the AP2 test cube).', slots: { marker: 'subAccent' }, model: 'assets/models/test-cube.glb', fallback: 'ballMarkers', tris: 24 },
     whiteStakes: { desc: 'White out-of-bounds stakes (fixed white: the golf rule colour).', slots: {}, tris: 24 },
-    flatPond: { desc: 'A flat, slightly see-through water surface over a pond in a bowl (holes with scenery.water).', slots: { surface: 'pondSurface' }, tris: 48 },
+    flatPond: { desc: 'Not drawn since X43 (the see-through water surface covers every water area); kept while the biome sets still pick it (furniture.pond).', slots: { surface: 'pondSurface' }, tris: 48 },
   },
-  // Scattered by the set's rule (smallProps). None yet (ART1 / AP7).
-  smallProps: {},
-  // Placed by hand in the hole data; the set lists which are available. None yet (ART1 / AP7).
-  bigProps: {},
+  // Scattered by the set's rule (smallProps, AP7c / AP7d; core/smallPropShapes.js builds the shapes, the artist's
+  // docs/art/small-props/SPEC.md). One draw call per pick (all its copies instanced, every part in one geometry,
+  // each vertex mixed from its lo / hi slot by w), toon shaded like the trees, fogged; at most SMALL_PROPS.maxTris
+  // triangles of them per frame, the nearest first. tris = one copy (ART_STYLE §5: a small prop ≤ 50).
+  //   scale = [min, max] size of a copy (a random draw); shade = the per-copy colour tint (TREE_TINT at half the
+  //   spread: `half` 0.5 = half way back to white) on the listed green `slots` only: petals, flowers and stones
+  //   keep their exact colour.
+  smallProps: {
+    grassTuft: { desc: 'A thin fan of 7 slim, pointed blades (0.3–0.45 m): deepRough at the foot, leafTop at the tips, each blade drooping a little; drawn from both sides.', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 21 },
+    flowerPatch: { desc: 'A flat carpet of 9 five-point flower heads lying 3 cm above the grass over ~0.8 × 0.65 m: no stems, no leaves, so it never hides the ball. One colour (petal).', slots: { petal: 'propA' }, scale: [0.8, 1.3], tris: 45 },
+    flowerBush: { desc: 'A round green dome 1.36 m across and 0.92 m tall (foot low, crown top) with 4 raised flower clumps (flower). Tall: scenery beyond OB only.', slots: { low: 'leafLow', top: 'leafTop', flower: 'propA' }, scale: [0.8, 1.25], shade: smallTint(['low', 'top']), tris: 46 },
+    pebbles: { desc: 'Three squashed 5-sided stones close together, ~0.45 m across.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 30 },
+    flatStone: { desc: 'One flat 6-sided stepping stone, 0.64 × 0.52 m and 0.12 m tall.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 24 },
+    reeds: { desc: 'A bunch of 10 tall blades (0.7–1.15 m) bending gently outward: deepRough at the foot, leafTop at the tips; drawn from both sides. Meant for a water edge (perTenM).', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 30 },
+  },
+  // AP7e: placed by hand in the hole data (scenery.bigProps: [{ id, x, z, turn, scale }], beyond OB only); the set
+  // lists which it offers. The artist's owner-approved spec docs/art/big-props/SPEC.md; shapes in
+  // core/bigPropShapes.js. Flat-shaded toon (crisp faces), fogged, instanced: one draw call per piece part per hole
+  // (the windmill: body + sails, a part of their own so they could turn later; owner: still). No collider, no
+  // physics. tris = one copy (ART_STYLE §5: a big prop ≤ 1,500); scale = the [min, max] a hole may give it; size = the piece's drawn size (× the hole's scale, × the BIG_PROP_SCALE tunable; owner pick 2026-11-23).
+  bigProps: {
+    windmill: { desc: 'Meadow: a white 8-sided smock mill (13 m) on a grey stone base, a wooden gallery ring, a brick-red onion cap and 4 still cloth sails (6.8 m) on a wooden hub, a door and a window on the front.', slots: { wall: 'propSnow', base: 'rock', cap: 'roof', spar: 'wood', sail: 'propSnow', glass: 'glass' }, scale: [0.9, 1.15], size: 2.5, tris: 328 },
+    chalet: { desc: 'Alpine: a classic chalet, 12 × 9 m, 8.5 m tall: a white stone ground floor, a dark wood upper floor, a wide low roof of two thick slabs, a front balcony with 3 geranium boxes, red shutters, a door and a white chimney.', slots: { stone: 'propSnow', wood: 'wood', roof: 'roof', shut: 'accent', flower: 'accent', leaf: 'leaf', glass: 'glass' }, scale: [0.9, 1.15], size: 1.8, tris: 404 },
+    chaletTall: { desc: 'Alpine: the tall chalet, 10 × 9 m, 11 m tall: stone and two wood floors, two balconies with 2 geranium boxes each, a steeper roof.', slots: { stone: 'propSnow', wood: 'wood', roof: 'roof', shut: 'accent', flower: 'accent', leaf: 'leaf', glass: 'glass' }, scale: [0.9, 1.15], size: 1.8, tris: 404 },
+    beachHut: { desc: 'Island: a thatched stilt hut, 3.6 × 3.6 m (+ deck), 4.7 m tall: 4 short stilts, a wooden deck and room, a steep thatch pyramid roof, a turquoise door and side shutter, a step. Never below scale 0.9 (its door reads door-sized next to the golfer).', slots: { wall: 'wood', post: 'trunk', roof: 'roof', door: 'water', trim: 'propSnow' }, scale: [0.9, 1.15], size: 1.8, tris: 114 },
+  },
 });

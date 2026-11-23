@@ -8,6 +8,7 @@ import { createHolePlay } from './play.js';
 import { meshAxis } from './terrain.js';
 import { parseSeaSide } from './backdrop.js';
 import { palmColliderError } from './trees.js';
+import { bigPropsFormatError } from './bigProps.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
@@ -135,6 +136,9 @@ export function validateHole(hole, { shots = true } = {}) {
       if (sc.ground.y > low.y - GROUND_PLANE_MARGIN) bad(`scenery.ground.y (${sc.ground.y}) must be at least ${GROUND_PLANE_MARGIN} m below the lowest terrain, ${low.y.toFixed(2)} m at (${low.x}, ${low.z}): use ${(Math.floor((low.y - GROUND_PLANE_MARGIN) * 10) / 10).toFixed(1)} or lower`);
     }
   }
+  // AP7e: hand-placed big props (looks only): the format here; the set offers the id, the scale range and the
+  // OB clearance need the biome set and the library (src/holes/sets.js checkHoleLooks, core/bigProps.js bigPropsError)
+  { const e = bigPropsFormatError(sc?.bigProps); if (e) bad(e); }
   // AP6a: where the sea is when the hole's biome set draws the ocean backdrop (looks only, never physics)
   if (sc?.seaSide !== undefined) {
     try { parseSeaSide(sc.seaSide); } catch (e) { bad(`scenery.${e.message}`); }

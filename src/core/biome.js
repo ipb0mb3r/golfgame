@@ -8,6 +8,7 @@ import { UI_COLORS, MINIMAP_DARKEN } from './config.js';
 import { createRng } from './rng.js';
 import { modelPieceError } from './assets.js';
 import { parseSeaSide } from './backdrop.js';
+import { smallPropsRuleError, normalizeSmallProps, SMALL_PROP_PICK_KEYS } from './smallProps.js';
 
 // ---- 1. Palette keys: every set defines ALL of them (ART_STYLE §4.1, plus the engine group) ----
 export const PALETTE_KEYS = Object.freeze({
@@ -39,6 +40,11 @@ export const PICKS = Object.freeze({
   furniture: { group: 'furniture', keys: ['flag', 'teeMarkers', 'stakes', 'pond'] }, // the course's own small things
   bigProps: { group: 'bigProps', list: true },     // what the course designer may place by hand (hole scenery.bigProps)
 });
+// X33: a pick is a piece id ('roundCanopy') or { id, slots: { <slot>: '<palette key>' } }, which colours that
+// slot of the piece from another palette key, in this set only ({ id: 'roundCanopy', slots: { canopy: 'leafAlt' } }).
+// A small-prop pick may also carry weight and cluster (AP7c, core/smallProps.js).
+export const pickId = p => (typeof p === 'string' ? p : p?.id);
+export const PICK_KEYS = Object.freeze(['id', 'slots']);
 const SET_FIELDS = new Set(['id', 'name', 'description', 'palette', 'smallProps', 'notes', 'readabilityWaivers', 'light', ...Object.keys(PICKS)]);
 // The optional `light` override (PM on #86): when a set has it, it replaces the hole's scenery light
 // (a sunset wants a low sun); without it the hole's own values apply. Fog distances stay in the hole.
@@ -120,8 +126,8 @@ export function minimapShade(palette, kind, colour, look = '') {
 const minimapPieces = (set, library) => {
   const look = pieceColours(set, library);
   return [
-    ...set.onTrees.map(id => ({ group: 'trees', id, m: minimapShade(set.palette, 'tree', look('onTrees', id).canopy, id) })),
-    { group: 'rock', id: set.rocks[0], m: minimapShade(set.palette, 'rock', look('rocks', set.rocks[0]).body, set.rocks[0]) },
+    ...set.onTrees.map(pickId).map(id => ({ group: 'trees', id, m: minimapShade(set.palette, 'tree', look('onTrees', id).canopy, id) })),
+    { group: 'rock', id: pickId(set.rocks[0]), m: minimapShade(set.palette, 'rock', look('rocks', pickId(set.rocks[0])).body, pickId(set.rocks[0])) },
   ];
 };
 // The minimap's colours from the set (X26): every onTrees look → its tree colour, and the boulders (the
@@ -137,6 +143,24 @@ export function minimapColours(set, library) {
 // Every minimap rule's result for each onTrees look and the rock (after the darken step): [{ id, look, ..., ok, darkened }]
 export function checkMinimap(set, library) {
   return minimapPieces(set, library).flatMap(({ m }) => m.rows.map(r => ({ ...r, darkened: m.darkened })));
+}
+
+// X33: a slot override can change what the flag or the tee markers are drawn in. Then the accent rules
+// (accent/*: the flag) or the subAccent rules (subAccent/*: the tee markers) are also run on the colour the
+// piece is really drawn in (rows tagged with the pick, e.g. look 'furniture.flag cloth → propA').
+const OVERRIDE_RULES = Object.freeze([
+  { field: 'flag', slot: 'cloth', key: 'accent' },
+  { field: 'teeMarkers', slot: 'marker', key: 'subAccent' },
+]);
+export function checkPickReadability(set, library) {
+  const look = pieceColours(set, library), rows = [];
+  for (const { field, slot, key } of OVERRIDE_RULES) {
+    const id = pickId(set.furniture[field]), used = overridesFor(set, 'furniture', id)[slot];
+    if (used === undefined || library.furniture[id]?.slots?.[slot] === undefined) continue;
+    const c = look('furniture', id)[slot];
+    rows.push(...checkReadability({ ...set.palette, [key]: c }).filter(r => r.a === key).map(r => ({ ...r, look: `furniture.${field} ${slot} → ${used}` })));
+  }
+  return rows;
 }
 
 // Every rule's result: [{ id, a, b, dE, dL, minE, minL, ok }]. The palette must already be complete.
@@ -170,6 +194,21 @@ export function validateBiomeSet(set, library) {
   for (const k of Object.keys(p)) if (!ALL_PALETTE_KEYS.includes(k)) bad(`palette has an unknown key "${k}"`);
 
   // pick list: every piece exists in the library, and every colour slot it uses names a palette key
+  // X33: a pick is an id or { id, slots } (small props: also weight, cluster). where = the pick's place for
+  // the error ('onTrees[1]'); every overridden slot must be a slot of that piece, every value a palette key.
+  const usePick = (field, where, group, pick, keys = PICK_KEYS) => {
+    if (typeof pick === 'string') return usePiece(field, group, pick);
+    if (!pick || typeof pick !== 'object' || typeof pick.id !== 'string') bad(`${where} must be a piece id or { id, slots: { <slot>: '<palette key>' } }`);
+    for (const k of Object.keys(pick)) if (!keys.includes(k)) bad(`${where} (${pick.id}) has an unknown key "${k}" (known: ${keys.join(', ')})`);
+    usePiece(field, group, pick.id);
+    if (pick.slots === undefined) return;
+    if (!pick.slots || typeof pick.slots !== 'object' || Array.isArray(pick.slots)) bad(`${where} (${pick.id}).slots must be { <slot>: '<palette key>' }`);
+    const own = Object.keys(library[group][pick.id].slots ?? {});
+    for (const [slot, key] of Object.entries(pick.slots)) {
+      if (!own.includes(slot)) bad(`${where} (${pick.id}).slots: "${slot}" is not a slot of this piece (its slots: ${own.join(', ') || 'none'})`);
+      if (!ALL_PALETTE_KEYS.includes(key)) bad(`${where} (${pick.id}).slots.${slot}: "${key}" is not a palette key`);
+    }
+  };
   const usePiece = (field, group, id) => {
     const piece = library[group]?.[id];
     if (!piece) bad(`${field}: unknown piece "${id}" (the library's ${group}: ${Object.keys(library[group] ?? {}).join(', ') || 'none yet'})`);
@@ -184,26 +223,26 @@ export function validateBiomeSet(set, library) {
     const v = set[field];
     if (rule.keys) {
       if (!v || typeof v !== 'object') bad(`${field} must be { ${rule.keys.join(', ')} }`);
-      for (const k of rule.keys) { if (typeof v[k] !== 'string') bad(`${field}.${k} must be a piece id`); usePiece(`${field}.${k}`, rule.group, v[k]); }
+      for (const k of rule.keys) { if (v[k] === undefined) bad(`${field}.${k} must be a piece id`); usePick(`${field}.${k}`, `${field}.${k}`, rule.group, v[k]); }
       for (const k of Object.keys(v)) if (!rule.keys.includes(k)) bad(`${field} has an unknown key "${k}"`);
     } else if (rule.list) {
       if (!Array.isArray(v)) bad(`${field} must be a list of piece ids`);
       if (v.length < (rule.min ?? 0) || v.length > (rule.max ?? Infinity)) bad(`${field} must list ${rule.min ?? 0}–${rule.max ?? 'any'} pieces (got ${v.length})`);
-      if (new Set(v).size !== v.length) bad(`${field} lists a piece twice`);
-      for (const id of v) usePiece(field, rule.group, id);
+      v.forEach((p, i) => usePick(field, `${field}[${i}]`, rule.group, p));
+      if (new Set(v.map(pickId)).size !== v.length) bad(`${field} lists a piece twice`);
     } else {
-      if (typeof v !== 'string') bad(`${field} must be a piece id`);
-      usePiece(field, rule.group, v);
+      if (v === undefined) bad(`${field} must be a piece id`);
+      usePick(field, field, rule.group, v);
     }
   }
-  // small props: scattered by a rule (owner, #73). { pieces: [...], perHa: n, on: [surface ids] }
+  // small props: scattered by a rule (owner, #73; AP7c weights and clusters, core/smallProps.js).
+  // { pieces: [id | { id, weight, slots, cluster: { count, radius } }], perHa, on: [surface ids] }. The same
+  // piece may be picked twice (e.g. two colourings of one flower patch); each pick is its own draw call.
   const sp = set.smallProps;
   if (!sp || !Array.isArray(sp.pieces)) bad('smallProps must be { pieces: [...], perHa, on: [...] }');
-  for (const id of sp.pieces) usePiece('smallProps', 'smallProps', id);
-  if (sp.pieces.length) {
-    if (!(typeof sp.perHa === 'number' && sp.perHa >= 0)) bad('smallProps.perHa must be a number ≥ 0 (props per hectare)');
-    if (!Array.isArray(sp.on) || !sp.on.length || !sp.on.every(s => typeof s === 'string')) bad('smallProps.on must list the surfaces they are scattered on');
-  }
+  sp.pieces.forEach((p, i) => usePick('smallProps', `smallProps.pieces[${i}]`, 'smallProps', p, SMALL_PROP_PICK_KEYS));
+  const spError = smallPropsRuleError(sp);
+  if (spError) bad(spError);
 
   // light (optional): overrides the hole's scenery light when present
   if (set.light !== undefined) {
@@ -221,7 +260,7 @@ export function validateBiomeSet(set, library) {
     if (!READABILITY.some(r => r[0] === id) && !MINIMAP_READABILITY.some(r => r[0] === id)) bad(`readabilityWaivers names an unknown rule "${id}"`);
     if (typeof why !== 'string' || !why.trim()) bad(`readabilityWaivers.${id} needs a reason`);
   }
-  const all = [...checkReadability(p), ...checkMinimap(set, library)];
+  const all = [...checkReadability(p), ...checkMinimap(set, library), ...checkPickReadability(set, library)];
   const fails = all.filter(r => !r.ok && !Object.hasOwn(waivers, r.id));
   if (fails.length) bad(`readability (ART_STYLE §4.4): ${fails.map(r => `${r.id}${r.look ? ` (${r.look})` : ''} ΔE ${r.dE.toFixed(0)} (≥ ${r.minE})${r.minL ? `, ΔL ${r.dL.toFixed(0)} (≥ ${r.minL})` : ''}`).join('; ')}`);
   const unneeded = Object.keys(waivers).filter(id => all.filter(r => r.id === id).every(r => r.ok));
@@ -248,12 +287,49 @@ export const holeTreeLooks = (trees, data, onTrees) => treeLooks(trees.map(o => 
 // A piece's colours by slot ('#rrggbb'), read through the library's slot → palette key map, so a piece
 // is coloured the same way in every set: pieceColours(set, LIBRARY)('furniture', 'clothFlag') → { cloth }.
 // library = src/biomes/library.js LIBRARY (passed in, so core stays free of data files).
+// X33: with the set's slot override for that pick, when it has one. `pick` may be a piece id (the set's own
+// pick of that id in that group is used) or a pick object (its own slots: a small-prop pick).
 export function pieceColours(set, library) {
-  return (group, id) => {
-    const piece = library[group]?.[id];
+  return (group, pick) => {
+    const id = pickId(pick), piece = library[group]?.[id];
     if (!piece) throw new Error(`biome set "${set.id}": no ${group} piece "${id}"`);
-    return Object.fromEntries(Object.entries(piece.slots).map(([slot, key]) => [slot, set.palette[key]]));
+    const over = typeof pick === 'object' ? pick.slots ?? {} : overridesFor(set, group, id);
+    return Object.fromEntries(Object.entries(piece.slots).map(([slot, key]) => [slot, set.palette[over[slot] ?? key]]));
   };
+}
+// X33: the set's picks from one library group (as written in the set)
+function picksOf(set, group) {
+  if (group === 'smallProps') return set.smallProps?.pieces ?? [];
+  return Object.entries(PICKS).filter(([, r]) => r.group === group).flatMap(([f, r]) => {
+    const v = set[f];
+    return r.keys ? Object.values(v ?? {}) : [].concat(v ?? []);
+  });
+}
+// The slot override of a set's pick of piece `id` in `group` ({} = none). A resolved set (normalizeBiomeSet)
+// keeps them in slotOverrides; a set as written has them on its picks. Small props may pick one piece twice
+// with different colours, so theirs come from the pick object itself (never looked up by id).
+function overridesFor(set, group, id) {
+  if (group === 'smallProps') return {};
+  if (set.slotOverrides) return set.slotOverrides[group]?.[id] ?? {};
+  return picksOf(set, group).find(p => typeof p === 'object' && p?.id === id)?.slots ?? {};
+}
+// X33 + AP7c: the set as the game reads it (resolveBiome): every pick of the PICKS fields as its piece id (so
+// the game reads ids as before), the overrides kept apart in slotOverrides { group: { id: { slot: key } } }
+// (pieceColours reads them), and smallProps normalized (core/smallProps.js: every pick { id, weight, slots, cluster }).
+// A set with only string picks reads exactly as before (slotOverrides {}).
+export function normalizeBiomeSet(set) {
+  const slotOverrides = {}, out = { ...set };
+  const idOf = group => p => {
+    if (typeof p === 'object' && p.slots && Object.keys(p.slots).length) (slotOverrides[group] ??= {})[p.id] = { ...p.slots };
+    return pickId(p);
+  };
+  for (const [field, rule] of Object.entries(PICKS)) {
+    const v = set[field], f = idOf(rule.group);
+    out[field] = rule.keys ? Object.fromEntries(Object.entries(v).map(([k, p]) => [k, f(p)])) : rule.list ? v.map(f) : f(v);
+  }
+  out.smallProps = normalizeSmallProps(set.smallProps);
+  out.slotOverrides = slotOverrides;
+  return out;
 }
 // The flag cloth's colour (the 3D flag and the minimap's flag)
 export const flagColour = (set, library) => pieceColours(set, library)('furniture', set.furniture.flag).cloth;

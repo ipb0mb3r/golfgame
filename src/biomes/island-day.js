@@ -29,13 +29,25 @@ export default {
     gridFill: '#d4fc70', gridLine: '#a8e244', farGround: '#2ca232', pondSurface: '#00e0d8', boulder: '#3e3a40',
   },
   textures: [],               // none yet (AP6): flat painted colours
-  onTrees: ['roundCanopy'], // round canopy trees in play; palms in play after AP7b (colliders)
+  onTrees: ['palmTree', 'roundCanopy'], // palms (AP7b dome crown) and round trees in play; real Island holes give palms flat colliders (canopyH / 2R ≤ 0.8)
   offTrees: ['palmTree', 'roundCanopy'], // palms (leafAlt fronds) and round trees as scenery (AP7a)
   rocks: ['roundBoulder'],    // dark lava boulders
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'ocean',    // the sea along the course (left + far), beach, lava, volcanic ridge, far island (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
-  smallProps: { pieces: [] }, // later: bougainvillea bushes, tropical flowers, grass tufts (AP7)
-  bigProps: [],               // later: very tall palm (landmark), beach hut (AP7), placed by hand
+  // small props (docs/art/small-props/SPEC.md §4, at about half the spec's density: since AP7d they are drawn 2× size)
+  // tufts, bougainvillea pink (propA) and orange (propB) flowers, a few dark lava stones, pink-flowering bushes beyond OB, reeds by the water
+  smallProps: {
+    pieces: [
+      { id: 'grassTuft', perHa: 300, cluster: { count: [1, 3], radius: 2 }, on: ['rough', 'ob'] },
+      { id: 'flowerPatch', perHa: 45, cluster: { count: [3, 5], radius: 3 }, on: ['rough', 'ob'] },                               // pink
+      { id: 'flowerPatch', slots: { petal: 'propB' }, perHa: 30, cluster: { count: [2, 4], radius: 3 }, on: ['rough', 'ob'] },  // orange
+      { id: 'pebbles', perHa: 20, cluster: { count: [1, 2], radius: 1.5 }, on: ['rough'] },
+      { id: 'flatStone', perHa: 5, on: ['rough'] },
+      { id: 'flowerBush', perHa: 20, cluster: { count: [1, 3], radius: 4 }, on: ['ob'] },                                 // pink bougainvillea
+      { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
+    ],
+  },
+  bigProps: ['beachHut'],     // the thatched stilt hut (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: very tall palm
   notes: 'The course follows the ocean: run fairways along the beach, the sea on one side (often the left), waste bunkers and lava-rock edges, a few really tall palms as landmarks. Low, near sea level. No lighthouse. Suggested weather: sunny, sea wind.',
 };

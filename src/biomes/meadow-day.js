@@ -29,12 +29,24 @@ export default {
   },
   textures: [],               // none yet (AP6): flat painted colours
   onTrees: ['roundCanopy', 'pineTree'], // the soft round tree + a soft pine (AP7a)
-  offTrees: ['spruceTree', 'pineTree'], // conifer forest for now: round scenery trees go over the triangle budget on mtn-07 (321k) until the cheap far tree wall (AP7b)
+  offTrees: ['roundCanopy', 'spruceTree'], // round trees with dark spruces (owner: lots of round trees); fits mtn-07 with the AP7b lighter scenery round tree and far tree wall
   rocks: ['roundBoulder'],
   sky: 'gradientSky', // the gradient sky (AP6a)
   backdrop: 'hazeHills',  // the soft hazy hills, near ring backNear + far ring backFar (AP6a)
   furniture: { flag: 'clothFlag', teeMarkers: 'ballMarkers', stakes: 'whiteStakes', pond: 'flatPond' },
-  smallProps: { pieces: [] }, // later: grass tufts, buttercup patches, a few red flowers, bushes (AP7)
-  bigProps: [],               // later: windmill, cow, wooden fence (AP7), placed by hand out of bounds
+  // small props (docs/art/small-props/SPEC.md §4, at about half the spec's density: since AP7d they are drawn 2× size)
+  // tufts, buttercups (propA) and a few red flowers (propB), stones in the rough, plain green bushes beyond OB, reeds by the water
+  smallProps: {
+    pieces: [
+      { id: 'grassTuft', perHa: 350, cluster: { count: [1, 3], radius: 2 }, on: ['rough', 'ob'] },
+      { id: 'flowerPatch', perHa: 60, cluster: { count: [3, 5], radius: 3 }, on: ['rough', 'ob'] },                               // buttercups
+      { id: 'flowerPatch', slots: { petal: 'propB' }, perHa: 30, cluster: { count: [2, 4], radius: 3 }, on: ['rough', 'ob'] },  // red flowers
+      { id: 'pebbles', perHa: 20, cluster: { count: [1, 2], radius: 1.5 }, on: ['rough'] },
+      { id: 'flatStone', perHa: 8, on: ['rough'] },
+      { id: 'flowerBush', slots: { flower: 'leafTop' }, perHa: 15, cluster: { count: [1, 2], radius: 4 }, on: ['ob'] },  // plain green (owner: flowers on Island only)
+      { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
+    ],
+  },
+  bigProps: ['windmill'],     // the white smock mill (docs/art/big-props/SPEC.md); placed by hand beyond OB, high on a hill (course designer). Later: cow, fence
   notes: 'The default, classic theme: gentle open holes, wide fairways, plenty of trees along the fairways and a few in play, ponds, cream bunkers. Big props out of bounds: 1-3 windmills on the hills, a few cows grazing behind a wooden fence (never in play, no barns). Suggested weather: clear, light to medium wind.',
 };

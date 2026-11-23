@@ -1,13 +1,22 @@
 // Renderer, lights, sky, the terrain mesh (built from the hole's heightAt) and the scenery.
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
-import { TUNE } from '../core/config.js';
+import { TUNE, SMALL_PROPS, BIG_PROPS } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
+import { detailTexture, MASK_AMOUNT, GRID } from '../core/ground.js';
+import { GROUND_LOOK } from '../core/config.js';
 import { sceneLight, holeTreeLooks, pieceColours } from '../core/biome.js';
 import { LIBRARY } from '../biomes/library.js';
 import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
 import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
+import { addSmallProps } from './smallProps.js';
+import { addBigProps } from './bigProps.js';
+import { holeBigProps } from '../holes/dev-big-props.js';
+import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
+import { clearOf, stakeThings } from '../core/smallProps.js';
+import { waterSurface, waterColours } from '../core/water.js';
+import { WATER_LOOK } from '../core/config.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -43,7 +52,8 @@ const FIXED_WHITE = 0xffffff; // the OB stakes (the golf rule colour, library wh
 // obstacles = play.obstacles (core/obstacles.js colliders): drawn from exactly the shapes the ball hits (K5)
 // models (AP3) = path → the loaded model geometry or null (assets.js cache.geometry): a model piece whose
 // file is not there is drawn as its procedural fallback (library `fallback`).
-export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, biome, models = () => null) {
+// painted (AP6) = the painted ground (coursePainter.js paintGround): { canvas, mask, level, stripe, green }
+export function buildScene(renderer, hole, terrain, painted, obstacles, biome, models = () => null) {
   const sc = hole.scenery, map = hole.map, P = biome.palette, look = pieceColours(biome, LIBRARY);
   const shapeOf = pieceShape(models);
   let ramp = null; const toon = () => (ramp ??= toonRamp()); // AP7a: the gradient trees' toon ramp, made only when one is drawn
@@ -81,24 +91,20 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     geo.setAttribute('uv', new THREE.BufferAttribute(m.uvs, 2));
     geo.setIndex(new THREE.BufferAttribute(m.index, 1));
     if (tint) geo.setAttribute('shoreTint', new THREE.BufferAttribute(tint, 4));
-    const tex = new THREE.CanvasTexture(courseCanvas);
+    const tex = new THREE.CanvasTexture(painted.canvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
     tex.userData.courseMap = true; // AP1: the perf overlay shows this one apart ("map (AP6)"), unrated until AP6
     const mat = new THREE.MeshLambertMaterial({ map: tex });
-    if (tint) shoreTinted(mat);
+    groundMaterial(mat, renderer, painted, P, tint);
     const mesh = new THREE.Mesh(geo, mat);
     mesh.name = 'terrain'; // AP0: names only label the draw-call breakdown (window.__golf.perfBreakdown)
     scene.add(mesh);
   }
 
-  // Water surface (holes whose pond sits in a bowl)
-  if (sc.water) {
-    const w = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshLambertMaterial({ color: look('furniture', biome.furniture.pond).surface, transparent: true, opacity: 0.88 }));
-    w.rotation.x = -Math.PI / 2; w.scale.set(sc.water.rx * sc.water.scale, sc.water.rz * sc.water.scale, 1);
-    w.position.set(sc.water.cx, sc.water.y, sc.water.cz); w.name = 'water';
-    scene.add(w);
-  }
+  // X43 (DESIGN §8b "The water surface"): the see-through surface over every water area (it replaced the old opaque
+  // pond surface, X42)
+  const water = addWaterSurface(scene, hole, terrain, P);
 
   // Tee markers and the white out-of-bounds stakes: one instanced draw call each (AP1)
   {
@@ -116,11 +122,157 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
     }
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
-  addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
+  // AP7e: the big props this set draws (the hole's own, plus the dev overlay with ?biome=test-big-props): no
+  // scenery tree within BIG_PROPS.treeClear m of their footprints, nor in each one's sight corridor to the tee
+  const bigAsked = holeBigProps(hole, biome.id), { keep: bigList, clipped: bigClipped } = scaleBigProps(hole, bigAsked, TUNE.BIG_PROP_SCALE, LIBRARY);
+  if (bigClipped.length) console.info(`Pocket Links: BIG_PROP_SCALE ${TUNE.BIG_PROP_SCALE} would put ${bigClipped.length} big prop(s) of ${hole.id} (${bigClipped.map(p => p.id).join(', ')}) within ${BIG_PROPS.obClear} m of OB, so they are not drawn.`);
+  const bigKept = bigPropsFor(bigList, biome.bigProps).keep;
+  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes, bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee));
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
-  return { scene, camera, colliderOutlines, shore }; // AP6b: shore (or null) for the minimap's sea
+  // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea.
+  // AP7d: and none within 1 m of a tree trunk (in play or scenery) or an OB stake.
+  let keep;
+  if (biome.smallProps.pieces.length) {
+    const things = [...(hole.obstacles ?? []).filter(o => o.type === 'tree').map(o => ({ x: o.x, z: o.z, r: o.trunkR ?? SMALL_PROPS.sceneryTrunkR })),
+      ...sceneryTrees.map(([x, z]) => ({ x, z, r: SMALL_PROPS.sceneryTrunkR })), ...stakeThings(sc.stakes),
+      ...bigKept.map(p => ({ x: p.x, z: p.z, r: footprintOf(p) }))]; // AP7e: none under a big prop
+    const clear = clearOf(things), onLand = shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : () => true;
+    keep = (x, z) => onLand(x, z) && clear(x, z);
+  }
+  const smallProps = addSmallProps(scene, hole, terrain, biome, look, keep, toon);
+  // AP7e: the hand-placed big props (looks only), the hole's own plus the dev overlay with ?biome=test-big-props
+  // (with the ocean they stand on the DRAWN ground, which slopes under the sea beyond the beach top)
+  const drawnY = shore ? (x, z) => (shore.outward(x, z) > 0 ? shore.drawnY(x, z) : heightAt(x, z)) : heightAt;
+  const bigProps = addBigProps(scene, hole, bigList, drawnY, biome, look, toon);
+  return { scene, camera, colliderOutlines, shore, smallProps, bigProps, water }; // X43: water (or null) follows the ball; AP6b: shore (or null) for the minimap's sea
 }
+
+// X43 (DESIGN §8b "The water surface"): one see-through mesh over every water area of the hole (core/water.js:
+// flat at a pond's level, just over a creek's bed, fading out softly onto the bank at the edge), so the painted bed and
+// its deep-to-light gradient show through. On it, a stylized caustic web (owner 2026-11-23, "a sunny swimming pool
+// seen from above"): thin near-white wavy lines (core/water.js waterColours) round irregular cells, see-through
+// between them, two layers drifting past each other; a coarser web where the cells get small on screen (far water),
+// faded only in the fog and near the ball. No depth written;
+// drawn first of the see-through things (WATER_LOOK.renderOrder). Returns { update(ballPos) } (or null: no water).
+function addWaterSurface(scene, hole, terrain, P) {
+  const w = waterSurface(hole, terrain);
+  if (!w) return null;
+  const L = WATER_LOOK, c = waterColours(P);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(w.positions, 3));
+  geo.setAttribute('shore', new THREE.BufferAttribute(w.shore, 1));
+  geo.setIndex(new THREE.BufferAttribute(w.index, 1));
+  geo.computeBoundingSphere();
+  const mat = new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
+      uLine: { value: new THREE.Color(c.line) }, uLines: { value: TUNE.WATER_LINES }, uCell: { value: TUNE.WATER_CELL },
+      uWidth: { value: new THREE.Vector2(L.line[1] * TUNE.WATER_WIDTH, TUNE.WATER_LINE_PX) }, uTint: { value: TUNE.WATER_TINT }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
+      uWander: { value: new THREE.Vector2(...L.wander) }, uWarp: { value: new THREE.Vector2(...L.warp) }, uRound: { value: L.round },
+      uLod: { value: new THREE.Vector4(...L.coarse, ...L.cellPx) }, uDim: { value: new THREE.Vector2(...L.dim) }, uEdge: { value: new THREE.Vector2(...L.edge) },
+      uBall: { value: new THREE.Vector3(0, -1e4, 0) }, uBallClear: { value: new THREE.Vector2(...L.ballClear) },
+      uTime: { value: 0 }, uDpr: { value: 1 },
+    }]),
+    vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, fog: true,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'water surface'; mesh.renderOrder = L.renderOrder;
+  mesh.visible = TUNE.WATER_LINES > 0 || TUNE.WATER_TINT > 0; // 0 = no web: nothing left to draw (the bed and the soft edge are the ground's)
+  const speed = TUNE.WATER_SPEED;
+  mesh.onBeforeRender = renderer => { // the screen sizes (linePx, cellPx, dim) are CSS pixels: × the canvas's pixel ratio
+    mat.uniforms.uTime.value = (performance.now() / 1000 * speed) % 3600;
+    mat.uniforms.uDpr.value = renderer.getPixelRatio();
+  };
+  scene.add(mesh);
+  return { mesh, update(ball) { mat.uniforms.uBall.value.set(ball.x, ball.y, ball.z); } };
+}
+const WATER_VERT = /* glsl */ `
+attribute float shore;
+varying vec3 vWorld;
+varying float vShore;
+#include <fog_pars_vertex>
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vShore = shore;
+  vec4 mvPosition = viewMatrix * wp;
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
+}`;
+// The web: for each pixel, the distance to the nearest border of a Voronoi cell (two passes, the cells' points
+// wander slowly), on a gently sine-bent plane so the lines are wavy; a line where that distance is under half the
+// line width: a share of the cell close up, never under linePx screen pixels (the distance's own screen derivative,
+// so the line is ~2 px and antialiased at any distance). Where the main cells get small on screen, a coarser web
+// takes over (uLod), so far water keeps a calm pattern; it fades out only in the fog. WebGL2 (three r187): the
+// derivatives are built in.
+const WATER_FRAG = /* glsl */ `
+uniform vec3 uLine, uLayer2, uBall;
+uniform vec4 uLod;
+uniform float uLines, uCell, uTime, uRound, uDpr, uTint;
+uniform vec2 uWidth, uWander, uWarp, uEdge, uBallClear, uDim;
+varying vec3 vWorld;
+varying float vShore;
+#include <fog_pars_fragment>
+vec2 waterHash(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
+}
+vec2 waterPoint(vec2 c, float t) { return 0.5 + uWander.x * sin(t * uWander.y + 6.2831 * waterHash(c)); }
+float waterBorder(vec2 x, float t) { // distance (in cells) to the nearest cell border
+  vec2 n = floor(x), f = x - n, mr = vec2(0.0), mg = vec2(0.0);
+  float md = 8.0;
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+    vec2 g = vec2(float(i), float(j)), r = g + waterPoint(n + g, t) - f;
+    float d = dot(r, r);
+    if (d < md) { md = d; mr = r; mg = g; }
+  }
+  md = 8.0;
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+    vec2 g = mg + vec2(float(i), float(j)), r = g + waterPoint(n + g, t) - f;
+    vec2 e = r - mr;
+    if (dot(e, e) > 1e-5) { // smooth minimum: the cells' corners round off, the lines thicken where they meet
+      float d = dot(0.5 * (mr + r), normalize(e)), h = clamp(0.5 + 0.5 * (d - md) / uRound, 0.0, 1.0);
+      md = mix(d, md, h) - uRound * h * (1.0 - h);
+    }
+  }
+  return max(md, 0.0);
+}
+// 0..1 line coverage, p in m; mpp = m per pixel along the most squashed screen direction (caps a derivative spike)
+float waterWeb(vec2 p, float cell, float t, float mpp) {
+  vec2 x = p / cell;
+  x += uWarp.x * sin(x.yx * uWarp.y + vec2(0.7, 1.3) * t * 0.5);
+  float d = waterBorder(x, t) * cell;                                      // m
+  float px = clamp(length(vec2(dFdx(d), dFdy(d))), 1e-4, mpp);            // m per pixel across this line
+  float half_ = max(0.5 * uWidth.x * cell, 0.5 * uWidth.y * uDpr * px);
+  return 1.0 - smoothstep(half_ - 0.6 * px, half_ + 0.6 * px, d);
+}
+float waterShown(float cellPx) { // a web's weight by its cells' size on screen (CSS px): gone .. full, dimmer while small
+  return smoothstep(uLod.z, uLod.w, cellPx) * mix(uDim.x, 1.0, smoothstep(uLod.w, uDim.y, cellPx));
+}
+void main() {
+  float edge = smoothstep(-uEdge.x, uEdge.y, vShore); // the soft shore: 0 on the bank, 1 inside the water
+  float ball = smoothstep(uBallClear.x, uBallClear.y, length(vWorld - uBall)); // the white ball stays clear
+  // m per pixel: along the most squashed screen direction (caps the lines' derivative) and on average (the cells'
+  // size on screen: at a grazing angle the cells are flat but their lines across the view still read)
+  float mx = length(dFdx(vWorld.xz)), my = length(dFdy(vWorld.xz));
+  float mpp = max(max(mx, my), 1e-4), cssM = max(sqrt(mx * my), 1e-4) * uDpr;
+  float px0 = uCell / cssM, coarse = uCell * uLod.x;
+  float near = smoothstep(uLod.z, uLod.w, px0);    // the main web, handing over to the coarse one
+  vec2 drift = vec2(0.6, 0.8) * uLayer2.z * uTime; // no branch around the webs: the derivatives need every pixel
+  float a0 = max(waterWeb(vWorld.xz, uCell, uTime, mpp), uLayer2.y * waterWeb(vWorld.xz + drift, uCell * uLayer2.x, uTime * 1.3 + 17.0, mpp));
+  float a1 = uLod.y * waterWeb(vWorld.xz, coarse, uTime * 0.5 + 5.0, mpp);
+  float a = max(a0 * waterShown(px0), a1 * (1.0 - near) * waterShown(coarse / cssM));
+  float web = a * uLines * ball;
+  gl_FragColor = vec4(uLine, clamp(max(web, uTint) * edge, 0.0, 1.0)); // the web, over an even faint sheen
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #include <fog_fragment>
+  #ifdef USE_FOG
+    gl_FragColor.a *= 1.0 - fogFactor; // the web is gone only in the fog / at the horizon
+  #endif
+}`;
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
 // with one geometry and one material. `matrices` = the instances' local matrices (matrixOf below),
@@ -287,7 +439,10 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
 // Decoration trees (instanced so hundreds are cheap), standing on the ground. K8: only outside the
 // OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
 // AP5: the look is the set's first offTrees piece (more looks: later).
-function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes) {
+// AP7d: returns the spots (x, z, size), so the small props keep clear of the trunks.
+// AP7e: freeOfBig(x, z) (or null) = no big prop's footprint there; the spots are dropped after they are all drawn,
+// so the other trees keep their places.
+function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes, freeOfBig) {
   const r = createRng(42);
   const spots = [];
   let guard = 0;
@@ -299,7 +454,8 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stake
   for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
   // AP6a: no scenery tree on the beach or in the sea (only with the ocean backdrop)
   if (shore) for (let i = spots.length - 1; i >= 0; i--) if (shore.outward(spots[i][0], spots[i][1]) > -OCEAN_LOOK.gap / 2) spots.splice(i, 1);
-  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return; }
+  if (freeOfBig) for (let i = spots.length - 1; i >= 0; i--) if (!freeOfBig(spots[i][0], spots[i][1])) spots.splice(i, 1);
+  if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return spots; }
   const id = biome.offTrees[0], b = builder(OFF_TREES, id), colours = look('offTrees', id), shade = LIBRARY.offTrees[id].shade;
   const trunks = new THREE.InstancedMesh(b.trunk(), new THREE.MeshLambertMaterial({ color: colours.trunk }), spots.length);
   const leaves = new THREE.InstancedMesh(b.canopy(), shadedMaterial(shade, colours.canopy, { flatShading: true }), spots.length);
@@ -313,6 +469,7 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stake
   });
   trunks.name = 'scenery trees: trunks (instanced)'; leaves.name = 'scenery trees: leaves (instanced)';
   scene.add(trunks, leaves);
+  return spots;
 }
 
 // ---- AP7a: the gradient trees (core/trees.js builds the shapes, config TREE_LOOK / TREE_VARIETY) ----
@@ -498,7 +655,7 @@ function obBox(hole) {
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: st.z1, z1: st.z0 };
 }
 // Lower the drawn terrain beyond the beach top (positions and normals, in place) → the shore tint per
-// vertex (rgb linear + amount), painted over the course map by shoreTinted
+// vertex (rgb linear + amount), painted over the course map by groundMaterial
 function lowerShore(m, shore, P) {
   const pos = m.positions, nor = m.normals, n = pos.length / 3, tint = new Float32Array(n * 4), E = 1;
   const rgb = { sand: new THREE.Color(P.sand).toArray(), rock: new THREE.Color(P.rock).toArray() };
@@ -514,13 +671,69 @@ function lowerShore(m, shore, P) {
   }
   return tint;
 }
-// The terrain material with the shore tint: the beach's sand and lava rock painted over the course map
-function shoreTinted(mat) {
+// The terrain material (AP6, DESIGN §8b "The ground material"): at level 2 the shader draws the mowing stripes,
+// the green's stripes or putting grid (box-filtered, so they stay crisp near and smooth far away) and the shared
+// tiling detail texture (speckle + brush dabs, amounts per kind from the surface mask); with the ocean backdrop,
+// the shore tint (the beach's sand and lava rock) is painted over it all. Levels 0 and 1 draw the map as it is.
+function groundMaterial(mat, renderer, ground, P, tint) {
+  const full = ground.level === 2 && !!ground.mask;
+  if (!full && !tint) return;
+  const uniforms = {};
+  if (full) {
+    const lin = k => new THREE.Color(P[k]);
+    const ratio = (a, b) => { const A = lin(a), B = lin(b); return new THREE.Vector3(B.r / Math.max(A.r, 1e-4), B.g / Math.max(A.g, 1e-4), B.b / Math.max(A.b, 1e-4)); };
+    const d = detailTexture(), t = GROUND_LOOK.texture;
+    const detail = new THREE.DataTexture(d.data, d.size, d.size);
+    detail.wrapS = detail.wrapT = THREE.RepeatWrapping;
+    detail.magFilter = THREE.LinearFilter; detail.minFilter = THREE.LinearMipmapLinearFilter; detail.generateMipmaps = true;
+    detail.anisotropy = renderer.capabilities.getMaxAnisotropy(); detail.needsUpdate = true;
+    const m = ground.mask, mask = new THREE.DataTexture(m.data, m.width, m.height);
+    mask.magFilter = THREE.LinearFilter; mask.minFilter = THREE.LinearMipmapLinearFilter; mask.generateMipmaps = true; mask.needsUpdate = true;
+    mask.userData.courseMap = true; // the course map's data: shown with it in the perf overlay
+    mat.groundDetail = detail; mat.groundMask = mask; // material fields, so disposeScene (and the perf count) find them
+    const gl = lin('gridLine');
+    Object.assign(uniforms, {
+      groundDetail: { value: detail }, groundMask: { value: mask },
+      groundStripe: { value: ground.stripe }, groundFairwayRatio: { value: ratio('fairwayA', 'fairwayB') }, groundGreenRatio: { value: ratio('greenA', 'greenB') },
+      groundGrid: { value: ground.green === 'grid' ? 1 : 0 }, groundGridLine: { value: new THREE.Vector3(gl.r, gl.g, gl.b) },
+      groundTile: { value: t.tile }, groundTurn: { value: new THREE.Vector2(Math.cos(t.turn), Math.sin(t.turn)) },
+    });
+  }
   mat.onBeforeCompile = s => {
-    s.vertexShader = s.vertexShader.replace('#include <common>', '#include <common>\nattribute vec4 shoreTint;\nvarying vec4 vShoreTint;')
-      .replace('#include <begin_vertex>', '#include <begin_vertex>\nvShoreTint = shoreTint;');
-    s.fragmentShader = s.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec4 vShoreTint;')
-      .replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb = mix(diffuseColor.rgb, vShoreTint.rgb, vShoreTint.a);');
+    Object.assign(s.uniforms, uniforms);
+    let vh = '', vb = '', fh = '', fb = '';
+    if (full) {
+      vh += 'varying vec2 vGroundXZ;\n'; vb += 'vGroundXZ = position.xz;\n';
+      fh += `varying vec2 vGroundXZ;
+uniform sampler2D groundDetail; uniform sampler2D groundMask; uniform float groundStripe; uniform vec3 groundFairwayRatio;
+uniform vec3 groundGreenRatio; uniform float groundGrid; uniform vec3 groundGridLine; uniform float groundTile; uniform vec2 groundTurn;
+float groundOddF(float t) { return floor(t * 0.5) + clamp(t - 2.0 * floor(t * 0.5) - 1.0, 0.0, 1.0); }
+float groundOdd(float t) { float w = max(fwidth(t), 1e-4) * 0.5; return (groundOddF(t + w) - groundOddF(t - w)) / (2.0 * w); }
+float groundLineF(float u, float a) { return floor(u) * a + min(fract(u), a); }
+float groundLine(float u, float a) { float w = max(fwidth(u), 1e-4) * 0.5; return (groundLineF(u + w, a) - groundLineF(u - w, a)) / (2.0 * w); }
+`;
+      fb += `{
+  vec4 gm = texture2D(groundMask, vMapUv);
+  vec2 gw = vGroundXZ;
+  diffuseColor.rgb *= mix(vec3(1.0), groundFairwayRatio, (1.0 - groundOdd(gw.y / groundStripe)) * gm.r);
+  if (groundGrid < 0.5) diffuseColor.rgb *= mix(vec3(1.0), groundGreenRatio, (1.0 - groundOdd((gw.x - gw.y) / 2.5)) * gm.g);
+  vec2 gq = vec2(groundTurn.x * gw.x - groundTurn.y * gw.y, groundTurn.y * gw.x + groundTurn.x * gw.y) / groundTile;
+  vec4 gd = texture2D(groundDetail, gq);
+  diffuseColor.rgb *= 1.0 + ${MASK_AMOUNT.toFixed(3)} * (gm.b * (gd.r - 0.5) + gm.a * (gd.g * 2.0 - 1.0));
+  if (groundGrid > 0.5) {
+    float ga = ${(GRID.line / GRID.step).toFixed(4)};
+    float gl = max(groundLine(gw.x / ${GRID.step.toFixed(1)}, ga), groundLine(gw.y / ${GRID.step.toFixed(1)}, ga));
+    diffuseColor.rgb = mix(diffuseColor.rgb, groundGridLine, clamp(gl, 0.0, 1.0) * gm.g);
+  }
+}
+`;
+    }
+    if (tint) {
+      vh += 'attribute vec4 shoreTint;\nvarying vec4 vShoreTint;\n'; vb += 'vShoreTint = shoreTint;\n';
+      fh += 'varying vec4 vShoreTint;\n'; fb += 'diffuseColor.rgb = mix(diffuseColor.rgb, vShoreTint.rgb, vShoreTint.a);\n';
+    }
+    s.vertexShader = s.vertexShader.replace('#include <common>', `#include <common>\n${vh}`).replace('#include <begin_vertex>', `#include <begin_vertex>\n${vb}`);
+    s.fragmentShader = s.fragmentShader.replace('#include <common>', `#include <common>\n${fh}`).replace('#include <map_fragment>', `#include <map_fragment>\n${fb}`);
   };
-  mat.customProgramCacheKey = () => 'shoreTint';
+  mat.customProgramCacheKey = () => `ground${full ? 2 : 0}${tint ? '+shore' : ''}`;
 }
