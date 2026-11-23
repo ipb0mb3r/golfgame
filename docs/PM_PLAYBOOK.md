@@ -100,6 +100,10 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Owner decisions on #116 (2026-11-23):** small props stay at 45 m (`PROP_DRAW_DIST`; on mtn-07 the 10k triangle cap stops them at ~48 m anyway). **X39 (backlog):** a player **view-distance setting** in the Settings menu that changes **only the small props' draw distance** (e.g. Near 45 m / Far 60 m, with thinning beyond ~30 m + a 12k cap so Far fits 300k; dev numbers on #116). Also backlog from #116: X36 the prop cap as a `PERF_BUDGET` line, X37 model-rock fallback ignores slot overrides, X38 perf-check has no rough view. X35–X46 are in TASKS "Backlog from the art passes" (docs PR, 2026-11-23).
 - **Backlog from #110/#112:** X35 a minimum for the palm collider rule, widen the tall roundCanopy's base row ~10 % (artist), birch / round-canopy fine-tuning by the artist.
 
+**Fourth Claude Code PM session (2026-11-23):**
+- **Owner order:** one more reusable prop first, **a fence** (owner picked fence only from fence / cow / hay hut / tall palm), then **the first real course: Meadow**.
+- **Artist session** `session_01Rv6NgC9PsRba6RezCHMPb1` ("Pocket Links: Artist (fence prop)", 60 min): the owner co-designs the fence with it → PR "Art: fence spec" (`docs/art/fence/SPEC.md`: look, line placement format, look-only vs collider = owner's call, PM recommends look-only, triangle cost). Then a dev builds it (library piece + line placement), then the Meadow course with the course designer (genre talk first).
+
 **Next (owner's choice, ask him):**
 0. **Recommended next (PM, 2026-11-23): the first real course** (Meadow, Alpine or Island) with the course designer: all the art (ground, small / big props, water) only shows on real holes; follow HOLE_GUIDELINES incl. the big-prop placement rules. Other open picks: AP8 pixel setting, Phase MP menus.
 1. **Phase MP: main menu pass** (`ui-designer` designs MP0 with the owner in its own session, like the artist → dev builds MP1–MP5), then Phase U for the HUD (X18, X19, X24, X28; keep the red tree warning prominent: QA on #106).
