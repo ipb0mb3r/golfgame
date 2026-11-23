@@ -547,9 +547,9 @@ export const TUNABLES = Object.freeze({
   PROP_THIN_FROM:        { def: 30,   min: 5,     max: 100 },
   PROP_FAR_KEEP:         { def: 0.5,  min: 0.1,   max: 1 },
   PROP_MAX_TRIS:         { def: 10000, min: 1000, max: 60000 },
-  // AP7e follow-up (owner: big props hard to notice; looks only, default = today): BIG_PROP_SCALE = one multiplier on every big prop's size, on top of its own scale (0.9–1.15);
+  // AP7e follow-up (owner: big props hard to notice; looks only, default 2.5 = owner pick 2026-11-23): BIG_PROP_SCALE = one multiplier on every big prop's size, on top of its own scale (0.9–1.15);
   // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
-  BIG_PROP_SCALE:        { def: 1,    min: 0.5,   max: 4 },
+  BIG_PROP_SCALE:        { def: 2.5,    min: 0.5,   max: 4 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.

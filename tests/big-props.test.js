@@ -84,14 +84,15 @@ test('scenery.bigProps format: { id, x, z, turn, scale }, turn and scale optiona
 test('placement rules: the set must offer the id, the scale in range, the footprint clear of the OB box + 5 m', () => {
   const box = obBoxOf(mtn07.scenery.stakes); // x −70…72, z −475…16
   assert.deepEqual(box, { x0: -70, x1: 72, z0: -475, z1: 16 });
-  const r = footprintOf({ id: 'windmill' }), edge = box.x1 + BIG_PROPS.obClear + r;
+  const D = TUNABLES.BIG_PROP_SCALE.def, r = footprintOf({ id: 'windmill', scale: D }), edge = box.x1 + BIG_PROPS.obClear + r;
   assert.equal(bigPropsError(withProps([]).scenery, [], offerAll, LIBRARY), null);
   assert.equal(bigPropsError(withProps([]), [{ id: 'windmill', x: edge + 0.01, z: -150 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: edge - 0.01, z: -150 }], offerAll, LIBRARY), /footprint .* comes within 5 m of the OB box/);
+  assert.equal(D, 2.5);                                                              // the static check uses the default scale
   // scale grows the footprint
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: edge + 0.01, z: -150, scale: 1.1 }], offerAll, LIBRARY), /comes within/);
   // beyond the far end (behind the green) and inside the box
-  assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet' }) - 0.01 }], offerAll, LIBRARY), null);
+  assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet', scale: D }) - 0.01 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -200 }], offerAll, LIBRARY), /comes within/);
   // the set must offer it (meadow-day offers none today)
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), /biome set "meadow-day" does not offer it \(its bigProps: none\)/);
@@ -154,11 +155,11 @@ test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07
   assert.deepEqual(rest, meadow); assert.deepEqual(none, []);
 });
 
-test('BIG_PROP_SCALE: a tunable (default 1, 0.5–4); scales every prop, clips what would reach inside OB + 5 m, the demo fits up to 2.5', () => {
-  assert.deepEqual(TUNABLES.BIG_PROP_SCALE, { def: 1, min: 0.5, max: 4 });
+test('BIG_PROP_SCALE: a tunable (default 2.5, 0.5–4); scales every prop, clips what would reach inside OB + 5 m, the demo fits up to 2.5', () => {
+  assert.deepEqual(TUNABLES.BIG_PROP_SCALE, { def: 2.5, min: 0.5, max: 4 });
   assert.deepEqual(parseTune('BIG_PROP_SCALE:9').set, [{ name: 'BIG_PROP_SCALE', value: 4, asked: 9 }]);
   const demo = DEV_BIG_PROPS['mtn-07'];
-  assert.equal(scaleBigProps(mtn07, demo, 1).keep, demo);                            // default: untouched
+  assert.equal(scaleBigProps(mtn07, demo, 1).keep, demo);                            // mult 1: untouched
   for (const m of [0.5, 1.5, 2, 2.5]) {
     const { keep, clipped } = scaleBigProps(mtn07, demo, m);
     assert.equal(clipped.length, 0, `x${m}`);

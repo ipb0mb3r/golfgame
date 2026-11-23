@@ -4,7 +4,7 @@
 // no collider, no physics, never hidden by the small-props ball rule (they stand well beyond OB).
 //   id = a library bigProps piece, x / z = the foot centre (m), turn = rad about y (0 = the front faces +z, toward
 //   the tee end; like Three.js rotation.y), scale = the size (the piece's `scale` range in the library, default 1).
-import { BIG_PROPS } from './config.js';
+import { BIG_PROPS, TUNABLES } from './config.js';
 import { bigPropShape } from './bigPropShapes.js';
 
 export const BIG_PROP_KEYS = Object.freeze(['id', 'x', 'z', 'turn', 'scale']);
@@ -48,14 +48,14 @@ export function bigPropsError(hole, list, set, library) {
     if (!offered.includes(p.id)) return `${where}: biome set "${set.id}" does not offer it (its bigProps: ${offered.join(', ') || 'none'})`;
     const s = p.scale ?? 1, [lo, hi] = piece.scale;
     if (s < lo || s > hi) return `${where}.scale must be ${lo}–${hi} (got ${s})`;
-    const r = footprintOf(p), d = toBox(box, p.x, p.z);
+    const r = footprintOf({ ...p, scale: s * TUNABLES.BIG_PROP_SCALE.def }), d = toBox(box, p.x, p.z); // at the default BIG_PROP_SCALE, so a placement that would be clipped at runtime fails here
     if (d < r + BIG_PROPS.obClear) return `${where} at (${p.x}, ${p.z}): its footprint (${r.toFixed(1)} m) comes within ${BIG_PROPS.obClear} m of the OB box (it is ${d.toFixed(1)} m from it; needs ${(r + BIG_PROPS.obClear).toFixed(1)})`;
   }
   return null;
 }
 
 // The BIG_PROP_SCALE tunable (looks only): every prop's scale × mult, and a prop whose scaled footprint would come
-// within BIG_PROPS.obClear m of the OB box is left out (the static check, bigPropsError, is at mult 1 only).
+// within BIG_PROPS.obClear m of the OB box is left out (the static check, bigPropsError, uses the default mult).
 // → { keep: [props with the scaled scale], clipped: [the props left out, as asked] }
 export function scaleBigProps(hole, list, mult) {
   if (mult === 1 || !list.length) return { keep: list, clipped: [] };
