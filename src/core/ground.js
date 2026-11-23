@@ -21,10 +21,16 @@ export const KIND_KEYS = Object.freeze({ ob: 'deepRough', rough: 'rough', fairwa
 // ---- noise (the recipe's, deterministic; `seed` shifts the hash) ----
 const fract = v => v - Math.floor(v);
 export const hash = (x, z, seed = 0) => fract(Math.sin(x * 127.1 + z * 311.7 + seed * 74.7) * 43758.5453);
-export function vnoise(x, z) {
+// cache (optional) = { xi, zi, a, b, c, d }: the last cell's corners (a painter scanning a row reuses them)
+export function vnoise(x, z, cache = null) {
   const xi = Math.floor(x), zi = Math.floor(z), xf = x - xi, zf = z - zi;
   const u = xf * xf * (3 - 2 * xf), v = zf * zf * (3 - 2 * zf);
-  const a = hash(xi, zi), b = hash(xi + 1, zi), c = hash(xi, zi + 1), d = hash(xi + 1, zi + 1);
+  let a, b, c, d;
+  if (cache && cache.xi === xi && cache.zi === zi) ({ a, b, c, d } = cache);
+  else {
+    a = hash(xi, zi); b = hash(xi + 1, zi); c = hash(xi, zi + 1); d = hash(xi + 1, zi + 1);
+    if (cache) Object.assign(cache, { xi, zi, a, b, c, d });
+  }
   return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
 }
 const mod = (a, n) => ((a % n) + n) % n;
@@ -64,10 +70,11 @@ export function detailTexture(look = GROUND_LOOK) {
 }
 
 // ---- the drawn bands (edge, lip, bank) and the water's depth, from the painted surfaces ----
-// Chamfer distance (px, 1 / √2 steps) from every pixel to the nearest pixel where isSrc(i)
+// Chamfer distance (px, 1 / √2 steps) from every pixel to the nearest pixel where isSrc(i) (or isSrc[i], an array)
 export function distanceTo(W, H, isSrc) {
   const d = new Float32Array(W * H), INF = 1e9, D = Math.SQRT2;
-  for (let i = 0; i < W * H; i++) d[i] = isSrc(i) ? 0 : INF;
+  if (typeof isSrc === 'function') for (let i = 0; i < W * H; i++) d[i] = isSrc(i) ? 0 : INF;
+  else for (let i = 0; i < W * H; i++) d[i] = isSrc[i] ? 0 : INF; // a flag per pixel (faster)
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const k = j * W + i; let v = d[k];
     if (i > 0) v = Math.min(v, d[k - 1] + 1);
@@ -88,14 +95,13 @@ export function distanceTo(W, H, isSrc) {
 // A pixel is in a band when the nearest source pixel's edge is less than the band's width away.
 export function groundKinds(base, W, H, res, look = GROUND_LOOK) {
   const K = KIND, kinds = Uint8Array.from(base), depth = new Float32Array(W * H);
-  const has = ids => { const s = new Set(ids); for (const b of base) if (s.has(b)) return true; return false; };
-  const within = (d, w) => d - 0.5 < w * res;
-  const course = new Set([K.fairway, K.tee, K.fringe]);
-  const dCourse = distanceTo(W, H, i => course.has(base[i]));
-  const water = has([K.water]), sand = has([K.sand]);
-  const dWater = water ? distanceTo(W, H, i => base[i] === K.water) : null;
-  const dShore = water ? distanceTo(W, H, i => base[i] !== K.water) : null;
-  const dNotSand = sand ? distanceTo(W, H, i => base[i] !== K.sand) : null;
+  const within = (d, w) => d - 0.5 < w * res, n = W * H;
+  const flags = test => { const f = new Uint8Array(n); for (let i = 0; i < n; i++) f[i] = test(base[i]) ? 1 : 0; return f; };
+  const dCourse = distanceTo(W, H, flags(b => b === K.fairway || b === K.tee || b === K.fringe));
+  const water = base.includes(K.water), sand = base.includes(K.sand);
+  const dWater = water ? distanceTo(W, H, flags(b => b === K.water)) : null;
+  const dShore = water ? distanceTo(W, H, flags(b => b !== K.water)) : null;
+  const dNotSand = sand ? distanceTo(W, H, flags(b => b !== K.sand)) : null;
   for (let i = 0; i < W * H; i++) {
     const b = base[i];
     if (b === K.water) { depth[i] = (dShore[i] - 0.5) / res; continue; }
@@ -107,19 +113,21 @@ export function groundKinds(base, W, H, res, look = GROUND_LOOK) {
 }
 
 // ---- colours ----
+const CACHES = {}; // per kind: the last noise cell (the result never depends on it)
 // The low-frequency part of a kind's texture (base + soft patches / rock bands): painted into the course map
 export function lowDetail(kind, x, z, look = GROUND_LOOK) {
   const g = look.kinds[kind]; if (!g) return 1;
+  const cache = CACHES[kind] ??= { xi: NaN, zi: NaN, a: 0, b: 0, c: 0, d: 0 };
   let v = g.base;
-  if (g.patch) v += g.patch[0] * vnoise(x / g.patch[1], z / g.patch[1]);
-  if (g.bands) v += g.bands[0] * Math.floor(vnoise(x / g.bands[1], z / g.bands[1]) * g.bands[2]) / g.bands[2];
+  if (g.patch) v += g.patch[0] * vnoise(x / g.patch[1], z / g.patch[1], cache);
+  if (g.bands) v += g.bands[0] * Math.floor(vnoise(x / g.bands[1], z / g.bands[1], cache) * g.bands[2]) / g.bands[2];
   return v;
 }
-// The fine part (speckle + dabs), evaluated per course-map pixel (level 1; level 2 draws it from the texture)
+// The fine part, evaluated per course-map pixel (level 1; level 2 draws it from the texture): the speckle only.
+// The dabs (0.22 m wide) are under one map pixel (0.13–0.25 m), so they would only cost time (×3 to paint).
 export function fineDetail(kind, x, z, look = GROUND_LOOK) {
-  const g = look.kinds[kind]; if (!g) return 0;
-  const t = look.texture;
-  return (g.speck ? g.speck * speck(x, z, t.speck, look.seed) : 0) + (g.dab ? g.dab * dabs(x, z, t.dabCell, t.dabLen, t.dabWid, 1.3, look.seed) : 0);
+  const g = look.kinds[kind];
+  return g?.speck ? g.speck * speck(x, z, look.texture.speck, look.seed) : 0;
 }
 // The water's colour: water → waterDeep with the depth, plus the recipe's sparkle ripples
 export function waterColour(P, x, z, depth, look = GROUND_LOOK) {
@@ -137,7 +145,8 @@ export const onGridLine = (x, z) => { const fx = mod(x, GRID.step), fz = mod(z, 
 
 // One course-map pixel: P = palette as [r, g, b] 0..255 per key. level 2 leaves the stripes, the putting grid
 // and the fine detail to the shader (fairway = fairwayA, green = greenA or gridFill).
-export function groundColour(P, kind, x, z, { level, stripe, green, depth = 0, look = GROUND_LOOK }) {
+// `out` (optional) = an [r, g, b] array to fill (the painter reuses one: no allocation per pixel)
+export function groundColour(P, kind, x, z, { level, stripe, green, depth = 0, look = GROUND_LOOK }, out = [0, 0, 0]) {
   const name = KINDS[kind];
   if (name === 'water') return waterColour(P, x, z, depth, look);
   let c;
@@ -147,7 +156,8 @@ export function groundColour(P, kind, x, z, { level, stripe, green, depth = 0, l
     else c = level === 1 && !greenStripe(x, z) ? P.greenB : P.greenA;
   } else c = P[KIND_KEYS[name]];
   const d = lowDetail(name, x, z, look) + (level === 1 ? fineDetail(name, x, z, look) : 0);
-  return [Math.min(255, c[0] * d), Math.min(255, c[1] * d), Math.min(255, c[2] * d)];
+  out[0] = Math.min(255, c[0] * d); out[1] = Math.min(255, c[1] * d); out[2] = Math.min(255, c[2] * d);
+  return out;
 }
 
 // The shader's surface mask (level 2), RGBA8 at maskScale × the map: R = fairway (mowing stripes), G = green

@@ -118,3 +118,10 @@ test('treeShadows: one soft shadow per tree in play, pushed away from the sun', 
   assert.ok(c.every((v, i) => v >= P.shadow[i] && v <= 255));
   assert.deepEqual(treeShadows(undefined, [0, 1, 0]), []);
 });
+
+test('vnoise: the painter\'s corner cache never changes a value', async () => {
+  const { vnoise, lowDetail } = await import('../src/core/ground.js');
+  const cache = { xi: NaN, zi: NaN, a: 0, b: 0, c: 0, d: 0 };
+  for (const [x, z] of [[0.2, 0.3], [0.7, 0.3], [5.5, -2.1], [5.6, -2.1], [0.2, 0.3]]) assert.equal(vnoise(x, z, cache), vnoise(x, z));
+  assert.equal(lowDetail('rough', 12.3, -40.2), lowDetail('rough', 12.3, -40.2));
+});

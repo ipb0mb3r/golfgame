@@ -38,12 +38,12 @@ export function paintGround(hole, surfaceAt, biome, { green: greenOverride = nul
   const p = Object.fromEntries(Object.entries(biome.palette).map(([k, c]) => [k, parseColour(c)]));
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
-  const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H), opts = { level, stripe, green, depth: 0 };
+  const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H), opts = { level, stripe, green, depth: 0 }, rgb = [0, 0, 0];
   for (let j = 0; j < H; j++) {
     const z = map.z0 + (j + 0.5) / res;
     for (let i = 0; i < W; i++) {
       const k = j * W + i; opts.depth = depth[k];
-      const c = groundColour(p, kinds[k], map.x0 + (i + 0.5) / res, z, opts);
+      const c = groundColour(p, kinds[k], map.x0 + (i + 0.5) / res, z, opts, rgb);
       img.data[k * 4] = c[0]; img.data[k * 4 + 1] = c[1]; img.data[k * 4 + 2] = c[2]; img.data[k * 4 + 3] = 255;
     }
   }
