@@ -284,27 +284,20 @@ export const TREE_VARIETY = Object.freeze({ seed: 78, canopyLean: 0.06, sceneryL
 //   scale: per-copy size [from, spread] (seeded, the scatter's own stream; each copy also gets a random turn).
 export const SMALL_PROPS = Object.freeze({
   seed: 61,
-  surfaces: Object.freeze(['rough', 'ob']),
-  maxPerHa: 4000, maxProps: 20000,
+  surfaces: Object.freeze(['rough', 'ob']),   // the ground a prop may stand on (a pick's `on`)
+  waterEdge: 'waterEdge',                      // AP7d: the extra `on` name of a shore pick (reeds): land beside water (below)
+  maxPerHa: 4000, maxProps: 20000, maxPerTenM: 20,
   cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
   margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
   ballClear: 1.2, lineClear: 0.5,
   drawDist: 45, maxTris: 10000, moveStep: 0.5, behind: 2, turnStep: 0.05,
-  scale: Object.freeze([0.8, 0.45]),
-});
-// AP7c: the two PLACEHOLDER small-prop pieces (core/smallProps.js builds them; the artist's real pieces replace
-// them). Sizes in m. grassTuft: `blades` blades on a ring of radius `ring`, each `width` wide at the
-// foot, `height` [from, spread] tall, leaning out by `lean` m (slot `base` at the foot, `tip` at the tip; 2 triangles
-// each, back to back).
-// flowerPatch: one flower per spot [x, z, stem height]: a 1-triangle stem (`stemW` wide, slot `stem`) and a
-// 6-triangle head (a 3-sided double pyramid, radius `headR`, half-height `headH`) in the slot heads[i].
-export const SMALL_PROP_LOOK = Object.freeze({
-  grassTuft: Object.freeze({ blades: 6, ring: 0.05, width: 0.1, height: Object.freeze([0.2, 0.14]), lean: 0.1 }),
-  flowerPatch: Object.freeze({
-    stemW: 0.025, headR: 0.05, headH: 0.035,
-    spots: Object.freeze([Object.freeze([0, 0, 0.28]), Object.freeze([0.11, 0.06, 0.22]), Object.freeze([-0.06, 0.1, 0.24])]),
-    heads: Object.freeze(['headA', 'headB', 'headA']),
-  }),
+  scale: Object.freeze([0.8, 0.45]),           // a piece without its own range: from, spread (× 0.8–1.25)
+  areaStep: 2,                                 // m, the grid that measures a pick's surfaces (per-pick perHa)
+  // AP7d: the water-edge surface. A shore patch's centre stands on land `reach` m or less outside the water's
+  // edge; `step` m is the grid that finds the shoreline (each boundary point stands for `step` m of it).
+  shore: Object.freeze({ reach: 1, step: 0.5, coarse: 2, land: Object.freeze(['rough', 'ob']) }),
+  trunkClear: 1,                               // AP7d: m from a tree trunk's edge or an OB stake (nothing stands closer)
+  stakeR: 0.05, sceneryTrunkR: 0.3,            // m: an OB stake's radius; a scenery tree's trunk (its real radius is not stored)
 });
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.

@@ -22,6 +22,8 @@ const SPRUCE_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt' }
 const PALM_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, canopy: 'leafAlt', trunk: 'trunkAlt', mark: 'trunk' });
 const BIRCH_SLOTS = Object.freeze({ ...TREE_GRADIENT_SLOTS, trunk: 'trunkAlt', mark: 'trunk' });
 const TREE_TINT =Object.freeze({ slot: 'canopy', mode: 'tint', h: [0.2, 0.15], s: 0.25, l: [0.84, 0.16] });
+// AP7d: a small prop's per-copy tint: the trees' tint at half the spread, on the listed (green) slots only
+const smallTint = slots => Object.freeze({ ...TREE_TINT, slot: undefined, slots: Object.freeze(slots), half: 0.5 });
 export const LIBRARY = Object.freeze({
   // Course textures: the same greyscale textures in every biome, recoloured by the palette. None exist
   // yet (AP6): with none picked, the course is painted in flat palette colours, as today.
@@ -86,14 +88,20 @@ export const LIBRARY = Object.freeze({
     whiteStakes: { desc: 'White out-of-bounds stakes (fixed white: the golf rule colour).', slots: {}, tris: 24 },
     flatPond: { desc: 'A flat, slightly see-through water surface over a pond in a bowl (holes with scenery.water).', slots: { surface: 'pondSurface' }, tris: 48 },
   },
-  // Scattered by the set's rule (smallProps, AP7c; core/smallProps.js builds the shapes, config SMALL_PROP_LOOK).
-  // One draw call per pick (all its copies instanced, every part in one geometry painted per vertex by slot),
-  // lit like the ground (up normals), fogged; at most SMALL_PROPS.maxTris triangles of them per frame, the
-  // nearest first. tris = one copy (ART_STYLE §5: a small prop ≤ 50).
-  // PLACEHOLDERS (AP7c, dev only: test-small-props): the artist's real pieces replace them.
+  // Scattered by the set's rule (smallProps, AP7c / AP7d; core/smallPropShapes.js builds the shapes, the artist's
+  // docs/art/small-props/SPEC.md). One draw call per pick (all its copies instanced, every part in one geometry,
+  // each vertex mixed from its lo / hi slot by w), toon shaded like the trees, fogged; at most SMALL_PROPS.maxTris
+  // triangles of them per frame, the nearest first. tris = one copy (ART_STYLE §5: a small prop ≤ 50).
+  //   scale = [min, max] size of a copy (a random draw); shade = the per-copy colour tint (TREE_TINT at half the
+  //   spread: `half` 0.5 = half way back to white) on the listed green `slots` only: petals, flowers and stones
+  //   keep their exact colour.
   smallProps: {
-    grassTuft: { desc: 'Placeholder: a tuft of 6 thin blades, rough-coloured at the foot, lighter at the tips (each blade 2 triangles, one per side).', slots: { base: 'rough', tip: 'leafTop' }, tris: 12 },
-    flowerPatch: { desc: 'Placeholder: 3 little flowers, each a thin stem and a round-ish head (two in propA, one in propB): a 2-triangle stem and a 6-triangle head each.', slots: { stem: 'leafLow', headA: 'propA', headB: 'propB' }, tris: 24 },
+    grassTuft: { desc: 'A thin fan of 7 slim, pointed blades (0.3–0.45 m): deepRough at the foot, leafTop at the tips, each blade drooping a little; drawn from both sides.', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 21 },
+    flowerPatch: { desc: 'A flat carpet of 9 five-point flower heads lying 3 cm above the grass over ~0.8 × 0.65 m: no stems, no leaves, so it never hides the ball. One colour (petal).', slots: { petal: 'propA' }, scale: [0.8, 1.3], tris: 45 },
+    flowerBush: { desc: 'A round green dome 1.36 m across and 0.92 m tall (crown low, foot top) with 4 raised flower clumps (flower). Tall: scenery beyond OB only.', slots: { low: 'leafLow', top: 'leafTop', flower: 'propA' }, scale: [0.8, 1.25], shade: smallTint(['low', 'top']), tris: 46 },
+    pebbles: { desc: 'Three squashed 5-sided stones close together, ~0.45 m across.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 30 },
+    flatStone: { desc: 'One flat 6-sided stepping stone, 0.64 × 0.52 m and 0.12 m tall.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 24 },
+    reeds: { desc: 'A bunch of 10 tall blades (0.7–1.15 m) bending gently outward: deepRough at the foot, leafTop at the tips; drawn from both sides. Meant for a water edge (perTenM).', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 30 },
   },
   // Placed by hand in the hole data; the set lists which are available. None yet (ART1 / AP7).
   bigProps: {},
