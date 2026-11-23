@@ -1,7 +1,7 @@
 // Renderer, lights, sky, the terrain mesh (built from the hole's heightAt) and the scenery.
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
-import { TUNE, SMALL_PROPS, BIG_PROPS } from '../core/config.js';
+import { TUNE, SMALL_PROPS, BIG_PROPS, FENCES } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
 import { detailTexture, MASK_AMOUNT, GRID } from '../core/ground.js';
 import { GROUND_LOOK } from '../core/config.js';
@@ -14,6 +14,13 @@ import { addSmallProps } from './smallProps.js';
 import { addBigProps } from './bigProps.js';
 import { holeBigProps } from '../holes/dev-big-props.js';
 import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
+import { addFences } from './fences.js';
+import { addEventProps } from './eventProps.js';
+import { holeFences } from '../holes/dev-fences.js';
+import { holeEventProps } from '../holes/dev-event-props.js';
+import { fencesClear } from '../core/fences.js';
+import { scaleEventProps, eventPropsClear } from '../core/eventProps.js';
+import { eventPropShape } from '../core/eventPropShapes.js';
 import { clearOf, stakeThings } from '../core/smallProps.js';
 import { waterSurface, waterColours } from '../core/water.js';
 import { WATER_LOOK } from '../core/config.js';
@@ -127,7 +134,14 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   const bigAsked = holeBigProps(hole, biome.id), { keep: bigList, clipped: bigClipped } = scaleBigProps(hole, bigAsked, TUNE.BIG_PROP_SCALE, LIBRARY);
   if (bigClipped.length) console.info(`Pocket Links: BIG_PROP_SCALE ${TUNE.BIG_PROP_SCALE} would put ${bigClipped.length} big prop(s) of ${hole.id} (${bigClipped.map(p => p.id).join(', ')}) within ${BIG_PROPS.obClear} m of OB, so they are not drawn.`);
   const bigKept = bigPropsFor(bigList, biome.bigProps).keep;
-  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes, bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee));
+  // AP7f / AP7g: the fences (laid at FENCE_SCALE) and the event props (at EVENT_PROP_SCALE) this set draws, the hole's own
+  // plus the dev overlays with ?biome=test-fences / test-event-props: no scenery tree within FENCES.treeClear m of a
+  // fence leg, nor within BIG_PROPS.treeClear m of an event prop's footprint or in its sight corridor to the tee
+  const fenceAsked = holeFences(hole, biome.id), eventAsked = scaleEventProps(holeEventProps(hole, biome.id), TUNE.EVENT_PROP_SCALE);
+  const eventKept = bigPropsFor(eventAsked, biome.eventProps).keep;
+  const treeFree = allOf([bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee), fencesClear(bigPropsFor(fenceAsked, biome.fences).keep, FENCES.treeClear),
+    eventPropsClear(eventKept, BIG_PROPS.treeClear, hole.tee)]);
+  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes, treeFree);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
   // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea.
@@ -136,7 +150,8 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   if (biome.smallProps.pieces.length) {
     const things = [...(hole.obstacles ?? []).filter(o => o.type === 'tree').map(o => ({ x: o.x, z: o.z, r: o.trunkR ?? SMALL_PROPS.sceneryTrunkR })),
       ...sceneryTrees.map(([x, z]) => ({ x, z, r: SMALL_PROPS.sceneryTrunkR })), ...stakeThings(sc.stakes),
-      ...bigKept.map(p => ({ x: p.x, z: p.z, r: footprintOf(p) }))]; // AP7e: none under a big prop
+      ...bigKept.map(p => ({ x: p.x, z: p.z, r: footprintOf(p) })), // AP7e: none under a big prop
+      ...eventKept.map(p => ({ x: p.x, z: p.z, r: eventPropShape(p.id).radius * p.scale }))]; // AP7g: nor under an event prop (fences: small props may stay, SPEC §7.5)
     const clear = clearOf(things), onLand = shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : () => true;
     keep = (x, z) => onLand(x, z) && clear(x, z);
   }
@@ -145,7 +160,16 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   // (with the ocean they stand on the DRAWN ground, which slopes under the sea beyond the beach top)
   const drawnY = shore ? (x, z) => (shore.outward(x, z) > 0 ? shore.drawnY(x, z) : heightAt(x, z)) : heightAt;
   const bigProps = addBigProps(scene, hole, bigList, drawnY, biome, look, toon);
-  return { scene, camera, colliderOutlines, shore, smallProps, bigProps, water }; // X43: water (or null) follows the ball; AP6b: shore (or null) for the minimap's sea
+  // AP7f / AP7g: the fences (one merged mesh per look) and the event props (one instanced draw call per piece), looks only
+  const fences = addFences(scene, hole, fenceAsked, drawnY, biome, look, toon, TUNE.FENCE_SCALE);
+  const eventProps = addEventProps(scene, hole, eventAsked, drawnY, biome, look, toon);
+  return { scene, camera, colliderOutlines, shore, smallProps, bigProps, fences, eventProps, water }; // X43: water (or null) follows the ball; AP6b: shore (or null) for the minimap's sea
+}
+
+// (x, z) → true where every given rule allows a tree (each a function or null); null when there is none
+function allOf(rules) {
+  const r = rules.filter(Boolean);
+  return r.length ? (x, z) => r.every(f => f(x, z)) : null;
 }
 
 // X43 (DESIGN §8b "The water surface"): one see-through mesh over every water area of the hole (core/water.js:
