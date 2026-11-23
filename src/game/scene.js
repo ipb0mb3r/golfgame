@@ -15,6 +15,8 @@ import { addBigProps } from './bigProps.js';
 import { holeBigProps } from '../holes/dev-big-props.js';
 import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
 import { clearOf, stakeThings } from '../core/smallProps.js';
+import { waterSurface, waterColours } from '../core/water.js';
+import { WATER_LOOK } from '../core/config.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -100,13 +102,9 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
     scene.add(mesh);
   }
 
-  // Water surface (holes whose pond sits in a bowl)
-  if (sc.water) {
-    const w = new THREE.Mesh(new THREE.CircleGeometry(1, 48), new THREE.MeshLambertMaterial({ color: look('furniture', biome.furniture.pond).surface, transparent: true, opacity: 0.88 }));
-    w.rotation.x = -Math.PI / 2; w.scale.set(sc.water.rx * sc.water.scale, sc.water.rz * sc.water.scale, 1);
-    w.position.set(sc.water.cx, sc.water.y, sc.water.cz); w.name = 'water';
-    scene.add(w);
-  }
+  // X43 (DESIGN §8b "The water surface"): the see-through surface over every water area (it replaced the old opaque
+  // pond surface, X42)
+  const water = addWaterSurface(scene, hole, terrain, P);
 
   // Tee markers and the white out-of-bounds stakes: one instanced draw call each (AP1)
   {
@@ -147,8 +145,113 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   // (with the ocean they stand on the DRAWN ground, which slopes under the sea beyond the beach top)
   const drawnY = shore ? (x, z) => (shore.outward(x, z) > 0 ? shore.drawnY(x, z) : heightAt(x, z)) : heightAt;
   const bigProps = addBigProps(scene, hole, bigList, drawnY, biome, look, toon);
-  return { scene, camera, colliderOutlines, shore, smallProps, bigProps }; // AP6b: shore (or null) for the minimap's sea
+  return { scene, camera, colliderOutlines, shore, smallProps, bigProps, water }; // X43: water (or null) follows the ball; AP6b: shore (or null) for the minimap's sea
 }
+
+// X43 (DESIGN §8b "The water surface"): one see-through mesh over every water area of the hole (core/water.js:
+// flat at a pond's level, just over a creek's bed, fading out softly onto the bank at the edge), so the painted bed and
+// its deep-to-light gradient show through. On it, a stylized caustic web (owner 2026-11-23, "a sunny swimming pool
+// seen from above"): thin near-white wavy lines (core/water.js waterColours) round irregular cells, see-through
+// between them, two layers drifting past each other, faded with distance and near the ball. Fogged. No depth written;
+// drawn first of the see-through things (WATER_LOOK.renderOrder). Returns { update(ballPos) } (or null: no water).
+function addWaterSurface(scene, hole, terrain, P) {
+  const w = waterSurface(hole, terrain);
+  if (!w) return null;
+  const L = WATER_LOOK, c = waterColours(P);
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(w.positions, 3));
+  geo.setAttribute('shore', new THREE.BufferAttribute(w.shore, 1));
+  geo.setIndex(new THREE.BufferAttribute(w.index, 1));
+  geo.computeBoundingSphere();
+  const mat = new THREE.ShaderMaterial({
+    uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, {
+      uLine: { value: new THREE.Color(c.line) }, uLines: { value: TUNE.WATER_LINES }, uCell: { value: TUNE.WATER_CELL },
+      uWidth: { value: new THREE.Vector2(L.line[1], L.minPx) }, uLayer2: { value: new THREE.Vector3(...L.layer2) },
+      uWander: { value: new THREE.Vector2(...L.wander) }, uWarp: { value: new THREE.Vector2(...L.warp) }, uRound: { value: L.round },
+      uFade: { value: new THREE.Vector3(...L.fade, L.cellPx) }, uEdge: { value: new THREE.Vector2(...L.edge) },
+      uBall: { value: new THREE.Vector3(0, -1e4, 0) }, uBallClear: { value: new THREE.Vector2(...L.ballClear) },
+      uTime: { value: 0 },
+    }]),
+    vertexShader: WATER_VERT, fragmentShader: WATER_FRAG,
+    transparent: true, depthWrite: false, fog: true,
+    polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -2,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.name = 'water surface'; mesh.renderOrder = L.renderOrder;
+  mesh.visible = TUNE.WATER_LINES > 0; // 0 = no web: nothing left to draw (the bed and the soft edge are the ground's)
+  const speed = TUNE.WATER_SPEED;
+  mesh.onBeforeRender = () => { mat.uniforms.uTime.value = (performance.now() / 1000 * speed) % 3600; };
+  scene.add(mesh);
+  return { mesh, update(ball) { mat.uniforms.uBall.value.set(ball.x, ball.y, ball.z); } };
+}
+const WATER_VERT = /* glsl */ `
+attribute float shore;
+varying vec3 vWorld;
+varying float vShore;
+#include <fog_pars_vertex>
+void main() {
+  vec4 wp = modelMatrix * vec4(position, 1.0);
+  vWorld = wp.xyz;
+  vShore = shore;
+  vec4 mvPosition = viewMatrix * wp;
+  gl_Position = projectionMatrix * mvPosition;
+  #include <fog_vertex>
+}`;
+// The web: for each pixel, the distance to the nearest border of a Voronoi cell (two passes, the cells' points
+// wander slowly), on a gently sine-bent plane so the lines are wavy; a line where that distance is under half the
+// line width (at least minPx / 2 pixels, antialiased by fwidth).
+const WATER_FRAG = /* glsl */ `
+uniform vec3 uLine, uLayer2, uBall, uFade;
+uniform float uLines, uCell, uTime, uRound;
+uniform vec2 uWidth, uWander, uWarp, uEdge, uBallClear;
+varying vec3 vWorld;
+varying float vShore;
+#include <fog_pars_fragment>
+vec2 waterHash(vec2 p) {
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453);
+}
+vec2 waterPoint(vec2 c, float t) { return 0.5 + uWander.x * sin(t * uWander.y + 6.2831 * waterHash(c)); }
+float waterBorder(vec2 x, float t) { // distance (in cells) to the nearest cell border
+  vec2 n = floor(x), f = x - n, mr = vec2(0.0), mg = vec2(0.0);
+  float md = 8.0;
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+    vec2 g = vec2(float(i), float(j)), r = g + waterPoint(n + g, t) - f;
+    float d = dot(r, r);
+    if (d < md) { md = d; mr = r; mg = g; }
+  }
+  md = 8.0;
+  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {
+    vec2 g = mg + vec2(float(i), float(j)), r = g + waterPoint(n + g, t) - f;
+    vec2 e = r - mr;
+    if (dot(e, e) > 1e-5) { // smooth minimum: the cells' corners round off, the lines thicken where they meet
+      float d = dot(0.5 * (mr + r), normalize(e)), h = clamp(0.5 + 0.5 * (d - md) / uRound, 0.0, 1.0);
+      md = mix(d, md, h) - uRound * h * (1.0 - h);
+    }
+  }
+  return max(md, 0.0);
+}
+float waterWeb(vec2 p, float cell, float t) { // 0..1 line coverage, p in m
+  vec2 x = p / cell;
+  x += uWarp.x * sin(x.yx * uWarp.y + vec2(0.7, 1.3) * t * 0.5);
+  float d = waterBorder(x, t) * cell;            // m
+  float px = max(fwidth(d), 1e-4);                // m per pixel
+  float half_ = max(0.5 * uWidth.x * cell, 0.5 * uWidth.y * px);
+  float k = 1.0 - smoothstep(half_ - 0.5 * px, half_ + 0.5 * px, d);
+  return k * (1.0 - smoothstep(cell / (2.0 * uFade.z), cell / uFade.z, px)); // too small on screen: gone
+}
+void main() {
+  float dist = length(cameraPosition - vWorld);
+  float far = 1.0 - smoothstep(uFade.x, uFade.y, dist);
+  float edge = smoothstep(-uEdge.x, uEdge.y, vShore); // the soft shore: 0 on the bank, 1 inside the water
+  float ball = smoothstep(uBallClear.x, uBallClear.y, length(vWorld - uBall)); // the white ball stays clear
+  vec2 drift = vec2(0.6, 0.8) * uLayer2.z * uTime; // no branch around it: fwidth needs every pixel
+  float a = max(waterWeb(vWorld.xz, uCell, uTime), uLayer2.y * waterWeb(vWorld.xz + drift, uCell * uLayer2.x, uTime * 1.3 + 17.0));
+  gl_FragColor = vec4(uLine, clamp(a * uLines * far * edge * ball, 0.0, 1.0));
+  #include <tonemapping_fragment>
+  #include <colorspace_fragment>
+  #include <fog_fragment>
+}`;
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
 // with one geometry and one material. `matrices` = the instances' local matrices (matrixOf below),

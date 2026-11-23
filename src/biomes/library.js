@@ -86,7 +86,7 @@ export const LIBRARY = Object.freeze({
     // piece names its .glb (`model`) and the procedural piece drawn when the file can't load (`fallback`).
     testCubeMarkers: { desc: 'AP3 test: two cubes from a model file either side of the tee (the AP2 test cube).', slots: { marker: 'subAccent' }, model: 'assets/models/test-cube.glb', fallback: 'ballMarkers', tris: 24 },
     whiteStakes: { desc: 'White out-of-bounds stakes (fixed white: the golf rule colour).', slots: {}, tris: 24 },
-    flatPond: { desc: 'A flat, slightly see-through water surface over a pond in a bowl (holes with scenery.water).', slots: { surface: 'pondSurface' }, tris: 48 },
+    flatPond: { desc: 'Not drawn since X43 (the see-through water surface covers every water area); kept while the biome sets still pick it (furniture.pond).', slots: { surface: 'pondSurface' }, tris: 48 },
   },
   // Scattered by the set's rule (smallProps, AP7c / AP7d; core/smallPropShapes.js builds the shapes, the artist's
   // docs/art/small-props/SPEC.md). One draw call per pick (all its copies instanced, every part in one geometry,

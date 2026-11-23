@@ -303,6 +303,41 @@ export const GROUND_LOOK = Object.freeze({
   }),
 });
 
+// X43: the see-through water surface (DESIGN §8b "The water surface", core/water.js). Looks only.
+//   step: m between the grid points the water is found on and drawn with; lift: m above the bed a wet point is drawn
+//   at least; drop: m a body's flat level sits under its lowest shore point.
+//   The soft edge (owner 2026-11-23: "it should blend better, even if the surface ends up a little bit on the rock"):
+//   edge: [out, in] m: the surface fades from fully drawn `in` m inside the water's edge to nothing `out` m onto the
+//   bank (smooth, per pixel, from each vertex's distance to the real edge); hug: m over the ground the mesh lies
+//   where it reaches onto the bank (never under it, so the ground never cuts it); bisect: halvings of a grid step
+//   that find the water's edge between a wet and a dry grid point (1 m / 2^4 ≈ 6 cm).
+//   The caustic web (owner 2026-11-23: "something like a sunny swimming pool seen from above ... stylized and
+//   see-through ... some kind of white see-through grid as the water surface"): thin, near-white wavy lines forming
+//   irregular rounded cells (the distance to a Voronoi cell's border, in the shader, no texture), fully see-through
+//   between them, so the painted bed reads. Two layers: the main web (WATER_CELL m cells) and a fainter, smaller one
+//   that drifts past it; the cells' points wander slowly (× WATER_SPEED). The strength is WATER_LINES.
+//   line: [sun share, width]: the lines' colour is the palette's `cloud` mixed this share toward `sun`; each line's
+//   width as a share of the cell (never thinner than minPx pixels, so it never breaks up into flicker).
+//   layer2: [scale, strength, drift m/s]: the second web's cell size (× WATER_CELL), strength (× the main web's) and drift.
+//   wander: [amplitude, rad/s]: how far (share of a cell) and how fast each cell's point moves; warp: [amplitude,
+//   frequency] a slow sine bend of the pattern (shares of a cell) so the lines are wavy, not straight; round: share of
+//   a cell over which the borders blend (a smooth minimum), so the cells are rounded and the lines thicken where they meet.
+//   fade: [from, to] m from the camera: the lines are crisp up to `from` and gone by `to`; they also fade when a cell
+//   gets smaller than cellPx pixels on screen (grazing angle), so nothing shimmers far away.
+//   ballClear: [from, to] m: the lines are gone within `from` m of the ball and full beyond `to` m (the ball is white).
+//   renderOrder: drawn first among the see-through things (the aim marks, rings and the ball's shadow come after,
+//   so they read on top); the ball is drawn after the water too (props.js).
+export const WATER_LOOK = Object.freeze({
+  step: 1, lift: 0.08, drop: 0.05,
+  edge: Object.freeze([0.5, 0.9]), hug: 0.06, bisect: 4,
+  line: Object.freeze([0.5, 0.035]), minPx: 1.5,
+  layer2: Object.freeze([0.62, 0.45, 0.12]),
+  wander: Object.freeze([0.36, 0.35]), warp: Object.freeze([0.06, 4.5]), round: 0.12,
+  fade: Object.freeze([35, 75]), cellPx: 14,
+  ballClear: Object.freeze([0.7, 1.5]),
+  renderOrder: -0.2,
+});
+
 // AP7c: small props scattered by a biome set's rule (DESIGN §8b "Small props", core/smallProps.js). Looks only:
 // no physics, no effect on the aim line or the warnings. Every number of the scatter and the drawing is here.
 //   surfaces: the ONLY surfaces a prop may stand on, whatever the set's `on` says (never tee, fairway, fringe,
@@ -551,6 +586,12 @@ export const TUNABLES = Object.freeze({
   // windmill 2.5, chalets and beach hut 1.8); BIG_PROP_SCALE = one multiplier on those sizes (default 1, for comparing), on top of the hand-placed scale (0.9–1.15);
   // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
   BIG_PROP_SCALE:        { def: 1,      min: 0.2,   max: 1.6 },
+  // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
+  // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
+  // WATER_SPEED = × how fast the web moves (0 = still).
+  WATER_LINES:           { def: 0.85, min: 0,     max: 1 },
+  WATER_CELL:            { def: 2.4,  min: 0.8,   max: 8 },
+  WATER_SPEED:           { def: 1,    min: 0,     max: 3 },
 });
 
 // The live values. Only setTunable() / resetTunables() change them.
