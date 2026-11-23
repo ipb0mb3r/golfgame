@@ -139,10 +139,10 @@ export const PIECES = {
     C2: { name: 'C2 · Wavy flower caps', sub: 'a wavy edge, lower at the front', slots: { low: 'leafLow', mid: 'leaf', top: 'leafTop', flower: 'propA' },
       build(seed) { return spill(seed, 1); } },
     D1: { name: 'D1 · Flower dots', sub: 'green dome, 6 small flower dots', slots: { low: 'leafLow', mid: 'leaf', top: 'leafTop', flower: 'propA' },
-      build(seed) { const r = rng(seed), d = dome(6, r() * 3); d.w = d.w.map(v => 1 - v); const out = [part(d, 'low', 'top')];
+      build(seed) { const r = rng(seed), d = dome(6, r() * 3); const out = [part(d, 'low', 'top')]; // foot leafLow → crown leafTop, like the trees
         for (let i = 0; i < 6; i++) out.push(part(spot(0.35 + r() * 0.9, (i / 6) * TAU + r() * 0.6, 0.13, 3, 1.1), 'flower', 'flower')); return out; } },
     D2: { name: 'D2 · Bigger spots', sub: 'green dome, 4 raised flower clumps', slots: { low: 'leafLow', mid: 'leaf', top: 'leafTop', flower: 'propA' },
-      build(seed) { const r = rng(seed), d = dome(6, r() * 3); d.w = d.w.map(v => 1 - v); const out = [part(d, 'low', 'top')];
+      build(seed) { const r = rng(seed), d = dome(6, r() * 3); const out = [part(d, 'low', 'top')]; // foot leafLow → crown leafTop, like the trees
         for (let i = 0; i < 4; i++) out.push(part(spot(0.3 + r() * 0.8, (i / 4) * TAU + r() * 0.8, 0.19, 4, 1.12, 0.55), 'flower', 'flower')); return out; } },
     D3: { name: 'D3 · Painted patches', sub: 'green dome, some of its faces flowered', slots: { low: 'leafLow', mid: 'leaf', top: 'leafTop', flower: 'propA' },
       build(seed) { return paintedDome(seed); } },
