@@ -96,3 +96,6 @@ Densities are copies per hectare of the listed surface. A cluster = how many cop
 2. **Draw distance for small props:** draw a piece only within about 60 m of the camera, with a fade or thin-out over the last 10 m. Beyond that they are invisible on a phone anyway (see the fairway views). This keeps them well under the budget.
 3. **A "water edge" scatter surface** for the reeds: patches on a ring 0–1 m outside a pond's or water hazard's edge, on its land side, with N patches per 10 m of shoreline (reeds: ~2 per 10 m).
 4. **Per-pick density in the scatter** (if AP7c has only one perHa per set): the table above sets per-piece densities. Weights + one total also work, and then I'll convert.
+
+## 7. In the real sets (2026-11-23, after AP7d)
+Since AP7d every small prop is drawn at **2× size** (`PROP_SCALE` 2, the owner's pick: "too subtle"), seen out to 60 m and thinned to half beyond 30 m. A prop now covers about 4× the ground, so `meadow-day`, `alpine-day` and `island-day` use about **half the §4 densities**, with the cluster radii about 1.6× wider. The pieces, colours and surfaces are as in §4. perf-check results: mtn-07 291k / 292k / 265k, mtn-04 267k / 268k / 243k (Meadow / Alpine / Island). The 10k-triangle prop cap per frame keeps any hole within budget. Pictures: `09`–`11` (before | after, `?scenario=h1-pond-carry`).
