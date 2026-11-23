@@ -29,7 +29,8 @@ export function modelPieceError(library, group, id, field = null) {
 // Every [group, id] a biome set picks, in pick-list order (the same fields validateBiomeSet checks)
 export function pickedPieces(set) {
   const out = [];
-  const add = (group, ids) => { for (const id of [].concat(ids ?? [])) if (typeof id === 'string') out.push([group, id]); };
+  // X33: a pick may be { id, slots, ... } (core/biome.js pickId; inlined: biome.js imports this file)
+  const add = (group, ids) => { for (const p of [].concat(ids ?? [])) { const id = typeof p === 'string' ? p : p?.id; if (typeof id === 'string') out.push([group, id]); } };
   add('textures', set.textures); add('onTrees', set.onTrees); add('offTrees', set.offTrees); add('rocks', set.rocks);
   add('skies', set.sky); add('backdrops', set.backdrop); add('furniture', Object.values(set.furniture ?? {}));
   add('bigProps', set.bigProps); add('smallProps', set.smallProps?.pieces);

@@ -86,8 +86,15 @@ export const LIBRARY = Object.freeze({
     whiteStakes: { desc: 'White out-of-bounds stakes (fixed white: the golf rule colour).', slots: {}, tris: 24 },
     flatPond: { desc: 'A flat, slightly see-through water surface over a pond in a bowl (holes with scenery.water).', slots: { surface: 'pondSurface' }, tris: 48 },
   },
-  // Scattered by the set's rule (smallProps). None yet (ART1 / AP7).
-  smallProps: {},
+  // Scattered by the set's rule (smallProps, AP7c; core/smallProps.js builds the shapes, config SMALL_PROP_LOOK).
+  // One draw call per pick (all its copies instanced, every part in one geometry painted per vertex by slot),
+  // lit like the ground (up normals), fogged; at most SMALL_PROPS.maxTris triangles of them per frame, the
+  // nearest first. tris = one copy (ART_STYLE §5: a small prop ≤ 50).
+  // PLACEHOLDERS (AP7c, dev only: test-small-props): the artist's real pieces replace them.
+  smallProps: {
+    grassTuft: { desc: 'Placeholder: a tuft of 6 thin blades, rough-coloured at the foot, lighter at the tips (each blade 2 triangles, one per side).', slots: { base: 'rough', tip: 'leafTop' }, tris: 12 },
+    flowerPatch: { desc: 'Placeholder: 3 little flowers, each a thin stem and a round-ish head (two in propA, one in propB): a 2-triangle stem and a 6-triangle head each.', slots: { stem: 'leafLow', headA: 'propA', headB: 'propB' }, tris: 24 },
+  },
   // Placed by hand in the hole data; the set lists which are available. None yet (ART1 / AP7).
   bigProps: {},
 });

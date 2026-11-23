@@ -8,6 +8,7 @@ import { LIBRARY } from '../biomes/library.js';
 import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaSide, mixHex } from '../core/backdrop.js';
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
 import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
+import { addSmallProps } from './smallProps.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
 // Throws when WebGL isn't available (main.js shows a plain message, Gate A C2).
@@ -119,7 +120,9 @@ export function buildScene(renderer, hole, terrain, courseCanvas, obstacles, bio
   addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
-  return { scene, camera, colliderOutlines, shore }; // AP6b: shore (or null) for the minimap's sea
+  // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea
+  const smallProps = addSmallProps(scene, hole, terrain, biome, look, shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : undefined);
+  return { scene, camera, colliderOutlines, shore, smallProps }; // AP6b: shore (or null) for the minimap's sea
 }
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),

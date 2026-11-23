@@ -50,7 +50,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
   const courseCanvas = paintCourse(hole, terrain.surfaceAt, biome, { green });
-  const { scene, camera, colliderOutlines, shore } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
+  const { scene, camera, colliderOutlines, shore, smallProps } = buildScene(renderer, hole, terrain, courseCanvas, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
@@ -384,6 +384,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
+    smallProps?.update(camera, ball.pos); // AP7c: the props to draw from here (never one that could hide the ball)
     props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);
     aimLabel();
@@ -511,6 +512,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     get view() { return view; }, viewTap() { onViewInput(true); onViewInput(false); return view; },
     get camFrame() { return camFrame; }, cameraAt() { return { pos: camera.position.clone(), fov: camera.fov, aspect: camera.aspect }; },
     get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
+    smallProps: () => smallProps?.stats(ball.pos) ?? null, // AP7c (tools): scattered / drawn, the drawn prop nearest the ball
   };
 
   return {
