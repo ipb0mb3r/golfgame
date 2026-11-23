@@ -98,7 +98,7 @@ export const LIBRARY = Object.freeze({
   smallProps: {
     grassTuft: { desc: 'A thin fan of 7 slim, pointed blades (0.3–0.45 m): deepRough at the foot, leafTop at the tips, each blade drooping a little; drawn from both sides.', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 21 },
     flowerPatch: { desc: 'A flat carpet of 9 five-point flower heads lying 3 cm above the grass over ~0.8 × 0.65 m: no stems, no leaves, so it never hides the ball. One colour (petal).', slots: { petal: 'propA' }, scale: [0.8, 1.3], tris: 45 },
-    flowerBush: { desc: 'A round green dome 1.36 m across and 0.92 m tall (crown low, foot top) with 4 raised flower clumps (flower). Tall: scenery beyond OB only.', slots: { low: 'leafLow', top: 'leafTop', flower: 'propA' }, scale: [0.8, 1.25], shade: smallTint(['low', 'top']), tris: 46 },
+    flowerBush: { desc: 'A round green dome 1.36 m across and 0.92 m tall (foot low, crown top) with 4 raised flower clumps (flower). Tall: scenery beyond OB only.', slots: { low: 'leafLow', top: 'leafTop', flower: 'propA' }, scale: [0.8, 1.25], shade: smallTint(['low', 'top']), tris: 46 },
     pebbles: { desc: 'Three squashed 5-sided stones close together, ~0.45 m across.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 30 },
     flatStone: { desc: 'One flat 6-sided stepping stone, 0.64 × 0.52 m and 0.12 m tall.', slots: { stone: 'boulder' }, scale: [0.8, 1.4], tris: 24 },
     reeds: { desc: 'A bunch of 10 tall blades (0.7–1.15 m) bending gently outward: deepRough at the foot, leafTop at the tips; drawn from both sides. Meant for a water edge (perTenM).', slots: { base: 'deepRough', tip: 'leafTop' }, scale: [0.8, 1.3], shade: smallTint(['base', 'tip']), tris: 30 },
