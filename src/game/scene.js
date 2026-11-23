@@ -1,7 +1,7 @@
 // Renderer, lights, sky, the terrain mesh (built from the hole's heightAt) and the scenery.
 import * as THREE from 'three';
 import { createRng } from '../core/rng.js';
-import { TUNE, SMALL_PROPS } from '../core/config.js';
+import { TUNE, SMALL_PROPS, BIG_PROPS } from '../core/config.js';
 import { buildTerrainMesh } from '../core/terrainMesh.js';
 import { detailTexture, MASK_AMOUNT, GRID } from '../core/ground.js';
 import { GROUND_LOOK } from '../core/config.js';
@@ -11,6 +11,9 @@ import { backdropScale, cloudPuffs, ridgeLayer, hornRange, oceanShore, parseSeaS
 import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE_VARIETY } from '../core/config.js';
 import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
 import { addSmallProps } from './smallProps.js';
+import { addBigProps } from './bigProps.js';
+import { holeBigProps } from '../holes/dev-big-props.js';
+import { bigPropsFor, bigPropsClear, footprintOf } from '../core/bigProps.js';
 import { clearOf, stakeThings } from '../core/smallProps.js';
 
 // Quality (Gate A C4): ?tune=DPR_CAP:1 renders fewer pixels, ?tune=ANTIALIAS:0 turns MSAA off.
@@ -121,7 +124,10 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
     }
     scene.add(instanced(new THREE.CylinderGeometry(0.05, 0.05, 1, 6), new THREE.MeshLambertMaterial({ color: FIXED_WHITE }), stakes, 'OB stakes (instanced)'));
   }
-  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes);
+  // AP7e: the big props this set draws (the hole's own, plus the dev overlay with ?biome=test-big-props): no
+  // scenery tree within BIG_PROPS.treeClear m of their footprints, nor in each one's sight corridor to the tee
+  const bigList = holeBigProps(hole, biome.id), bigKept = bigPropsFor(bigList, biome.bigProps).keep;
+  const sceneryTrees = addTrees(scene, sc.trees, heightAt, terrain.surfaceAt, biome, look, shore, toon, sc.stakes, bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee));
   const colliderOutlines = addObstacles(scene, obstacles, hole.obstacles ?? [], biome, look, shapeOf, toon);
   addBackdrop(scene, sc, look('backdrops', biome.backdrop), sky, biome, shore);
   // AP7c: the set's small props (or null); like the scenery trees, none on the ocean's beach or in the sea.
@@ -129,12 +135,17 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   let keep;
   if (biome.smallProps.pieces.length) {
     const things = [...(hole.obstacles ?? []).filter(o => o.type === 'tree').map(o => ({ x: o.x, z: o.z, r: o.trunkR ?? SMALL_PROPS.sceneryTrunkR })),
-      ...sceneryTrees.map(([x, z]) => ({ x, z, r: SMALL_PROPS.sceneryTrunkR })), ...stakeThings(sc.stakes)];
+      ...sceneryTrees.map(([x, z]) => ({ x, z, r: SMALL_PROPS.sceneryTrunkR })), ...stakeThings(sc.stakes),
+      ...bigKept.map(p => ({ x: p.x, z: p.z, r: footprintOf(p) }))]; // AP7e: none under a big prop
     const clear = clearOf(things), onLand = shore ? (x, z) => shore.outward(x, z) <= -OCEAN_LOOK.gap / 2 : () => true;
     keep = (x, z) => onLand(x, z) && clear(x, z);
   }
   const smallProps = addSmallProps(scene, hole, terrain, biome, look, keep, toon);
-  return { scene, camera, colliderOutlines, shore, smallProps }; // AP6b: shore (or null) for the minimap's sea
+  // AP7e: the hand-placed big props (looks only), the hole's own plus the dev overlay with ?biome=test-big-props
+  // (with the ocean they stand on the DRAWN ground, which slopes under the sea beyond the beach top)
+  const drawnY = shore ? (x, z) => (shore.outward(x, z) > 0 ? shore.drawnY(x, z) : heightAt(x, z)) : heightAt;
+  const bigProps = addBigProps(scene, hole, bigList, drawnY, biome, look, toon);
+  return { scene, camera, colliderOutlines, shore, smallProps, bigProps }; // AP6b: shore (or null) for the minimap's sea
 }
 
 // AP1 (fewer draw calls): every repeated object is one InstancedMesh (one draw call for all of them),
@@ -303,7 +314,9 @@ function addObstacles(scene, obstacles, data, biome, look, shapeOf, toon) {
 // OB line; every tree in play is an obstacle in the hole data (drawn by addObstacles).
 // AP5: the look is the set's first offTrees piece (more looks: later).
 // AP7d: returns the spots (x, z, size), so the small props keep clear of the trunks.
-function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes) {
+// AP7e: freeOfBig(x, z) (or null) = no big prop's footprint there; the spots are dropped after they are all drawn,
+// so the other trees keep their places.
+function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stakes, freeOfBig) {
   const r = createRng(42);
   const spots = [];
   let guard = 0;
@@ -315,6 +328,7 @@ function addTrees(scene, t, heightAt, surfaceAt, biome, look, shore, toon, stake
   for (let i = spots.length - 1; i >= 0; i--) if (surfaceAt(spots[i][0], spots[i][1]) !== 'ob') spots.splice(i, 1);
   // AP6a: no scenery tree on the beach or in the sea (only with the ocean backdrop)
   if (shore) for (let i = spots.length - 1; i >= 0; i--) if (shore.outward(spots[i][0], spots[i][1]) > -OCEAN_LOOK.gap / 2) spots.splice(i, 1);
+  if (freeOfBig) for (let i = spots.length - 1; i >= 0; i--) if (!freeOfBig(spots[i][0], spots[i][1])) spots.splice(i, 1);
   if (LIBRARY.offTrees[biome.offTrees[0]].gradient) { gradientScenery(scene, spots, t, heightAt, biome, look, toon, stakes); return spots; }
   const id = biome.offTrees[0], b = builder(OFF_TREES, id), colours = look('offTrees', id), shade = LIBRARY.offTrees[id].shade;
   const trunks = new THREE.InstancedMesh(b.trunk(), new THREE.MeshLambertMaterial({ color: colours.trunk }), spots.length);

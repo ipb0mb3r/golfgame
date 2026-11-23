@@ -337,6 +337,18 @@ export const SMALL_PROPS = Object.freeze({
   trunkClear: 1,                               // AP7d: m from a tree trunk's edge or an OB stake (nothing stands closer)
   stakeR: 0.05, sceneryTrunkR: 0.3,            // m: an OB stake's radius; a scenery tree's trunk (its real radius is not stored)
 });
+// AP7e: the big props placed by hand in a hole's scenery.bigProps (DESIGN §8b "Big props", core/bigProps.js). Looks only.
+//   obClear: m a prop's footprint (its piece's radius × scale) must stay outside the OB stakes' box (validation).
+//   drop: the prop stands at the lowest ground under its footprint (never floats; a sunk foot is fine): heightAt is
+//     read at the centre and on rings at these fractions of the footprint radius, `perRing` points each.
+//   maxTris: one piece's triangles (ART_STYLE §5: a big prop ≤ 1,500; tests/big-props.test.js).
+//   treeClear: m beyond a prop's footprint where no scenery tree stands (so none pokes through a roof; only on a hole
+//     with props: the other trees keep their places). Small props keep SMALL_PROPS.trunkClear from the footprint.
+export const BIG_PROPS = Object.freeze({
+  obClear: 5, treeClear: 3,
+  drop: Object.freeze({ rings: Object.freeze([0.5, 1]), perRing: 12 }),
+  maxTris: 1500,
+});
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({

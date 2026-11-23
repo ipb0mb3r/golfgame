@@ -45,7 +45,9 @@ test('the pick list: every piece exists in the library', () => {
   assert.throws(() => validateBiomeSet(withChange({ offTrees: ['coneTree', 'coneTree'] }), LIBRARY), /offTrees lists a piece twice/);
   assert.throws(() => validateBiomeSet(withChange({ sky: 'gradient' }), LIBRARY), /sky: unknown piece "gradient"/);
   assert.throws(() => validateBiomeSet(withChange({ backdrop: 'peaksSnow' }), LIBRARY), /backdrop: unknown piece "peaksSnow"/);
-  assert.throws(() => validateBiomeSet(withChange({ bigProps: ['windmill'] }), LIBRARY), /bigProps: unknown piece "windmill" \(the library's bigProps: none yet\)/);
+  // (AP7e: the windmill is a library piece now, so the unknown piece is a cow)
+  assert.throws(() => validateBiomeSet(withChange({ bigProps: ['cow'] }), LIBRARY), /bigProps: unknown piece "cow" \(the library's bigProps: windmill, chalet, chaletTall, beachHut\)/);
+  assert.doesNotThrow(() => validateBiomeSet(withChange({ bigProps: ['windmill', { id: 'chalet', slots: { roof: 'rock' } }] }), LIBRARY));
   assert.throws(() => validateBiomeSet(withChange({ textures: ['grassDabs'] }), LIBRARY), /textures: unknown piece "grassDabs"/);
   assert.throws(() => validateBiomeSet(withChange({ furniture: { ...base.furniture, flag: 'banner' } }), LIBRARY), /furniture\.flag: unknown piece "banner"/);
   // (AP7c: grassTuft is a library piece now, so the unknown piece is a buttercup)

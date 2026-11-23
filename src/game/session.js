@@ -50,7 +50,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
   const ground = paintGround(hole, terrain.surfaceAt, biome, { green }); // AP6: the course map + the shader's surface mask
-  const { scene, camera, colliderOutlines, shore, smallProps } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
+  const { scene, camera, colliderOutlines, shore, smallProps, bigProps } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
@@ -512,6 +512,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     get view() { return view; }, viewTap() { onViewInput(true); onViewInput(false); return view; },
     get camFrame() { return camFrame; }, cameraAt() { return { pos: camera.position.clone(), fov: camera.fov, aspect: camera.aspect }; },
     get warn() { return warn; }, get collidersShown() { return colliderOutlines.visible; },
+    bigProps: () => ({ drawn: bigProps.drawn.length, skipped: bigProps.skipped.length, drawCalls: bigProps.drawCalls, tris: bigProps.tris, props: bigProps.drawn }), // AP7e (tools)
     smallProps: () => smallProps?.stats(ball.pos) ?? null, // AP7c (tools): scattered / drawn, the drawn prop nearest the ball
   };
 
