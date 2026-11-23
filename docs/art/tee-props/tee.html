@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tee Props Options</title>
+<!-- Tee props (feather flag, pop-up tent), artist mock-up (docs/art/tee-props/SPEC.md). Geometry: pieces.js.
+     Stand-alone; reads src/core and src/biomes only, never changes them.
+     ?kind=flag|tent&opts=F1,F2,F3 (&biome=meadow-day)  → one row per look: close-up beside a 1.8 m golfer | the aim view
+     ?dress=F1,T2&scale=1.3&biomes=meadow-day,alpine-day,island-day → a dressed "tournament" tee per biome  &label=0  — Agent: artist -->
+<script type="importmap">{ "imports": { "three": "../../../vendor/three-0.187.0/three.module.js" } }</script>
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
+  canvas { display: block; position: fixed; inset: 0; width: 100%; height: 100%; }
+  #grid { position: fixed; inset: 0; display: grid; pointer-events: none; }
+  .cell { position: relative; border: 2px solid #fff; box-sizing: border-box; }
+  .tag { position: absolute; top: 8px; left: 8px; right: 8px; background: rgba(255,255,255,.92); color: #1d3340; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; text-align: left; box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  .tag small { display: block; font-weight: 500; font-size: 10px; color: #4a5a64; }
+  .row { position: absolute; bottom: 6px; left: 8px; color: #fff; font-size: 11px; font-weight: 700; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+  body.nolabel .tag { display: none; }
+</style>
+</head>
+<body>
+<div id="grid"></div>
+<script type="module">
+import * as THREE from 'three';
+import { PIECES, tris } from './pieces.js';
+import { mixHex } from '../../../src/core/backdrop.js';
+import { treeParts, gradientHex } from '../../../src/core/trees.js';
+import meadow from '../../../src/biomes/meadow-day.js';
+import alpine from '../../../src/biomes/alpine-day.js';
+import island from '../../../src/biomes/island-day.js';
+const SETS = { 'meadow-day': meadow, 'alpine-day': alpine, 'island-day': island };
+const q = new URLSearchParams(location.search);
+if (q.get('label') === '0') document.body.classList.add('nolabel');
+let set, P;      // set per column below
+
+const grad = new THREE.DataTexture(new Uint8Array([90, 90, 90, 255, 175, 175, 175, 255, 255, 255, 255, 255]), 3, 1);
+grad.minFilter = grad.magFilter = THREE.NearestFilter; grad.needsUpdate = true;
+const toon = o => new THREE.MeshToonMaterial({ gradientMap: grad, ...o });
+
+function geometryOf(parts, slots, at = { x: 0, z: 0, ry: 0 }) {
+  const pos = [], col = [], idx = [], c = Math.cos(at.ry), s = Math.sin(at.ry);
+  for (const p of parts) {
+    const base = pos.length / 3, lo = P[slots[p.lo]], hi = P[slots[p.hi]];
+    for (let i = 0; i < p.positions.length; i += 3) {
+      const x = p.positions[i], y = p.positions[i + 1], z = p.positions[i + 2];
+      pos.push(at.x + x * c + z * s, y, at.z - x * s + z * c);
+      const cc = new THREE.Color(mixHex(lo, hi, p.w[i / 3])); col.push(cc.r, cc.g, cc.b);
+    }
+    for (const i of p.indices) idx.push(i + base);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); const n = g.toNonIndexed(); n.computeVertexNormals(); return n;
+}
+// the scene: a hole's edge (fairway, rough, the ground beyond OB), a few of the biome's scenery trees for scale
+function world() {
+  const scene = new THREE.Scene(); scene.fog = new THREE.Fog(P.fog, 120, 900);
+  const sky = new THREE.Mesh(new THREE.SphereGeometry(900, 32, 16), new THREE.ShaderMaterial({ side: THREE.BackSide, depthWrite: false, fog: false,
+    uniforms: { top: { value: new THREE.Color(P.skyTop) }, hor: { value: new THREE.Color(P.skyHorizon) } },
+    vertexShader: 'varying vec3 vp; void main(){ vp = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'uniform vec3 top; uniform vec3 hor; varying vec3 vp; void main(){ float t = clamp(vp.y*1.9, 0.0, 1.0); gl_FragColor = vec4(mix(hor, top, pow(t, 0.62)), 1.0); }' }));
+  scene.add(sky);
+  scene.add(new THREE.HemisphereLight(P.ambient, P.shadow, 1.9)); const sun = new THREE.DirectionalLight(P.sun, 2.2); sun.position.set(-60, 80, 40); scene.add(sun);
+  const flat = (w, d, c, x, z, y = 0) => { const m = new THREE.Mesh(new THREE.PlaneGeometry(w, d).rotateX(-Math.PI / 2), toon({ color: c })); m.position.set(x, y, z); scene.add(m); };
+  flat(3000, 3000, P.deepRough, 0, 0); flat(70, 3000, P.rough, 0, 0, 0.005); flat(30, 3000, P.fringe, 0, 0, 0.01); flat(28, 3000, P.fairwayA, 0, 0, 0.015);
+  for (let z = 30; z > -500; z -= 14) flat(28, 7, P.fairwayB, 0, z, 0.02);
+  if (set === island) { flat(3000, 60, P.sand, 0, -260, 0.03); flat(3000, 2000, P.water, 0, -1290, 0.04); }
+  // white OB stakes along x = 35
+  for (let z = 40; z > -300; z -= 18) { const st = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.9, 0.1), toon({ color: '#ffffff' })); st.position.set(35, 0.45, z); scene.add(st); }
+  // scenery trees (the biome's first offTrees piece), drawn simply: trunk + canopy part
+  const id = typeof set.offTrees[0] === 'string' ? set.offTrees[0] : set.offTrees[0].id, tp = treeParts(id);
+  const treeMesh = (x, z, sc) => {
+    for (const [part, lo, mid, top, R, H, y] of [[tp.trunk, P.trunk, P.trunk, P.trunk, 0.35, 4, 0], [tp.canopy, P.leafLow, id === 'palmTree' || id === 'spruceTree' ? P.leafAlt : id === 'pineTree' ? P.pine : P.leaf, P.leafTop, 3.2, 3.6, 4]]) {
+      const g = new THREE.BufferGeometry(), col = [];
+      for (const wv of part.w) { const c = new THREE.Color(gradientHex(lo, mid, top, wv)); col.push(c.r, c.g, c.b); }
+      g.setAttribute('position', new THREE.Float32BufferAttribute(part.positions.map((v, i) => (i % 3 === 0 ? v * R : i % 3 === 1 ? v * H + y : v * R) * sc), 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3)); g.setIndex(part.indices); g.computeVertexNormals();
+      const m = new THREE.Mesh(g, toon({ vertexColors: true, side: THREE.DoubleSide })); m.position.set(x, 0, z); scene.add(m);
+    }
+  };
+  for (const [x, z, s] of [[66, -84, 1.1], [34 + 40, -50, 0.95], [44, -110, 1.2], [80, -100, 1.0], [-50, -60, 1.1], [-46, -120, 1.0], [58, -30, 0.9]]) treeMesh(x, z, s);
+  return scene;
+}
+
+
+// a tee box at (0, 20); the hole plays toward −z; the game's aim camera is 7 m behind, 2.6 m up
+const TEE = { x: 0, z: 20 };
+const golferAt = (scene, x, z) => { const m = toon({ color: '#2a4a7a' }), skin = toon({ color: '#f0c8a0' });
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 1.5, 8), m); body.position.set(x, 0.75, z);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), skin); head.position.set(x, 1.65, z); scene.add(body, head); };
+const SCALE = Number(q.get('scale') || 1);
+const place = (scene, look, at) => scene.add(new THREE.Mesh(geometryOf(look.build().map(p => ({ ...p, positions: p.positions.map(v => v * SCALE) })), look.slots, at), toon({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+function teeScene(golfer = true) {
+  const scene = world();
+  const tb = new THREE.Mesh(new THREE.PlaneGeometry(7, 9).rotateX(-Math.PI / 2), toon({ color: P.fairwayA })); tb.position.set(TEE.x, 0.03, TEE.z); scene.add(tb);
+  for (const x of [-2.2, 2.2]) { const mk = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 8), toon({ color: P.subAccent })); mk.position.set(x, 0.16, TEE.z - 1.5); scene.add(mk); }
+  if (golfer) golferAt(scene, TEE.x - 0.6, TEE.z);
+  return scene;
+}
+// dressing spots (the SPEC's tee zones): tent beside-behind, flags at the tee box's sides and behind
+const SPOTS = { tent: [{ x: -9, z: 25, ry: 1.2 }], flag: [{ x: 5.2, z: 15.5, ry: -0.35 }, { x: -5.2, z: 15.5, ry: 0.35 }, { x: 6, z: 27, ry: -0.6 }] };
+const AIM = [[0, 2.6, 27], [0, 0, -10]], WIDE = [[13, 5.5, 1], [-3, 1.2, 22]];
+const panels = [];
+const dress = q.get('dress');
+if (dress) {
+  const [f, t] = dress.split(',');
+  for (const bid of (q.get('biomes') || 'meadow-day').split(',')) {
+    set = SETS[bid]; P = set.palette;
+    for (const view of ['wide', 'aim']) {
+      const scene = teeScene(view !== 'aim');
+      for (const at of SPOTS.flag) place(scene, PIECES.flag[f], at);
+      for (const at of SPOTS.tent) place(scene, PIECES.tent[t], at);
+      panels.push({ scene, view, cam: view === 'wide' ? WIDE : AIM, tag: view === 'wide' ? `${bid.replace('-day', '')} · ${f} + ${t}${SCALE !== 1 ? ' at ' + SCALE + '×' : ''}<small>colours = the biome's accent / subAccent / white</small>` : '', row: view === 'wide' ? 'tee seen from ahead' : 'the aim view' });
+    }
+  }
+} else {
+  const kind = q.get('kind') || 'flag';
+  for (const opt of (q.get('opts') || 'F1,F2,F3').split(',')) {
+    set = SETS[q.get('biome') || 'meadow-day']; P = set.palette; const look = PIECES[kind][opt];
+    for (const view of ['close', 'wide']) {
+      const scene = teeScene();
+      for (const at of SPOTS[kind]) place(scene, look, at);
+      const cam = view === 'wide' ? WIDE : kind === 'tent' ? [[-1.5, 2.0, 31], [-8.5, 1.4, 25]] : [[1.5, 1.7, 19], [5.2, 1.9, 15.5]];
+      panels.push({ scene, view, cam, tag: view === 'close' ? `${look.name}<small>${look.sub} · ${look.size} · ${tris(look.build())} triangles</small>` : '', row: view === 'close' ? 'close-up, 1.8 m golfer on the tee' : 'the tee seen from ahead' });
+    }
+  }
+}
+const nr = panels.length / 2, nc = 2, grid = document.getElementById('grid');
+grid.style.gridTemplateColumns = '1fr 1fr'; grid.style.gridTemplateRows = `repeat(${nr}, 1fr)`;
+for (const p of panels) { const d = document.createElement('div'); d.className = 'cell'; d.innerHTML = (p.tag ? `<div class="tag">${p.tag}</div>` : '') + `<div class="row">${p.row}</div>`; grid.appendChild(d); }
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2)); renderer.setSize(innerWidth, innerHeight); renderer.setScissorTest(true); document.body.prepend(renderer.domElement);
+const W = innerWidth / nc, H = innerHeight / nr;
+panels.forEach((p, i) => {
+  const c = i % nc, r = Math.floor(i / nc), cam = new THREE.PerspectiveCamera(p.view === 'close' ? 50 : 55, W / H, 0.1, 3000);
+  cam.position.set(...p.cam[0]); cam.lookAt(...p.cam[1]);
+  renderer.setViewport(c * W, (nr - 1 - r) * H, W, H); renderer.setScissor(c * W, (nr - 1 - r) * H, W, H); renderer.render(p.scene, cam);
+});
+document.title = 'ready';
+</script>
+</body>
+</html>
