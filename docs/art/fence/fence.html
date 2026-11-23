@@ -90,7 +90,7 @@ const golfer = scene => { const m = toon({ color: '#2a4a7a' }), skin = toon({ co
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 1.5, 8), m); body.position.set(36.6, 0.75, -50);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), skin); head.position.set(36.6, 1.65, -50); scene.add(body, head); };
 const SC = q.get('scales') ? q.get('scales').split(',').map(Number) : null;
-const cols = q.get('biomes') ? q.get('biomes').split(',').map(b => [q.get('opt') || 'B', b]) : (q.get('opts') || 'A,B,C').split(',').map(o => [o, q.get('biome') || FENCES[o].home]);
+const cols = q.get('biomes') ? q.get('biomes').split(',').map(b => [q.get('opt') || 'B', b]) : (q.get('opts') || 'A,B,C').split(',').map(o => o.split('@')).map(([o, b]) => [o, b || q.get('biome') || FENCES[o].home]);
 const panels = [];
 for (const [ci, [opt, bid]] of cols.entries()) {
   const sc = SC ? SC[ci] : Number(q.get('scale') || 1);
@@ -100,8 +100,8 @@ for (const [ci, [opt, bid]] of cols.entries()) {
     scene.add(new THREE.Mesh(geometryOf(laid.parts, look.slots), toon({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
     golfer(scene);
     const cam = view === 'close' ? [[32.5, 1.9, -38], [39.5, 0.2, -50]] : [[14, 1.9, -22], [39, 0.2, -62]];
-    const name = q.get('biomes') ? `${look.name.split(' · ')[0]} · ${bid.replace('-day', '')}` : SC ? `${look.name} at ${sc}×` : look.name;
-    panels.push({ scene, view, cam, tag: view === 'close' ? `${name}<small>${q.get('biomes') ? '' : look.sub + ' · '}${perSegment(look)} tri / ${look.spacing * sc} m</small>` : '', row: view === 'close' ? `${(look.height * sc).toFixed(2)} m tall` : 'from the fairway, ~45 m' });
+    const name = q.get('biomes') ? `${look.name.split(' · ')[0]} · ${bid.replace('-day', '')}` : SC ? `${look.name} at ${sc}× · ${bid.replace('-day', '')}` : look.name;
+    panels.push({ scene, view, cam, tag: view === 'close' ? `${name}<small>${q.get('biomes') ? '' : look.sub + ' · '}${perSegment(look)} tri / ${+(look.spacing * sc).toFixed(2)} m</small>` : '', row: view === 'close' ? `${(look.height * sc).toFixed(2)} m tall` : 'from the fairway, ~45 m' });
   }
 }
 const nr = panels.length / 2, nc = 2, grid = document.getElementById('grid');
