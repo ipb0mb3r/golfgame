@@ -4,8 +4,9 @@ import assert from 'node:assert/strict';
 import { GROUND_LOOK, PERF_BUDGET, TUNABLES } from '../src/core/config.js';
 import { ALL_PALETTE_KEYS, parseColour } from '../src/core/biome.js';
 import { BIOMES } from '../src/biomes/index.js';
+import { HOLES } from '../src/holes/sets.js';
 import {
-  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKinds, groundKindsAA, nearestPoints,
+  groundLevel, KINDS, KIND, kindOf, KIND_KEYS, speck, dabs, detailTexture, distanceTo, groundKinds, groundKindsAA, nearestPoints, baseKinds,
   groundColour, surfaceMask, treeShadows, shadowColour, waterColour, fairwayStripe,
 } from '../src/core/ground.js';
 
@@ -76,6 +77,18 @@ test('groundKinds: the edge line outside the fairway, the lip inside the bunker,
 
 test('GROUND_EDGE_AA: a tunable 0..1, default 1 (smooth edges); 0 = the hard per-pixel edges (compare switch)', () => {
   assert.deepEqual(TUNABLES.GROUND_EDGE_AA, { def: 1, min: 0, max: 1 });
+});
+
+test('baseKinds: the same physics kind per map pixel as asking every pixel, with about a third of the calls', () => {
+  for (const id of ['pl-03', 'mtn-03', 'mtn-06']) {
+    const hole = HOLES[id], { map } = hole, { res } = hole.scenery.paint;
+    const W = Math.round((map.x1 - map.x0) * res), H = Math.round((map.z1 - map.z0) * res);
+    let calls = 0;
+    const kindAt = (u, v) => { calls++; return kindOf(hole.surfaceAt(map.x0 + u / res, map.z0 + v / res)); };
+    const fast = baseKinds(W, H, kindAt);
+    assert.ok(calls < W * H * 0.4, `${id}: ${calls} calls for ${W * H} px`);
+    for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) if (fast[j * W + i] !== kindAt(i + 0.5, j + 0.5)) assert.fail(`${id} (${i}, ${j})`);
+  }
 });
 
 test('nearestPoints: each pixel finds its nearest boundary point, within the limit only', () => {

@@ -112,6 +112,25 @@ export function groundKinds(base, W, H, res, look = GROUND_LOOK) {
   return { kinds, depth };
 }
 
+// The physics kind at every map pixel centre, kindAt(u, v) in pixel units. Faster than asking every pixel: the
+// even pixels are asked first; a 2 × 2 block whose 4 × 4 even neighbours all agree takes their kind, the others
+// ask kindAt themselves. The same map unless a surface is narrower than 2 px (0.5 m at 4 px / m): none is.
+export function baseKinds(W, H, kindAt) {
+  const cW = Math.ceil(W / 2) + 1, cH = Math.ceil(H / 2) + 1, c = new Uint8Array(cW * cH), base = new Uint8Array(W * H);
+  for (let cj = 0; cj < cH; cj++) for (let ci = 0; ci < cW; ci++) c[cj * cW + ci] = kindAt(Math.min(2 * ci, W - 1) + 0.5, Math.min(2 * cj, H - 1) + 0.5);
+  for (let cj = 0; cj < cH - 1; cj++) for (let ci = 0; ci < cW - 1; ci++) {
+    const v = c[cj * cW + ci];
+    let same = true;
+    for (let b = Math.max(0, cj - 1); b <= Math.min(cH - 1, cj + 2) && same; b++)
+      for (let a = Math.max(0, ci - 1); a <= Math.min(cW - 1, ci + 2); a++) if (c[b * cW + a] !== v) { same = false; break; }
+    for (let dj = 0; dj < 2; dj++) for (let di = 0; di < 2; di++) {
+      const i = 2 * ci + di, j = 2 * cj + dj; if (i >= W || j >= H) continue;
+      base[j * W + i] = same || (di === 0 && dj === 0) ? v : kindAt(i + 0.5, j + 0.5);
+    }
+  }
+  return base;
+}
+
 // ---- anti-aliased bands and boundaries (AP6 follow-up, ?tune=GROUND_EDGE_AA, default on) ----
 // The hard version above decides each pixel by its centre, so a 0.6 m line at 4 px / m shows its stair-steps.
 // The smooth version keeps the same rule but measures it below the pixel: the pixels where the surfaces change
@@ -134,6 +153,23 @@ export function nearestPoints(W, H, seed, px, pz, limit) {
   if (i1 < 0) return near;
   const g = Math.ceil(limit) + 1;
   i0 = Math.max(0, i0 - g); i1 = Math.min(W - 1, i1 + g); j0 = Math.max(0, j0 - g); j1 = Math.min(H - 1, j1 + g);
+  // few seeds in a big box (a fairway's outline over the whole map): each seed's point is offered to the pixels
+  // within `limit` of it instead (exact, and cheaper than sweeping the box)
+  if (px.length * (2 * g + 1) ** 2 < (i1 - i0 + 1) * (j1 - j0 + 1) * 8) {
+    const L2 = limit * limit;
+    for (let s = 0; s < px.length; s++) {
+      const x = px[s], z = pz[s], a0 = Math.max(0, Math.floor(x - limit)), a1 = Math.min(W - 1, Math.floor(x + limit));
+      const b0 = Math.max(0, Math.floor(z - limit)), b1 = Math.min(H - 1, Math.floor(z + limit));
+      for (let j = b0; j <= b1; j++) {
+        const dz = z - j - 0.5, dz2 = dz * dz; if (dz2 >= L2) continue;
+        for (let i = a0; i <= a1; i++) {
+          const dx = x - i - 0.5, q = dx * dx + dz2, k = j * W + i;
+          if (q < best[k]) { best[k] = q; near[k] = s; }
+        }
+      }
+    }
+    return near;
+  }
   const relax = (k, m, cx, cz) => {
     const s = near[m]; if (s < 0) return;
     const dx = px[s] - cx, dz = pz[s] - cz, q = dx * dx + dz * dz;
@@ -245,6 +281,10 @@ export function groundKindsAA(base, W, H, res, sampleKind, look = GROUND_LOOK) {
   const cnt = new Float32Array(NK), N = new Float64Array(6);
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
     const k = j * W + i, b = base[k];
+    // far from every boundary (most of the map): the pixel is its physics kind
+    if (subAt[k] < 0 && fCourse.near[k] < 0 && (!fWater || fWater.near[k] < 0) && (!fSand || fSand.near[k] < 0)) {
+      kinds[k] = b; if (b === K.water) depth[k] = fWater.limit / res; continue;
+    }
     const sc = signed(fCourse, k, i, j), sw = signed(fWater, k, i, j), ss = signed(fSand, k, i, j);
     if (b === K.water) depth[k] = Math.max(0, -sw) / res;
     const near = subAt[k] >= 0 || (isBare[b] && Math.abs(sc - wEdge) < T) || (fWater && isLand[b] && Math.abs(sw - wBank) < T)
