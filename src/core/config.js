@@ -290,7 +290,7 @@ export const SMALL_PROPS = Object.freeze({
   cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
   margin: 30, edgeClear: 0.5, teeClear: 8, cupClear: 14, greenClear: 2.5, greenReach: 45,
   ballClear: 1.2, lineClear: 0.5,
-  drawDist: 45, maxTris: 10000, moveStep: 0.5, behind: 2, turnStep: 0.05,
+  drawDist: 60, maxTris: 10000, moveStep: 0.5, behind: 2, turnStep: 0.05,
   scale: Object.freeze([0.8, 0.45]),           // a piece without its own range: from, spread (× 0.8–1.25)
   areaStep: 2,                                 // m, the grid that measures a pick's surfaces (per-pick perHa)
   // AP7d: the water-edge surface. A shore patch's centre stands on land `reach` m or less outside the water's
@@ -485,13 +485,13 @@ export const TUNABLES = Object.freeze({
   // AP7c (game layer only, looks): m around the ball where small props are hidden (SMALL_PROPS.ballClear is the same default)
   PROP_BALL_CLEAR:       { def: 1.2,  min: 0,     max: 5 },
   // AP7c: m from the camera beyond which no small prop is drawn (SMALL_PROPS.drawDist is the same default; maxTris still caps the triangles)
-  PROP_DRAW_DIST:        { def: 45,   min: 20,    max: 100 },
+  PROP_DRAW_DIST:        { def: 60,   min: 20,    max: 100 },
   // AP7d follow-up (owner: "too subtle"; looks only, defaults = today): PROP_SCALE = one multiplier on every small prop's size (on top of the copy's own scale; the ball clearance grows with it);
   // beyond PROP_THIN_FROM m from the camera only the share PROP_FAR_KEEP of the props is drawn (fixed per copy, no flicker; PROP_THIN_FROM >= PROP_DRAW_DIST = off);
   // PROP_MAX_TRIS = the triangle cap of the small props (read when the hole is built)
-  PROP_SCALE:            { def: 1,    min: 0.5,   max: 3 },
-  PROP_THIN_FROM:        { def: 45,   min: 5,     max: 100 },
-  PROP_FAR_KEEP:         { def: 1,    min: 0.1,   max: 1 },
+  PROP_SCALE:            { def: 2,    min: 0.5,   max: 3 },
+  PROP_THIN_FROM:        { def: 30,   min: 5,     max: 100 },
+  PROP_FAR_KEEP:         { def: 0.5,  min: 0.1,   max: 1 },
   PROP_MAX_TRIS:         { def: 10000, min: 1000, max: 60000 },
 });
 

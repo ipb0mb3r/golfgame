@@ -401,11 +401,11 @@ test('AP7d: the Meadow set uses all six pieces and fills the triangle cap near t
   assert.ok(tris <= SMALL_PROPS.maxTris && tris > SMALL_PROPS.maxTris * 0.5, `${tris}`);
 });
 
-test('AP7d follow-up: PROP_SCALE / PROP_FAR_KEEP / PROP_MAX_TRIS are tunables with the asked ranges, defaults = today', async () => {
+test('AP7d follow-up: PROP_SCALE / PROP_FAR_KEEP / PROP_MAX_TRIS are tunables with the asked ranges, defaults = the owner pick C but 2x', async () => {
   const { TUNABLES } = await import('../src/core/config.js');
-  assert.deepEqual([TUNABLES.PROP_SCALE.def, TUNABLES.PROP_SCALE.min, TUNABLES.PROP_SCALE.max], [1, 0.5, 3]);
-  assert.deepEqual([TUNABLES.PROP_FAR_KEEP.def, TUNABLES.PROP_FAR_KEEP.min, TUNABLES.PROP_FAR_KEEP.max], [1, 0.1, 1]);
-  assert.equal(TUNABLES.PROP_THIN_FROM.def, TUNABLES.PROP_DRAW_DIST.def); // thinning is off by default
+  assert.deepEqual([TUNABLES.PROP_SCALE.def, TUNABLES.PROP_SCALE.min, TUNABLES.PROP_SCALE.max], [2, 0.5, 3]);
+  assert.deepEqual([TUNABLES.PROP_FAR_KEEP.def, TUNABLES.PROP_FAR_KEEP.min, TUNABLES.PROP_FAR_KEEP.max], [0.5, 0.1, 1]);
+  assert.deepEqual([TUNABLES.PROP_DRAW_DIST.def, TUNABLES.PROP_THIN_FROM.def, SMALL_PROPS.drawDist], [60, 30, 60]); // owner pick 2026-11-23; SMALL_PROPS mirrors the draw distance
   assert.equal(TUNABLES.PROP_MAX_TRIS.def, SMALL_PROPS.maxTris);
   const { parseTune } = await import('../src/core/tune.js');
   const r = parseTune('PROP_SCALE:5,PROP_FAR_KEEP:0.05,PROP_THIN_FROM:30,PROP_MAX_TRIS:20000');
