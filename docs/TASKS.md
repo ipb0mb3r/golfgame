@@ -299,6 +299,19 @@ The models and pieces the first three biome sets need. They shape AP3 → AP7 �
 - [x] **X43c** (owner on #133: web "a little less prominent, more stylized") ✅ (dev): fainter, thinner, sparser web over a faint even sheen; new tunables `WATER_WIDTH`, `WATER_LINE_PX`, `WATER_TINT`; defaults = option B. Looks only.
 - [x] **X42** (backlog) pl-02's opaque pond surface (`flatPond`, `pondSurface`) hid the painted deep-to-light gradient. ✅ (dev, with X43): no longer drawn (code removed); the see-through surface covers that pond.
 
+## Backlog from the art passes (PM, 2026-11-22/23)
+- [ ] **X35** (from #112) A minimum for the palm collider rule: a very flat collider squashes the palm crown.
+- [ ] **X36** (from #116) The small-prop triangle cap (`PROP_MAX_TRIS`) as its own line in `PERF_BUDGET` / perf-check.
+- [ ] **X37** (from #116, low) A model rock whose file fails to load falls back without the pick's slot override (X33).
+- [ ] **X38** (from #116, low) perf-check measures the tee and flyover but no view from the rough.
+- [ ] **X39** (owner, 2026-11-23) A player **view-distance setting** in Settings that changes **only the small props' draw distance** (e.g. Near / Far around today's 60 m default, with far thinning so Far fits 300k).
+- [ ] **X40** (from #125) Tee-off wait grows with the painted map (AP6: +1.2–1.3 s headless on mtn-04 / mtn-09): cache or split the map build if the owner notices it on his phone. Relates to X13.
+- [ ] **X41** (from #125, only if needed) Let a biome set name its own ground textures in `textures` (today the AP6 ground applies to every set).
+- [ ] **X44** (from #131, only if the owner notices) The water surface's far edge on steep creek banks looks slightly scalloped; a finer shore grid would fix it (≈ 2× water triangles).
+- [ ] **X45** (from #131) Water look numbers (web strength / tint) per biome set, owned by the artist (e.g. Island's bright cyan bed shows the web less).
+- [ ] **X46** (from #131, artist + dev) Drop `furniture.pond` and the `pondSurface` palette key from the biome sets (artist), then delete the `flatPond` library piece (dev): no longer drawn since X43.
+- Note: AP7b part (4) "per-pick slot override" was done as **X33** (#116).
+
 ## Backlog after the playtest 1 pass (PM, 2026-11-19)
 - [ ] X13 Mountain holes still take ~2 s headless to build their 3D scene after X12 (probably the course painter or the terrain mesh). Measure on a real phone first.
 - [ ] X15 The real ball tests every obstacle on every physics step (`firstHit` in ball.js): a coarse grid would speed up ⏩ Skip and flights on tree-heavy holes. *(AP1 measured it: the aim-step warning already tests only the obstacles near the aim line (X14), so `firstHit` is ≤ 0.2 ms of an aim step; the aim cost is the terrain (`heightAt`, ~1 µs a call on the mountain holes vs 0.02 µs on pl-01) and the shaped preview. A grid would only help the real ball and ⏩ Skip.)*
