@@ -50,7 +50,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
   $intro().classList.toggle('hidden', compact);
   $holeCard().classList.toggle('hidden', !compact);
   const ground = paintGround(hole, terrain.surfaceAt, biome, { green }); // AP6: the course map + the shader's surface mask
-  const { scene, camera, colliderOutlines, shore, smallProps, bigProps } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
+  const { scene, camera, colliderOutlines, shore, smallProps, bigProps, water } = buildScene(renderer, hole, terrain, ground, play.obstacles, biome, models);
   const props = createProps(scene, hole, terrain, cup, biome);
   const rig = createCameraRig(camera, terrain.heightAt);
   const hud = createHud(play);
@@ -384,6 +384,7 @@ export function createHoleSession(hole, { renderer, input, seed, biome, models =
     props.animateFlag(t, wind);
     hud.updateMeter(state, meter.value, meter.power);
     rig.update(camView(), dt);
+    water?.update(ball.pos); // X43: the caustic web stays clear of the white ball
     smallProps?.update(camera, ball.pos); // AP7c: the props to draw from here (never one that could hide the ball)
     props.fitMarker(camera.position); // PR #63: the landing marker keeps a modest size on screen
     drawMinimap(ball.pos, isAim ? target : null, warn, marks);

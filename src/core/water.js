@@ -152,8 +152,8 @@ export function shoreFade(d, look = WATER_LOOK) {
   return t * t * (3 - 2 * t);
 }
 
-// The surface's colours from the biome palette (hex strings '#rrggbb'): the tint (the bed's shallow `water`
-// lightened toward the sky's `skyHorizon`), the sky reflected at a grazing angle and the sun's sheen.
+// The surface's colour from the biome palette (hex string '#rrggbb'): the caustic web's lines, the sky's `cloud`
+// warmed toward the `sun` (near white). Between the lines the surface is fully see-through.
 export function waterColours(P, look = WATER_LOOK) {
-  return { tint: mixHex(P.water, P.skyHorizon, look.tint), sky: P.skyHorizon, sun: P.sun };
+  return { line: mixHex(P.cloud, P.sun, look.line[0]) };
 }

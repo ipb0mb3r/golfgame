@@ -12,10 +12,15 @@ const cache = new Map();
 const surf = id => { if (!cache.has(id)) cache.set(id, waterSurface(HOLES[id], terrainOf(HOLES[id]))); return cache.get(id); };
 const WET = ['pl-01', 'pl-02', 'mtn-01', 'mtn-03', 'mtn-04', 'mtn-05', 'mtn-06', 'mtn-07', 'mtn-08', 'mtn-09'];
 
-test('the look switches: WATER_OPACITY (default 0.5, owner pick 2026-11-23), WATER_SHEEN; no WATER_SURFACE switch any more', () => {
-  assert.equal(TUNABLES.WATER_OPACITY.def, 0.5);
-  assert.equal(TUNABLES.WATER_SHEEN.def, 1);
-  assert.equal(TUNABLES.WATER_SURFACE, undefined);
+test('the look switches: WATER_LINES (0 = no web), WATER_CELL (m), WATER_SPEED; the old tint switches are gone', () => {
+  assert.deepEqual([TUNABLES.WATER_LINES.def, TUNABLES.WATER_LINES.min], [0.85, 0]);
+  assert.equal(TUNABLES.WATER_CELL.def, 2.4); assert.ok(TUNABLES.WATER_CELL.min > 0);
+  assert.equal(TUNABLES.WATER_SPEED.def, 1); assert.equal(TUNABLES.WATER_SPEED.min, 0);
+  for (const gone of ['WATER_SURFACE', 'WATER_OPACITY', 'WATER_SHEEN']) assert.equal(TUNABLES[gone], undefined, gone);
+  // no shimmer on a phone: the lines are gone by 90 m, never under 1.5 px, and clear of the (white) ball
+  assert.ok(WATER_LOOK.fade[1] <= 90 && WATER_LOOK.fade[0] < WATER_LOOK.fade[1]);
+  assert.ok(WATER_LOOK.minPx >= 1.5);
+  assert.ok(WATER_LOOK.ballClear[1] >= 1.5 && WATER_LOOK.ballClear[0] < WATER_LOOK.ballClear[1]);
 });
 
 test('a hole without water gets no surface', () => {
@@ -120,11 +125,12 @@ test('deterministic: the same hole gives the same mesh', () => {
   assert.deepEqual(a.positions, b.positions); assert.deepEqual(a.index, b.index); assert.deepEqual(a.shore, b.shore);
 });
 
-test('the colours come from the palette: a tint lighter than the bed (water → skyHorizon), the sky, the sun', () => {
+test('the web\'s colour comes from the palette: the sky\'s cloud warmed toward the sun, near white, lighter than the bed', () => {
   for (const set of Object.values(BIOMES)) {
     const P = set.palette, c = waterColours(P);
-    assert.equal(c.sky, P.skyHorizon); assert.equal(c.sun, P.sun);
-    assert.match(c.tint, /^#[0-9a-f]{6}$/);
-    assert.ok(lab(c.tint)[0] >= lab(P.water)[0], `${set.id}: tint ${c.tint} vs water ${P.water}`);
+    assert.deepEqual(Object.keys(c), ['line']);
+    assert.match(c.line, /^#[0-9a-f]{6}$/);
+    assert.ok(lab(c.line)[0] >= 90, `${set.id}: line ${c.line} not near white`);
+    assert.ok(lab(c.line)[0] > lab(P.water)[0] + 10, `${set.id}: line ${c.line} vs water ${P.water}`);
   }
 });
