@@ -16,6 +16,8 @@ const withChange = change => ({ ...meadow, id: 'x-test', ...change });
 const rule = { pieces: [{ id: 'grassTuft', weight: 5 }, { id: 'grassTuft', weight: 3, cluster: { count: 8, radius: 1.2 } }, { id: 'flowerPatch', weight: 2, slots: { petal: 'propB' }, cluster: { count: 10, radius: 1.5 } }, { id: 'flowerPatch', weight: 0.6 }], perHa: 2500, on: ['rough', 'ob'] };
 const MEADOW_RULE = BIOMES['test-small-props'].smallProps; // AP7d: the spec's Meadow numbers, per pick
 const REAL_SETS = ['meadow-day', 'alpine-day', 'island-day', 'mtn-default', 'proto-default'];
+const NO_PROPS_SETS = ['mtn-default', 'proto-default'];
+const PROP_SETS = ['meadow-day', 'alpine-day', 'island-day'];
 
 // ---- X33: the per-pick slot override ----
 test('X33: every existing set reads exactly as before through normalizeBiomeSet (string picks unchanged)', () => {
@@ -27,8 +29,8 @@ test('X33: every existing set reads exactly as before through normalizeBiomeSet 
     for (const [group, pid] of pickedPieces(set)) if (group !== 'smallProps') assert.deepEqual(pieceColours(n, LIBRARY)(group, pid), pieceColours(set, LIBRARY)(group, pid), `${id} ${group} ${pid}`);
     assert.deepEqual(minimapColours(n, LIBRARY), minimapColours(set, LIBRARY), id);
   }
-  // the artist's real sets pick no small props yet
-  for (const id of REAL_SETS) assert.deepEqual(resolveBiome(id).smallProps, { pieces: [], perHa: 0, on: [] }, id);
+  // mtn-default / proto-default pick no small props; the artist's sets (meadow, alpine, island) do (see the real-sets test below)
+  for (const id of NO_PROPS_SETS) assert.deepEqual(resolveBiome(id).smallProps, { pieces: [], perHa: 0, on: [] }, id);
 });
 
 test('X33: a pick may be { id, slots }: trees, rocks, sky, furniture; the game reads its colours from the override', () => {
@@ -90,7 +92,7 @@ test('AP7c: the smallProps format: a bare id = weight 1, weights, clusters; { pi
     pieces: [{ id: 'grassTuft', weight: 1, slots: {}, cluster: null, perHa: null, on: null, perTenM: null },
       { id: 'flowerPatch', weight: 2, slots: { petal: 'propB' }, cluster: { count: [10, 10], radius: 1.5 }, perHa: null, on: null, perTenM: null }], perHa: 300, on: ['rough'],
   });
-  for (const id of REAL_SETS) assert.deepEqual(BIOMES[id].smallProps, { pieces: [] }, id);
+  for (const id of NO_PROPS_SETS) assert.deepEqual(BIOMES[id].smallProps, { pieces: [] }, id);
   assert.ok(validateBiomeSet(BIOMES['test-small-props'], LIBRARY));
   const v = sp => () => validateBiomeSet(withChange({ smallProps: sp }), LIBRARY);
   const ok = { perHa: 100, on: ['rough'] };
@@ -263,6 +265,28 @@ test('AP7c: the drawn props: nearest first, within drawDist, at most maxTris tri
   assert.ok(shown.some(i => props[i].z > cam.z + 5) && !ahead.some(i => props[i].z > cam.z + 5));
   // from high above (the flyover) almost nothing is near enough
   assert.ok(visibleSmallProps(props, { x: cam.x, y: cam.y + 200, z: cam.z }, ball, part).length < shown.length / 4);
+});
+
+test('art: the real Meadow, Alpine and Island sets validate, use only library pieces, and scatter deterministically on rough/ob only', () => {
+  for (const id of PROP_SETS) {
+    const set = BIOMES[id];
+    assert.ok(validateBiomeSet(set, LIBRARY), id);
+    const rule = normalizeSmallProps(set.smallProps);
+    assert.ok(rule.pieces.length > 0, id);
+    for (const p of rule.pieces) assert.ok(LIBRARY.smallProps[p.id], `${id}: ${p.id} is a library piece`);
+    const run = () => {
+      const hole = HOLES['mtn-07'], t = makeTerrain(hole);
+      return { hole, t, props: scatterSmallProps(hole, { heightAt: t.heightAt, surfaceAt: t.surfaceAt, rule, scaleOf }) };
+    };
+    const { hole, t, props } = run();
+    assert.ok(props.length > 0, id);
+    assert.deepEqual(props, run().props, `${id} deterministic`);
+    for (const p of props) {
+      assert.ok(SMALL_PROPS.surfaces.includes(t.surfaceAt(p.x, p.z)), `${id} ${p.x},${p.z}`);
+      assert.ok(Math.hypot(p.x - hole.tee.x, p.z - hole.tee.z) >= SMALL_PROPS.teeClear, id);
+      assert.ok(Math.hypot(p.x - hole.cup.x, p.z - hole.cup.z) >= SMALL_PROPS.cupClear, id);
+    }
+  }
 });
 
 // ---- AP7d: per-pick density, the water-edge surface, clear of trunks and stakes ----
