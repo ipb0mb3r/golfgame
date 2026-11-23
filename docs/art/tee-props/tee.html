@@ -7,7 +7,7 @@
 <!-- Tee props (feather flag, pop-up tent), artist mock-up (docs/art/tee-props/SPEC.md). Geometry: pieces.js.
      Stand-alone; reads src/core and src/biomes only, never changes them.
      ?kind=flag|tent&opts=F1,F2,F3 (&biome=meadow-day)  → one row per look: close-up beside a 1.8 m golfer | the aim view
-     ?dress=F1,T2&biomes=meadow-day,alpine-day,island-day → a dressed "tournament" tee per biome  &label=0  — Agent: artist -->
+     ?dress=F1,T2&scale=1.3&biomes=meadow-day,alpine-day,island-day → a dressed "tournament" tee per biome  &label=0  — Agent: artist -->
 <script type="importmap">{ "imports": { "three": "../../../vendor/three-0.187.0/three.module.js" } }</script>
 <style>
   html, body { margin: 0; height: 100%; overflow: hidden; background: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; }
@@ -90,7 +90,8 @@ const TEE = { x: 0, z: 20 };
 const golferAt = (scene, x, z) => { const m = toon({ color: '#2a4a7a' }), skin = toon({ color: '#f0c8a0' });
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.2, 1.5, 8), m); body.position.set(x, 0.75, z);
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 10, 8), skin); head.position.set(x, 1.65, z); scene.add(body, head); };
-const place = (scene, look, at) => scene.add(new THREE.Mesh(geometryOf(look.build(), look.slots, at), toon({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
+const SCALE = Number(q.get('scale') || 1);
+const place = (scene, look, at) => scene.add(new THREE.Mesh(geometryOf(look.build().map(p => ({ ...p, positions: p.positions.map(v => v * SCALE) })), look.slots, at), toon({ vertexColors: true, flatShading: true, side: THREE.DoubleSide })));
 function teeScene(golfer = true) {
   const scene = world();
   const tb = new THREE.Mesh(new THREE.PlaneGeometry(7, 9).rotateX(-Math.PI / 2), toon({ color: P.fairwayA })); tb.position.set(TEE.x, 0.03, TEE.z); scene.add(tb);
@@ -111,7 +112,7 @@ if (dress) {
       const scene = teeScene(view !== 'aim');
       for (const at of SPOTS.flag) place(scene, PIECES.flag[f], at);
       for (const at of SPOTS.tent) place(scene, PIECES.tent[t], at);
-      panels.push({ scene, view, cam: view === 'wide' ? WIDE : AIM, tag: view === 'wide' ? `${bid.replace('-day', '')} · ${f} + ${t}<small>colours = the biome's accent / subAccent / white</small>` : '', row: view === 'wide' ? 'tee seen from ahead' : 'the aim view' });
+      panels.push({ scene, view, cam: view === 'wide' ? WIDE : AIM, tag: view === 'wide' ? `${bid.replace('-day', '')} · ${f} + ${t}${SCALE !== 1 ? ' at ' + SCALE + '×' : ''}<small>colours = the biome's accent / subAccent / white</small>` : '', row: view === 'wide' ? 'tee seen from ahead' : 'the aim view' });
     }
   }
 } else {
