@@ -5,14 +5,14 @@
 // OB + 5 m). Real holes get their props from the course designer, in their own scenery.bigProps.
 export const DEV_BIG_PROPS_SET = 'test-big-props';
 export const DEV_BIG_PROPS = Object.freeze({
-  // mtn-07 (OB box x −70…72, z −475…16; the rough's trees line the left side and the green's back): the windmill and
-  // the beach hut beyond the open right rough, the two chalets on the slope behind the green, so the tee view shows
-  // all four (a wide screen; on a phone, aim right or watch the flyover). Each front turned toward the tee (turn 0 = +z).
+  // mtn-07 (OB box x −70…72, z −475…16): the rough's trees in play line the left side and the back of the green, so
+  // all four stand beyond the open right rough of the first 160 m, each front turned toward the tee (turn 0 = the
+  // front faces +z): from the tee, aim right (▶) to see them all; on a phone they also show as the ball flies.
   'mtn-07': Object.freeze([
-    Object.freeze({ id: 'windmill', x: 96, z: -100, turn: -0.8, scale: 1 }),
+    Object.freeze({ id: 'chalet', x: 124, z: -50, turn: -1.3, scale: 1 }),
+    Object.freeze({ id: 'chaletTall', x: 108, z: -84, turn: -1.0, scale: 0.95 }),
+    Object.freeze({ id: 'windmill', x: 96, z: -112, turn: -0.8, scale: 1 }),
     Object.freeze({ id: 'beachHut', x: 82, z: -160, turn: -0.6, scale: 1.15 }),
-    Object.freeze({ id: 'chalet', x: -45, z: -495, turn: 0.1, scale: 1 }),
-    Object.freeze({ id: 'chaletTall', x: 32, z: -506, turn: -0.1, scale: 1.1 }),
   ]),
 });
 
