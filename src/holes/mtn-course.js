@@ -43,7 +43,8 @@ export function smin(a, b, k) {
 }
 // A blob (playtest 1, L4/L5): a main ellipse plus optional lobes, rotated by `rot` (rad), its edge
 // wobbling by `wob` (0..0.3). Returns a "radius" like sqrt(ell): < 1 inside, 1 on the edge.
-//   { cx, cz, rx, rz, rot?, wob?, seed?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates)
+//   { cx, cz, rx, rz, rot?, wob?, seed?, blend?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates;
+//   blend 0.3–0.6 joins them in one smooth shape, no waist between two circles)
 export function blobR(x, z, b) {
   // quick reject: far outside the blob's bounding circle (the painter calls this millions of times)
   const q = b._q ?? blobPrep(b);
@@ -57,7 +58,9 @@ export function blobR(x, z, b) {
   for (const l of q.lobes) {
     const dx = x - l.cx, dz = z - l.cz;
     u = (dx * c + dz * sn) / l.rx; v = (-dx * sn + dz * c) / l.rz;
-    r = Math.min(r, Math.sqrt(u * u + v * v));
+    // b.blend (owner, 2026-11-24): the lobes melt into ONE smooth shape instead of touching circles; without it
+    // the plain minimum, exactly as before (the Mountain 9 holes)
+    r = q.k > 0 ? smin(r, Math.sqrt(u * u + v * v), q.k) : Math.min(r, Math.sqrt(u * u + v * v));
   }
   if (b.wob) {
     const a = Math.atan2(z - b.cz, x - b.cx), k = b.seed ?? 1;
@@ -72,7 +75,9 @@ export function blobR(x, z, b) {
 export function blobBeyond(x, z, b, edge) {
   const wob = b.wob ?? 0;
   if (!(wob < 0.9)) return false;
-  const q = b._q ?? blobPrep(b), k = edge * (1 + 1e-6) / (1 - wob);
+  const q0 = b._q ?? blobPrep(b);
+  // a blended blob (b.blend) reads at most blend / 4 lower per lobe than the plain minimum
+  const q = q0, k = (edge + 0.25 * q0.k * q0.lobes.length) * (1 + 1e-6) / (1 - wob);
   let dx = x - b.cx, dz = z - b.cz;
   if (dx * dx + dz * dz < k * k * q.M2) return false;
   for (const l of q.lobes) {
@@ -87,7 +92,7 @@ function blobPrep(b) {
   for (const l of b.lobes ?? []) R = Math.max(R, Math.hypot(l.cx - b.cx, l.cz - b.cz) + Math.hypot(l.rx, l.rz));
   const R1 = R * (1 + (b.wob ?? 0));
   const q = {
-    R2x9: 9 * R1 * R1, c: Math.cos(b.rot ?? 0), sn: Math.sin(b.rot ?? 0), M2: Math.max(b.rx, b.rz) ** 2,
+    R2x9: 9 * R1 * R1, k: b.blend ?? 0, c: Math.cos(b.rot ?? 0), sn: Math.sin(b.rot ?? 0), M2: Math.max(b.rx, b.rz) ** 2,
     lobes: (b.lobes ?? []).map(l => ({ cx: l.cx, cz: l.cz, rx: l.rx, rz: l.rz, M2: Math.max(l.rx, l.rz) ** 2 })),
   };
   Object.defineProperty(b, '_q', { value: q, enumerable: false });
@@ -148,7 +153,7 @@ const SCENERY = {
 //   base(x, z)        overall ground profile (drops and climbs), default flat
 //   hills: [{ x, z, r, h }]        bumps and dips (terrain.bump)
 //   teePad: { h, r }  the tee box sits on a flat pad h metres above the base (raised tee), radius r
-//   green: { cx, cz, rx, rz, raise, contour(x, z) → dh }  the putting surface; contour adds its slopes
+//   green: { cx, cz, rx, rz, raise, contour(x, z) → dh, rot?, wob?, seed?, lobes? }  the putting surface; contour adds its slopes; lobes / wob make it a blob
 //   fringe: m around the green (default 2.2)
 //   fairways: [{ pts: [{ x, z, w }] }]  centre lines with half-widths
 //   bunkers: [{ cx, cz, rx, rz, depth }]  hollows of sand (depth m, default 0.6)
@@ -186,10 +191,10 @@ export function makeMtnHole(spec) {
 
 function buildMtnHole(spec0, meta) {
   // the OB line keeps at least 40 m of rough around the green, so the trees behind it fit in bounds
-  const g0 = spec0.green, m0 = 40;
+  const g0 = greenBox(spec0.green), m0 = 40;
   const spec = { ...spec0, ob: {
-    x0: Math.min(spec0.ob.x0, g0.cx - g0.rx - m0), x1: Math.max(spec0.ob.x1, g0.cx + g0.rx + m0),
-    z0: Math.min(spec0.ob.z0, g0.cz - g0.rz - m0), z1: Math.max(spec0.ob.z1, g0.cz + g0.rz + m0),
+    x0: Math.min(spec0.ob.x0, g0.x0 - m0), x1: Math.max(spec0.ob.x1, g0.x1 + m0),
+    z0: Math.min(spec0.ob.z0, g0.z0 - m0), z1: Math.max(spec0.ob.z1, g0.z1 + m0),
   } };
   const fringeW = spec.fringe ?? 2.2;
   const G = spec.green;
@@ -203,7 +208,10 @@ function buildMtnHole(spec0, meta) {
   const tee = spec.tee, pad = spec.teePad ?? { h: 0.4, r: 4.5 };
 
   // the green's own outline size, ellipse "radius" (1 = on the edge)
-  const gE = (x, z) => Math.sqrt(ell(x, z, G));
+  // a blob green (owner, 2026-11-24: greens are often blobs, beans, lobes) when it has lobes or a wobble;
+  // otherwise the plain ellipse, exactly as before (the Mountain 9 greens)
+  const gBlob = isBlobGreen(G), GF = gBlob ? grownBlob(G, fringeW) : null;
+  const gE = gBlob ? (x, z) => blobR(x, z, G) : (x, z) => Math.sqrt(ell(x, z, G));
   const roughs = spec.roughs ?? [];
   const blend = spec.blend ?? 12; // m: how round the joints between fairway legs are
   // Signed distance to the fairway edge (< 0 = on the fairway). Every segment of every fairway is a
@@ -358,8 +366,13 @@ function buildMtnHole(spec0, meta) {
     if (c && c.d < c.w + (creek.lipW ?? 2.5)) return creek.lip ?? 'rough';
     if (lip) return lip;
     for (const b of bunkers) if (blobR(x, z, b) < 1) return 'sand';
-    if (ell(x, z, G) < 1) return 'green';
-    if (ell(x, z, G, fringeW) < 1) return 'fringe';
+    if (gBlob) {
+      if (blobR(x, z, G) < 1) return 'green';
+      if (blobR(x, z, GF) < 1) return 'fringe';
+    } else {
+      if (ell(x, z, G) < 1) return 'green';
+      if (ell(x, z, G, fringeW) < 1) return 'fringe';
+    }
     for (const r of rocks) if (ell(x, z, r) < 1) return 'rock';
     for (const p of paths) { const d = polyDist(x, z, p.pts); if (d.d < (p.w ?? 1.4)) return 'rock'; }
     for (const r of roughs) if (blobR(x, z, r) < 1) return 'rough'; // L6: rough that bites into the fairway
@@ -370,8 +383,9 @@ function buildMtnHole(spec0, meta) {
   // The terrain mesh: 1 m over the course, 0.5 m on the green, 10 m far away
   const M = 8; // map margin beyond OB
   const map = { x0: OB.x0 - M, x1: OB.x1 + M, z0: OB.z0 - M, z1: OB.z1 + M };
-  const g0x = Math.floor(G.cx - G.rx - 8), g1x = Math.ceil(G.cx + G.rx + 8);
-  const g0z = Math.floor(G.cz - G.rz - 8), g1z = Math.ceil(G.cz + G.rz + 8);
+  const gb = greenBox(G);
+  const g0x = Math.floor(gb.x0 - 8), g1x = Math.ceil(gb.x1 + 8);
+  const g0z = Math.floor(gb.z0 - 8), g1z = Math.ceil(gb.z1 + 8);
   const mesh = {
     xs: [[map.x0 - 300, map.x0, 10], [map.x0, g0x, 1], [g0x, g1x, 0.5], [g1x, map.x1, 1], [map.x1, map.x1 + 300, 10]],
     zs: [[map.z0 - 360, map.z0, 10], [map.z0, g0z, 1], [g0z, g1z, 0.5], [g1z, map.z1, 1], [map.z1, map.z1 + 200, 10]],
@@ -452,7 +466,7 @@ function plantForest(hole, spec, fairways) {
   if (back !== false && f.back !== false) {
     const from = spec.approachFrom ?? (spec.playLine ? spec.playLine[spec.playLine.length - 2] : spec.tee);
     const ax = G.cx - from.x, az = G.cz - from.z, aL = Math.hypot(ax, az), bx = ax / aL, bz = az / aL;
-    const R = Math.max(G.rx, G.rz) + 2.2 + (back.gap ?? 13), span = back.span ?? 1.35; // ±77°
+    const R = greenBox(G).R + 2.2 + (back.gap ?? 13), span = back.span ?? 1.35; // ±77°
     for (let row = 0; row < (back.rows ?? 2); row++) {
       const rr = R + row * 8, n = Math.round(2 * span * rr / (back.spacing ?? 9));
       for (let i = 0; i <= n; i++) {
@@ -484,6 +498,26 @@ function plantForest(hole, spec, fairways) {
     trees.splice(i, 1);
   }
   return trees;
+}
+
+// Greens (owner, 2026-11-24): a green with `lobes` (world coordinates, like a bunker's) or a `wob` is a blob,
+// measured with blobR (rot, wob, seed as a bunker); otherwise a plain ellipse. Its fringe is the same blob grown by
+// the fringe width. greenBox = its bounding box and the farthest reach R from its centre (an ellipse: exactly
+// the old cx ± rx, cz ± rz and max(rx, rz), so the Mountain 9 holes don't move).
+const isBlobGreen = G => !!(G.lobes?.length || G.wob);
+function grownBlob(G, w) {
+  return { ...G, rx: G.rx + w, rz: G.rz + w, lobes: (G.lobes ?? []).map(l => ({ ...l, rx: l.rx + w, rz: l.rz + w })) };
+}
+function greenBox(G) {
+  if (!isBlobGreen(G)) return { x0: G.cx - G.rx, x1: G.cx + G.rx, z0: G.cz - G.rz, z1: G.cz + G.rz, R: Math.max(G.rx, G.rz) };
+  const k = 1 + (G.wob ?? 0), parts = [G, ...(G.lobes ?? [])];
+  const b = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity, R: 0 };
+  for (const e of parts) {
+    const r = Math.max(e.rx, e.rz) * k;
+    b.x0 = Math.min(b.x0, e.cx - r); b.x1 = Math.max(b.x1, e.cx + r); b.z0 = Math.min(b.z0, e.cz - r); b.z1 = Math.max(b.z1, e.cz + r);
+    b.R = Math.max(b.R, Math.hypot(e.cx - G.cx, e.cz - G.cz) + r);
+  }
+  return b;
 }
 
 // A minimap that keeps the hole's proportions inside the same box as the other holes

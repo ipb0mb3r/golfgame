@@ -9,7 +9,7 @@ import { validateHole } from '../src/core/validate.js';
 import { createRng } from '../src/core/rng.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
-import { HOLES } from '../src/holes/sets.js';
+import { HOLES, SETS } from '../src/holes/sets.js';
 import { PALETTES as ARTIST_R2 } from '../docs/art/style-r2/palettes.js';
 
 const base = BIOMES['mtn-default'];
@@ -105,14 +105,16 @@ test('step 2 rules (artist on #86): per stripe and the putting grid; today\'s lo
   assert.throws(() => validateBiomeSet(withChange({ readabilityWaivers: fewer }), LIBRARY), /greenB\/fairwayA ΔE 6 \(≥ 10\)/);
 });
 
-test('meadow-day (the AP5 proof): the artist\'s Meadow palette, today\'s pieces only, no waiver, no hole uses it', () => {
+test('meadow-day (the AP5 proof): the artist\'s Meadow palette, today\'s pieces only, no waiver, only Buttercup Meadows uses it', () => {
   const m = BIOMES['meadow-day'];
   assert.equal(validateBiomeSet(m, LIBRARY), m);
   assert.equal(m.readabilityWaivers, undefined);
   assert.deepEqual(checkReadability(m.palette).filter(r => !r.ok), []);
   // every artist key is the artist's Meadow value (only the engine keys are the dev's)
   for (const k of Object.values(PALETTE_KEYS).slice(0, -1).flat()) assert.equal(m.palette[k], ARTIST_R2.meadow[k].toLowerCase(), k);
-  assert.ok(Object.values(HOLES).every(h => h.biome !== 'meadow-day'));
+  // the first real course (docs/COURSE_PLAN_MEADOW.md) is the only one dressed in it
+  const meadows = SETS.find(s => s.id === 'meadows').holes;
+  for (const h of Object.values(HOLES)) assert.equal(h.biome === 'meadow-day', meadows.includes(h.id), h.id);
 });
 
 test('the optional light override: replaces the hole\'s scenery light when present', () => {
