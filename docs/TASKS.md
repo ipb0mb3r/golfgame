@@ -306,6 +306,13 @@ The models and pieces the first three biome sets need. They shape AP3 → AP7 �
 - [x] **X43c** (owner on #133: web "a little less prominent, more stylized") ✅ (dev): fainter, thinner, sparser web over a faint even sheen; new tunables `WATER_WIDTH`, `WATER_LINE_PX`, `WATER_TINT`; defaults = option B. Looks only.
 - [x] **X42** (backlog) pl-02's opaque pond surface (`flatPond`, `pondSurface`) hid the painted deep-to-light gradient. ✅ (dev, with X43): no longer drawn (code removed); the see-through surface covers that pond.
 
+## Backlog from the props and Meadow passes (PM, 2026-11-23/24)
+- [ ] **X47** `meadow-day` on mtn-07 measures 303k triangles on main (over the 300k budget; TASKS said 288–294k after AP7b). Find what pushed it up and bring it back under, before long Meadow holes get close (found on #137).
+- [ ] **X48** Beyond a hole's map edge the far ground is drawn in 10 m cells, so it can sit a few cm off the true height props stand on (low: hidden by the 0.1 m post sink; on flat pl-01 a course-side tent stands 0.1 m above the far ground, not visible from the course) (#137).
+- [ ] **X49** Aiming almost backwards at the tee (about 119° off the line, toward OB) the event-prop tent roof can fill the screen (QA #138, low). Options: a wider camera clear zone, or fade props very close to the camera.
+- [ ] **X52** BC4 shape preview from sand: a Driver from a bunker stops 0.64–0.91 m from the shown end (the test's tolerance is 0.5 m and doesn't cover this case) (course designer, #145).
+- [ ] **X53** **The ball should visibly roll** (owner, 2026-11-24: "it looks like it's just sliding on the green"). Today the ball is a plain white sphere (`src/game/props.js`) with no rotation. Give it a simple pattern that shows spin (e.g. dimple-like dots or a subtle seam / stripe, artist picks the look, readable at phone size and still clearly "the white ball"), and turn the mesh with the ball's travel (rolling: rotation = distance / radius around the axis across the movement; in the air: keep or slowly decay the last spin). Look only, no physics change; the ball must stay easy to spot on every surface.
+
 ## Backlog from the art passes (PM, 2026-11-22/23)
 - [ ] **X35** (from #112) A minimum for the palm collider rule: a very flat collider squashes the palm crown.
 - [ ] **X36** (from #116) The small-prop triangle cap (`PROP_MAX_TRIS`) as its own line in `PERF_BUDGET` / perf-check.
