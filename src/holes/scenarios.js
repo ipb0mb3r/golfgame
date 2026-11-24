@@ -184,12 +184,12 @@ export const SCENARIOS = {
   },
   // Buttercup Meadows (course designer, docs/COURSE_PLAN_MEADOW.md): the key shot, a recovery spot and a putt per hole.
   'mdw1-drive-right': {
-    hole: 'mdw-01', ball: { x: 0, z: 0 }, aimAt: { x: 14, z: -240 }, strokes: 0, seed: 2101, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Meadows 1: drive down the right', text: 'Aimed down the right side, near the tree line: the open angle into the green, away from its front-left bunker.',
+    hole: 'mdw-01', ball: { x: 0, z: 0 }, aimAt: { x: 9, z: -240 }, strokes: 0, seed: 2101, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 1: thread the gap', text: 'A full Driver between the bunker on the left and the lone tree on the right: it leaves a wedge.',
   },
   'mdw1-bunker': {
-    hole: 'mdw-01', ball: { x: -24, z: -240 }, strokes: 1, seed: 2102, lie: 'sand',
-    name: 'Meadows 1: fairway bunker', text: 'The shallow bunker left of the landing zone, about 115 m out.',
+    hole: 'mdw-01', ball: { x: -5, z: -238 }, strokes: 1, seed: 2102, lie: 'sand',
+    name: 'Meadows 1: landing-zone bunker', text: 'In the big bunker in the left of the landing zone, about 115 m out.',
   },
   'mdw1-putt': {
     hole: 'mdw-01', ball: { x: -8, z: -341 }, strokes: 2, seed: 2103, wind: { x: 0, z: 0 }, lie: 'green',

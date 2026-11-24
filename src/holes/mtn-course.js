@@ -131,6 +131,34 @@ export function meander(pts, { amp = 4, len = 70, wvar = 0.3, seed = 1 } = {}) {
   }
   return out;
 }
+// Map study (owner, 2026-11-24, docs/course/MAP_STUDY.md): shapes drawn as OUTLINES. A closed outline through
+// hand-placed points [{ x, z }] (or [x, z]) is rounded by closed Chaikin corner cutting, so a few points make a
+// smooth blob that can pinch, swell, lean and bend (a fairway, the playable land).
+export function smoothClosed(pts0, rounds = 4) {
+  let a = pts0.map(p => (Array.isArray(p) ? { x: p[0], z: p[1] } : p));
+  for (let r = 0; r < rounds; r++) {
+    const b = [];
+    for (let i = 0; i < a.length; i++) {
+      const p = a[i], q = a[(i + 1) % a.length];
+      b.push({ x: p.x * 0.75 + q.x * 0.25, z: p.z * 0.75 + q.z * 0.25 }, { x: p.x * 0.25 + q.x * 0.75, z: p.z * 0.25 + q.z * 0.75 });
+    }
+    a = b;
+  }
+  return a;
+}
+// Signed distance to a closed outline (< 0 inside, metres)
+export function outlineGap(x, z, poly) {
+  let d2 = Infinity, inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[j], b = poly[i], dx = b.x - a.x, dz = b.z - a.z;
+    const u = Math.min(1, Math.max(0, ((x - a.x) * dx + (z - a.z) * dz) / (dx * dx + dz * dz || 1e-9)));
+    const px = a.x + dx * u - x, pz = a.z + dz * u - z;
+    d2 = Math.min(d2, px * px + pz * pz);
+    if ((a.z > z) !== (b.z > z) && x < a.x + (z - a.z) / (b.z - a.z) * dx) inside = !inside;
+  }
+  return inside ? -Math.sqrt(d2) : Math.sqrt(d2);
+}
+
 // Length of a polyline (m)
 export const polyLen = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.x - pts[i].x, p.z - pts[i].z), 0);
 
@@ -256,6 +284,16 @@ function buildMtnHole(spec0, meta) {
   const GRID = new Float32Array(GW * GH);
   const GX1 = GX0 + (GW - 1) * GS, GZ1 = GZ0 + (GH - 1) * GS;
   for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) GRID[j * GW + i] = SEG.length ? Math.min(fairwayGapRaw(GX0 + i * GS, GZ0 + j * GS), 1e4) : 1e4;
+  // Map study: fairways drawn as outlines (spec.fairwayShapes: [{ pts }]), joined to any spine fairways
+  const shapes = (spec.fairwayShapes ?? []).map(f => smoothClosed(f.pts, f.rounds ?? 4));
+  if (shapes.length) for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) {
+    for (const sh of shapes) GRID[j * GW + i] = Math.min(GRID[j * GW + i], outlineGap(GX0 + i * GS, GZ0 + j * GS, sh));
+  }
+  // Map study: the playable land (spec.land: { pts }), a clearing in the forest. Outside it is out of bounds
+  // (painted dark, filled with scenery trees): the hole reads as a real place, not a field.
+  const land = spec.land ? smoothClosed(spec.land.pts, spec.land.rounds ?? 4) : null;
+  const LGRID = land ? new Float32Array(GW * GH) : null;
+  if (land) for (let j = 0; j < GH; j++) for (let i = 0; i < GW; i++) LGRID[j * GW + i] = outlineGap(GX0 + i * GS, GZ0 + j * GS, land);
   // X20: the grid cell of (x, z), without allocating (the same numbers the old clamp-to-grid array
   // gave): gO = the cell's first index, gTx / gTz = where in the cell, gOut = the distance outside the grid. Inside
   // the grid gOut is exactly 0, as Math.hypot(0, 0) is, so the costly hypot runs only outside.
@@ -273,6 +311,7 @@ function buildMtnHole(spec0, meta) {
     gridCell(x, z);
     return bilerp(GRID) + gOut;
   };
+  const landGap = land ? (x, z) => { gridCell(x, z); return bilerp(LGRID) + gOut; } : null;
 
   // the creek's distance and half-width, cached on the same 1 m grid as the fairway
   const CD = creek ? new Float32Array(GW * GH) : null, CW = creek ? new Float32Array(GW * GH) : null;
@@ -354,6 +393,7 @@ function buildMtnHole(spec0, meta) {
   function surfaceAt(x, z) {
     if (x < OB.x0 || x > OB.x1 || z < OB.z0 || z > OB.z1) return 'ob';
     if (Math.abs(x - tee.x) < 3.5 && Math.abs(z - tee.z) < 4) return 'tee';
+    if (land && landGap(x, z) > 0) return 'ob';
     // water first (a creek running into a lake is one body of water), then the lips around it
     const c = creek ? creekAt(x, z) : null;
     let lip = null;
@@ -411,8 +451,11 @@ function buildMtnHole(spec0, meta) {
       mesh,
       stakes: { xs: [OB.x0, OB.x1], z0: OB.z1 - 2, z1: OB.z0 + 2, step: 12 },
       trees: {
-        count: Math.round(220 + lenZ * 0.6), xSpan: (OB.x1 - OB.x0) + 260, zTop: OB.z1 + 110, zSpan: lenZ + 300, sink: 0.2,
-        exclude: (x, z) => (x > OB.x0 - 5 && x < OB.x1 + 5 && z > OB.z0 - 5 && z < OB.z1 + 5) || (Math.abs(x - tee.x) < 20 && z > tee.z),
+        count: Math.round((220 + lenZ * 0.6) * (land ? spec.land.forest ?? 1.6 : 1)), xSpan: (OB.x1 - OB.x0) + 260, zTop: OB.z1 + 110, zSpan: lenZ + 300, sink: 0.2,
+        // with a land outline the forest grows right up to the clearing (3 m back from its edge), inside the OB box too
+        exclude: land
+          ? (x, z) => landGap(x, z) < 3 || (Math.abs(x - tee.x) < 20 && z > tee.z)
+          : (x, z) => (x > OB.x0 - 5 && x < OB.x1 + 5 && z > OB.z0 - 5 && z < OB.z1 + 5) || (Math.abs(x - tee.x) < 20 && z > tee.z),
       },
       hills: { count: 18, dist: [520 + lenZ * 0.4, 140], xz: [110, 70], y: [70, 60], posY: -18, cz: midZ },
       clouds: { count: 14, xSpan: 800, y: [110, 50], cz: midZ, zOff: 0.4, zSpan: 900 },
@@ -420,7 +463,7 @@ function buildMtnHole(spec0, meta) {
       ...(spec.scenery ?? {}),
     },
   };
-  if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways)];
+  if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways, land && { land, landGap })];
   return hole;
 }
 
@@ -430,13 +473,35 @@ function buildMtnHole(spec0, meta) {
 //   size: [min, max] (default [1.1, 1.7]), seed, clear: [{ pts, w }] corridors kept free (brave lines),
 //   keep (m: distance kept from water, sand, green, tee; default 6) }
 // Trees that would block the default tee shot are left out (K8 / validateHole), so the hole stays fair.
-function plantForest(hole, spec, fairways) {
+function plantForest(hole, spec, fairways, edge = null) {
   const f = spec.forest, r = createRng(f.seed ?? 7);
   const gap = f.gap ?? 7, rows = f.rows ?? 2, spacing = f.spacing ?? 11, [s0, s1] = f.size ?? [1.1, 1.7];
   const keep = f.keep ?? 6, OB = spec.ob;
   const clear = f.clear ?? [];
   const spots = [];
-  for (const fw of fairways) {
+  // Map study (owner): with a land outline, trees in play stand in CLUMPS of 1–3 along the edge of the clearing,
+  // a few metres inside it, at irregular gaps, so the edge reads as a living tree line, not a row
+  if (edge) {
+    const L = edge.land, [g0, g1] = f.edgeGap ?? [5, 16], [i0, i1] = f.inset ?? [3, 9];
+    let run = g0 + r() * (g1 - g0);
+    for (let i = 0; i < L.length; i++) {
+      const a = L[i], b = L[(i + 1) % L.length], seg = Math.hypot(b.x - a.x, b.z - a.z);
+      let t = 0;
+      while (run <= seg - t) {
+        t += run;
+        const ux = (b.x - a.x) / seg, uz = (b.z - a.z) / seg, px = a.x + ux * t, pz = a.z + uz * t;
+        const side = edge.landGap(px - uz * 4, pz + ux * 4) < edge.landGap(px + uz * 4, pz - ux * 4) ? 1 : -1; // the inward normal
+        const n = 1 + Math.floor(r() * (f.clump ?? 3));
+        for (let k = 0; k < n; k++) {
+          const d = i0 + r() * (i1 - i0), along = (r() - 0.5) * 7;
+          spots.push({ x: px + ux * along - uz * d * side, z: pz + uz * along + ux * d * side, s: s0 + r() * (s1 - s0) });
+        }
+        run = g0 + r() * (g1 - g0);
+      }
+      run -= seg - t;
+    }
+  }
+  for (const fw of edge ? [] : fairways) {
     for (let k = 1; k < fw.pts.length; k++) {
       const a = fw.pts[k - 1], b = fw.pts[k], L = Math.hypot(b.x - a.x, b.z - a.z);
       const ux = (b.x - a.x) / L, uz = (b.z - a.z) / L;
