@@ -68,3 +68,22 @@ test('mdw-03: a short tee shot rolls back off the raised green; the middle of th
   const short = shot(startAt(h), { pk: 0.82 });
   assert.notEqual(short.surface, 'green', `a short shot ended on the ${short.surface}`);
 });
+
+// Owner (2026-11-24, all holes from now on): bunkers are big, deep bowls the ball rolls into, like a pit.
+test('Buttercup Meadows bunkers are big, deep bowls; the Sand Wedge always gets out', () => {
+  for (const h of MDW) {
+    for (const b of h.features.bunkers) {
+      const near = Math.hypot(b.cx - h.cup.x, b.cz - h.cup.z) < 40;
+      assert.ok(b.depth >= (near ? 1.4 : 1.0), `${h.id} bunker at (${b.cx}, ${b.cz}): ${b.depth} m deep`);
+      assert.ok(b.rx * b.rz >= 40, `${h.id} bunker at (${b.cx}, ${b.cz}): too small`);
+      // the middle is the low point of a bowl: lower than the ground just past the sand
+      const mid = h.heightAt(b.cx, b.cz), R = 1.3 * Math.max(b.rx, b.rz);
+      let rim = 0; for (let k = 0; k < 8; k++) rim += h.heightAt(b.cx + R * Math.cos(k * Math.PI / 4), b.cz + R * Math.sin(k * Math.PI / 4)) / 8;
+      assert.ok(rim - mid > 0.7 * b.depth, `${h.id} bunker at (${b.cx}, ${b.cz}): only ${(rim - mid).toFixed(2)} m below its rim`);
+      // a Sand Wedge at the pin from the middle gets out
+      const p = startAt(h, { x: b.cx, z: b.cz }, 1);
+      const e = shot(p, { club: 'sw', power: near ? 'pin' : 1 });
+      assert.notEqual(e.surface, 'sand', `${h.id}: stuck in the bunker at (${b.cx}, ${b.cz})`);
+    }
+  }
+});

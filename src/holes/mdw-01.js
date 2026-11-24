@@ -29,9 +29,9 @@ export default makeMdwHole({
   // one flowing blob, widest in the landing zone, merging into the green's front
   fairways: [{ pts: [{ x: 0, z: -26, w: 13 }, { x: 0, z: -120, w: 25 }, { x: 2, z: -240, w: 27 }, { x: 3, z: -310, w: 19 }, { x: 3, z: -338, w: 15 }] }],
   bunkers: [
-    // a shallow blob where real drives finish, left of centre
-    { cx: -20, cz: -238, rx: 6, rz: 10, rot: 0.25, wob: 0.12, seed: 2, depth: 0.45, lobes: [{ cx: -15, cz: -250, rx: 5, rz: 5 }] },
-    { cx: -15, cz: -337, rx: 5, rz: 7, rot: -0.3, wob: 0.1, depth: 0.9 }, // front left of the green: the right side has the open angle
+    // a big bowl where real drives finish, left of centre
+    { cx: -22, cz: -238, rx: 9, rz: 14, rot: 0.25, wob: 0.12, seed: 2, depth: 1.1, lobes: [{ cx: -16, cz: -254, rx: 7, rz: 7 }] },
+    { cx: -24, cz: -336, rx: 7, rz: 10, rot: -0.3, wob: 0.1, depth: 1.5 }, // front left of the green: the right side has the open angle
   ],
   ob: { x0: -62, x1: 62, z0: -390, z1: 18 },
   forest: { gap: 9, rows: 2, spacing: 13, size: [1.0, 1.5], seed: 101, keep: 6 },

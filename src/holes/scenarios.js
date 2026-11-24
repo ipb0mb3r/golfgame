@@ -200,7 +200,7 @@ export const SCENARIOS = {
     name: 'Meadows 2: cut the corner', text: 'Aimed left, just past the group of round trees: a full Driver leaves a short wedge. Hook it and you meet the trees.',
   },
   'mdw2-outside-bunker': {
-    hole: 'mdw-02', ball: { x: 25, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
+    hole: 'mdw-02', ball: { x: 27, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
     name: 'Meadows 2: outside the bend', text: 'In the shallow bunker on the outside of the bend, about 135 m from the green.',
   },
   'mdw2-downhill-putt': {
@@ -212,7 +212,7 @@ export const SCENARIOS = {
     name: 'Meadows 3: the tee shot', text: 'A simple par 3 to a wide, slightly raised green. Short rolls back down the bank.',
   },
   'mdw3-bunker': {
-    hole: 'mdw-03', ball: { x: -12, z: -136 }, strokes: 1, seed: 2302, wind: { x: 0, z: 0 }, lie: 'sand',
+    hole: 'mdw-03', ball: { x: -17, z: -131 }, strokes: 1, seed: 2302, wind: { x: 0, z: 0 }, lie: 'sand',
     name: 'Meadows 3: front-left bunker', text: 'In the bunker short left of the green, about 22 m from the flag.',
   },
   'mdw3-putt': {

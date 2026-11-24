@@ -1,6 +1,6 @@
 // Buttercup Meadows, hole 2: par 4, about 340 m, curving LEFT around a group of round trees. Difficulty 1.
 // Plan (docs/COURSE_PLAN_MEADOW.md): fairly flat with soft rolls. Safe: play out to the right, to the elbow,
-// then a mid-iron in. Brave: cut close to (or over) the trees inside the bend, for a wedge. Two shallow bunkers
+// then a mid-iron in. Brave: cut close to (or over) the trees inside the bend, for a wedge. Two big bunkers
 // on the outside of the bend catch a long safe drive. The green has one clear back-to-front slope.
 // Props: a lighter tournament tee (tent + 2 flags), a rail fence along the right OB line.
 import { makeMdwHole, mdwIntro, oak, TEE_DRESS } from './mdw-course.js';
@@ -35,10 +35,10 @@ export default makeMdwHole({
   ],
   bunkers: [
     // the outside of the bend: the cost of the safe line (a harder next shot, no penalty)
-    { cx: 25, cz: -204, rx: 6, rz: 10, rot: -0.2, wob: 0.12, seed: 3, depth: 0.45 },
-    { cx: 8, cz: -258, rx: 9, rz: 6, rot: -0.3, wob: 0.14, seed: 4, depth: 0.5, lobes: [{ cx: -2, cz: -263, rx: 5, rz: 4 }] },
-    { cx: -73, cz: -312, rx: 4, rz: 7, rot: 0.7, wob: 0.1, seed: 5, depth: 0.8 },   // right of the green
-    { cx: -101, cz: -309, rx: 6, rz: 4, rot: -0.5, wob: 0.12, seed: 6, depth: 0.8 }, // back left
+    { cx: 27, cz: -204, rx: 8, rz: 14, rot: -0.2, wob: 0.12, seed: 3, depth: 1.1 },
+    { cx: 9, cz: -262, rx: 12, rz: 8, rot: -0.3, wob: 0.14, seed: 4, depth: 1.1, lobes: [{ cx: -4, cz: -268, rx: 7, rz: 5 }] },
+    { cx: -69, cz: -316, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
+    { cx: -105, cz: -312, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // back left
   ],
   ob: { x0: -132, x1: 56, z0: -345, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 102, keep: 6, clear: [{ pts: [{ x: 0, z: 0 }, { x: -60, z: -254 }], w: 8 }] },

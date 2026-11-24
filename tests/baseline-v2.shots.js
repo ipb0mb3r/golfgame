@@ -95,7 +95,7 @@ export const SHOTS = [
   { name: 'MDW mdw2 Driver cuts the corner past the trees', hole: 'mdw-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 1, z: -206 }, aimOff: -0.204, club: 'driver' },
   { name: 'MDW mdw2 safe drive in seeded wind', hole: 'mdw-02', seed: 52, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: -0.02, aimFrom: { x: 1, z: -206 }, aimOff: 0 },
   { name: 'MDW mdw3 tee shot to the raised green', hole: 'mdw-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
-  { name: 'MDW mdw3 out of the front-left bunker', hole: 'mdw-03', seed: null, start: { x: -12, z: -136 }, strokes: 1, power: 0.45, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw3 out of the front-left bunker', hole: 'mdw-03', seed: null, start: { x: -17, z: -131 }, strokes: 1, power: 0.45, acc: 0, aimOff: 0 },
   // Phase BC (BC1/BC2): shaped shots. `impact` { x, y } = where the club hits the ball (core/shape.js;
   // left/right = start out then curve back, bottom/top = higher/lower). Every shot above is a centre hit.
   { name: 'BC h1 tee, left impact (starts left, curves right)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
