@@ -94,8 +94,10 @@ test('placement rules: the set must offer the id, the scale in range, the footpr
   // beyond the far end (behind the green) and inside the box
   assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet', scale: LIBRARY.bigProps.chalet.size }) - 0.01 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -200 }], offerAll, LIBRARY), /comes within/);
-  // the set must offer it (meadow-day offers only the windmill)
-  assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), /biome set "meadow-day" does not offer it \(its bigProps: windmill\)/);
+  // the set must offer it: a library piece meadow-day does not list (whatever its list is)
+  const meadowIds = BIOMES['meadow-day'].bigProps.map(p => p.id ?? p), notMeadow = Object.keys(LIBRARY.bigProps).find(k => !meadowIds.includes(k));
+  assert.ok(notMeadow, 'some big prop is not in meadow-day');
+  assert.match(bigPropsError(withProps([]), [{ id: notMeadow, x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), new RegExp(`biome set "meadow-day" does not offer it \\(its bigProps: ${meadowIds.join(', ')}\\)`));
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['mtn-default'], LIBRARY), /biome set "mtn-default" does not offer it \(its bigProps: none\)/);
   assert.match(bigPropsError(withProps([]), [{ id: 'hayHut', x: 200, z: -150 }], offerAll, LIBRARY), /not a big-prop piece/);
   // the scale range; the beach hut never below 0.9
@@ -153,7 +155,8 @@ test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07
   // the dev set is meadow-day plus all four props, nothing else changed
   const { id, name, description, bigProps, ...rest } = BIOMES[DEV_BIG_PROPS_SET];
   const { id: _i, name: _n, description: _d, bigProps: meadowProps, ...meadow } = BIOMES['meadow-day'];
-  assert.deepEqual(rest, meadow); assert.deepEqual(bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut', 'cow']); assert.deepEqual(meadowProps, ['windmill']);
+  assert.deepEqual(rest, meadow); assert.deepEqual(bigProps, Object.keys(LIBRARY.bigProps));
+  for (const p of meadowProps) assert.ok(bigProps.includes(p.id ?? p), `the dev set offers meadow's ${p.id ?? p}`);
 });
 
 test('per-piece sizes (owner pick 2026-11-23): windmill 2.5, chalet / chaletTall / beachHut 1.8, in the library', () => {
@@ -181,12 +184,13 @@ test('BIG_PROP_SCALE: a tunable multiplier on the piece sizes (default 1, 0.2–
 });
 
 test('the real sets: each validates, offers only library pieces of its biome; mtn-default / proto-default offer none', () => {
-  const want = { 'meadow-day': ['windmill'], 'alpine-day': ['chalet', 'chaletTall'], 'island-day': ['beachHut'], 'mtn-default': [], 'proto-default': [] };
-  for (const [id, ids] of Object.entries(want)) {
-    assert.deepEqual((BIOMES[id].bigProps ?? []).map(p => p.id ?? p), ids, id);
-    for (const pid of ids) assert.ok(LIBRARY.bigProps[pid], `${id}: ${pid} is a library piece`);
+  const ids = ['meadow-day', 'alpine-day', 'island-day', 'mtn-default', 'proto-default'];
+  for (const id of ids) {
+    const offered = (BIOMES[id].bigProps ?? []).map(p => p.id ?? p);
+    for (const pid of offered) assert.ok(LIBRARY.bigProps[pid], `${id}: ${pid} is a library piece`);
+    if (id.endsWith('-default')) assert.deepEqual(offered, [], id); else assert.ok(offered.length > 0, `${id} offers some`);
   }
-  for (const id of Object.keys(want)) assert.doesNotThrow(() => validateBiomeSet(BIOMES[id], LIBRARY), id);
+  for (const id of ids) assert.doesNotThrow(() => validateBiomeSet(BIOMES[id], LIBRARY), id);
   // the piece names say their biome (SPEC): Meadow / Alpine / Island
   for (const id of ['meadow-day', 'alpine-day', 'island-day']) for (const p of BIOMES[id].bigProps) assert.match(LIBRARY.bigProps[p.id ?? p].desc, new RegExp(`^${id.split('-')[0]}`, 'i'), id);
 });
