@@ -38,8 +38,8 @@ export default makeMdwHole({
     // the outside of the bend: the cost of the safe line (a harder next shot, no penalty)
     { cx: 22, cz: -204, rx: 8, rz: 14, rot: -0.2, wob: 0.12, seed: 3, depth: 1.1 },
     { cx: 7, cz: -244, rx: 12, rz: 8, rot: -0.5, wob: 0.14, seed: 4, depth: 1.1, blend: 0.5, lobes: [{ cx: -1, cz: -251, rx: 7, rz: 6 }] },
-    { cx: -64, cz: -312, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
-    { cx: -104, cz: -305, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // left of the green
+    { cx: -58, cz: -315, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
+    { cx: -107, cz: -306, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // left of the green
   ],
   ob: { x0: -132, x1: 56, z0: -345, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 102, keep: 6, clear: [{ pts: [{ x: 0, z: 0 }, { x: -60, z: -254 }], w: 8 }] },

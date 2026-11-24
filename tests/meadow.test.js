@@ -102,3 +102,16 @@ test('Buttercup Meadows bunkers touch play: each one borders the fairway, the fr
     }
   }
 });
+
+// Owner (2026-11-24): bunkers and rough patches can overlap a lot of things, but never the green.
+test('Buttercup Meadows: no bunker or rough patch covers any part of the green', async () => {
+  const { blobR } = await import('../src/holes/mtn-course.js');
+  for (const h of MDW) {
+    const G = h.features.green;
+    for (const b of [...h.features.bunkers, ...(h.features.roughs ?? [])]) {
+      for (let z = b.cz - 30; z < b.cz + 30; z += 0.5) for (let x = b.cx - 30; x < b.cx + 30; x += 0.5) {
+        if (blobR(x, z, b) < 1) assert.ok(blobR(x, z, G) >= 1, `${h.id}: the shape at (${b.cx}, ${b.cz}) covers the green at (${x}, ${z})`);
+      }
+    }
+  }
+});

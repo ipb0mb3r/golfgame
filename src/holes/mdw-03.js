@@ -25,7 +25,7 @@ export default makeMdwHole({
   fairways: [{ pts: [{ x: 2, z: -92, w: 9 }, { x: 3, z: -122, w: 14 }, { x: 3, z: -136, w: 16 }] }],
   bunkers: [
     { cx: -17, cz: -131, rx: 7, rz: 8, rot: 0.5, wob: 0.12, seed: 7, depth: 1.5, blend: 0.5, lobes: [{ cx: -21, cz: -138, rx: 5, rz: 6 }] }, // front left
-    { cx: 27, cz: -142, rx: 6, rz: 9, rot: -0.3, wob: 0.1, seed: 8, depth: 1.5 },                                           // right
+    { cx: 30, cz: -143, rx: 6, rz: 9, rot: -0.3, wob: 0.1, seed: 8, depth: 1.5 },                                           // right
   ],
   ob: { x0: -58, x1: 58, z0: -200, z1: 14 },
   forest: { gap: 10, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 103, keep: 7 },
