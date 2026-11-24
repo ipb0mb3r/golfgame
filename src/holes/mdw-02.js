@@ -25,7 +25,8 @@ export default makeMdwHole({
     { x: -70, z: -150, r: 30, h: 1.6 },  // the trees' knoll, inside the bend
   ],
   // back-to-front along the line of the approach (the back left is high): putts from the back run toward the fairway
-  green: { cx: -86, cz: -300, rx: 15, rz: 13, raise: 0.4, contour: (x, z) => -0.015 * (x + 86) - 0.016 * (z + 300) },
+  // a wide bean across the line of the approach (owner: greens are often blobs)
+  green: { cx: -86, cz: -300, rx: 17, rz: 12, rot: -0.75, wob: 0.07, seed: 5, lobes: [{ cx: -96, cz: -291, rx: 10, rz: 9 }, { cx: -76, cz: -309, rx: 10, rz: 9 }], raise: 0.4, contour: (x, z) => -0.015 * (x + 86) - 0.016 * (z + 300) },
   // one flowing fairway: the inside of the bend swells toward the green (the shortcut grows out of the fairway),
   // and the approach merges into the green's front
   blend: 18,
@@ -35,10 +36,10 @@ export default makeMdwHole({
   ],
   bunkers: [
     // the outside of the bend: the cost of the safe line (a harder next shot, no penalty)
-    { cx: 27, cz: -204, rx: 8, rz: 14, rot: -0.2, wob: 0.12, seed: 3, depth: 1.1 },
-    { cx: 9, cz: -262, rx: 12, rz: 8, rot: -0.3, wob: 0.14, seed: 4, depth: 1.1, lobes: [{ cx: -4, cz: -268, rx: 7, rz: 5 }] },
-    { cx: -69, cz: -316, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
-    { cx: -105, cz: -312, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // back left
+    { cx: 22, cz: -204, rx: 8, rz: 14, rot: -0.2, wob: 0.12, seed: 3, depth: 1.1 },
+    { cx: 7, cz: -244, rx: 12, rz: 8, rot: -0.5, wob: 0.14, seed: 4, depth: 1.1, lobes: [{ cx: -4, cz: -253, rx: 7, rz: 5 }] },
+    { cx: -64, cz: -312, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
+    { cx: -104, cz: -305, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // left of the green
   ],
   ob: { x0: -132, x1: 56, z0: -345, z1: 18 },
   forest: { gap: 8, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 102, keep: 6, clear: [{ pts: [{ x: 0, z: 0 }, { x: -60, z: -254 }], w: 8 }] },

@@ -20,12 +20,12 @@ export default makeMdwHole({
     { x: -40, z: -60, r: 22, h: 1.8 },
   ],
   // wide, slightly raised (a short ball rolls back down the bank), one gentle tilt back to front
-  green: { cx: 3, cz: -150, rx: 16, rz: 12, raise: 0.8, bank: 1.0, contour: (x, z) => 0.004 * (x - 3) - 0.011 * (z + 150) },
+  green: { cx: 3, cz: -150, rx: 16, rz: 11, rot: 0.1, wob: 0.07, seed: 7, lobes: [{ cx: -8, cz: -156, rx: 10, rz: 9 }, { cx: 13, cz: -145, rx: 9, rz: 9 }], raise: 0.8, bank: 1.0, contour: (x, z) => 0.004 * (x - 3) - 0.011 * (z + 150) },
   // the approach fairway widens into the front of the green
   fairways: [{ pts: [{ x: 2, z: -92, w: 9 }, { x: 3, z: -122, w: 14 }, { x: 3, z: -136, w: 16 }] }],
   bunkers: [
     { cx: -17, cz: -131, rx: 7, rz: 8, rot: 0.5, wob: 0.12, seed: 7, depth: 1.5, lobes: [{ cx: -23, cz: -140, rx: 5, rz: 5 }] }, // front left
-    { cx: 28, cz: -153, rx: 6, rz: 9, rot: -0.2, wob: 0.1, seed: 8, depth: 1.5 },                                           // right
+    { cx: 27, cz: -142, rx: 6, rz: 9, rot: -0.3, wob: 0.1, seed: 8, depth: 1.5 },                                           // right
   ],
   ob: { x0: -58, x1: 58, z0: -200, z1: 14 },
   forest: { gap: 10, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 103, keep: 7 },

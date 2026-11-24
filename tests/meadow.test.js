@@ -87,3 +87,18 @@ test('Buttercup Meadows bunkers are big, deep bowls; the Sand Wedge always gets 
     }
   }
 });
+
+// Owner (2026-11-24): a bunker touches play. It may stick out into the rough, but it overlaps the fairway (or sits
+// in it), or hugs the green. Never a lone bunker in the rough.
+test('Buttercup Meadows bunkers touch play: each one borders the fairway, the fringe or the green', () => {
+  for (const h of MDW) {
+    for (const b of h.features.bunkers) {
+      let play = 0;
+      for (let z = b.cz - 25; z < b.cz + 25; z += 0.5) for (let x = b.cx - 25; x < b.cx + 25; x += 0.5) {
+        if (h.surfaceAt(x, z) !== 'sand') continue;
+        for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (['fairway', 'fringe', 'green'].includes(h.surfaceAt(x + dx, z + dz))) play++;
+      }
+      assert.ok(play >= 20, `${h.id} bunker at (${b.cx}, ${b.cz}) barely touches play (${play})`);
+    }
+  }
+});

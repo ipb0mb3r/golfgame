@@ -200,7 +200,7 @@ export const SCENARIOS = {
     name: 'Meadows 2: cut the corner', text: 'Aimed left, just past the group of round trees: a full Driver leaves a short wedge. Hook it and you meet the trees.',
   },
   'mdw2-outside-bunker': {
-    hole: 'mdw-02', ball: { x: 27, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
+    hole: 'mdw-02', ball: { x: 22, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
     name: 'Meadows 2: outside the bend', text: 'In the shallow bunker on the outside of the bend, about 135 m from the green.',
   },
   'mdw2-downhill-putt': {

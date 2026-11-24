@@ -24,14 +24,14 @@ export default makeMdwHole({
     { x: 10, z: -395, r: 26, h: 2.6 },   // a low bank behind the green (a backdrop)
     { x: 10, z: -445, r: 34, h: 9 },     // the windmill's hill, beyond OB
   ],
-  // big and gently tilted (back right high): putts break a little toward the front left
-  green: { cx: 3, cz: -348, rx: 17, rz: 14, raise: 0.3, contour: (x, z) => 0.011 * (x - 3) - 0.009 * (z + 348) },
+  // a big bean (owner: greens are often blobs), gently tilted (back right high): putts break a little toward the front left
+  green: { cx: 3, cz: -348, rx: 17, rz: 12, rot: 0.35, wob: 0.07, seed: 3, lobes: [{ cx: -9, cz: -357, rx: 11, rz: 10 }, { cx: 14, cz: -341, rx: 10, rz: 9 }], raise: 0.3, contour: (x, z) => 0.011 * (x - 3) - 0.009 * (z + 348) },
   // one flowing blob, widest in the landing zone, merging into the green's front
   fairways: [{ pts: [{ x: 0, z: -26, w: 13 }, { x: 0, z: -120, w: 25 }, { x: 2, z: -240, w: 27 }, { x: 3, z: -310, w: 19 }, { x: 3, z: -338, w: 15 }] }],
   bunkers: [
     // a big bowl where real drives finish, left of centre
     { cx: -22, cz: -238, rx: 9, rz: 14, rot: 0.25, wob: 0.12, seed: 2, depth: 1.1, lobes: [{ cx: -16, cz: -254, rx: 7, rz: 7 }] },
-    { cx: -24, cz: -336, rx: 7, rz: 10, rot: -0.3, wob: 0.1, depth: 1.5 }, // front left of the green: the right side has the open angle
+    { cx: -19, cz: -334, rx: 7, rz: 10, rot: -0.3, wob: 0.1, seed: 9, depth: 1.5 }, // front left of the green: the right side has the open angle
   ],
   ob: { x0: -62, x1: 62, z0: -390, z1: 18 },
   forest: { gap: 9, rows: 2, spacing: 13, size: [1.0, 1.5], seed: 101, keep: 6 },
@@ -40,8 +40,8 @@ export default makeMdwHole({
     eventProps: [
       TEE_DRESS.tent, TEE_DRESS.flagR, TEE_DRESS.flagL, TEE_DRESS.flagBack, TEE_DRESS.bench,
       // two flags behind the green, framing the hole flag in the approach view
-      { id: 'featherFlag', x: -9, z: -373, turn: 0.25 },
-      { id: 'featherFlag', x: 15, z: -373, turn: -0.25 },
+      { id: 'featherFlag', x: -12, z: -382, turn: 0.25 },
+      { id: 'featherFlag', x: 17, z: -378, turn: -0.25 },
     ],
     bigProps: [{ id: 'windmill', x: 10, z: -445, turn: 0, scale: 1.05 }],
   },
