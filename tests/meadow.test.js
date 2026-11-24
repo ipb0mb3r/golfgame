@@ -50,15 +50,15 @@ test('Buttercup Meadows 1–3 are fairly flat, not literally flat (owner): gentl
   }
 });
 
-test('mdw-02: cutting the corner past the trees leaves a wedge; the safe drive leaves a longer iron', () => {
+test('mdw-02 (map study): threading the gap inside the bend leaves a wedge; short of it is the bunker; the safe drive leaves an iron', () => {
   const h = HOLES['mdw-02'];
   const safe = shot(startAt(h));
-  const brave = shot(startAt(h), { at: { x: -50, z: -248 }, club: 'driver', power: 1 });
+  const brave = shot(startAt(h), { at: { x: -42, z: -250 }, club: 'driver', power: 1 });
   assert.equal(brave.surface, 'fairway');
   assert.ok(brave.toCup < 90 && safe.toCup > 110, `brave ${brave.toCup.toFixed(0)} m, safe ${safe.toCup.toFixed(0)} m from the cup`);
-  // a hooked brave drive meets the trees inside the bend (a recovery, never a penalty)
-  const hook = shot(startAt(h), { at: { x: -62, z: -200 }, club: 'driver', power: 1 });
-  assert.notEqual(hook.ev, 'penalty');
+  assert.equal(shot(startAt(h), { at: { x: -42, z: -250 }, club: 'driver', power: 0.9 }).surface, 'sand', 'a brave drive that comes up short finds the bunker');
+  // too far left: the rough under the trees inside the bend (a recovery, never a penalty)
+  assert.notEqual(shot(startAt(h), { at: { x: -60, z: -240 }, club: 'driver', power: 1 }).ev, 'penalty');
 });
 
 test('mdw-03: a short tee shot rolls back off the raised green; the middle of the green holds', () => {

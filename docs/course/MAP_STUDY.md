@@ -48,7 +48,17 @@
 - A pond can sit in the fairway short of the landing zone, take half the hole with the line cutting its corner,
   run along a whole side, or cross the hole as a river (a chain of islands).
 
-## 8. Not yet (later steps)
+## 8. The theme shapes the hole (maps 16–23)
+- The theme decides **what surrounds the hole** (forest, open parkland, sea and beach, a river, cliffs, desert) and
+  **what the hazards are**: on a beach the beach is the long bunker; on a river course the hole is strips of land
+  between channels; in a desert the hole is an oasis inside a band of waste ground.
+- **Nested tiers of grass** (fairway, a first cut, a rough band) each with its own soft outline (map 16). We have
+  no "first cut" surface (D5 wish); the art could tint the band near the fairway.
+- **Height shows as terraces and bands**: banks stepping down to water (map 21), contour bands around a hill with
+  the fairway curving round its foot (map 22), a beach with terraces climbing away from it (map 17).
+- **Owner (2026-11-24): Meadow keeps the dense forest outside the clearing** (option B), as in the hole 1 pilot.
+
+## 9. Not yet (later steps)
 - **Heights:** the maps barely show them. A separate pass with the owner.
 - **Minimap contrast:** OB (`deepRough`) is only a little darker than the rough in `meadow-day`, so the
   clearing reads weakly on the minimap. Art question for the artist.
