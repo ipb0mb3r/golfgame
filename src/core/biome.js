@@ -30,10 +30,16 @@ export const PALETTE_KEYS = Object.freeze({
 // X50: optional keys, each with the key it falls back to when a set does not define it, so a set written before
 // the key existed reads exactly as before. propWood / propWoodDark = the wood of wooden props (fences, bench),
 // apart from the trees' trunks and the chalets' wood: `propWood` → `wood` (the light top), `propWoodDark` → `trunk`.
-export const OPTIONAL_PALETTE_KEYS = Object.freeze({ propWood: 'wood', propWoodDark: 'trunk' });
+// AP7i: a fallback may instead be a fixed colour '#rrggbb' (no palette key is near-black or pink): the cow's coat,
+// patches and muzzle (docs/art/cow/SPEC.md §3), the same in every set that leaves them out.
+export const OPTIONAL_PALETTE_KEYS = Object.freeze({ propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b' });
 export const ALL_PALETTE_KEYS = Object.freeze([...Object.values(PALETTE_KEYS).flat(), ...Object.keys(OPTIONAL_PALETTE_KEYS)]);
-// A palette's colour for a key, through the fallback of an optional key the set leaves out
-export const paletteColour = (palette, key) => palette[key] ?? palette[OPTIONAL_PALETTE_KEYS[key]];
+// A palette's colour for a key, through the fallback of an optional key the set leaves out (a key or a fixed colour)
+export const paletteColour = (palette, key) => {
+  if (palette[key] !== undefined || !Object.hasOwn(OPTIONAL_PALETTE_KEYS, key)) return palette[key];
+  const fb = OPTIONAL_PALETTE_KEYS[key];
+  return fb.startsWith('#') ? fb : palette[fb];
+};
 
 // The pick-list fields of a set and the library group each one picks from (src/biomes/library.js)
 export const PICKS = Object.freeze({

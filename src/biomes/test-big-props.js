@@ -9,6 +9,6 @@ export default {
   ...meadowDay,
   id: 'test-big-props',
   name: 'Test: big props (AP7e)',
-  description: 'Dev only (AP7e): Meadow (day) offering all four big props: the windmill, the two chalets and the beach hut. Never in a menu or on a hole: ?hole=mtn-07&biome=test-big-props shows one of each beyond OB.',
-  bigProps: ['windmill', 'chalet', 'chaletTall', 'beachHut'],
+  description: 'Dev only (AP7e): Meadow (day) offering all the big props: the windmill, the two chalets, the beach hut and the cow. Never in a menu or on a hole: ?hole=mtn-07&biome=test-big-props shows one of each beyond OB and a herd of 4 cows in a rail-fence pasture right of the tee.',
+  bigProps: ['windmill', 'chalet', 'chaletTall', 'beachHut', 'cow'], // AP7i: + the cow (a herd of 4 in a rail-fence pasture)
 };
