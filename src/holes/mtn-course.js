@@ -43,7 +43,8 @@ export function smin(a, b, k) {
 }
 // A blob (playtest 1, L4/L5): a main ellipse plus optional lobes, rotated by `rot` (rad), its edge
 // wobbling by `wob` (0..0.3). Returns a "radius" like sqrt(ell): < 1 inside, 1 on the edge.
-//   { cx, cz, rx, rz, rot?, wob?, seed?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates)
+//   { cx, cz, rx, rz, rot?, wob?, seed?, blend?, lobes?: [{ cx, cz, rx, rz }] }  (lobes in world coordinates;
+//   blend 0.3–0.6 joins them in one smooth shape, no waist between two circles)
 export function blobR(x, z, b) {
   // quick reject: far outside the blob's bounding circle (the painter calls this millions of times)
   const q = b._q ?? blobPrep(b);
@@ -57,7 +58,9 @@ export function blobR(x, z, b) {
   for (const l of q.lobes) {
     const dx = x - l.cx, dz = z - l.cz;
     u = (dx * c + dz * sn) / l.rx; v = (-dx * sn + dz * c) / l.rz;
-    r = Math.min(r, Math.sqrt(u * u + v * v));
+    // b.blend (owner, 2026-11-24): the lobes melt into ONE smooth shape instead of touching circles; without it
+    // the plain minimum, exactly as before (the Mountain 9 holes)
+    r = q.k > 0 ? smin(r, Math.sqrt(u * u + v * v), q.k) : Math.min(r, Math.sqrt(u * u + v * v));
   }
   if (b.wob) {
     const a = Math.atan2(z - b.cz, x - b.cx), k = b.seed ?? 1;
@@ -72,7 +75,9 @@ export function blobR(x, z, b) {
 export function blobBeyond(x, z, b, edge) {
   const wob = b.wob ?? 0;
   if (!(wob < 0.9)) return false;
-  const q = b._q ?? blobPrep(b), k = edge * (1 + 1e-6) / (1 - wob);
+  const q0 = b._q ?? blobPrep(b);
+  // a blended blob (b.blend) reads at most blend / 4 lower per lobe than the plain minimum
+  const q = q0, k = (edge + 0.25 * q0.k * q0.lobes.length) * (1 + 1e-6) / (1 - wob);
   let dx = x - b.cx, dz = z - b.cz;
   if (dx * dx + dz * dz < k * k * q.M2) return false;
   for (const l of q.lobes) {
@@ -87,7 +92,7 @@ function blobPrep(b) {
   for (const l of b.lobes ?? []) R = Math.max(R, Math.hypot(l.cx - b.cx, l.cz - b.cz) + Math.hypot(l.rx, l.rz));
   const R1 = R * (1 + (b.wob ?? 0));
   const q = {
-    R2x9: 9 * R1 * R1, c: Math.cos(b.rot ?? 0), sn: Math.sin(b.rot ?? 0), M2: Math.max(b.rx, b.rz) ** 2,
+    R2x9: 9 * R1 * R1, k: b.blend ?? 0, c: Math.cos(b.rot ?? 0), sn: Math.sin(b.rot ?? 0), M2: Math.max(b.rx, b.rz) ** 2,
     lobes: (b.lobes ?? []).map(l => ({ cx: l.cx, cz: l.cz, rx: l.rx, rz: l.rz, M2: Math.max(l.rx, l.rz) ** 2 })),
   };
   Object.defineProperty(b, '_q', { value: q, enumerable: false });

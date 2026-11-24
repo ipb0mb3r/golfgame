@@ -7,7 +7,7 @@ import { makeMdwHole, mdwIntro, oak, TEE_DRESS } from './mdw-course.js';
 
 const TEE = { x: 0, z: 0 };
 const CORNER = { x: -2, z: -212 };
-const CUP = { x: -88, z: -302 };
+const CUP = { x: -96, z: -291 }; // in the middle of the bean's left lobe, by the left bunker
 
 export default makeMdwHole({
   id: 'mdw-02', number: 2, name: 'Buttercup Meadows · 2', par: 4, difficulty: 1,
@@ -26,7 +26,7 @@ export default makeMdwHole({
   ],
   // back-to-front along the line of the approach (the back left is high): putts from the back run toward the fairway
   // a wide bean across the line of the approach (owner: greens are often blobs)
-  green: { cx: -86, cz: -300, rx: 17, rz: 12, rot: -0.75, wob: 0.07, seed: 5, lobes: [{ cx: -96, cz: -291, rx: 10, rz: 9 }, { cx: -76, cz: -309, rx: 10, rz: 9 }], raise: 0.4, contour: (x, z) => -0.015 * (x + 86) - 0.016 * (z + 300) },
+  green: { cx: -86, cz: -300, rx: 17, rz: 12, rot: -0.75, wob: 0.07, seed: 5, blend: 0.5, lobes: [{ cx: -96, cz: -291, rx: 10, rz: 9 }, { cx: -76, cz: -309, rx: 10, rz: 9 }], raise: 0.4, contour: (x, z) => -0.015 * (x + 86) - 0.016 * (z + 300) },
   // one flowing fairway: the inside of the bend swells toward the green (the shortcut grows out of the fairway),
   // and the approach merges into the green's front
   blend: 18,
@@ -37,7 +37,7 @@ export default makeMdwHole({
   bunkers: [
     // the outside of the bend: the cost of the safe line (a harder next shot, no penalty)
     { cx: 22, cz: -204, rx: 8, rz: 14, rot: -0.2, wob: 0.12, seed: 3, depth: 1.1 },
-    { cx: 7, cz: -244, rx: 12, rz: 8, rot: -0.5, wob: 0.14, seed: 4, depth: 1.1, lobes: [{ cx: -4, cz: -253, rx: 7, rz: 5 }] },
+    { cx: 7, cz: -244, rx: 12, rz: 8, rot: -0.5, wob: 0.14, seed: 4, depth: 1.1, blend: 0.5, lobes: [{ cx: -1, cz: -251, rx: 7, rz: 6 }] },
     { cx: -64, cz: -312, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },   // right of the green
     { cx: -104, cz: -305, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 }, // left of the green
   ],

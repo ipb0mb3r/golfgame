@@ -193,7 +193,7 @@ export const SCENARIOS = {
   },
   'mdw1-putt': {
     hole: 'mdw-01', ball: { x: -8, z: -341 }, strokes: 2, seed: 2103, wind: { x: 0, z: 0 }, lie: 'green',
-    name: 'Meadows 1: across the big green', text: 'A 15 m putt across the big green: it breaks a little toward the front left.',
+    name: 'Meadows 1: across the big green', text: 'A 16 m putt across the big green to the cup in its back-left lobe: it breaks a little toward the front left.',
   },
   'mdw2-cut-the-corner': {
     hole: 'mdw-02', ball: { x: 0, z: 0 }, aimAt: { x: -50, z: -248 }, strokes: 0, seed: 2201, wind: { x: 0, z: 0 }, lie: 'tee',
@@ -205,7 +205,7 @@ export const SCENARIOS = {
   },
   'mdw2-downhill-putt': {
     hole: 'mdw-02', ball: { x: -95, z: -308 }, strokes: 2, seed: 2203, wind: { x: 0, z: 0 }, lie: 'green',
-    name: 'Meadows 2: from the back', text: 'From the high back of the green, down the slope to the cup: hit it softly.',
+    name: 'Meadows 2: across the bean', text: 'From the high back right of the green, across the slope to the cup in the left lobe.',
   },
   'mdw3-at-the-flag': {
     hole: 'mdw-03', ball: { x: 0, z: 0 }, strokes: 0, seed: 2301, wind: { x: 0, z: 0 }, lie: 'tee',
@@ -213,11 +213,11 @@ export const SCENARIOS = {
   },
   'mdw3-bunker': {
     hole: 'mdw-03', ball: { x: -17, z: -131 }, strokes: 1, seed: 2302, wind: { x: 0, z: 0 }, lie: 'sand',
-    name: 'Meadows 3: front-left bunker', text: 'In the bunker short left of the green, about 22 m from the flag.',
+    name: 'Meadows 3: front-left bunker', text: 'In the bunker short left of the green, about 32 m from the flag on the right.',
   },
   'mdw3-putt': {
-    hole: 'mdw-03', ball: { x: -5, z: -158 }, strokes: 1, seed: 2303, wind: { x: 0, z: 0 }, lie: 'green',
-    name: 'Meadows 3: birdie putt', text: 'A 12 m birdie putt from the back left, down the gentle back-to-front slope.',
+    hole: 'mdw-03', ball: { x: -9, z: -156 }, strokes: 1, seed: 2303, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 3: across the bean', text: 'A long putt from the left lobe across the green to the cup in the right lobe.',
   },
 };
 

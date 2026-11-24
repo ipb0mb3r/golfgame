@@ -6,7 +6,7 @@
 import { makeMdwHole, mdwIntro, TEE_DRESS } from './mdw-course.js';
 
 const TEE = { x: 0, z: 0 };
-const CUP = { x: 4, z: -350 };
+const CUP = { x: -9, z: -357 }; // in the middle of the bean's back-left lobe, behind the front-left bunker
 
 export default makeMdwHole({
   id: 'mdw-01', number: 1, name: 'Buttercup Meadows · 1', par: 4, difficulty: 1,
@@ -25,12 +25,12 @@ export default makeMdwHole({
     { x: 10, z: -445, r: 34, h: 9 },     // the windmill's hill, beyond OB
   ],
   // a big bean (owner: greens are often blobs), gently tilted (back right high): putts break a little toward the front left
-  green: { cx: 3, cz: -348, rx: 17, rz: 12, rot: 0.35, wob: 0.07, seed: 3, lobes: [{ cx: -9, cz: -357, rx: 11, rz: 10 }, { cx: 14, cz: -341, rx: 10, rz: 9 }], raise: 0.3, contour: (x, z) => 0.011 * (x - 3) - 0.009 * (z + 348) },
+  green: { cx: 3, cz: -348, rx: 17, rz: 12, rot: 0.35, wob: 0.07, seed: 3, blend: 0.5, lobes: [{ cx: -9, cz: -357, rx: 11, rz: 10 }, { cx: 14, cz: -341, rx: 10, rz: 9 }], raise: 0.3, contour: (x, z) => 0.011 * (x - 3) - 0.009 * (z + 348) },
   // one flowing blob, widest in the landing zone, merging into the green's front
   fairways: [{ pts: [{ x: 0, z: -26, w: 13 }, { x: 0, z: -120, w: 25 }, { x: 2, z: -240, w: 27 }, { x: 3, z: -310, w: 19 }, { x: 3, z: -338, w: 15 }] }],
   bunkers: [
     // a big bowl where real drives finish, left of centre
-    { cx: -22, cz: -238, rx: 9, rz: 14, rot: 0.25, wob: 0.12, seed: 2, depth: 1.1, lobes: [{ cx: -16, cz: -254, rx: 7, rz: 7 }] },
+    { cx: -22, cz: -238, rx: 9, rz: 14, rot: 0.25, wob: 0.12, seed: 2, depth: 1.1, blend: 0.5, lobes: [{ cx: -18, cz: -251, rx: 7, rz: 8 }] },
     { cx: -19, cz: -334, rx: 7, rz: 10, rot: -0.3, wob: 0.1, seed: 9, depth: 1.5 }, // front left of the green: the right side has the open angle
   ],
   ob: { x0: -62, x1: 62, z0: -390, z1: 18 },

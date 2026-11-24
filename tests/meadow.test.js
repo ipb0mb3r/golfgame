@@ -8,7 +8,7 @@ import { holeLength } from '../src/core/vec.js';
 import { shot, startAt } from './mtn.test.js';
 
 // The plan: [par, length m, difficulty]
-const PLAN = { 'mdw-01': [4, 350, 1], 'mdw-02': [4, 340, 1], 'mdw-03': [3, 150, 1] };
+const PLAN = { 'mdw-01': [4, 357, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1] };
 const LENGTH = { 3: [120, 210], 4: [285, 440], 5: [460, 550] }; // HOLE_GUIDELINES §4
 
 test('Buttercup Meadows: every hole validates, is dressed in meadow-day, and has its plan par, length and difficulty', () => {
