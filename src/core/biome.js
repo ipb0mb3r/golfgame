@@ -39,6 +39,8 @@ export const PICKS = Object.freeze({
   backdrop: { group: 'backdrops' },               // tint-only (owner, #73)
   furniture: { group: 'furniture', keys: ['flag', 'teeMarkers', 'stakes', 'pond'] }, // the course's own small things
   bigProps: { group: 'bigProps', list: true },     // what the course designer may place by hand (hole scenery.bigProps)
+  fences: { group: 'fences', list: true, optional: true },         // AP7f: the fence looks a hole may lay (scenery.fences); optional, none = []
+  eventProps: { group: 'eventProps', list: true, optional: true }, // AP7g: the event props a hole may place (scenery.eventProps); optional, none = []
 });
 // X33: a pick is a piece id ('roundCanopy') or { id, slots: { <slot>: '<palette key>' } }, which colours that
 // slot of the piece from another palette key, in this set only ({ id: 'roundCanopy', slots: { canopy: 'leafAlt' } }).
@@ -221,6 +223,7 @@ export function validateBiomeSet(set, library) {
   };
   for (const [field, rule] of Object.entries(PICKS)) {
     const v = set[field];
+    if (rule.optional && v === undefined) continue;
     if (rule.keys) {
       if (!v || typeof v !== 'object') bad(`${field} must be { ${rule.keys.join(', ')} }`);
       for (const k of rule.keys) { if (v[k] === undefined) bad(`${field}.${k} must be a piece id`); usePick(`${field}.${k}`, `${field}.${k}`, rule.group, v[k]); }
@@ -325,7 +328,7 @@ export function normalizeBiomeSet(set) {
   };
   for (const [field, rule] of Object.entries(PICKS)) {
     const v = set[field], f = idOf(rule.group);
-    out[field] = rule.keys ? Object.fromEntries(Object.entries(v).map(([k, p]) => [k, f(p)])) : rule.list ? v.map(f) : f(v);
+    out[field] = rule.keys ? Object.fromEntries(Object.entries(v).map(([k, p]) => [k, f(p)])) : rule.list ? v?.map(f) : f(v); // an optional list left out stays out (none)
   }
   out.smallProps = normalizeSmallProps(set.smallProps);
   out.slotOverrides = slotOverrides;

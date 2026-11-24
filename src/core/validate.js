@@ -9,6 +9,8 @@ import { meshAxis } from './terrain.js';
 import { parseSeaSide } from './backdrop.js';
 import { palmColliderError } from './trees.js';
 import { bigPropsFormatError } from './bigProps.js';
+import { fencesFormatError, fencesError } from './fences.js';
+import { eventPropsFormatError, eventPropsError } from './eventProps.js';
 import { GROUND_PLANE_MARGIN, GROUND_CHECK_STEP } from './config.js';
 
 // The surface fields a hole may override (DESIGN §4 surface table, §3 lie)
@@ -139,6 +141,12 @@ export function validateHole(hole, { shots = true } = {}) {
   // AP7e: hand-placed big props (looks only): the format here; the set offers the id, the scale range and the
   // OB clearance need the biome set and the library (src/holes/sets.js checkHoleLooks, core/bigProps.js bigPropsError)
   { const e = bigPropsFormatError(sc?.bigProps); if (e) bad(e); }
+  // AP7f: fences (looks only): the format, then the line rules (≥ 2 points, legs ≥ 1 m, every leg OB + 2 m clear, ≤ 600 m
+  // per hole; core/fences.js); the set offering the look is checked in src/holes/sets.js checkHoleLooks
+  { const e = fencesFormatError(sc?.fences) ?? fencesError(hole, sc?.fences); if (e) bad(e); }
+  // AP7g: event props (looks only): the format, then the zone rules (tee box, tee camera, in front of the tee, surfaces,
+  // green, the tents' clearances; core/eventProps.js); the set offering the piece in checkHoleLooks
+  { const e = eventPropsFormatError(sc?.eventProps) ?? eventPropsError(hole, sc?.eventProps); if (e) bad(e); }
   // AP6a: where the sea is when the hole's biome set draws the ocean backdrop (looks only, never physics)
   if (sc?.seaSide !== undefined) {
     try { parseSeaSide(sc.seaSide); } catch (e) { bad(`scenery.${e.message}`); }

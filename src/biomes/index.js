@@ -19,8 +19,11 @@ import testIslandTrees from './test-island-trees.js';
 import testSmallProps from './test-small-props.js';
 // AP7e: dev only, the four big props (?hole=mtn-07&biome=test-big-props, with the overlay src/holes/dev-big-props.js)
 import testBigProps from './test-big-props.js';
+// AP7f / AP7g: dev only, fences (?hole=mtn-07&biome=test-fences) and event props (?hole=pl-01&biome=test-event-props)
+import testFences from './test-fences.js';
+import testEventProps from './test-event-props.js';
 
-export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook, testTrees, testIslandTrees, testSmallProps, testBigProps].map(b => [b.id, b]));
+export const BIOMES = Object.fromEntries([mtnDefault, protoDefault, meadowDay, alpineDay, islandDay, testModels, testAlpineLook, testIslandLook, testMeadowLook, testTrees, testIslandTrees, testSmallProps, testBigProps, testFences, testEventProps].map(b => [b.id, b]));
 
 // The set a hole uses, checked (validateBiomeSet throws with the set and the field). Unknown id → throws.
 // X33 / AP7c: returned as the game reads it (core/biome.js normalizeBiomeSet): every pick as its piece id,

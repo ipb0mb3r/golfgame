@@ -391,6 +391,25 @@ export const BIG_PROPS = Object.freeze({
   drop: Object.freeze({ rings: Object.freeze([0.5, 1]), perRing: 12 }),
   maxTris: 1500,
 });
+// AP7f: fences, a line of posts and rails laid along a hole's scenery.fences (DESIGN §8b "Fences", core/fences.js,
+// the artist's owner-approved docs/art/fence/SPEC.md). Looks only: no collider, no physics.
+//   obClear: m every leg (+ the look's scaled half thickness) stays outside the OB stakes' box. minLeg: m, the
+//   shortest leg. maxLength: m of fence per hole (all entries). sink: m each post (and its rails) sits below the
+//   ground at its spot. treeClear: m from a leg where no scenery tree stands. maxTris: one segment (post + span).
+export const FENCES = Object.freeze({ obClear: 2, minLeg: 1, maxLength: 600, sink: 0.1, treeClear: 1.5, maxTris: 100 });
+// AP7g: event props (featherFlag, popupTent), placed by hand near the tee, along the course and behind the green
+// (DESIGN §8b "Event props", core/eventProps.js, docs/art/tee-props/SPEC.md §4 / §6.3). Looks only. All in m;
+// a footprint = the piece's radius × EVENT_PROP_SCALE (default) × the prop's scale, sampled every `step` m
+// (`stepFar` past `farFrom` m of search radius).
+//   teeBox: the footprint stays this far from the tee box. camHalf / camBehind: the tee camera's clear zone, ±camHalf
+//   from the tee's aim line, from camBehind behind the tee to the tee. ahead / teeZone: nothing more than `ahead`
+//   in front of the tee while within `teeZone` of it (and the tee zone for the tent rule). greenClear: from the
+//   green's edge. tentGreen: no tent this close to the green. tentPlay: a tent beyond the tee zone keeps this far
+//   from every in-play surface. scale: the [min, max] a hole may give a prop. maxTris: one piece.
+export const EVENT_PROPS = Object.freeze({
+  teeBox: 1.5, camHalf: 4, camBehind: 12, ahead: 4, teeZone: 15, greenClear: 8, tentGreen: 25, tentPlay: 5,
+  scale: Object.freeze([0.9, 1.15]), step: 0.5, stepFar: 1, farFrom: 10, maxTris: 300,
+});
 // AP1b: the terrain mesh's detail by distance (src/core/terrainMesh.js, DESIGN §5 "Terrain mesh").
 // Looks only: the ball always uses heightAt.
 export const TERRAIN_LOD = Object.freeze({
@@ -593,6 +612,11 @@ export const TUNABLES = Object.freeze({
   // windmill 2.5, chalets and beach hut 1.8); BIG_PROP_SCALE = one multiplier on those sizes (default 1, for comparing), on top of the hand-placed scale (0.9–1.15);
   // the footprint (tree clearing, OB + obClear m rule) grows with it: a prop that would then reach inside OB + obClear m is not drawn (console note)
   BIG_PROP_SCALE:        { def: 1,      min: 0.2,   max: 1.6 },
+  // AP7f (owner to compare 1 / 1.5 / 2 on his phone, fence SPEC §7.4; looks only, read when the hole is built): the fences' size AND
+  // post spacing (posts every spacing × FENCE_SCALE m); the static OB + 2 m check uses the default
+  FENCE_SCALE:           { def: 1.5,  min: 0.5,   max: 2.5 },
+  // AP7g (owner pick 1.3, tee-props SPEC §1; looks only): the event props' drawn size, × each prop's own scale; the placement checks use the default
+  EVENT_PROP_SCALE:      { def: 1.3,  min: 0.5,   max: 2 },
   // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
   // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
   // WATER_SPEED = × how fast the web moves (0 = still).
