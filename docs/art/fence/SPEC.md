@@ -39,6 +39,21 @@ Flat-shaded (crisp faces), the scene's 3-band toon ramp, fogged like the scenery
 
 Every key exists in all three sets, so the same pieces work anywhere. In Alpine the rails come out dark chalet wood (`04`), which matches the chalets. A pick can swap a slot like the small props (X33), e.g. a white-painted paddock fence: `{ id: 'railFence', slots: { post: 'propSnow', postTop: 'propSnow', rail: 'propSnow', railTop: 'propSnow' } }`. Each part goes from a foot slot to a top slot (`post` → `postTop`, `rail` → `railTop`), so an all-white fence needs all four.
 
+### 3b. Props wood colours (owner, 2026-11-24; needs dev work first)
+The owner wants a **wood colour of its own** in every biome palette, so wooden props can be tuned without changing tree trunks or chalets. There are two new palette keys:
+
+| Key | Use | Meadow | Alpine | Island |
+|---|---|---|---|---|
+| `propWood` | the light (top) wood of props | `#c58a52` | `#6a4128` | `#b88a5a` |
+| `propWoodDark` | the dark (foot / shade) wood of props | `#8a5634` | `#6e4a30` | `#8e6a46` |
+
+- The starting values = today's `wood` / `trunk`, so nothing changes on screen until the owner tunes them.
+- Once the keys exist, these slots move to them:
+  - `railFence`: `post`/`rail` → `propWoodDark`, `postTop`/`railTop` → `propWood`.
+  - `ropeFence`: `post` → `propWoodDark` (the top stays `bank`, bleached driftwood).
+  - `parkBench` (bench SPEC): the same as `railFence`.
+- The big props keep `wood` (windmill sails, chalet, hut).
+
 ## 4. Placement (course designer)
 A hole lists its fences in the scenery, like the big props:
 

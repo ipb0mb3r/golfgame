@@ -49,6 +49,8 @@ export default {
       { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
     ],
   },
-  bigProps: ['chalet', 'chaletTall'], // the classic and the tall chalet (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: hay hut, fence
+  bigProps: ['chalet', 'chaletTall'], // the classic and the tall chalet (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: hay hut
+  fences: ['railFence'],      // post & two rails in dark chalet wood (docs/art/fence/SPEC.md); look only
+  // not a tournament set (owner 2026-11-24): no event props
   notes: 'Swiss Alps: rolling, elevated holes with raised tees and greens, creeks and small ponds, pines along the fairways, the big peaks always in view. Big props out of bounds: chalets on the slopes, hay huts dotted near the holes, never in play. Suggested weather: clear, light wind.',
 };
