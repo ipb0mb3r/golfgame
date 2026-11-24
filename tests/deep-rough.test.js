@@ -42,19 +42,19 @@ function playOut(play, power, acc = 0) {
   return { land, rest: { ...play.ball.pos }, landedOn };
 }
 
-test('S24: the starting values (PM), named "Deep rough"; no club override (the sand wedge too)', () => {
+test('S24: the values (owner picked option C), named "Deep rough"; no club override (the sand wedge too)', () => {
   const s = BASE_SURFACES.deepRough;
-  assert.deepEqual({ ...s }, { name: 'Deep rough', rest: 0.08, keep: 0.12, decel: 9, maxPower: 0.6, sweetScale: 0.45, shape: 0.3 });
-  for (const c of Object.values(CLUBS).filter(c => !c.putter)) assert.deepEqual(lieFor(c, 'deepRough', BASE_SURFACES), { maxPower: 0.6, sweetScale: 0.45 }, c.id);
+  assert.deepEqual({ ...s }, { name: 'Deep rough', rest: 0.08, keep: 0.12, decel: 9, maxPower: 0.3, sweetScale: 0.25, shape: 0.1 });
+  for (const c of Object.values(CLUBS).filter(c => !c.putter)) assert.deepEqual(lieFor(c, 'deepRough', BASE_SURFACES), { maxPower: 0.3, sweetScale: 0.25 }, c.id);
   // harder than the rough on every count
   const r = BASE_SURFACES.rough;
   for (const k of ['rest', 'keep', 'maxPower', 'sweetScale', 'shape']) assert.ok(s[k] < r[k], k);
   assert.ok(s.decel > r.decel);
-  // the lie line: "Deep rough · max 60% · harder timing" (hud.js lieText: the name, the cap below 1, the window below 1)
+  // the lie line: "Deep rough · max 30% · harder timing" (hud.js lieText: the name, the cap below 1, the window below 1)
   const play = playOn('deepRough');
   assert.equal(play.lie, 'deepRough');
   assert.equal(play.surfaces[play.lie].name, 'Deep rough');
-  assert.deepEqual(play.lieOf(), { maxPower: 0.6, sweetScale: 0.45 });
+  assert.deepEqual(play.lieOf(), { maxPower: 0.3, sweetScale: 0.25 });
 });
 
 test('S24: tunable with ?tune=deepRough.<key> and per hole with surfaceOverrides (a tuned value wins)', () => {
@@ -71,19 +71,19 @@ test('S24: tunable with ?tune=deepRough.<key> and per hole with surfaceOverrides
   assert.equal(makeSurfaceTable({ surfaceOverrides: { deepRough: { maxPower: 0.65 } } }).deepRough.maxPower, 0.5);
 });
 
-test('S24: the meter turns around at 60% and the window is SWEET × 0.45', () => {
+test('S24: the meter turns around at 30% and the window is SWEET × 0.25', () => {
   const cap = playOn('deepRough').lieOf().maxPower;
   const g = scriptedSwing([cap + TUNE.POWER_GRACE / 2, 2 * cap], { cap });
   assert.equal(g.events[0].event, 'max');
-  assert.ok(near(g.events[0].t, 0.6, 0.002));
-  assert.equal(g.result.power, 0.6);
+  assert.ok(near(g.events[0].t, 0.3, 0.002));
+  assert.equal(g.result.power, 0.3);
   // a full-power hit carries 60% of the club's distance
   const full = playOut(playOn('fairway'), 1).land, deep = playOut(playOn('deepRough'), 1).land;
-  assert.ok(near(Math.abs(deep.z) / Math.abs(full.z), 0.6, 0.01), `deep ${deep.z.toFixed(1)} vs fairway ${full.z.toFixed(1)}`);
+  assert.ok(near(Math.abs(deep.z) / Math.abs(full.z), 0.3, 0.01), `deep ${deep.z.toFixed(1)} vs fairway ${full.z.toFixed(1)}`);
   // the accuracy window
   const play = playOn('deepRough');
   const h = sweetHalfWidth(play.lieOf().sweetScale);
-  assert.ok(near(h, TUNE.SWEET * 0.45, 1e-12));
+  assert.ok(near(h, TUNE.SWEET * 0.25, 1e-12));
   assert.equal(play.hit(0.5, h * 0.98).err, 0, 'just inside: straight');
   assert.notEqual(playOn('deepRough').hit(0.5, -h * 1.02).err, 0, 'just outside: curves');
   assert.equal(playOn('fairway').hit(0.5, -TUNE.SWEET * 0.5).err, 0);
@@ -102,37 +102,37 @@ test('S24: a ball landing in deep rough stops much sooner than in the rough', ()
   assert.ok(roll('deepRough') < roll('rough') * 0.7, `roll: deep ${roll('deepRough').toFixed(2)} vs rough ${roll('rough').toFixed(2)}`);
 });
 
-test('S24: the auto-club (rule 3) and the S22 marker use the 60% cap', () => {
+test('S24: the auto-club (rule 3) and the S22 marker use the 30% cap', () => {
   // the shortest club whose capped carry reaches AUTO_CLUB_REACH × dist (flat ground: carry × cap)
   const expect = (cap, dist) => ['sw', 'pw', '9i', '7i', '5i', '3w'].find(id => CLUBS[id].carry * cap >= dist * AUTO_CLUB_REACH) ?? '3w';
-  for (const dist of [60, 90, 100, 140]) {
+  for (const dist of [20, 30, 40, 50]) {
     const pick = id => playOn(id, null, { cupZ: -dist }).club.id;
-    assert.equal(pick('deepRough'), expect(0.6, dist), `${dist} m from the deep rough`);
+    assert.equal(pick('deepRough'), expect(0.3, dist), `${dist} m from the deep rough`);
     assert.equal(pick('rough'), expect(0.85, dist), `${dist} m from the rough`);
   }
-  assert.equal(playOn('deepRough', null, { cupZ: -100 }).club.id, '5i', 'a 9 Iron from the rough, a 5 Iron from the deep rough');
+  assert.equal(playOn('deepRough', null, { cupZ: -45 }).club.id, '7i', 'a Sand Wedge from the rough, a 7 Iron from the deep rough');
   assert.equal(playOn('deepRough', null, { cupZ: -300 }).club.id, '3w', 'nothing reaches: the longest club, never the Driver');
   const reach = playOn('deepRough', '7i').clubReach();
-  assert.ok(near(reach, 0.6 * CLUBS['7i'].carry, 0.6), `the club reach shown is the capped one (${reach.toFixed(1)})`);
-  // the marker: capped, at 60% power, where that lands; the 25 / 50% ticks only (75% is above the cap)
+  assert.ok(near(reach, 0.3 * CLUBS['7i'].carry, 0.6), `the club reach shown is the capped one (${reach.toFixed(1)})`);
+  // the marker: capped, at 30% power, where that lands; the 25% tick only (50% and up are above the cap)
   const full = playOn('fairway').aimMarks(), m = playOn('deepRough').aimMarks();
-  assert.equal(m.capped, true); assert.equal(m.power, 0.6);
-  assert.ok(near(m.dist / full.dist, 0.6, 0.01), `marker ${m.dist.toFixed(1)} vs ${full.dist.toFixed(1)}`);
-  assert.deepEqual(m.ticks.map(t => t.frac), [0.25, 0.5]);
-  // BC4: an off-centre impact is shaped × 0.3 (less than the rough's 0.5) and the preview still shows it
+  assert.equal(m.capped, true); assert.equal(m.power, 0.3);
+  assert.ok(near(m.dist / full.dist, 0.3, 0.01), `marker ${m.dist.toFixed(1)} vs ${full.dist.toFixed(1)}`);
+  assert.deepEqual(m.ticks.map(t => t.frac), [0.25]);
+  // BC4: an off-centre impact is shaped × 0.1 (less than the rough's 0.5) and the preview still shows it
   const p = playOn('deepRough'); p.setImpact({ x: -1, y: 0 });
   const shaped = p.aimMarks();
   assert.ok(shaped.shape && shaped.shape.path.length > 0);
   const r = playOn('rough'); r.setImpact({ x: -1, y: 0 });
   const bulge = mk => Math.max(...mk.shape.path.map(q => Math.abs(q.x)));
   assert.ok(bulge(shaped) < bulge(r.aimMarks()), 'curves less than from the rough');
-  // ⚑: the power that finishes at a 70 m target from the deep rough (above the rough's, below the cap)
-  const fl = playOn('deepRough', '7i', { cupZ: -70 }), pp = fl.pinPower();
-  assert.ok(pp < 0.6, `⚑ ${pp.toFixed(3)}`);
+  // ⚑: the power that finishes at a 35 m target from the deep rough (above the rough's, below the cap)
+  const fl = playOn('deepRough', '7i', { cupZ: -35 }), pp = fl.pinPower();
+  assert.ok(pp < 0.3, `⚑ ${pp.toFixed(3)}`);
   const rp = fl.restPoint(fl.clubIdx, fl.aim, pp);
-  assert.ok(near(flatDist(rp, fl.ball.pos), 70, 1), `finishes at ${flatDist(rp, fl.ball.pos).toFixed(2)} m`);
+  assert.ok(near(flatDist(rp, fl.ball.pos), 35, 1), `finishes at ${flatDist(rp, fl.ball.pos).toFixed(2)} m`);
   const far = playOn('deepRough', '7i', { cupZ: -120 });
-  assert.ok(far.pinPower() > 0.6, 'out of reach: the ⚑ is in the grayed-out part');
+  assert.ok(far.pinPower() > 0.3, 'out of reach: the ⚑ is in the grayed-out part');
 });
 
 test('S24: the hole data format (deepRoughs: blobs and strips), painted over fairway and rough only; bad entries throw', () => {

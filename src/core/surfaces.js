@@ -17,8 +17,8 @@ export const BASE_SURFACES = deepFreeze({
   // K1: hard ground (a rock outcrop, scree or a cart path): big bounce and a long roll, and a "thin" lie
   rock:    { name: 'Rock',    rest: .55, keep: .75, decel: 1.8, maxPower: .9,  sweetScale: .8,  shape: .7 },
   // S24 (owner 2026-11-24: "really hard for accuracy and does not go really far with power"): thick, long grass.
-  // PM starting values; the owner tunes them (?tune=deepRough.maxPower:0.55). No club override (the sand wedge's is bunker only).
-  deepRough: { name: 'Deep rough', rest: .08, keep: .12, decel: 9, maxPower: .6, sweetScale: .45, shape: .3 },
+  // Owner picked option C (2026-11-24: "player should not land in deep rough"): a punch-out lie; tune with ?tune=deepRough.maxPower:0.35. No club override (the sand wedge's is bunker only).
+  deepRough: { name: 'Deep rough', rest: .08, keep: .12, decel: 9, maxPower: .30, sweetScale: .25, shape: .1 },
   water:   { name: 'Water', penalty: true },
   ob:      { name: 'Out of bounds', penalty: true },
 });

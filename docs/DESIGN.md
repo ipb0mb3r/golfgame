@@ -112,11 +112,11 @@ How it's built (`core/swing.js`): the meter phases are `power → grace → nopo
 | Bunker + sand wedge | **0.75** (S17, was 0.85) | **0.6** (S17, was 0.7) |
 | Green (putter) | 1.00 | 1.5 |
 | Rock (K1) | 0.90 | 0.8 |
-| Deep rough ✅ (S24) | **0.60** | **0.45** |
+| Deep rough ✅ (S24, owner picked option C) | **0.30** | **0.25** |
 
 **Putter:** the putter ignores `maxPower` on the fringe and the green (a club override, like the sand wedge), so a full putt always uses the whole putt range. It keeps the surface's `sweetScale` (green ×1.5, fringe ×1.0). Decided by the PM on PR #12.
 
-**Deep rough (S24, owner 2026-11-24: "really hard for accuracy and does not go really far with power"):** PM starting values; lie line "Deep rough · max 60% · harder timing"; `shape` 0.3 (as sand). No club override (the sand wedge's override stays bunker only, the putter's stays fringe / green). The S22 marker, the auto-pick (rule 3 inside the 60% cap), the BC4 shaped preview and the ⚑ all read it from the surface table like any lie.
+**Deep rough (S24, owner 2026-11-24: "really hard for accuracy and does not go really far with power"):** owner picked option C on 2026-11-24 ("player should not land in deep rough"): a punch-out lie, so a player in it only gets back to the fairway. Lie line "Deep rough · max 30% · harder timing"; `shape` 0.1 (barely curves). Tune with `?tune=deepRough.maxPower:0.25 | 0.30 | 0.35`. No club override (the sand wedge's override stays bunker only, the putter's stays fringe / green). The S22 marker, the auto-pick (rule 3 inside the 30% cap), the BC4 shaped preview and the ⚑ all read it from the surface table like any lie.
 
 Starting values. The designer tunes them with `?tune=` (X8), e.g. `?tune=rough.maxPower:0.8,sand.sweetScale:0.6,sw.sand.maxPower:0.9` (each clamped: `maxPower` 0.1–1, `sweetScale` 0.2–3). Later hooks: rain (W2) and slope lie (T6) may reduce `sweetScale` through the same function.
 
@@ -194,7 +194,7 @@ The power cap and accuracy window per surface (`maxPower`, `sweetScale`) are in 
 | Rough | .15 | .22 | 5.5 | |
 | Bunker | .02 | .06 | 18 | |
 | Rock / path ✅ (K1) | .55 | .75 | 1.8 | hard surface: big bounce, long roll. Lie: cap 0.90, window ×0.8. Grey on the course texture and minimap, "Rock" on the lie line. Tunable like the others (`rock.rest`, `rock.keep`, `rock.decel`, `rock.maxPower`, `rock.sweetScale`) |
-| Deep rough ✅ (S24) | .08 | .12 | 9 | thick, long grass: almost no bounce, the ball stops quickly (a landing runs out less than half as far as in the rough). Lie: cap 0.60, window ×0.45, shape 0.3. Drawn darker and denser than the rough (palette `roughDeep`, §8b); "Deep rough" on the lie line. Tunable like the others (`deepRough.rest`, `.keep`, `.decel`, `.maxPower`, `.sweetScale`, `.shape`), per hole in `surfaceOverrides.deepRough`. Hole data: `deepRoughs` (below) |
+| Deep rough ✅ (S24) | .08 | .12 | 9 | thick, long grass: almost no bounce, the ball stops quickly (a landing runs out less than half as far as in the rough). Lie (owner picked option C): cap 0.30, window ×0.25, shape 0.1. Drawn darker and denser than the rough (palette `roughDeep`, §8b); "Deep rough" on the lie line. Tunable like the others (`deepRough.rest`, `.keep`, `.decel`, `.maxPower`, `.sweetScale`, `.shape`), per hole in `surfaceOverrides.deepRough`. Hole data: `deepRoughs` (below) |
 | Water / OB | | | | penalty |
 
 **Painting deep rough in hole data (S24).** Holes built with `makeMtnHole` (every Mountain 9 and Buttercup Meadows hole, `src/holes/mtn-course.js`) take an optional `deepRoughs` list. Each entry is either a **blob** (the same shape as `bunkers` / `roughs`: `{ cx, cz, rx, rz, rot?, wob?, seed?, blend?, lobes? }`) or a **strip** along a line (`{ pts: [{ x, z }, ...], w }`, `w` = half-width in m, default 4, like `paths`). Deep rough is painted over fairway and rough (and over `roughs` patches); it never covers the tee box, water, a pond's or creek's lip, sand, the green, the fringe, rock outcrops or paths. It does not change the ground's height. A bad entry throws when the hole is built, naming the hole and the index. Example (copy-paste):
