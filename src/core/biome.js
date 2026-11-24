@@ -27,7 +27,13 @@ export const PALETTE_KEYS = Object.freeze({
   // once AP6 (ground material) / AP7 (models) replace those pieces.
   engine: ['gridFill', 'gridLine', 'farGround', 'pondSurface', 'boulder'],
 });
-export const ALL_PALETTE_KEYS = Object.freeze(Object.values(PALETTE_KEYS).flat());
+// X50: optional keys, each with the key it falls back to when a set does not define it, so a set written before
+// the key existed reads exactly as before. propWood / propWoodDark = the wood of wooden props (fences, bench),
+// apart from the trees' trunks and the chalets' wood: `propWood` → `wood` (the light top), `propWoodDark` → `trunk`.
+export const OPTIONAL_PALETTE_KEYS = Object.freeze({ propWood: 'wood', propWoodDark: 'trunk' });
+export const ALL_PALETTE_KEYS = Object.freeze([...Object.values(PALETTE_KEYS).flat(), ...Object.keys(OPTIONAL_PALETTE_KEYS)]);
+// A palette's colour for a key, through the fallback of an optional key the set leaves out
+export const paletteColour = (palette, key) => palette[key] ?? palette[OPTIONAL_PALETTE_KEYS[key]];
 
 // The pick-list fields of a set and the library group each one picks from (src/biomes/library.js)
 export const PICKS = Object.freeze({
@@ -39,6 +45,8 @@ export const PICKS = Object.freeze({
   backdrop: { group: 'backdrops' },               // tint-only (owner, #73)
   furniture: { group: 'furniture', keys: ['flag', 'teeMarkers', 'stakes', 'pond'] }, // the course's own small things
   bigProps: { group: 'bigProps', list: true },     // what the course designer may place by hand (hole scenery.bigProps)
+  fences: { group: 'fences', list: true, optional: true },         // AP7f: the fence looks a hole may lay (scenery.fences); optional, none = []
+  eventProps: { group: 'eventProps', list: true, optional: true }, // AP7g: the event props a hole may place (scenery.eventProps); optional, none = []
 });
 // X33: a pick is a piece id ('roundCanopy') or { id, slots: { <slot>: '<palette key>' } }, which colours that
 // slot of the piece from another palette key, in this set only ({ id: 'roundCanopy', slots: { canopy: 'leafAlt' } }).
@@ -98,7 +106,7 @@ export const READABILITY = Object.freeze([
   ...['greenA', 'greenB'].map(k => [`gridLine/${k}`, 'gridLine', k, 10, 0]),
 ]);
 const colourOf = (palette, name) =>
-  name.startsWith('ui:') ? UI_COLORS[name.slice(3)] : MIXES[name] ? mixColour(palette[MIXES[name][0]], palette[MIXES[name][1]]) : palette[name];
+  name.startsWith('ui:') ? UI_COLORS[name.slice(3)] : MIXES[name] ? mixColour(palette[MIXES[name][0]], palette[MIXES[name][1]]) : paletteColour(palette, name);
 
 // X26 (owner, 2026-11-20): the minimap draws the trees in play in their canopy colour and the boulders in
 // their rock colour, so each must stay clearly apart from the fairway AND the rough there (the fairway/rough
@@ -188,6 +196,7 @@ export function validateBiomeSet(set, library) {
   const p = set.palette;
   if (!p || typeof p !== 'object') bad('palette is missing');
   for (const k of ALL_PALETTE_KEYS) {
+    if (Object.hasOwn(OPTIONAL_PALETTE_KEYS, k) && !Object.hasOwn(p, k)) continue; // X50: optional, falls back
     if (!Object.hasOwn(p, k)) bad(`palette is missing "${k}"`);
     if (!parseColour(p[k])) bad(`palette.${k} must be a colour '#rrggbb' (got ${JSON.stringify(p[k])})`);
   }
@@ -221,6 +230,7 @@ export function validateBiomeSet(set, library) {
   };
   for (const [field, rule] of Object.entries(PICKS)) {
     const v = set[field];
+    if (rule.optional && v === undefined) continue;
     if (rule.keys) {
       if (!v || typeof v !== 'object') bad(`${field} must be { ${rule.keys.join(', ')} }`);
       for (const k of rule.keys) { if (v[k] === undefined) bad(`${field}.${k} must be a piece id`); usePick(`${field}.${k}`, `${field}.${k}`, rule.group, v[k]); }
@@ -294,7 +304,7 @@ export function pieceColours(set, library) {
     const id = pickId(pick), piece = library[group]?.[id];
     if (!piece) throw new Error(`biome set "${set.id}": no ${group} piece "${id}"`);
     const over = typeof pick === 'object' ? pick.slots ?? {} : overridesFor(set, group, id);
-    return Object.fromEntries(Object.entries(piece.slots).map(([slot, key]) => [slot, set.palette[over[slot] ?? key]]));
+    return Object.fromEntries(Object.entries(piece.slots).map(([slot, key]) => [slot, paletteColour(set.palette, over[slot] ?? key)]));
   };
 }
 // X33: the set's picks from one library group (as written in the set)
@@ -325,7 +335,7 @@ export function normalizeBiomeSet(set) {
   };
   for (const [field, rule] of Object.entries(PICKS)) {
     const v = set[field], f = idOf(rule.group);
-    out[field] = rule.keys ? Object.fromEntries(Object.entries(v).map(([k, p]) => [k, f(p)])) : rule.list ? v.map(f) : f(v);
+    out[field] = rule.keys ? Object.fromEntries(Object.entries(v).map(([k, p]) => [k, f(p)])) : rule.list ? v?.map(f) : f(v); // an optional list left out stays out (none)
   }
   out.smallProps = normalizeSmallProps(set.smallProps);
   out.slotOverrides = slotOverrides;

@@ -420,6 +420,8 @@ window.__golf = {
   objectNames: () => session?.scene.children.map(o => o.name) ?? [],
   smallProps: () => api().smallProps(), // AP7c: { scattered, drawn, drawCalls, tris, nearestToBall } or null
   bigProps: () => api().bigProps(), // AP7e: { drawn, skipped, drawCalls, tris, props: [{ id, x, y, z, turn, scale }] }
+  fences: () => api().fences(), // AP7f: { drawn, skipped, drawCalls, tris, posts }
+  eventProps: () => api().eventProps(), // AP7g: { drawn, skipped, drawCalls, tris, props: [{ id, x, y, z, turn, scale }] }
   // Phase 6: the round (null when playing a single hole)
   get round() { return round && { set: round.set.id, seed: round.seed, index: round.index, length: round.length, done: round.done, cards: round.cards.map(r => ({ ...r })), totals: round.totals, holeSeed: round.current?.seed ?? null,
     // Phase T: vs AI (null in solo)

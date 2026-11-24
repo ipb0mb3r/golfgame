@@ -49,5 +49,8 @@ export default {
     ],
   },
   bigProps: ['beachHut'],     // the thatched stilt hut (docs/art/big-props/SPEC.md); placed by hand beyond OB. Later: very tall palm
+  fences: ['ropeFence'],      // driftwood posts and two ropes (docs/art/fence/SPEC.md); look only
+  // a "tournament" set (owner 2026-11-24): flags with swapped colours (magenta body, orange top) and tents
+  eventProps: [{ id: 'featherFlag', slots: { body: 'subAccent', top: 'accent' } }, 'popupTent', 'parkBench'], // + the park bench by the tee (docs/art/bench/SPEC.md)
   notes: 'The course follows the ocean: run fairways along the beach, the sea on one side (often the left), waste bunkers and lava-rock edges, a few really tall palms as landmarks. Low, near sea level. No lighthouse. Suggested weather: sunny, sea wind.',
 };

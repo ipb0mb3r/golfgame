@@ -33,8 +33,9 @@ export function addBigProps(scene, hole, list, heightAt, biome, look, toon) {
   return { drawn: placed, skipped, drawCalls, tris };
 }
 
-// A core/bigPropShapes.js part → an indexed geometry, each vertex coloured mix(slot lo, slot hi, w) (sRGB)
-function partGeometry(part, colours) {
+// A core/bigPropShapes.js part → an indexed geometry, each vertex coloured mix(slot lo, slot hi, w) (sRGB) (also the
+// fences and event props, AP7f / AP7g)
+export function partGeometry(part, colours) {
   const n = part.w.length, col = new Float32Array(n * 3), c = new THREE.Color();
   for (let i = 0; i < n; i++) c.set(mixHex(colours[part.lo[i]], colours[part.hi[i]], part.w[i])).toArray(col, i * 3);
   const g = new THREE.BufferGeometry();

@@ -12,11 +12,13 @@ const isNum = v => typeof v === 'number' && Number.isFinite(v);
 const pickId = p => (typeof p === 'string' ? p : p?.id);
 
 // The format of a hole's scenery.bigProps (validateHole): → an error message or null
-export function bigPropsFormatError(list) {
+export const bigPropsFormatError = list => placedFormatError(list, 'bigProps');
+// The format of a list of hand-placed props { id, x, z, turn, scale } (scenery.bigProps, AP7g scenery.eventProps)
+export function placedFormatError(list, field) {
   if (list === undefined) return null;
-  if (!Array.isArray(list)) return 'scenery.bigProps must be a list of { id, x, z, turn, scale }';
+  if (!Array.isArray(list)) return `scenery.${field} must be a list of { id, x, z, turn, scale }`;
   for (const [i, p] of list.entries()) {
-    const where = `scenery.bigProps[${i}]`;
+    const where = `scenery.${field}[${i}]`;
     if (!p || typeof p !== 'object' || typeof p.id !== 'string' || !p.id) return `${where} must be { id, x, z, turn, scale } with a piece id`;
     for (const k of Object.keys(p)) if (!BIG_PROP_KEYS.includes(k)) return `${where} (${p.id}) has an unknown key "${k}" (known: ${BIG_PROP_KEYS.join(', ')})`;
     for (const k of ['x', 'z']) if (!isNum(p[k])) return `${where} (${p.id}).${k} must be a number (got ${p[k]})`;
@@ -31,7 +33,7 @@ export function obBoxOf(stakes) {
   return { x0: Math.min(...xs), x1: Math.max(...xs), z0: Math.min(stakes.z0, stakes.z1), z1: Math.max(stakes.z0, stakes.z1) };
 }
 // m from (x, z) to the box (0 inside it)
-const toBox = (b, x, z) => Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.z0 - z, 0, z - b.z1));
+export const toBox = (b, x, z) => Math.hypot(Math.max(b.x0 - x, 0, x - b.x1), Math.max(b.z0 - z, 0, z - b.z1));
 // A prop's footprint radius (m): its shape's farthest point from the foot's axis × its scale
 export const footprintOf = p => bigPropShape(p.id).radius * (p.scale ?? 1);
 
@@ -78,11 +80,12 @@ export function bigPropsFor(list, offered) {
 }
 
 // Each prop dropped onto the terrain: y = the lowest heightAt under its footprint (the centre and BIG_PROPS.drop's
-// rings), so it never floats (a sunk foot is fine). → [{ id, x, y, z, turn, scale }]
-export function placeBigProps(list, heightAt) {
+// rings), so it never floats (a sunk foot is fine). radiusOf = the footprint (AP7g: the event props' own).
+// → [{ id, x, y, z, turn, scale }]
+export function placeBigProps(list, heightAt, radiusOf = footprintOf) {
   const { rings, perRing } = BIG_PROPS.drop;
   return list.map(p => {
-    const r = footprintOf(p);
+    const r = radiusOf(p);
     let y = heightAt(p.x, p.z);
     for (const f of rings) for (let k = 0; k < perRing; k++) {
       const a = (k / perRing) * Math.PI * 2;
@@ -95,11 +98,11 @@ export function placeBigProps(list, heightAt) {
 // Where no scenery tree may stand (the Mountain holes' forest fills everything beyond OB, so a prop would stand
 // inside it, hidden): within `clear` m of a prop's footprint, and in a sight corridor as wide as the footprint from
 // the prop toward `toward` (the tee), so the prop shows from the course. (x, z) → true when a tree may stand there;
-// null when there are no props (nothing to test).
-export function bigPropsClear(list, clear, toward = null) {
+// null when there are no props (nothing to test). radiusOf = the footprint (AP7g: the event props' own).
+export function bigPropsClear(list, clear, toward = null, radiusOf = footprintOf) {
   if (!list.length) return null;
   const rings = list.map(p => {
-    const r = footprintOf(p), dx = toward ? toward.x - p.x : 0, dz = toward ? toward.z - p.z : 0, len = Math.hypot(dx, dz);
+    const r = radiusOf(p), dx = toward ? toward.x - p.x : 0, dz = toward ? toward.z - p.z : 0, len = Math.hypot(dx, dz);
     return { x: p.x, z: p.z, r: r + clear, half: r, ux: len ? dx / len : 0, uz: len ? dz / len : 0, len };
   });
   return (x, z) => rings.every(c => {
