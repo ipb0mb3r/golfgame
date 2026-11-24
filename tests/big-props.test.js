@@ -11,13 +11,13 @@ import { bigPropShape, BIG_PROP_PIECES } from '../src/core/bigPropShapes.js';
 import { bigPropsFormatError, bigPropsError, bigPropsFor, placeBigProps, bigPropsClear, footprintOf, obBoxOf, scaleBigProps } from '../src/core/bigProps.js';
 import { validateHole } from '../src/core/validate.js';
 import { HOLES, checkHoleLooks } from '../src/holes/sets.js';
-import { DEV_BIG_PROPS, DEV_BIG_PROPS_SET, holeBigProps } from '../src/holes/dev-big-props.js';
+import { DEV_BIG_PROPS, DEV_BIG_PROPS_SET, DEV_BIG_PROPS_FENCES, holeBigProps } from '../src/holes/dev-big-props.js';
 
 // the spec's numbers (SPEC §1): triangles per piece
-const SPEC_TRIS = { windmill: 328, chalet: 404, chaletTall: 404, beachHut: 114 };
+const SPEC_TRIS = { windmill: 328, chalet: 404, chaletTall: 404, beachHut: 114, cow: 624 }; // AP7i: + the cow (docs/art/cow/SPEC.md)
 
-test('the four pieces: in the library with desc / slots / tris, the spec\'s triangle counts, each ≤ 1,500', () => {
-  assert.deepEqual(Object.keys(LIBRARY.bigProps), ['windmill', 'chalet', 'chaletTall', 'beachHut']);
+test('the pieces (AP7e four + AP7i cow): in the library with desc / slots / tris, the spec\'s triangle counts, each ≤ 1,500', () => {
+  assert.deepEqual(Object.keys(LIBRARY.bigProps), ['windmill', 'chalet', 'chaletTall', 'beachHut', 'cow']);
   assert.deepEqual(BIG_PROP_PIECES, Object.keys(LIBRARY.bigProps));
   for (const [id, piece] of Object.entries(LIBRARY.bigProps)) {
     const shape = bigPropShape(id);
@@ -97,7 +97,7 @@ test('placement rules: the set must offer the id, the scale in range, the footpr
   // the set must offer it (meadow-day offers only the windmill)
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), /biome set "meadow-day" does not offer it \(its bigProps: windmill\)/);
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['mtn-default'], LIBRARY), /biome set "mtn-default" does not offer it \(its bigProps: none\)/);
-  assert.match(bigPropsError(withProps([]), [{ id: 'cow', x: 200, z: -150 }], offerAll, LIBRARY), /not a big-prop piece/);
+  assert.match(bigPropsError(withProps([]), [{ id: 'hayHut', x: 200, z: -150 }], offerAll, LIBRARY), /not a big-prop piece/);
   // the scale range; the beach hut never below 0.9
   assert.match(bigPropsError(withProps([]), [{ id: 'beachHut', x: 200, z: -150, scale: 0.85 }], offerAll, LIBRARY), /scale must be 0\.9–1\.15 \(got 0\.85\)/);
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 200, z: -150, scale: 1.3 }], offerAll, LIBRARY), /scale must be/);
@@ -117,7 +117,7 @@ test('?biome= override to a set without the prop: the prop is skipped, never an 
   assert.deepEqual(bigPropsFor(list, []), { keep: [], skipped: list });
   assert.deepEqual(bigPropsFor(undefined, ['windmill']), { keep: [], skipped: [] });
   // a resolved set's bigProps are ids (an X33 override pick resolves to its id)
-  assert.deepEqual(resolveBiome(DEV_BIG_PROPS_SET).bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut']);
+  assert.deepEqual(resolveBiome(DEV_BIG_PROPS_SET).bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut', 'cow']);
 });
 
 test('the drop: each prop stands at the lowest ground under its footprint (never floats)', () => {
@@ -142,22 +142,22 @@ test('scenery trees keep out of a prop\'s footprint (+ treeClear) and its sight 
 });
 
 test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07, every entry valid', () => {
-  assert.deepEqual(DEV_BIG_PROPS['mtn-07'].map(p => p.id).sort(), ['beachHut', 'chalet', 'chaletTall', 'windmill']);
+  assert.deepEqual(DEV_BIG_PROPS['mtn-07'].map(p => p.id).sort(), ['beachHut', 'chalet', 'chaletTall', 'cow', 'cow', 'cow', 'cow', 'windmill']); // AP7i: + a herd of 4
   assert.deepEqual(holeBigProps(mtn07, 'meadow-day'), []);
   assert.deepEqual(holeBigProps(mtn07, DEV_BIG_PROPS_SET), DEV_BIG_PROPS['mtn-07']);
   assert.deepEqual(holeBigProps(HOLES['pl-01'], DEV_BIG_PROPS_SET), []);
   for (const [id, list] of Object.entries(DEV_BIG_PROPS)) {
     assert.equal(bigPropsFormatError(list), null, id);
-    assert.equal(bigPropsError(HOLES[id], list, BIOMES[DEV_BIG_PROPS_SET], LIBRARY), null, id);
+    assert.equal(bigPropsError(HOLES[id], list, BIOMES[DEV_BIG_PROPS_SET], LIBRARY, DEV_BIG_PROPS_FENCES[id]), null, id);
   }
   // the dev set is meadow-day plus all four props, nothing else changed
   const { id, name, description, bigProps, ...rest } = BIOMES[DEV_BIG_PROPS_SET];
   const { id: _i, name: _n, description: _d, bigProps: meadowProps, ...meadow } = BIOMES['meadow-day'];
-  assert.deepEqual(rest, meadow); assert.deepEqual(bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut']); assert.deepEqual(meadowProps, ['windmill']);
+  assert.deepEqual(rest, meadow); assert.deepEqual(bigProps, ['windmill', 'chalet', 'chaletTall', 'beachHut', 'cow']); assert.deepEqual(meadowProps, ['windmill']);
 });
 
 test('per-piece sizes (owner pick 2026-11-23): windmill 2.5, chalet / chaletTall / beachHut 1.8, in the library', () => {
-  assert.deepEqual(Object.fromEntries(Object.entries(LIBRARY.bigProps).map(([id, p]) => [id, p.size])), { windmill: 2.5, chalet: 1.8, chaletTall: 1.8, beachHut: 1.8 });
+  assert.deepEqual(Object.fromEntries(Object.entries(LIBRARY.bigProps).map(([id, p]) => [id, p.size])), { windmill: 2.5, chalet: 1.8, chaletTall: 1.8, beachHut: 1.8, cow: 2 });
   const at = (id, scale, mult) => scaleBigProps(mtn07, [{ id, x: 200, z: -150, scale }], mult, LIBRARY).keep[0].scale;
   assert.ok(Math.abs(at('windmill', 1, 1) - 2.5) < 1e-9);
   assert.ok(Math.abs(at('beachHut', 1.15, 1) - 1.8 * 1.15) < 1e-9);                   // × the hand-placed scale
@@ -172,7 +172,7 @@ test('BIG_PROP_SCALE: a tunable multiplier on the piece sizes (default 1, 0.2–
   for (const m of [0.5, 1]) {
     const { keep, clipped } = scaleBigProps(mtn07, demo, m, LIBRARY);
     assert.equal(clipped.length, 0, `x${m}`);                                         // every demo spot still draws
-    keep.forEach((q, i) => assert.ok(Math.abs(q.scale - demo[i].scale * LIBRARY.bigProps[q.id].size * m) < 1e-9));
+    keep.forEach((q, i) => assert.ok(Math.abs(q.scale - (demo[i].scale ?? 1) * LIBRARY.bigProps[q.id].size * m) < 1e-9));
   }
   const { keep, clipped } = scaleBigProps(mtn07, demo, 1.6, LIBRARY);                // the windmill's spot is the tightest; a bigger one is skipped, not an error
   assert.equal(keep.length + clipped.length, demo.length);

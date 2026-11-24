@@ -113,9 +113,21 @@ export function layFence(id, points, heightAt, scale) {
 // there; null when there are no fences.
 export function fencesClear(list, clear) {
   if (!list.length) return null;
-  const all = list.flatMap(f => legs(f.points));
+  const all = list.flatMap(f => legs(f.points)), pastures = list.map(f => f.points).filter(isClosed);
   return (x, z) => all.every(([[ax, az], [bx, bz]]) => {
     const dx = bx - ax, dz = bz - az, l2 = dx * dx + dz * dz, t = l2 ? Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / l2)) : 0;
     return Math.hypot(ax + dx * t - x, az + dz * t - z) > clear;
-  });
+  }) && !pastures.some(pts => inside(pts, x, z));
+}
+// AP7i: a closed fence (its last point = its first, ≥ 3 corners) is a pasture: no scenery tree stands inside it
+// (the cows' meadow; on a forested hole the forest would fill it)
+export const isClosed = pts => pts.length >= 4 && pts[0][0] === pts.at(-1)[0] && pts[0][1] === pts.at(-1)[1];
+// (x, z) inside the polygon pts (even-odd rule)
+export function inside(pts, x, z) {
+  let c = false;
+  for (let i = 0, j = pts.length - 1; i < pts.length; j = i++) {
+    const [xi, zi] = pts[i], [xj, zj] = pts[j];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) c = !c;
+  }
+  return c;
 }

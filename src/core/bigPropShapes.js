@@ -8,6 +8,7 @@
 // a vertex's colour = mix(slot lo, slot hi, w) (sRGB). Metres, y up, the foot centre at the origin, the front
 // facing +z. Drawn flat-shaded (crisp faces) with the toon ramp, from both sides (the artist's mock-up).
 import { lathe } from './trees.js';
+import { cowAssembled } from './cowShape.js';
 
 const TAU = Math.PI * 2;
 const P = (p, lo, hi = lo) => ({ ...p, lo, hi });
@@ -115,7 +116,12 @@ const SHAPES = {
     out.push(P(box(0, 0.55, 2.3, 1.0, 0.12, 0.5), 'wall'));                                            // the step
     return { body: out };
   },
+  // AP7i: the cow (core/cowShape.js, docs/art/cow/SPEC.md; look C): its 3 part groups body / head / tail, assembled
+  // standing with patch layout 0 (the drawing places each group about its pivot itself: src/game/bigProps.js)
+  cow: () => cowAssembled(),
 };
+// AP7i: a piece whose footprint must cover more than its standing shape: the grazing cow's head reaches lower and forward
+const REACH = { cow: () => [cowAssembled({ pose: 'graze' })] };
 export const BIG_PROP_PIECES = Object.freeze(Object.keys(SHAPES));
 
 // One merged draw part from a list of parts (also used by core/fenceShapes.js and core/eventPropShapes.js)
@@ -135,9 +141,9 @@ const cache = new Map();
 export function bigPropShape(id) {
   if (!SHAPES[id]) throw new Error(`no big-prop shape "${id}" (core/bigPropShapes.js)`);
   if (!cache.has(id)) {
-    const parts = Object.fromEntries(Object.entries(SHAPES[id]()).map(([k, v]) => [k, merge(v)]));
+    const parts = Object.fromEntries(Object.entries(SHAPES[id]()).map(([k, v]) => [k, Array.isArray(v) ? merge(v) : v])); // the cow's groups come merged
     let radius = 0, height = 0;
-    for (const p of Object.values(parts)) for (let i = 0; i < p.positions.length; i += 3) {
+    for (const p of [parts, ...(REACH[id]?.() ?? [])].flatMap(Object.values)) for (let i = 0; i < p.positions.length; i += 3) {
       radius = Math.max(radius, Math.hypot(p.positions[i], p.positions[i + 2]));
       height = Math.max(height, p.positions[i + 1]);
     }
