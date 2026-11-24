@@ -3,7 +3,8 @@
 // `ball`, `strokes`, `seed` and the optional `wind` (m/s, overrides the seeded wind).
 // `lie` is what the ball should sit on; tests/scenarios.test.js checks it, so a hole edit that
 // moves a bunker can't silently break a scenario.
-import { HOLES } from './sets.js';
+import { HOLES, DEV_HOLES } from './sets.js';
+import { DEV_DEEP_ROUGH_ID, DEV_DEEP_ROUGH_SPOTS } from './dev-deep-rough.js';
 import { validateScenario } from '../core/validate.js';
 
 export const SCENARIOS = {
@@ -253,6 +254,18 @@ export const SCENARIOS = {
   },
 };
 
+// S24: dev-only test spots on dev-only holes (sets.js DEV_HOLES): ?scenario=<id> only, no menu lists them.
+// The deep-rough practice spot: the same distance (≈ 147 m) from the fairway, the rough and the deep rough.
+const drSpot = (lie, seed, name) => ({
+  hole: DEV_DEEP_ROUGH_ID, ball: { ...DEV_DEEP_ROUGH_SPOTS[lie] }, strokes: 1, seed, wind: { x: 0, z: 0 }, lie,
+  name: `Deep rough test: ${name}`, text: 'About 160 yd to the flag, no wind. Fairway, rough (left) and deep rough (right) side by side.',
+});
+export const DEV_SCENARIOS = {
+  'dr-fairway': drSpot('fairway', 2401, 'from the fairway'),
+  'dr-rough': drSpot('rough', 2402, 'from the rough'),
+  'dr-deep': drSpot('deepRough', 2403, 'from the deep rough'),
+};
+
 // Checked (Gate A T7) when one is first played: a bad spot fails there, naming the scenario and the
 // field. X12: not all at load, since checking a spot builds its hole; tests/validate.test.js checks them all.
 const checked = new Set();
@@ -261,7 +274,8 @@ const checked = new Set();
 export function resolveScenario(id) {
   const key = (id ?? '').trim().toLowerCase();
   if (!key) return { scenario: null, unknown: false };
-  if (!Object.hasOwn(SCENARIOS, key)) return { scenario: null, unknown: true };
-  if (!checked.has(key)) { validateScenario(key, SCENARIOS[key], HOLES); checked.add(key); }
-  return { scenario: { id: key, ...SCENARIOS[key] }, unknown: false };
+  const list = Object.hasOwn(SCENARIOS, key) ? SCENARIOS : Object.hasOwn(DEV_SCENARIOS, key) ? DEV_SCENARIOS : null;
+  if (!list) return { scenario: null, unknown: true };
+  if (!checked.has(key)) { validateScenario(key, list[key], list === SCENARIOS ? HOLES : { ...HOLES, ...DEV_HOLES }); checked.add(key); }
+  return { scenario: { id: key, ...list[key] }, unknown: false };
 }

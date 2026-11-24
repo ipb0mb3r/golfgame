@@ -9,14 +9,15 @@ import { GROUND_LOOK } from './config.js';
 // The ground detail level (?tune=GROUND_DETAIL): 0 = the flat look of before AP6, 1 = low, 2 = full
 export const groundLevel = v => Math.max(0, Math.min(2, Math.round(Number(v) || 0)));
 
-// The drawn ground kinds: the physics surfaces (`ob` = beyond the stakes) plus the drawn-only bands
-export const KINDS = Object.freeze(['ob', 'rough', 'fairway', 'tee', 'fringe', 'green', 'sand', 'water', 'rock', 'edge', 'lip', 'bank']);
+// The drawn ground kinds: the physics surfaces (`ob` = beyond the stakes) plus the drawn-only bands.
+// S24: deepRough is added last, so every older kind keeps its index.
+export const KINDS = Object.freeze(['ob', 'rough', 'fairway', 'tee', 'fringe', 'green', 'sand', 'water', 'rock', 'edge', 'lip', 'bank', 'deepRough']);
 export const KIND = Object.freeze(Object.fromEntries(KINDS.map((k, i) => [k, i])));
 // physics surface → drawn kind (any other surface is drawn as rough, as before AP6)
 export const kindOf = s => KIND[s] ?? KIND.rough;
 // drawn kind → palette key (fairway / green take their stripe or grid colours apart)
 export const KIND_KEYS = Object.freeze({ ob: 'deepRough', rough: 'rough', fairway: 'fairwayA', tee: 'tee', fringe: 'fringe', green: 'greenA',
-  sand: 'sand', water: 'water', rock: 'rock', edge: 'edge', lip: 'lip', bank: 'bank' });
+  sand: 'sand', water: 'water', rock: 'rock', edge: 'edge', lip: 'lip', bank: 'bank', deepRough: 'roughDeep' }); // S24: the surface's own key (palette `deepRough` is the ground beyond OB)
 
 // ---- noise (the recipe's, deterministic; `seed` shifts the hash) ----
 const fract = v => v - Math.floor(v);
@@ -205,8 +206,8 @@ export function groundKindsAA(base, W, H, res, sampleKind, look = GROUND_LOOK) {
   // 2. a field per boundary (course, water, sand): the boundary points found between the samples (the one
   // nearest each mixed pixel's centre), then each pixel's nearest point (nearestPoints)
   const flag = test => Uint8Array.from(KINDS, (_, i) => test(i) ? 1 : 0);
-  const isLand = flag(i => i === K.rough || i === K.ob || i === K.fairway || i === K.fringe);
-  const isBare = flag(i => i === K.rough || i === K.ob);
+  const isLand = flag(i => i === K.rough || i === K.ob || i === K.fairway || i === K.fringe || i === K.deepRough);
+  const isBare = flag(i => i === K.rough || i === K.ob || i === K.deepRough); // S24: deep rough gets the edge line and the bank like rough
   const wEdge = look.edge * res, wLip = look.lip * res, wBank = look.bank * res, T = look.aa.near;
   const fields = [
     { inside: flag(i => i === K.fairway || i === K.tee || i === K.fringe), limit: wEdge + 2 },

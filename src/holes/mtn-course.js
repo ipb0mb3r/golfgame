@@ -165,6 +165,8 @@ export const polyLen = pts => pts.slice(1).reduce((s, p, i) => s + Math.hypot(p.
 // ---- obstacles ----
 // A pine-ish tree in play (trunk + leaves). s = size. Always placed on rough (GENRE_NOTES).
 export const pine = (x, z, s = 1) => ({ type: 'tree', x, z, trunkR: 0.32 * s, trunkH: 6 * s, canopyR: 2.6 * s, canopyH: 6.5 * s });
+// S24: a deep-rough strip's default half-width (m)
+export const DEEP_ROUGH_W = 4;
 export const boulder = (x, z, r = 1.2) => ({ type: 'boulder', x, z, r });
 
 // ---- shared mountain scenery (looks only) ----
@@ -189,6 +191,10 @@ const SCENERY = {
 //   ponds: [{ cx, cz, rx, rz, depth, lip, lipW }]  water in a bowl
 //   rocks: [{ cx, cz, rx, rz, h }]  rock outcrops (rock surface, raised by h)
 //   paths: [{ pts, w }]  cart paths (rock surface strip, GENRE_NOTES)
+//   roughs: [blob]   L6: rough patches that bite into the fairway (a blob, see blobR)
+//   deepRoughs: [blob | { pts: [{ x, z }], w }]  S24: deep rough, a blob or a strip along a line (w = half-width m,
+//                    default 4); painted over fairway and rough (and `roughs`), never over the tee, water, a lip,
+//                    sand, the green, the fringe or rock / paths. Flat: no change to the ground's height.
 //   ob: { x0, x1, z0, z1 }   out-of-bounds box; map = the box + margin
 //   banks: k  how fast the rough rises away from the fairway (m per m beyond 8 m), default 0.03
 //   obstacles: [...]  trees and boulders
@@ -241,6 +247,14 @@ function buildMtnHole(spec0, meta) {
   const gBlob = isBlobGreen(G), GF = gBlob ? grownBlob(G, fringeW) : null;
   const gE = gBlob ? (x, z) => blobR(x, z, G) : (x, z) => Math.sqrt(ell(x, z, G));
   const roughs = spec.roughs ?? [];
+  const deepRoughs = spec.deepRoughs ?? []; // S24
+  deepRoughs.forEach((d, i) => {
+    const num = v => Number.isFinite(v);
+    const ok = d && (d.pts ? Array.isArray(d.pts) && d.pts.length >= 2 && d.pts.every(q => num(q?.x) && num(q?.z)) && (d.w === undefined || (num(d.w) && d.w > 0))
+      : ['cx', 'cz', 'rx', 'rz'].every(k => num(d[k])) && d.rx > 0 && d.rz > 0);
+    if (!ok) throw new Error(`hole "${spec.id}": deepRoughs[${i}] must be a blob { cx, cz, rx, rz, rot?, wob?, seed?, lobes? } or a strip { pts: [{ x, z }, ...], w? }`);
+  });
+  const inDeepRough = (x, z) => deepRoughs.some(d => (d.pts ? polyDist(x, z, d.pts).d < (d.w ?? DEEP_ROUGH_W) : blobR(x, z, d) < 1));
   const blend = spec.blend ?? 12; // m: how round the joints between fairway legs are
   // Signed distance to the fairway edge (< 0 = on the fairway). Every segment of every fairway is a
   // rounded strip; they are joined with a smooth minimum so legs flow into each other (L4), and the
@@ -415,6 +429,7 @@ function buildMtnHole(spec0, meta) {
     }
     for (const r of rocks) if (ell(x, z, r) < 1) return 'rock';
     for (const p of paths) { const d = polyDist(x, z, p.pts); if (d.d < (p.w ?? 1.4)) return 'rock'; }
+    if (deepRoughs.length && inDeepRough(x, z)) return 'deepRough'; // S24
     for (const r of roughs) if (blobR(x, z, r) < 1) return 'rough'; // L6: rough that bites into the fairway
     if (fairwayGap(x, z) < 0) return 'fairway';
     return 'rough';
@@ -441,7 +456,7 @@ function buildMtnHole(spec0, meta) {
   const hole = {
     ...meta,
     map,
-    features: { green: G, bunkers, ponds, rocks, creek, fairways, course: 'mtn' },
+    features: { green: G, bunkers, ponds, rocks, creek, fairways, deepRoughs, course: 'mtn' },
     obstacles: spec.obstacles ?? [],
     heightAt, surfaceAt,
     scenery: {
@@ -519,9 +534,10 @@ function plantForest(hole, spec, fairways, edge = null) {
     for (let i = 0; i < 8; i++) {
       const a = i / 8 * Math.PI * 2, px = x + Math.cos(a) * d, pz = z + Math.sin(a) * d;
       const sf = hole.surfaceAt(px, pz);
-      if (sf !== 'rough' && sf !== 'ob' && sf !== 'rock') return false;
+      if (sf !== 'rough' && sf !== 'deepRough' && sf !== 'ob' && sf !== 'rock') return false;
     }
-    return hole.surfaceAt(x, z) === 'rough';
+    const at = hole.surfaceAt(x, z);
+    return at === 'rough' || at === 'deepRough'; // S24: trees may stand in deep rough too
   };
   // Behind the green (owner, 2026-11-18, GENRE_NOTES screenshot 3): an arc of trees on the rough
   // around the back of the green, framing the target. Far enough back (backGap m beyond the fringe)
