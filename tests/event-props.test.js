@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { EVENT_PROPS, TUNABLES } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
-import { validateBiomeSet, pieceColours } from '../src/core/biome.js';
+import { validateBiomeSet, pieceColours, pickId } from '../src/core/biome.js';
 import { validateHole } from '../src/core/validate.js';
 import { eventPropShape, EVENT_PROP_PIECES } from '../src/core/eventPropShapes.js';
 import { eventPropsFormatError, eventPropsError, eventPropsSetError, eventFootprint, fromTee, teeAim, scaleEventProps, placeEventProps, eventPropsClear, surfaceNear } from '../src/core/eventProps.js';
@@ -21,8 +21,8 @@ const pl01 = readyHole(HOLES['pl-01']);
 const err = (id, x, z, extra = {}) => eventPropsError(pl01, [{ id, x, z, ...extra }]);
 const FLAG_R = 0.75 * TUNABLES.EVENT_PROP_SCALE.def, TENT_R = eventPropShape('popupTent').radius * TUNABLES.EVENT_PROP_SCALE.def;
 
-test('library: featherFlag and popupTent with tris / slots / desc; each ≤ 300 triangles', () => {
-  assert.deepEqual(Object.keys(LIBRARY.eventProps), ['featherFlag', 'popupTent']);
+test('library: featherFlag, popupTent and parkBench with tris / slots / desc; each ≤ 300 triangles', () => {
+  assert.deepEqual(Object.keys(LIBRARY.eventProps), ['featherFlag', 'popupTent', 'parkBench']);
   assert.deepEqual(EVENT_PROP_PIECES, Object.keys(LIBRARY.eventProps));
   for (const [id, piece] of Object.entries(LIBRARY.eventProps)) {
     const shape = eventPropShape(id);
@@ -35,6 +35,16 @@ test('library: featherFlag and popupTent with tris / slots / desc; each ≤ 300 
   // SPEC §3: the biome's accents
   assert.deepEqual(LIBRARY.eventProps.featherFlag.slots, { pole: 'propSnow', body: 'accent', top: 'subAccent', stripe: 'propSnow', base: 'rock' });
   assert.deepEqual(LIBRARY.eventProps.popupTent.slots, { leg: 'propSnow', roof: 'accent', valance: 'subAccent' });
+  // AP7h bench SPEC §1 / §3b (X50): 132 triangles, 1.8 × 0.55 m (before scale), the props' wood, dark at the foot
+  const bench = eventPropShape('parkBench');
+  assert.equal(bench.tris, 132); assert.equal(LIBRARY.eventProps.parkBench.tris, 132);
+  assert.deepEqual(LIBRARY.eventProps.parkBench.slots, { slat: 'propWoodDark', slatTop: 'propWood', frame: 'propWoodDark', frameTop: 'propWood' });
+  assert.deepEqual(Object.keys(bench.parts), ['slats', 'frame']);
+  const xs = [], zs = [];
+  for (const p of Object.values(bench.parts)) for (let i = 0; i < p.positions.length; i += 3) { xs.push(p.positions[i]); zs.push(p.positions[i + 2]); }
+  assert.ok(Math.abs(Math.max(...xs) - Math.min(...xs) - 1.8) < 1e-9, 'width 1.8 m');
+  assert.ok(Math.abs(Math.max(...zs) - Math.min(...zs) - 0.55) < 0.05, 'depth ~0.55 m');
+  assert.ok(Math.abs(bench.height - 0.85) < 0.05, 'back ~0.85 m');
   // the banner and the roof are parts of their own (double-sided sheets; a banner sway could come later)
   assert.deepEqual(Object.keys(eventPropShape('featherFlag').parts), ['pole', 'banner']);
   assert.deepEqual(Object.keys(eventPropShape('popupTent').parts), ['frame', 'roof']);
@@ -66,7 +76,7 @@ test('scenery.eventProps format: the big props\' { id, x, z, turn, scale }; bad 
 });
 
 test('rule: an unknown piece or a scale out of range fails', () => {
-  assert.match(err('beachFlag', 6, 0), /is not an event prop \(the library's eventProps: featherFlag, popupTent\)/);
+  assert.match(err('beachFlag', 6, 0), /is not an event prop \(the library's eventProps: featherFlag, popupTent, parkBench\)/);
   assert.equal(err('featherFlag', 6, 0, { scale: 0.9 }), null);
   assert.match(err('featherFlag', 6, 0, { scale: 0.85 }), /scale must be 0\.9–1\.15 \(got 0\.85\)/);
   assert.match(err('popupTent', -10.5, 5, { scale: 1.2 }), /scale must be/);
@@ -144,17 +154,20 @@ test('the set\'s optional eventProps list; checkHoleLooks fails a hole whose set
   const set = { ...BIOMES['meadow-day'], id: 'x', eventProps: ['featherFlag'] };
   assert.match(eventPropsSetError([{ id: 'popupTent' }], set), /its eventProps: featherFlag/);
   assert.doesNotThrow(() => validateBiomeSet(set, LIBRARY));
-  assert.throws(() => validateBiomeSet({ ...set, eventProps: ['tent'] }, LIBRARY), /eventProps: unknown piece "tent" \(the library's eventProps: featherFlag, popupTent\)/);
+  assert.throws(() => validateBiomeSet({ ...set, eventProps: ['tent'] }, LIBRARY), /eventProps: unknown piece "tent" \(the library's eventProps: featherFlag, popupTent, parkBench\)/);
   // X33: a white tent with an accent valance (SPEC §3)
   const white = { ...set, eventProps: [{ id: 'popupTent', slots: { roof: 'propSnow', valance: 'accent' } }] };
   assert.doesNotThrow(() => validateBiomeSet(white, LIBRARY));
   assert.deepEqual(pieceColours(white, LIBRARY)('eventProps', 'popupTent'), { leg: set.palette.propSnow, roof: set.palette.propSnow, valance: set.palette.accent });
   assert.deepEqual(pieceColours(set, LIBRARY)('eventProps', 'featherFlag').body, set.palette.accent);
-  // real sets untouched: no list
+  // the real sets may or may not have a list yet (the artist writes them, X51): none = undefined, else only library
+  // pieces, read the same once resolved
   for (const id of ['meadow-day', 'alpine-day', 'island-day', 'mtn-default', 'proto-default']) {
-    assert.equal(BIOMES[id].eventProps, undefined, id);
-    assert.equal(resolveBiome(id).eventProps, undefined, id); // none
+    const list = BIOMES[id].eventProps;
+    assert.deepEqual(resolveBiome(id).eventProps, list?.map(pickId), id);
+    for (const p of list ?? []) assert.ok(LIBRARY.eventProps[pickId(p)], `${id}: ${pickId(p)}`);
   }
+  assert.equal(BIOMES['proto-default'].eventProps, undefined); assert.equal(BIOMES['mtn-default'].eventProps, undefined);
   const h = { ...pl01, scenery: { ...pl01.scenery, eventProps: DEV_EVENT_PROPS['pl-01'] } };
   assert.throws(() => checkHoleLooks(h), /hole "pl-01": scenery\.eventProps\[0\] \(popupTent\): biome set "proto-default" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_EVENT_PROPS_SET }));
@@ -198,6 +211,6 @@ test('the dev overlay: only with test-event-props, a dressed pl-01 tee, a course
   assert.equal(list.filter(p => p.id === 'featherFlag' && p.z < -150 - 12).length, 2);                                       // behind the green
   // the dev set is meadow-day plus both pieces, nothing else changed
   const { id, name, description, eventProps, ...rest } = BIOMES[DEV_EVENT_PROPS_SET];
-  const { id: _i, name: _n, description: _d, ...meadow } = BIOMES['meadow-day'];
-  assert.deepEqual(rest, meadow); assert.deepEqual(eventProps, ['featherFlag', 'popupTent']);
+  const { id: _i, name: _n, description: _d, eventProps: _e, ...meadow } = BIOMES['meadow-day']; // meadow's own list (if any) is the artist's
+  assert.deepEqual(rest, meadow); assert.deepEqual(eventProps, ['featherFlag', 'popupTent', 'parkBench']);
 });

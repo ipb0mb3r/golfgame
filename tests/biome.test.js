@@ -2,7 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, readdirSync } from 'node:fs';
-import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour, minimapColours, minimapShade, checkMinimap, MINIMAP_READABILITY, mixColour } from '../src/core/biome.js';
+import { validateBiomeSet, checkReadability, delta, parseColour, ALL_PALETTE_KEYS, OPTIONAL_PALETTE_KEYS, paletteColour, PALETTE_KEYS, READABILITY, sceneLight, treeLooks, pieceColours, flagColour, minimapColours, minimapShade, checkMinimap, MINIMAP_READABILITY, mixColour } from '../src/core/biome.js';
 import { MINIMAP_DARKEN } from '../src/core/config.js';
 import { checkHoleLooks } from '../src/holes/sets.js';
 import { validateHole } from '../src/core/validate.js';
@@ -202,4 +202,25 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
   assert.ok(ids.includes('minimapTree/rough'));
   assert.ok(validateBiomeSet({ ...failing, readabilityWaivers: Object.fromEntries(ids.map(id => [id, 'test'])) }, LIBRARY));
   assert.throws(() => validateBiomeSet(withChange({ readabilityWaivers: { ...base.readabilityWaivers, 'minimapTree/rough': 'x' } }), LIBRARY), /minimapTree\/rough already pass, remove the waiver/);
+});
+
+test('X50: propWood / propWoodDark are optional palette keys (fallback wood / trunk); a set may define them', () => {
+  assert.deepEqual({ ...OPTIONAL_PALETTE_KEYS }, { propWood: 'wood', propWoodDark: 'trunk' });
+  assert.ok(ALL_PALETTE_KEYS.includes('propWood') && ALL_PALETTE_KEYS.includes('propWoodDark'));
+  const base = BIOMES['proto-default'];
+  const bare = { ...base, palette: Object.fromEntries(Object.entries(base.palette).filter(([k]) => !(k in OPTIONAL_PALETTE_KEYS))) };
+  assert.doesNotThrow(() => validateBiomeSet(bare, LIBRARY));
+  assert.equal(paletteColour(bare.palette, 'propWood'), bare.palette.wood);
+  assert.equal(paletteColour(bare.palette, 'propWoodDark'), bare.palette.trunk);
+  // pieces read the fallback: the bench and the rail fence look as wood / trunk did
+  assert.equal(pieceColours(bare, LIBRARY)('eventProps', 'parkBench').slatTop, bare.palette.wood);
+  assert.equal(pieceColours(bare, LIBRARY)('fences', 'railFence').post, bare.palette.trunk);
+  // defined: used as it is, and must be a colour
+  const own = { ...bare, palette: { ...bare.palette, propWood: '#aa8855', propWoodDark: '#553311' } };
+  assert.doesNotThrow(() => validateBiomeSet(own, LIBRARY));
+  assert.equal(pieceColours(own, LIBRARY)('fences', 'railFence').postTop, '#aa8855');
+  assert.equal(pieceColours(own, LIBRARY)('fences', 'ropeFence').post, '#553311');
+  assert.throws(() => validateBiomeSet({ ...bare, palette: { ...bare.palette, propWood: 'brown' } }, LIBRARY), /palette\.propWood must be a colour/);
+  // the big props keep `wood`
+  for (const piece of Object.values(LIBRARY.bigProps)) for (const key of Object.values(piece.slots)) assert.ok(!(key in OPTIONAL_PALETTE_KEYS), key);
 });

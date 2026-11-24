@@ -10,9 +10,13 @@ import { merge } from './bigPropShapes.js';
 
 const TAU = Math.PI * 2;
 const P = (p, lo, hi = lo) => ({ ...p, lo, hi });
-function box(x, y, z, w, h, d) {
-  const v = [];
-  for (const [a, b, c] of [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]) v.push(x + a * w / 2, y + b * h / 2, z + c * d / 2);
+// a box centred at (x, y, z), size w × h × d, optionally tipped back about x by `tilt` (rad): 12 triangles
+function box(x, y, z, w, h, d, tilt = 0) {
+  const v = [], co = Math.cos(tilt), si = Math.sin(tilt);
+  for (const [a, b, c] of [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]]) {
+    const yy = b * h / 2, zz = c * d / 2;
+    v.push(x + a * w / 2, y + yy * co + zz * si, z - yy * si + zz * co);
+  }
   return { positions: v, indices: [0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7, 0, 1, 5, 0, 5, 4, 3, 7, 6, 3, 6, 2, 0, 4, 7, 0, 7, 3, 1, 2, 6, 1, 6, 5], w: [0, 0, 1, 1, 0, 0, 1, 1] };
 }
 // a thin n-sided pole from y0 to y1, radius r, a flat top: 3n triangles
@@ -47,6 +51,22 @@ function tentRoof(w, d, y0, h, slots) {
   return out;
 }
 
+// the park bench (AP7h, docs/art/bench/pieces.js PIECES.bench.B1): 3 seat slats + 2 back slats leaning back 0.2 rad,
+// and per end a front leg, a back leg rising into the backrest and a side rail: 11 boxes, 132 triangles. Along x, the
+// front (where you sit) toward +z; foot (lo) → top (hi) per slot pair (slat → slatTop, frame → frameTop).
+const BENCH_W = 1.8, BENCH_BACK = 0.2;
+function parkBench() {
+  const seat = Array.from({ length: 3 }, (_, i) => P(box(0, 0.45, 0.2 - (i + 0.5) * 0.42 / 3, BENCH_W, 0.04, 0.42 / 3 - 0.025), 'slat', 'slatTop'));
+  const back = [0.62, 0.78].map(y => P(box(0, y, -0.2 - (y - 0.45) * Math.tan(BENCH_BACK), BENCH_W, 0.11, 0.03, BENCH_BACK), 'slat', 'slatTop'));
+  const frame = [];
+  for (const x of [-0.75, 0.75]) {
+    frame.push(P(box(x, 0.215, 0.14, 0.07, 0.43, 0.07), 'frame', 'frameTop'));                       // front leg
+    frame.push(P(box(x, 0.42, -0.24, 0.07, 0.84, 0.07, BENCH_BACK * 0.5), 'frame', 'frameTop'));      // back leg, up into the back
+    frame.push(P(box(x, 0.4, -0.02, 0.06, 0.06, 0.44), 'frame', 'frameTop'));                         // side rail under the seat
+  }
+  return { slats: [...seat, ...back], frame };
+}
+
 const PIECES = {
   // F1 · a 5-sided pole (r 2.5 cm, 3.42 m) in a 0.36 m base; a banner 0.5 → 0.75 m wide, rounding over to the pole
   // tip, bowed 10 cm; three bands bottom → top: body, a thin stripe, the top cap
@@ -61,6 +81,7 @@ const PIECES = {
     for (const [x, z, w, d] of [[0, 1.55, 3.1, 0.03], [0, -1.55, 3.1, 0.03], [1.55, 0, 0.03, 3.1], [-1.55, 0, 0.03, 3.1]]) frame.push(P(box(x, 2.1, z, w, 0.3, d), 'valance'));
     return { frame, roof: tentRoof(3.1, 3.1, 2.25, 0.95, ['roof']) };
   },
+  parkBench,
 };
 export const EVENT_PROP_PIECES = Object.freeze(Object.keys(PIECES));
 

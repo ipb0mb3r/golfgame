@@ -11,7 +11,8 @@ import { BIOMES, resolveBiome } from '../src/biomes/index.js';
 import { HOLES } from '../src/holes/sets.js';
 
 const meadow = BIOMES['meadow-day'];
-const withChange = change => ({ ...meadow, id: 'x-test', ...change });
+// the artist's own eventProps / fences lists (X51: they may carry X33 slot overrides) are left out of the base set
+const withChange = change => ({ ...meadow, eventProps: undefined, fences: undefined, id: 'x-test', ...change });
 // the AP7c form: weights share one set-level perHa (still valid), clusters of a fixed count
 const rule = { pieces: [{ id: 'grassTuft', weight: 5 }, { id: 'grassTuft', weight: 3, cluster: { count: 8, radius: 1.2 } }, { id: 'flowerPatch', weight: 2, slots: { petal: 'propB' }, cluster: { count: 10, radius: 1.5 } }, { id: 'flowerPatch', weight: 0.6 }], perHa: 2500, on: ['rough', 'ob'] };
 const MEADOW_RULE = BIOMES['test-small-props'].smallProps; // AP7d: the spec's Meadow numbers, per pick
@@ -23,8 +24,11 @@ const PROP_SETS = ['meadow-day', 'alpine-day', 'island-day'];
 test('X33: every existing set reads exactly as before through normalizeBiomeSet (string picks unchanged)', () => {
   for (const [id, set] of Object.entries(BIOMES)) {
     const n = resolveBiome(id);
-    for (const field of Object.keys(PICKS)) assert.deepEqual(n[field], set[field], `${id}.${field}`);
-    assert.deepEqual(n.slotOverrides, {}, id);
+    // X51: the optional eventProps / fences lists may be the artist's, with slot overrides: ids read, overrides kept apart
+    const own = ['eventProps', 'fences'];
+    for (const field of Object.keys(PICKS)) assert.deepEqual(n[field], own.includes(field) ? set[field]?.map(pickId) : set[field], `${id}.${field}`);
+    assert.deepEqual(Object.keys(n.slotOverrides).filter(g => !own.includes(g)), [], id);
+    if (!set.eventProps?.some(p => p.slots) && !set.fences?.some(p => p.slots)) assert.deepEqual(n.slotOverrides, {}, id);
     // every piece's colours are the same from the set as written and as resolved
     for (const [group, pid] of pickedPieces(set)) if (group !== 'smallProps') assert.deepEqual(pieceColours(n, LIBRARY)(group, pid), pieceColours(set, LIBRARY)(group, pid), `${id} ${group} ${pid}`);
     assert.deepEqual(minimapColours(n, LIBRARY), minimapColours(set, LIBRARY), id);

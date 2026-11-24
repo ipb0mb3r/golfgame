@@ -121,8 +121,8 @@ export const LIBRARY = Object.freeze({
   // between posts at 1× (× the FENCE_SCALE tunable, default 1.5, like the size). Each slot pair is lo (foot / underside)
   // → hi (top).
   fences: {
-    railFence: { desc: 'Meadow, Alpine: a tidy paddock fence, square posts (0.16 m, 1.2 m tall) and two flat rails at 0.45 and 0.95 m on the posts\' front face, dark at the foot / underside, lighter on top.', slots: { post: 'trunk', postTop: 'wood', rail: 'trunk', railTop: 'wood' }, spacing: 3, tris: 36 },
-    ropeFence: { desc: 'Island: crooked 5-sided driftwood posts (1.0 m, leaning, each turned its own way) and two sagging ropes at 0.85 and 0.45 m, lighter on top.', slots: { post: 'trunk', postTop: 'bank', rope: 'lip', ropeTop: 'propSnow' }, spacing: 2.6, tris: 63 },
+    railFence: { desc: 'Meadow, Alpine: a tidy paddock fence, square posts (0.16 m, 1.2 m tall) and two flat rails at 0.45 and 0.95 m on the posts\' front face, dark at the foot / underside, lighter on top.', slots: { post: 'propWoodDark', postTop: 'propWood', rail: 'propWoodDark', railTop: 'propWood' }, spacing: 3, tris: 36 },
+    ropeFence: { desc: 'Island: crooked 5-sided driftwood posts (1.0 m, leaning, each turned its own way) and two sagging ropes at 0.85 and 0.45 m, lighter on top.', slots: { post: 'propWoodDark', postTop: 'bank', rope: 'lip', ropeTop: 'propSnow' }, spacing: 2.6, tris: 63 },
   },
   // AP7g: event props placed by hand in the hole data (scenery.eventProps: [{ id, x, z, turn, scale }]: at the tee,
   // the side of the course, behind the green; core/eventProps.js checks the zones); the set lists which it offers
@@ -132,5 +132,6 @@ export const LIBRARY = Object.freeze({
   eventProps: {
     featherFlag: { desc: 'A tall feather flag, 0.75 × 3.4 m: a banner with a rounded top on a thin white pole in a small stone base; body accent, a white stripe, the top cap subAccent. Still (no wind sway yet).', slots: { pole: 'propSnow', body: 'accent', top: 'subAccent', stripe: 'propSnow', base: 'rock' }, tris: 45 },
     popupTent: { desc: 'An open pop-up tent, 3 × 3 m, 3.2 m tall: 4 thin white legs, an accent pyramid roof and a subAccent valance on all four sides, no walls.', slots: { leg: 'propSnow', roof: 'accent', valance: 'subAccent' }, tris: 104 },
+    parkBench: { desc: 'A slatted park bench on square wooden legs, 1.8 × 0.55 m, seat 0.45 m, back 0.85 m: 3 seat slats and 2 leaning back slats, dark at the foot / underside, lighter on top; the same wood colours as the rail fence. Stands beside or behind the tee, turned toward it.', slots: { slat: 'propWoodDark', slatTop: 'propWood', frame: 'propWoodDark', frameTop: 'propWood' }, tris: 132 },
   },
 });
