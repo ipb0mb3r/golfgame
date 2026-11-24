@@ -43,7 +43,7 @@ export default makeMdwHole({
     ],
   },
   intro: mdwIntro({
-    par: 3, prev: 'mdw-02', // next: 'mdw-04' once it exists
+    par: 3, prev: 'mdw-02', next: 'mdw-04',
     tagline: 'A simple par 3 to a wide, slightly raised green.',
     steps: [
       'A wide green, a little above the fairway: come up short and the ball rolls back down.',

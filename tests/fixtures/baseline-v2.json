@@ -2123,6 +2123,146 @@
       }
     },
     {
+      "name": "MDW mdw4 default drive in seeded wind",
+      "hole": "mdw-04",
+      "seed": 54,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": 0.02,
+      "aimFrom": {
+        "x": -2,
+        "z": -232
+      },
+      "aimOff": 0,
+      "end": {
+        "x": 6.768032115763266,
+        "y": -7.900142428616275,
+        "z": -223.8704819739165,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "3w",
+        "wind": {
+          "x": 2.989998947029755,
+          "z": 0.16399976181016118
+        }
+      }
+    },
+    {
+      "name": "MDW mdw4 3 Wood up the hill in two",
+      "hole": "mdw-04",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": -284
+      },
+      "strokes": 1,
+      "power": 1,
+      "acc": 0,
+      "aimOff": 0,
+      "club": "3w",
+      "end": {
+        "x": 30.00209913500614,
+        "y": 3.0537442053297013,
+        "z": -469.56589164981034,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 2,
+        "club": "3w",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "MDW mdw5 Driver over the pond",
+      "hole": "mdw-05",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimFrom": {
+        "x": -2,
+        "z": -225
+      },
+      "aimOff": 0.2423,
+      "club": "driver",
+      "end": {
+        "x": 57.75010448869867,
+        "y": 1.5179765106665406,
+        "z": -239.71756459045193,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "MDW mdw5 putt up a tier",
+      "hole": "mdw-05",
+      "seed": null,
+      "start": {
+        "x": 93,
+        "z": -313
+      },
+      "strokes": 2,
+      "power": 0.6,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 101.99054527167132,
+        "y": 4.523711819396745,
+        "z": -322.95016404508436,
+        "event": "stopped",
+        "reason": "settled",
+        "strokes": 3,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "MDW mdw6 downhill tee shot in seeded wind",
+      "hole": "mdw-06",
+      "seed": 56,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.95,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": 5.4020427850302255,
+        "y": -7.595580143004661,
+        "z": -201.78869619481827,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "5i",
+        "wind": {
+          "x": 1.7278611119591811,
+          "z": -1.17376349566421
+        }
+      }
+    },
+    {
       "name": "BC h1 tee, left impact (starts left, curves right)",
       "hole": "pl-01",
       "seed": null,

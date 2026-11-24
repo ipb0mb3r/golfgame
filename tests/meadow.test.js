@@ -5,10 +5,10 @@ import assert from 'node:assert/strict';
 import { HOLES, SETS, MDW, checkHoleLooks } from '../src/holes/sets.js';
 import { validateHole } from '../src/core/validate.js';
 import { holeLength } from '../src/core/vec.js';
-import { shot, startAt } from './mtn.test.js';
+import { shot, startAt, layup } from './mtn.test.js';
 
 // The plan: [par, length m, difficulty]
-const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1] };
+const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 373, 2], 'mdw-06': [3, 174, 2] };
 const LENGTH = { 3: [120, 210], 4: [285, 440], 5: [460, 550] }; // HOLE_GUIDELINES §4
 
 test('Buttercup Meadows: every hole validates, is dressed in meadow-day, and has its plan par, length and difficulty', () => {
@@ -39,7 +39,7 @@ test('Buttercup Meadows: the default first shot stays out of trouble, and the sa
 });
 
 test('Buttercup Meadows 1–3 are fairly flat, not literally flat (owner): gentle rolls along the line of play', () => {
-  for (const h of MDW) {
+  for (const h of MDW.slice(0, 3)) {
     const line = h.playLine ?? [h.tee, h.cup], hs = [];
     for (let k = 1; k < line.length; k++) {
       const a = line[k - 1], b = line[k], n = Math.ceil(Math.hypot(b.x - a.x, b.z - a.z) / 5);
@@ -114,4 +114,35 @@ test('Buttercup Meadows: no bunker or rough patch covers any part of the green',
       }
     }
   }
+});
+
+// Holes 4–6: hills and the first water (docs/COURSE_PLAN_MEADOW.md)
+test('mdw-04: a real hill (down into the valley, up to the green); safe lay-up left of the pond, or reach in two', () => {
+  const h = HOLES['mdw-04'];
+  assert.ok(h.heightAt(0, -250) < h.heightAt(0, 0) - 4 && h.heightAt(30, -472) > h.heightAt(0, -250) + 6, 'down into the valley, then up');
+  const safe = startAt(h); shot(safe); const lay = layup(safe, { x: -8, z: -400 });
+  assert.equal(lay.surface, 'fairway');
+  const hero = startAt(h); shot(hero, { club: 'driver', power: 1 });
+  const two = shot(hero, { club: '3w', power: 1, at: { x: 30, z: -472 } });
+  assert.ok(['green', 'fringe'].includes(two.surface), `the hero second shot ends on the ${two.surface}`);
+  // a second shot that comes up short and right finds the pond: the brave line has a price
+  const push = startAt(h); shot(push, { club: 'driver', power: 1 });
+  assert.equal(shot(push, { club: '3w', power: 0.85, at: { x: 46, z: -472 } }).ev, 'penalty');
+});
+
+test('mdw-05: carrying the pond leaves a shorter approach than the safe drive to the elbow', () => {
+  const h = HOLES['mdw-05'];
+  const safe = shot(startAt(h), { club: 'driver', power: 1 });
+  const brave = shot(startAt(h), { club: 'driver', power: 1, at: { x: 60, z: -250 } });
+  assert.equal(brave.surface, 'fairway');
+  assert.ok(brave.toCup < safe.toCup - 25, `brave ${brave.toCup.toFixed(0)} m, safe ${safe.toCup.toFixed(0)} m`);
+  const wet = shot(startAt(h), { club: 'driver', power: 0.7, at: { x: 60, z: -250 } });
+  assert.equal(wet.ev, 'penalty', 'a weak drive on the brave line finds the pond');
+});
+
+test('mdw-06: downhill; at the flag holds the green, a miss left stays dry', () => {
+  const h = HOLES['mdw-06'];
+  assert.ok(h.heightAt(0, 0) - h.heightAt(2, -182) > 6, 'the tee sits well above the green');
+  assert.equal(shot(startAt(h), { at: { x: 12, z: -174 } }).surface, 'green');
+  assert.notEqual(shot(startAt(h), { at: { x: -30, z: -178 } }).ev, 'penalty');
 });

@@ -219,6 +219,38 @@ export const SCENARIOS = {
     hole: 'mdw-03', ball: { x: -9, z: -156 }, strokes: 1, seed: 2303, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Meadows 3: across the bean', text: 'A long putt from the left lobe across the green to the cup in the right lobe.',
   },
+  'mdw4-reach-in-two': {
+    hole: 'mdw-04', ball: { x: 0, z: -284 }, aimAt: { x: 30, z: -472 }, strokes: 1, seed: 2401, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 4: go for it in two', text: 'After a big drive into the valley: a full 3 Wood up the hill reaches the green. Short and right is the pond.',
+  },
+  'mdw4-cross-bunker': {
+    hole: 'mdw-04', ball: { x: -6, z: -330 }, strokes: 2, seed: 2402, wind: { x: 0, z: 0 }, lie: 'sand',
+    name: 'Meadows 4: cross bunker', text: 'In the bunker across the fairway, short of the hill, about 150 m from the green.',
+  },
+  'mdw4-uphill-pitch': {
+    hole: 'mdw-04', ball: { x: -8, z: -400 }, strokes: 2, seed: 2403, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 4: the lay-up', text: 'Laid up left of the pond: a pitch up the hill to the raised green. Short rolls back down.',
+  },
+  'mdw5-carry-the-pond': {
+    hole: 'mdw-05', ball: { x: 0, z: 0 }, aimAt: { x: 60, z: -250 }, strokes: 0, seed: 2501, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 5: carry the pond', text: 'Aimed over the corner of the pond: a full Driver carries it and leaves a short iron. A weak one is wet.',
+  },
+  'mdw5-outside-bunker': {
+    hole: 'mdw-05', ball: { x: -24, z: -238 }, strokes: 1, seed: 2502, lie: 'sand',
+    name: 'Meadows 5: outside the bend', text: 'In the big bunker on the outside of the bend, about 160 m from the green.',
+  },
+  'mdw5-up-a-tier': {
+    hole: 'mdw-05', ball: { x: 93, z: -313 }, strokes: 2, seed: 2503, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 5: putt up a tier', text: 'From the lower front tier, up the step to the cup on the back tier.',
+  },
+  'mdw6-at-the-flag': {
+    hole: 'mdw-06', ball: { x: 0, z: 0 }, aimAt: { x: 12, z: -174 }, strokes: 0, seed: 2601, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 6: at the flag', text: 'Downhill, straight at the flag in the lobe nearest the water. Short and right is wet.',
+  },
+  'mdw6-left-bank': {
+    hole: 'mdw-06', ball: { x: -30, z: -168 }, strokes: 1, seed: 2602, wind: { x: 0, z: 0 }, lie: 'rough',
+    name: 'Meadows 6: the safe miss', text: 'On the bank left of the green, the safe miss: a chip across the green toward the water side.',
+  },
 };
 
 // Checked (Gate A T7) when one is first played: a bad spot fails there, naming the scenario and the
