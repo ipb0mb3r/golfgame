@@ -188,12 +188,12 @@ export const SCENARIOS = {
     name: 'Meadows 1: drive down the right', text: 'Aimed down the right side, near the tree line: the open angle into the green, away from its front-left bunker.',
   },
   'mdw1-bunker': {
-    hole: 'mdw-01', ball: { x: -21, z: -236 }, strokes: 1, seed: 2102, lie: 'sand',
+    hole: 'mdw-01', ball: { x: -24, z: -240 }, strokes: 1, seed: 2102, lie: 'sand',
     name: 'Meadows 1: fairway bunker', text: 'The shallow bunker left of the landing zone, about 115 m out.',
   },
   'mdw1-putt': {
     hole: 'mdw-01', ball: { x: -8, z: -341 }, strokes: 2, seed: 2103, wind: { x: 0, z: 0 }, lie: 'green',
-    name: 'Meadows 1: across the big green', text: 'A 16 m putt across the big green to the cup in its back-left lobe: it breaks a little toward the front left.',
+    name: 'Meadows 1: across the big green', text: 'A 13 m putt across the big green to the cup in its centre: it breaks a little toward the front left.',
   },
   'mdw2-cut-the-corner': {
     hole: 'mdw-02', ball: { x: 0, z: 0 }, aimAt: { x: -50, z: -248 }, strokes: 0, seed: 2201, wind: { x: 0, z: 0 }, lie: 'tee',

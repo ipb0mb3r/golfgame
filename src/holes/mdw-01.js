@@ -6,7 +6,7 @@
 import { makeMdwHole, mdwIntro, TEE_DRESS } from './mdw-course.js';
 
 const TEE = { x: 0, z: 0 };
-const CUP = { x: -9, z: -357 }; // in the middle of the bean's back-left lobe, behind the front-left bunker
+const CUP = { x: 3, z: -348 }; // dead centre of the green (owner: sometimes the flag is centred; hole 1 is)
 
 export default makeMdwHole({
   id: 'mdw-01', number: 1, name: 'Buttercup Meadows · 1', par: 4, difficulty: 1,
