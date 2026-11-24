@@ -38,7 +38,7 @@ The owner's reference was a round, smiling cartoon cow (classic black and white,
   - two short cream horns turned outward;
   - a **red strap** round the neck with a **yellow bell** under the chin.
 - **Tail** (group `tail`, pivot = the top of the rump): a thin 4-sided tail, 0.62 m long, with a dark tuft.
-- **Grazing pose:** the neck pivot drops 0.42 m and moves 0.12 m forward, and the head tips down 1.15 rad until the muzzle is just above the grass.
+- **Grazing pose:** the neck pivot drops 0.22 m and moves 0.12 m forward, and the head tips down 1.15 rad until the muzzle is just above the grass. (The first value, 0.42 m, put the muzzle 0.17 m into the grass; the dev measured 0.22 m in AP7i, which leaves it 0.026 m above at the deepest munch.)
 - Flat-shaded toon (crisp faces), the scene's 3-band ramp, fogged like the scenery. Double-sided, like the other props (small ear and muzzle blobs overlap).
 
 ## 3. Material slots → palette keys
@@ -68,7 +68,7 @@ scenery: {
 ```
 
 - **pose:** `'stand'` (default) or `'graze'`. **pattern:** `0`, `1` or `2` (the patch layout, default 0). Mix both in a herd so no two neighbours look alike.
-- **Where:** **inside a fenced pasture** beyond OB (the fence SPEC §4). Every cow is at least **5 m outside the OB line** (the big-props rule) and **at least 3 m (scaled footprint) from any fence leg**, so no cow pokes through a rail. Turn them different ways, mostly side-on or facing the course.
+- **Where:** **inside a fenced pasture** beyond OB (the fence SPEC §4). A **closed fence** (its last point = its first) is a pasture: the engine keeps scenery trees out of it (AP7i). Every cow is at least **5 m outside the OB line** (the big-props rule) and **at least 3 m (scaled footprint) from any fence leg**, so no cow pokes through a rail. Turn them different ways, mostly side-on or facing the course.
 - **How many:** **3–4 per pasture** (owner), up to **6 per hole**.
 - **Size:** `size: 2` in the library (owner: 2×). `scale` per cow between 0.9 and 1.1, for a little variety.
 - **Cost:** 624 triangles each. A herd of 4 is ~2.5k, 6 cows ~3.7k (≈ 1 % of the 300k phone budget). On a heavy hole (X47: `meadow-day` is near 300k on long holes; plan holes 4, 7, 9), run `tools/perf-check.mjs`. If needed, use 3 cows or drop some fence or trees.
@@ -80,6 +80,7 @@ scenery: {
 | **Head bob** | the `head` group pitches about the neck pivot | standing: a slow nod ±0.10 rad every ~4 s; grazing: a "munch" dip ±0.18 rad every ~2.5 s, with the head lifting fully (−0.6 rad) now and then for ~1.5 s | 1 matrix per cow per frame |
 | **Tail swish** | the `tail` group swings sideways (about z at the tail root) | ±0.45 rad, a quick swish of ~0.8 s, then a 2–5 s pause | 1 matrix per cow per frame |
 
+- **The munch moves up from the grazing pose:** the head starts at the grazing pitch and lifts from there, never lower, so the muzzle never dips into the grass (AP7i).
 - Every cow gets its **own phase** (from its index or position), so the herd never moves in step.
 - The motion is gentle, with eased curves (sine), never jerky.
 - Only animate while the cow is on screen and closer than ~200 m. Far away, the motion can't be seen.

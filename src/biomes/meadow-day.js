@@ -47,7 +47,7 @@ export default {
       { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
     ],
   },
-  bigProps: ['windmill'],     // the white smock mill (docs/art/big-props/SPEC.md); placed by hand beyond OB, high on a hill (course designer). Later: cow
+  bigProps: ['windmill', 'cow'], // the white smock mill (docs/art/big-props/SPEC.md), high on a hill; the cow (docs/art/cow/SPEC.md), 3-4 in a fenced pasture. Both placed by hand beyond OB (course designer)
   fences: ['railFence'],      // post & two rails (docs/art/fence/SPEC.md), along OB or around a pasture; look only
   // a "tournament" set (owner 2026-11-24): feather flags (colours swapped so they never read as a hole flag) and tents
   // at the tee, along the course and near the green (docs/art/tee-props/SPEC.md §4)

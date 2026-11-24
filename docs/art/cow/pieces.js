@@ -100,9 +100,10 @@ function build(o, { pose = 'stand', pattern = 0, bob = 0, swish = 0 } = {}) {
   const tr = [0, B.y + B.ry * 0.45, -B.rz * 0.92];
   const tail = [P(limb(4, 0.035, 0.035, [0, -0.62, -0.06], [0, 0, 0]), 'coat', 'coat', 'tail'), P(blob(0, -0.68, -0.07, 0.07, 0.12, 0.07, 5, 3), 'patch', 'patch', 'tail')];
   for (const p of tail) out.push(xf(p, { x: tr[0], y: tr[1], z: tr[2], rx: -0.12, rz: swish }));
-  // grazing: the neck drops and reaches forward, the head tips down until the muzzle is just above the grass
+  // grazing: the neck drops 0.22 m and reaches 0.12 m forward, the head tips down 1.15 rad until the muzzle is just
+  // above the grass (the dev's measured value, AP7i: the first 0.42 m drop put the muzzle 0.17 m into the grass)
   const pitch = (pose === 'graze' ? 1.15 : 0) + bob;
-  const [nx, ny, nz] = pose === 'graze' ? [o.neck[0], o.neck[1] - 0.42, o.neck[2] + 0.12] : o.neck;
+  const [nx, ny, nz] = pose === 'graze' ? [o.neck[0], o.neck[1] - 0.22, o.neck[2] + 0.12] : o.neck;
   for (const p of head(o, pat)) out.push(xf(p, { x: nx, y: ny, z: nz, rx: pitch }));
   return out;
 }

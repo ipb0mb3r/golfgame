@@ -45,9 +45,9 @@ test('the shape is the artist\'s COWS.C: same vertices, slots and patches standi
       assert.deepEqual(mine[g].lo, r.lo, g);
     }
   }
-  // grazing: the reference's head at its 1.15 rad tip, moved up by the raised neck pivot (0.42 → 0.22 m drop)
+  // grazing: the reference's head at its 1.15 rad tip, the artist's pieces.js now drops the neck 0.22 m, as the engine does
   const ref = flat(refGroup(REF.C.build({ pose: 'graze' }), 'head')), mine = cowAssembled({ pose: 'graze' }).head;
-  mine.positions.forEach((v, i) => assert.ok(Math.abs(v - ref.pos[i] - (i % 3 === 1 ? 0.2 : 0)) < 1e-12, `head ${i}`));
+  mine.positions.forEach((v, i) => assert.ok(Math.abs(v - ref.pos[i]) < 1e-12, `head ${i}`));
 });
 
 test('the 3 patch layouts are painted faces: the same vertices, whole faces coat or patch, no extra triangles', () => {
@@ -114,7 +114,8 @@ test('a cow\'s scaled footprint stays 3 m from every fence leg; the big-prop rul
   assert.throws(() => checkHoleLooks(h), /comes within 3 m of scenery\.fences\[0\]/);
   // OB + 5 m and the set still apply
   assert.match(bigPropsError(mtn07, [{ id: 'cow', x: 74, z: 0 }], set, LIBRARY), /comes within 5 m of the OB box/);
-  assert.match(bigPropsError(mtn07, [{ id: 'cow', x: 150, z: 0 }], BIOMES['meadow-day'], LIBRARY), /does not offer it/);
+  const noCow = Object.values(BIOMES).find(b => !(b.bigProps ?? []).some(p => (p.id ?? p) === 'cow')); // any set that does not list the cow
+  assert.match(bigPropsError(mtn07, [{ id: 'cow', x: 150, z: 0 }], noCow, LIBRARY), /does not offer it/);
   assert.match(bigPropsError(mtn07, [{ id: 'cow', x: 150, z: 0, scale: 1.15 }], set, LIBRARY), /scale must be 0\.9–1\.1 \(got 1\.15\)/);
 });
 
