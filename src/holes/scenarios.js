@@ -3,7 +3,8 @@
 // `ball`, `strokes`, `seed` and the optional `wind` (m/s, overrides the seeded wind).
 // `lie` is what the ball should sit on; tests/scenarios.test.js checks it, so a hole edit that
 // moves a bunker can't silently break a scenario.
-import { HOLES } from './sets.js';
+import { HOLES, DEV_HOLES } from './sets.js';
+import { DEV_DEEP_ROUGH_ID, DEV_DEEP_ROUGH_SPOTS } from './dev-deep-rough.js';
 import { validateScenario } from '../core/validate.js';
 
 export const SCENARIOS = {
@@ -182,6 +183,55 @@ export const SCENARIOS = {
     hole: 'mtn-09', ball: { x: -2.5, z: -278 }, aimAt: { x: 40, z: -458 }, strokes: 1, seed: 1903, wind: { x: 0, z: 0 }, lie: 'fairway',
     name: 'Mountain 9: lay up round the lake', text: 'The safe second shot, up the left along the lake edge. Leaves about 95 m.',
   },
+  // Buttercup Meadows (course designer, docs/COURSE_PLAN_MEADOW.md): the key shot, a recovery spot and a putt per hole.
+  'mdw1-drive-right': {
+    hole: 'mdw-01', ball: { x: 0, z: 0 }, aimAt: { x: 14, z: -240 }, strokes: 0, seed: 2101, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 1: drive down the right', text: 'Aimed down the right side, near the tree line: the open angle into the green, away from its front-left bunker.',
+  },
+  'mdw1-bunker': {
+    hole: 'mdw-01', ball: { x: -24, z: -240 }, strokes: 1, seed: 2102, lie: 'sand',
+    name: 'Meadows 1: fairway bunker', text: 'The shallow bunker left of the landing zone, about 115 m out.',
+  },
+  'mdw1-putt': {
+    hole: 'mdw-01', ball: { x: -8, z: -341 }, strokes: 2, seed: 2103, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 1: across the big green', text: 'A 13 m putt across the big green to the cup in its centre: it breaks a little toward the front left.',
+  },
+  'mdw2-cut-the-corner': {
+    hole: 'mdw-02', ball: { x: 0, z: 0 }, aimAt: { x: -50, z: -248 }, strokes: 0, seed: 2201, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 2: cut the corner', text: 'Aimed left, just past the group of round trees: a full Driver leaves a short wedge. Hook it and you meet the trees.',
+  },
+  'mdw2-outside-bunker': {
+    hole: 'mdw-02', ball: { x: 22, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
+    name: 'Meadows 2: outside the bend', text: 'In the shallow bunker on the outside of the bend, about 135 m from the green.',
+  },
+  'mdw2-downhill-putt': {
+    hole: 'mdw-02', ball: { x: -95, z: -308 }, strokes: 2, seed: 2203, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 2: across the bean', text: 'From the high back right of the green, across the slope to the cup in the left lobe.',
+  },
+  'mdw3-at-the-flag': {
+    hole: 'mdw-03', ball: { x: 0, z: 0 }, strokes: 0, seed: 2301, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 3: the tee shot', text: 'A simple par 3 to a wide, slightly raised green. Short rolls back down the bank.',
+  },
+  'mdw3-bunker': {
+    hole: 'mdw-03', ball: { x: -17, z: -131 }, strokes: 1, seed: 2302, wind: { x: 0, z: 0 }, lie: 'sand',
+    name: 'Meadows 3: front-left bunker', text: 'In the bunker short left of the green, about 32 m from the flag on the right.',
+  },
+  'mdw3-putt': {
+    hole: 'mdw-03', ball: { x: -9, z: -156 }, strokes: 1, seed: 2303, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 3: across the bean', text: 'A long putt from the left lobe across the green to the cup in the right lobe.',
+  },
+};
+
+// S24: dev-only test spots on dev-only holes (sets.js DEV_HOLES): ?scenario=<id> only, no menu lists them.
+// The deep-rough practice spot: the same distance (≈ 147 m) from the fairway, the rough and the deep rough.
+const drSpot = (lie, seed, name) => ({
+  hole: DEV_DEEP_ROUGH_ID, ball: { ...DEV_DEEP_ROUGH_SPOTS[lie] }, strokes: 1, seed, wind: { x: 0, z: 0 }, lie,
+  name: `Deep rough test: ${name}`, text: 'About 160 yd to the flag, no wind. Fairway, rough (left) and deep rough (right) side by side.',
+});
+export const DEV_SCENARIOS = {
+  'dr-fairway': drSpot('fairway', 2401, 'from the fairway'),
+  'dr-rough': drSpot('rough', 2402, 'from the rough'),
+  'dr-deep': drSpot('deepRough', 2403, 'from the deep rough'),
 };
 
 // Checked (Gate A T7) when one is first played: a bad spot fails there, naming the scenario and the
@@ -192,7 +242,8 @@ const checked = new Set();
 export function resolveScenario(id) {
   const key = (id ?? '').trim().toLowerCase();
   if (!key) return { scenario: null, unknown: false };
-  if (!Object.hasOwn(SCENARIOS, key)) return { scenario: null, unknown: true };
-  if (!checked.has(key)) { validateScenario(key, SCENARIOS[key], HOLES); checked.add(key); }
-  return { scenario: { id: key, ...SCENARIOS[key] }, unknown: false };
+  const list = Object.hasOwn(SCENARIOS, key) ? SCENARIOS : Object.hasOwn(DEV_SCENARIOS, key) ? DEV_SCENARIOS : null;
+  if (!list) return { scenario: null, unknown: true };
+  if (!checked.has(key)) { validateScenario(key, list[key], list === SCENARIOS ? HOLES : { ...HOLES, ...DEV_HOLES }); checked.add(key); }
+  return { scenario: { id: key, ...list[key] }, unknown: false };
 }

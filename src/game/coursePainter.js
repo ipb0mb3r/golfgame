@@ -1,12 +1,13 @@
 // Paints the course onto a canvas: used as the ground texture and for the minimap.
 import { createRng } from '../core/rng.js';
-import { parseColour, sceneLight } from '../core/biome.js';
+import { parseColour, sceneLight, fullPalette } from '../core/biome.js';
 import { TUNE, GROUND_LOOK } from '../core/config.js';
 import { groundLevel, kindOf, KIND, KINDS, baseKinds, groundKindsAA, groundColour, surfaceMask, treeShadows, shadowColour } from '../core/ground.js';
 
 // AP5: every colour comes from the hole's biome set (DESIGN §8b): surface → palette key.
 // A surface not listed is painted as rough; the ground outside OB is deepRough.
-const SURFACE_KEYS = { tee: 'tee', fringe: 'fringe', sand: 'sand', water: 'water', ob: 'deepRough', rough: 'rough', rock: 'rock' };
+// S24: the deepRough SURFACE is the optional key roughDeep (its fallback: the rough, darker), not the OB ground's key.
+const SURFACE_KEYS = { tee: 'tee', fringe: 'fringe', sand: 'sand', water: 'water', ob: 'deepRough', rough: 'rough', rock: 'rock', deepRough: 'roughDeep' };
 // p = the palette as [r, g, b] 0..255 per key
 const GREEN_STYLES = {
   // Diagonal stripes (hole 1): the green's two shades
@@ -31,7 +32,7 @@ export function paintGround(hole, surfaceAt, biome, { green: greenOverride = nul
   const base = baseKinds(W, H, kindAt);
   // AP6 follow-up: smooth edges (owner on #125; the hard per-pixel path and its switch went in AP7e)
   const { kinds, depth, mix } = groundKindsAA(base, W, H, res, kindAt);
-  const p = Object.fromEntries(Object.entries(biome.palette).map(([k, c]) => [k, parseColour(c)]));
+  const p = Object.fromEntries(Object.entries(fullPalette(biome.palette)).map(([k, c]) => [k, parseColour(c)]));
   const canvas = document.createElement('canvas');
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d'), img = ctx.createImageData(W, H), opts = { level, stripe, green, depth: 0 }, rgb = [0, 0, 0], sum = [0, 0, 0], NK = KINDS.length;
@@ -83,7 +84,7 @@ export function paintCourse(hole, surfaceAt, biome, { green: greenOverride = nul
   const ctx = canvas.getContext('2d');
   const img = ctx.createImageData(W, H);
   const r = createRng(7);
-  const p = Object.fromEntries(Object.entries(biome.palette).map(([k, c]) => [k, parseColour(c)]));
+  const p = Object.fromEntries(Object.entries(fullPalette(biome.palette)).map(([k, c]) => [k, parseColour(c)]));
   const colors = Object.fromEntries(Object.entries(SURFACE_KEYS).map(([s, k]) => [s, p[k]]));
   const greenColor = GREEN_STYLES[green](p);
   for (let j = 0; j < H; j++) {
