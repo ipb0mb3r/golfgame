@@ -2,7 +2,7 @@
 // Plan (docs/COURSE_PLAN_MEADOW.md): a wide, slightly raised green, one bunker front left and one at the right,
 // no water. Safe: the middle of the green. Brave: at the pin, near a bunker. A short miss rolls back down the bank.
 // Props: a bench and two flags at the tee, two flags beside the green (the last tournament dressing of the nine).
-import { makeMdwHole, mdwIntro, TEE_DRESS } from './mdw-course.js';
+import { makeMdwHole, mdwIntro, oak, TEE_DRESS } from './mdw-course.js';
 
 const TEE = { x: 0, z: 0 };
 const CUP = { x: 5, z: -151 };
@@ -29,7 +29,11 @@ export default makeMdwHole({
   ],
   ob: { x0: -58, x1: 58, z0: -200, z1: 14 },
   forest: { gap: 10, rows: 2, spacing: 12, size: [1.0, 1.5], seed: 103, keep: 7 },
-  obstacles: [],
+  // round trees framing both sides of the hole, well off the line (on rough)
+  obstacles: [
+    oak(-34, -30, 1.0), oak(-42, -58, 1.1), oak(-36, -88, 0.95), oak(-46, -112, 1.05),
+    oak(36, -36, 1.05), oak(44, -66, 0.95), oak(38, -94, 1.1),
+  ],
   scenery: {
     eventProps: [
       TEE_DRESS.bench, TEE_DRESS.flagR, TEE_DRESS.flagL,

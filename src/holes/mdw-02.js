@@ -46,6 +46,7 @@ export default makeMdwHole({
     // the group of round trees inside the bend, on rough (the brave drive plays just right of them, or over)
     oak(-34, -96, 1.0), oak(-44, -88, 0.95), oak(-52, -102, 1.05), oak(-40, -114, 1.0),
     oak(-58, -120, 0.95), oak(-46, -130, 1.0), oak(-62, -140, 1.05),
+    oak(-35, -140, 0.9), oak(-40, -152, 1.0), oak(-52, -156, 0.95), oak(-28, -78, 0.9),
   ],
   scenery: {
     eventProps: [TEE_DRESS.tent, TEE_DRESS.flagR, TEE_DRESS.flagL],

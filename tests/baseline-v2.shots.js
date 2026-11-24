@@ -89,6 +89,13 @@ export const SHOTS = [
   { name: 'C mtn8 drive hooked into the pond', hole: 'mtn-08', seed: 8, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0.06, aimFrom: { x: 0, z: -180 }, aimOff: 0, club: 'driver', windless: true },
   { name: 'C mtn9 95% drive down the big drop', hole: 'mtn-09', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimFrom: { x: -4, z: -278 }, aimOff: 0, club: 'driver' },
   { name: 'C mtn9 3 Wood over the lake in two', hole: 'mtn-09', seed: null, start: { x: -4.4, z: -334.6 }, strokes: 1, power: 0.95, acc: 0, aimOff: 0, club: '3w' },
+  // Buttercup Meadows (course designer, docs/COURSE_PLAN_MEADOW.md)
+  { name: 'MDW mdw1 default drive in seeded wind', hole: 'mdw-01', seed: 51, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.02, aimFrom: { x: -2, z: -228 }, aimOff: 0 },
+  { name: 'MDW mdw1 putt across the big green (15 m)', hole: 'mdw-01', seed: null, start: { x: -8, z: -341 }, strokes: 2, power: 0.75, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw2 Driver cuts the corner past the trees', hole: 'mdw-02', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 1, z: -206 }, aimOff: -0.204, club: 'driver' },
+  { name: 'MDW mdw2 safe drive in seeded wind', hole: 'mdw-02', seed: 52, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: -0.02, aimFrom: { x: 1, z: -206 }, aimOff: 0 },
+  { name: 'MDW mdw3 tee shot to the raised green', hole: 'mdw-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw3 out of the front-left bunker', hole: 'mdw-03', seed: null, start: { x: -12, z: -136 }, strokes: 1, power: 0.45, acc: 0, aimOff: 0 },
   // Phase BC (BC1/BC2): shaped shots. `impact` { x, y } = where the club hits the ball (core/shape.js;
   // left/right = start out then curve back, bottom/top = higher/lower). Every shot above is a centre hit.
   { name: 'BC h1 tee, left impact (starts left, curves right)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
