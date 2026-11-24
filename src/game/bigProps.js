@@ -8,17 +8,23 @@ import * as THREE from 'three';
 import { mixHex } from '../core/backdrop.js';
 import { bigPropsFor, placeBigProps } from '../core/bigProps.js';
 import { bigPropShape } from '../core/bigPropShapes.js';
+import { addCows } from './cows.js';
 
 // list = the props asked for, biome = the resolved set, look = pieceColours(biome, LIBRARY), toon() = the 3-band ramp.
-// → { drawn, skipped, drawCalls, tris } (for tools: window.__golf.bigProps())
+// → { drawn, skipped, drawCalls, tris (for tools: window.__golf.bigProps()), update(t, camera) (AP7i: the cows move) }
 export function addBigProps(scene, hole, list, heightAt, biome, look, toon) {
   const { keep, skipped } = bigPropsFor(list, biome.bigProps);
   if (skipped.length) console.info(`Pocket Links: biome set "${biome.id}" has no ${[...new Set(skipped.map(p => p.id))].join(', ')}, so ${skipped.length} big prop(s) of ${hole.id} are not drawn.`);
   const placed = placeBigProps(keep, heightAt), ids = [...new Set(placed.map(p => p.id))];
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), v = new THREE.Vector3(), s = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
-  let drawCalls = 0, tris = 0;
+  let drawCalls = 0, tris = 0, cows = null;
   for (const id of ids) {
     const copies = placed.filter(p => p.id === id), shape = bigPropShape(id), colours = look('bigProps', id);
+    if (id === 'cow') { // AP7i: 3 draw calls (body, head, tail) for the whole herd, the head and the tail animated
+      cows = addCows(scene, copies, colours, toon);
+      drawCalls += cows.drawCalls; tris += cows.tris;
+      continue;
+    }
     for (const [name, part] of Object.entries(shape.parts)) {
       const mat = new THREE.MeshToonMaterial({ vertexColors: true, gradientMap: toon(), side: THREE.DoubleSide });
       mat.flatShading = true; // crisp faces (the face normal per pixel; MeshToonMaterial takes it set, not as an option)
@@ -30,7 +36,7 @@ export function addBigProps(scene, hole, list, heightAt, biome, look, toon) {
       drawCalls++; tris += part.tris * copies.length;
     }
   }
-  return { drawn: placed, skipped, drawCalls, tris };
+  return { drawn: placed, skipped, drawCalls, tris, update: cows ? (t, camera) => cows.update(t, camera) : () => {} };
 }
 
 // A core/bigPropShapes.js part → an indexed geometry, each vertex coloured mix(slot lo, slot hi, w) (sRGB) (also the

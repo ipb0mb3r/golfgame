@@ -45,8 +45,8 @@ test('the pick list: every piece exists in the library', () => {
   assert.throws(() => validateBiomeSet(withChange({ offTrees: ['coneTree', 'coneTree'] }), LIBRARY), /offTrees lists a piece twice/);
   assert.throws(() => validateBiomeSet(withChange({ sky: 'gradient' }), LIBRARY), /sky: unknown piece "gradient"/);
   assert.throws(() => validateBiomeSet(withChange({ backdrop: 'peaksSnow' }), LIBRARY), /backdrop: unknown piece "peaksSnow"/);
-  // (AP7e: the windmill is a library piece now, so the unknown piece is a cow)
-  assert.throws(() => validateBiomeSet(withChange({ bigProps: ['cow'] }), LIBRARY), /bigProps: unknown piece "cow" \(the library's bigProps: windmill, chalet, chaletTall, beachHut\)/);
+  // (AP7e: the windmill is a library piece now; AP7i: so is the cow, so the unknown piece is a hay hut)
+  assert.throws(() => validateBiomeSet(withChange({ bigProps: ['hayHut'] }), LIBRARY), /bigProps: unknown piece "hayHut" \(the library's bigProps: windmill, chalet, chaletTall, beachHut, cow\)/);
   assert.doesNotThrow(() => validateBiomeSet(withChange({ bigProps: ['windmill', { id: 'chalet', slots: { roof: 'rock' } }] }), LIBRARY));
   assert.throws(() => validateBiomeSet(withChange({ textures: ['grassDabs'] }), LIBRARY), /textures: unknown piece "grassDabs"/);
   assert.throws(() => validateBiomeSet(withChange({ furniture: { ...base.furniture, flag: 'banner' } }), LIBRARY), /furniture\.flag: unknown piece "banner"/);
@@ -205,7 +205,7 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
 });
 
 test('X50: propWood / propWoodDark are optional palette keys (fallback wood / trunk); a set may define them', () => {
-  assert.deepEqual({ ...OPTIONAL_PALETTE_KEYS }, { propWood: 'wood', propWoodDark: 'trunk' });
+  assert.deepEqual({ ...OPTIONAL_PALETTE_KEYS }, { propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b' }); // + AP7i's fixed defaults
   assert.ok(ALL_PALETTE_KEYS.includes('propWood') && ALL_PALETTE_KEYS.includes('propWoodDark'));
   const base = BIOMES['proto-default'];
   const bare = { ...base, palette: Object.fromEntries(Object.entries(base.palette).filter(([k]) => !(k in OPTIONAL_PALETTE_KEYS))) };
@@ -221,6 +221,6 @@ test('X50: propWood / propWoodDark are optional palette keys (fallback wood / tr
   assert.equal(pieceColours(own, LIBRARY)('fences', 'railFence').postTop, '#aa8855');
   assert.equal(pieceColours(own, LIBRARY)('fences', 'ropeFence').post, '#553311');
   assert.throws(() => validateBiomeSet({ ...bare, palette: { ...bare.palette, propWood: 'brown' } }, LIBRARY), /palette\.propWood must be a colour/);
-  // the big props keep `wood`
-  for (const piece of Object.values(LIBRARY.bigProps)) for (const key of Object.values(piece.slots)) assert.ok(!(key in OPTIONAL_PALETTE_KEYS), key);
+  // the big props keep `wood` (AP7i: only the cow uses optional keys, its own cowCoat / cowPatch / cowNose)
+  for (const [id, piece] of Object.entries(LIBRARY.bigProps)) for (const key of Object.values(piece.slots)) assert.ok(!(key in OPTIONAL_PALETTE_KEYS) || (id === 'cow' && key.startsWith('cow')), key);
 });

@@ -391,6 +391,26 @@ export const BIG_PROPS = Object.freeze({
   drop: Object.freeze({ rings: Object.freeze([0.5, 1]), perRing: 12 }),
   maxTris: 1500,
 });
+// AP7i: the cow, a big prop with a pose, a patch layout and a little animation (DESIGN §8b "Big props: the cow",
+// docs/art/cow/SPEC.md; core/cowShape.js, core/cows.js). Looks only.
+//   poses / patterns: what a scenery.bigProps cow may say (pose default 'stand', pattern 0..patterns-1, default 0).
+//   maxPerHole: cows on one hole. fenceClear: m a cow's scaled footprint stays from every fence leg (no cow pokes
+//   through a rail). stand / graze: the head's neck pivot (cow space, m) and pitch (rad, + = nose down) per pose
+//   (grazing: the muzzle just above the grass); tailTip: the tail's lean back (rad about x).
+//   Every cow holds still when it is off screen or farther than COW_ANIM_FAR m from the camera.
+//   The speeds and sizes of the moves are tunables (COW_* in TUNABLES).
+export const COW = Object.freeze({
+  poses: Object.freeze(['stand', 'graze']), patterns: 3,
+  maxPerHole: 6, fenceClear: 3,
+  stand: Object.freeze({ pivot: Object.freeze([0, 1.1, 0.6]) }),
+  // grazing: the neck drops 0.22 m (the reference's 0.42 put the muzzle 0.17 m into the grass; 0.22 leaves it 0.026 m
+  // above at the deepest munch, tested) and reaches 0.12 m forward; the head tips down 1.15 rad
+  // On a slope the head is raised (liftStep rad at a time, at most maxLift) until every point of the head lower than
+  // lowBand m (cow space) is `clear` m above the ground under it (core/cows.js cowRestPitch).
+  graze: Object.freeze({ pivot: Object.freeze([0, 1.1 - 0.22, 0.6 + 0.12]), pitch: 1.15, lowBand: 0.3, clear: 0.02, liftStep: 0.02, maxLift: 0.6 }),
+  tailTip: -0.12,
+  liftEase: 0.6,                               // s: the grazing head's sine rise / fall when it lifts
+});
 // AP7f: fences, a line of posts and rails laid along a hole's scenery.fences (DESIGN §8b "Fences", core/fences.js,
 // the artist's owner-approved docs/art/fence/SPEC.md). Looks only: no collider, no physics.
 //   obClear: m every leg (+ the look's scaled half thickness) stays outside the OB stakes' box. minLeg: m, the
@@ -617,6 +637,24 @@ export const TUNABLES = Object.freeze({
   FENCE_SCALE:           { def: 1.5,  min: 0.5,   max: 2.5 },
   // AP7g (owner pick 1.3, tee-props SPEC §1; looks only): the event props' drawn size, × each prop's own scale; the placement checks use the default
   EVENT_PROP_SCALE:      { def: 1.3,  min: 0.5,   max: 2 },
+  // AP7i (cow SPEC §5; looks only, read every frame): the cows' head bob and tail swish. Standing: a slow nod of
+  // ±COW_NOD rad every COW_NOD_TIME s. Grazing: a munch dip of COW_MUNCH rad (nose down from the grazing pitch and
+  // back, never into the grass) every COW_MUNCH_TIME s, and every ~COW_LIFT_EVERY s the head lifts COW_LIFT rad for
+  // COW_LIFT_HOLD s. Tail: a swish of ±COW_SWISH rad lasting COW_SWISH_TIME s, then a pause of COW_PAUSE_MIN–COW_PAUSE_MAX s.
+  // COW_ANIM_FAR: m from the camera beyond which a cow holds still. COW_SPEED: × every move's speed (0 = all still).
+  COW_NOD:               { def: 0.1,  min: 0,     max: 0.5 },
+  COW_NOD_TIME:          { def: 4,    min: 0.5,   max: 15 },
+  COW_MUNCH:             { def: 0.18, min: 0,     max: 0.4 },
+  COW_MUNCH_TIME:        { def: 2.5,  min: 0.5,   max: 10 },
+  COW_LIFT:              { def: 0.6,  min: 0,     max: 1.15 },
+  COW_LIFT_HOLD:         { def: 1.5,  min: 0,     max: 6 },
+  COW_LIFT_EVERY:        { def: 10,   min: 3,     max: 60 },
+  COW_SWISH:             { def: 0.45, min: 0,     max: 1 },
+  COW_SWISH_TIME:        { def: 0.8,  min: 0.2,   max: 3 },
+  COW_PAUSE_MIN:         { def: 2,    min: 0,     max: 15 },
+  COW_PAUSE_MAX:         { def: 5,    min: 0,     max: 20 },
+  COW_ANIM_FAR:          { def: 200,  min: 0,     max: 600 },
+  COW_SPEED:             { def: 1,    min: 0,     max: 4 },
   // X43 (owner 2026-11-23: a stylized caustic web on the see-through water; looks only, read when the hole is built):
   // WATER_LINES = the web's strength (0 = no web, only the soft-edged bed), WATER_CELL = the main cells' size in m,
   // WATER_SPEED = × how fast the web moves (0 = still).

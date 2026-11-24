@@ -6,21 +6,25 @@
 //   the tee end; like Three.js rotation.y), scale = the size (the piece's `scale` range in the library, default 1).
 import { BIG_PROPS, TUNABLES } from './config.js';
 import { bigPropShape } from './bigPropShapes.js';
+import { COW_ID, COW_KEYS, cowsFormatError, cowFenceError, cowGroundY, cowRestPitch } from './cows.js';
 
 export const BIG_PROP_KEYS = Object.freeze(['id', 'x', 'z', 'turn', 'scale']);
+// AP7i: a big prop may also say pose / pattern (a cow only: core/cows.js)
+const BIG_PROP_ALL_KEYS = Object.freeze([...BIG_PROP_KEYS, ...COW_KEYS]);
 const isNum = v => typeof v === 'number' && Number.isFinite(v);
 const pickId = p => (typeof p === 'string' ? p : p?.id);
 
-// The format of a hole's scenery.bigProps (validateHole): → an error message or null
-export const bigPropsFormatError = list => placedFormatError(list, 'bigProps');
+// The format of a hole's scenery.bigProps (validateHole), then the cow rules that need no set (AP7i: pose / pattern
+// only on a cow and known, ≤ COW.maxPerHole cows): → an error message or null
+export const bigPropsFormatError = list => placedFormatError(list, 'bigProps', BIG_PROP_ALL_KEYS) ?? cowsFormatError(list);
 // The format of a list of hand-placed props { id, x, z, turn, scale } (scenery.bigProps, AP7g scenery.eventProps)
-export function placedFormatError(list, field) {
+export function placedFormatError(list, field, keys = BIG_PROP_KEYS) {
   if (list === undefined) return null;
   if (!Array.isArray(list)) return `scenery.${field} must be a list of { id, x, z, turn, scale }`;
   for (const [i, p] of list.entries()) {
     const where = `scenery.${field}[${i}]`;
     if (!p || typeof p !== 'object' || typeof p.id !== 'string' || !p.id) return `${where} must be { id, x, z, turn, scale } with a piece id`;
-    for (const k of Object.keys(p)) if (!BIG_PROP_KEYS.includes(k)) return `${where} (${p.id}) has an unknown key "${k}" (known: ${BIG_PROP_KEYS.join(', ')})`;
+    for (const k of Object.keys(p)) if (!keys.includes(k)) return `${where} (${p.id}) has an unknown key "${k}" (known: ${keys.join(', ')})`;
     for (const k of ['x', 'z']) if (!isNum(p[k])) return `${where} (${p.id}).${k} must be a number (got ${p[k]})`;
     for (const k of ['turn', 'scale']) if (p[k] !== undefined && !isNum(p[k])) return `${where} (${p.id}).${k} must be a number (got ${p[k]})`;
   }
@@ -39,9 +43,10 @@ export const footprintOf = p => bigPropShape(p.id).radius * (p.scale ?? 1);
 
 // The placement rules that need the set and the library (src/holes/sets.js checkHoleLooks, readyHole): every id is
 // a library piece that the set offers (its `bigProps`), the scale is in the piece's range, and the footprint stays
-// outside the OB box grown by BIG_PROPS.obClear. list = the props (the hole's scenery.bigProps, or a dev overlay),
-// set = the biome set (as written or resolved). → an error message or null.
-export function bigPropsError(hole, list, set, library) {
+// outside the OB box grown by BIG_PROPS.obClear; AP7i: every cow's footprint stays COW.fenceClear m from every fence
+// leg. list = the props (the hole's scenery.bigProps, or a dev overlay), set = the biome set (as written or resolved),
+// fences = the hole's fences (default its scenery.fences; a dev overlay's with it). → an error message or null.
+export function bigPropsError(hole, list, set, library, fences = hole.scenery?.fences) {
   if (!list?.length) return null;
   const offered = (set.bigProps ?? []).map(pickId), box = obBoxOf(hole.scenery.stakes);
   for (const [i, p] of list.entries()) {
@@ -53,7 +58,7 @@ export function bigPropsError(hole, list, set, library) {
     const r = footprintOf({ ...p, scale: s * piece.size * TUNABLES.BIG_PROP_SCALE.def }), d = toBox(box, p.x, p.z); // at the piece's size × the default BIG_PROP_SCALE, so a placement that would be clipped at runtime fails here
     if (d < r + BIG_PROPS.obClear) return `${where} at (${p.x}, ${p.z}): its footprint (${r.toFixed(1)} m) comes within ${BIG_PROPS.obClear} m of the OB box (it is ${d.toFixed(1)} m from it; needs ${(r + BIG_PROPS.obClear).toFixed(1)})`;
   }
-  return null;
+  return cowFenceError(list, fences, p => footprintOf({ ...p, scale: (p.scale ?? 1) * library.bigProps[p.id].size * TUNABLES.BIG_PROP_SCALE.def }));
 }
 
 // The drawn size (looks only): every prop's scale × its piece's `size` (library.bigProps.<id>.size, the owner's
@@ -79,12 +84,19 @@ export function bigPropsFor(list, offered) {
   return { keep, skipped };
 }
 
+// AP7i: a cow → { id, x, y, z, turn, scale, pose, pattern, pitch (the head's rest pitch: core/cows.js cowRestPitch) }
+function placeCow(p, heightAt) {
+  const q = { id: p.id, x: p.x, z: p.z, turn: p.turn ?? 0, scale: p.scale ?? 1, pose: p.pose ?? 'stand', pattern: p.pattern ?? 0 };
+  q.y = cowGroundY(q, heightAt);
+  return { ...q, pitch: cowRestPitch(q, heightAt) };
+}
 // Each prop dropped onto the terrain: y = the lowest heightAt under its footprint (the centre and BIG_PROPS.drop's
 // rings), so it never floats (a sunk foot is fine). radiusOf = the footprint (AP7g: the event props' own).
 // → [{ id, x, y, z, turn, scale }]
 export function placeBigProps(list, heightAt, radiusOf = footprintOf) {
   const { rings, perRing } = BIG_PROPS.drop;
   return list.map(p => {
+    if (p.id === COW_ID) return placeCow(p, heightAt); // AP7i: a cow stands on its hooves, its grazing head clear of the grass
     const r = radiusOf(p);
     let y = heightAt(p.x, p.z);
     for (const f of rings) for (let k = 0; k < perRing; k++) {

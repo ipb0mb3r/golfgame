@@ -12,7 +12,7 @@ import { SKY_LOOK, HORN_PEAKS_LOOK, HAZE_HILLS_LOOK, OCEAN_LOOK, TREE_LOOK, TREE
 import { treeParts, sceneryTree, isFarTree, treeColours, canopyAspect, canopyDrawRy } from '../core/trees.js';
 import { addSmallProps } from './smallProps.js';
 import { addBigProps } from './bigProps.js';
-import { holeBigProps } from '../holes/dev-big-props.js';
+import { holeBigProps, devBigPropsFences } from '../holes/dev-big-props.js';
 import { bigPropsFor, bigPropsClear, footprintOf, scaleBigProps } from '../core/bigProps.js';
 import { addFences } from './fences.js';
 import { addEventProps } from './eventProps.js';
@@ -137,7 +137,7 @@ export function buildScene(renderer, hole, terrain, painted, obstacles, biome, m
   // AP7f / AP7g: the fences (laid at FENCE_SCALE) and the event props (at EVENT_PROP_SCALE) this set draws, the hole's own
   // plus the dev overlays with ?biome=test-fences / test-event-props: no scenery tree within FENCES.treeClear m of a
   // fence leg, nor within BIG_PROPS.treeClear m of an event prop's footprint or in its sight corridor to the tee
-  const fenceAsked = holeFences(hole, biome.id), eventAsked = scaleEventProps(holeEventProps(hole, biome.id), TUNE.EVENT_PROP_SCALE);
+  const fenceAsked = [...holeFences(hole, biome.id), ...devBigPropsFences(hole, biome.id)], eventAsked = scaleEventProps(holeEventProps(hole, biome.id), TUNE.EVENT_PROP_SCALE);
   const eventKept = bigPropsFor(eventAsked, biome.eventProps).keep;
   const treeFree = allOf([bigPropsClear(bigKept, BIG_PROPS.treeClear, hole.tee), fencesClear(bigPropsFor(fenceAsked, biome.fences).keep, FENCES.treeClear),
     eventPropsClear(eventKept, BIG_PROPS.treeClear, hole.tee)]);
