@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { FENCES, TUNABLES } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
-import { validateBiomeSet, pieceColours } from '../src/core/biome.js';
+import { validateBiomeSet, pieceColours, paletteColour, pickId } from '../src/core/biome.js';
 import { validateHole } from '../src/core/validate.js';
 import { fenceShape, FENCE_PIECES } from '../src/core/fenceShapes.js';
 import { fencesFormatError, fencesError, fencesSetError, fenceLength, postSpots, layFence, fencesClear, segmentToBox } from '../src/core/fences.js';
@@ -32,9 +32,9 @@ test('library: railFence and ropeFence with tris / spacing / slots / desc; each 
   }
   assert.equal(fenceShape('railFence').tris, 36); assert.equal(fenceShape('ropeFence').tris, 63);   // SPEC §1
   assert.deepEqual([LIBRARY.fences.railFence.spacing, LIBRARY.fences.ropeFence.spacing], [3, 2.6]);
-  // SPEC §3: trunk → wood (rail fence), trunk → bank + lip → propSnow (rope fence)
-  assert.deepEqual(LIBRARY.fences.railFence.slots, { post: 'trunk', postTop: 'wood', rail: 'trunk', railTop: 'wood' });
-  assert.deepEqual(LIBRARY.fences.ropeFence.slots, { post: 'trunk', postTop: 'bank', rope: 'lip', ropeTop: 'propSnow' });
+  // SPEC §3 / §3b (X50): propWoodDark → propWood (rail fence), propWoodDark → bank + lip → propSnow (rope fence)
+  assert.deepEqual(LIBRARY.fences.railFence.slots, { post: 'propWoodDark', postTop: 'propWood', rail: 'propWoodDark', railTop: 'propWood' });
+  assert.deepEqual(LIBRARY.fences.ropeFence.slots, { post: 'propWoodDark', postTop: 'bank', rope: 'lip', ropeTop: 'propSnow' });
 });
 
 test('the shapes are the artist\'s pieces.js (A → railFence, I2 → ropeFence): same vertices and triangles', () => {
@@ -107,7 +107,7 @@ test('segmentToBox: 0 across or inside the box, else the true distance', () => {
 
 test('the set\'s optional fences list: offered ids only; the real sets are untouched (no list = none)', () => {
   assert.equal(fencesSetError([{ id: 'railFence', points: [] }], BIOMES[DEV_FENCES_SET]), null);
-  assert.match(fencesSetError([{ id: 'ropeFence', points: [] }], BIOMES['meadow-day']), /biome set "meadow-day" does not offer it \(its fences: none\)/);
+  assert.match(fencesSetError([{ id: 'ropeFence', points: [] }], BIOMES['proto-default']), /biome set "proto-default" does not offer it \(its fences: none\)/);
   const set = { ...BIOMES['meadow-day'], id: 'x', fences: ['railFence'] };
   assert.match(fencesSetError([{ id: 'ropeFence' }], set), /its fences: railFence/);
   // validateBiomeSet: the list is optional; unknown pieces and bad slot overrides fail; an X33 override works
@@ -119,18 +119,21 @@ test('the set\'s optional fences list: offered ids only; the real sets are untou
   const white = { ...set, fences: [{ id: 'railFence', slots: { rail: 'propSnow', railTop: 'propSnow' } }] };
   assert.doesNotThrow(() => validateBiomeSet(white, LIBRARY));
   const look = pieceColours(white, LIBRARY)('fences', 'railFence');
-  assert.deepEqual(look, { post: set.palette.trunk, postTop: set.palette.wood, rail: set.palette.propSnow, railTop: set.palette.propSnow });
-  // resolved: ids; a set without the list has none
+  assert.deepEqual(look, { post: paletteColour(set.palette, 'propWoodDark'), postTop: paletteColour(set.palette, 'propWood'), rail: set.palette.propSnow, railTop: set.palette.propSnow });
+  // resolved: ids; a set without the list has none. The real sets may or may not have a list yet (the artist
+  // writes them, X51): none = undefined, else only library fences, read the same once resolved
   assert.deepEqual(resolveBiome(DEV_FENCES_SET).fences, ['railFence', 'ropeFence']);
   for (const id of ['meadow-day', 'alpine-day', 'island-day', 'mtn-default', 'proto-default']) {
-    assert.equal(BIOMES[id].fences, undefined, id);
-    assert.equal(resolveBiome(id).fences, undefined, id); // none (the game reads ?? [])
+    const list = BIOMES[id].fences;
+    assert.deepEqual(resolveBiome(id).fences, list?.map(pickId), id);
+    for (const p of list ?? []) assert.ok(LIBRARY.fences[pickId(p)], `${id}: ${pickId(p)}`);
   }
+  assert.equal(BIOMES['proto-default'].fences, undefined); assert.equal(BIOMES['mtn-default'].fences, undefined);
 });
 
 test('checkHoleLooks (readyHole) fails a hole whose set does not offer its fence; real holes have none', () => {
-  const h = { ...withFences(DEV_FENCES['mtn-07']), biome: 'meadow-day' };
-  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.fences\[0\] \(railFence\): biome set "meadow-day" does not offer it/);
+  const h = { ...withFences(DEV_FENCES['mtn-07']), biome: 'proto-default' };
+  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.fences\[0\] \(railFence\): biome set "proto-default" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_FENCES_SET }));
   for (const hole of Object.values(HOLES)) assert.equal(hole.scenery.fences, undefined, hole.id);
 });
@@ -215,6 +218,6 @@ test('the dev overlay: only with test-fences, both looks beyond OB on mtn-07, ~6
   assert.ok(Math.max(...hs) - Math.min(...hs) > 2);
   // the dev set is meadow-day plus both looks, nothing else changed
   const { id, name, description, fences, ...rest } = BIOMES[DEV_FENCES_SET];
-  const { id: _i, name: _n, description: _d, ...meadow } = BIOMES['meadow-day'];
+  const { id: _i, name: _n, description: _d, fences: _f, ...meadow } = BIOMES['meadow-day']; // meadow's own list (if any) is the artist's
   assert.deepEqual(rest, meadow); assert.deepEqual(fences, ['railFence', 'ropeFence']);
 });

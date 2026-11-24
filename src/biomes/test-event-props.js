@@ -9,6 +9,6 @@ export default {
   ...meadowDay,
   id: 'test-event-props',
   name: 'Test: event props (AP7g)',
-  description: 'Dev only (AP7g): Meadow (day) offering the feather flag and the pop-up tent. Never in a menu or on a hole: ?hole=pl-01&biome=test-event-props dresses the tee, the side of the hole and the back of the green.',
-  eventProps: ['featherFlag', 'popupTent'],
+  description: 'Dev only (AP7g): Meadow (day) offering the feather flag, the pop-up tent and the park bench. Never in a menu or on a hole: ?hole=pl-01&biome=test-event-props dresses the tee, the side of the hole and the back of the green.',
+  eventProps: ['featherFlag', 'popupTent', 'parkBench'],
 };

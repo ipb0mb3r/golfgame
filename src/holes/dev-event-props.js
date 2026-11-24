@@ -14,6 +14,8 @@ export const DEV_EVENT_PROPS = Object.freeze({
     Object.freeze({ id: 'featherFlag', x: 6.3, z: -2.8, turn: -0.35 }),
     Object.freeze({ id: 'featherFlag', x: -6.3, z: -2.8, turn: 0.35 }),
     Object.freeze({ id: 'featherFlag', x: 7, z: 7, turn: -0.6 }),
+    // a park bench behind the tee box on the right, seat toward the tee box (AP7h)
+    Object.freeze({ id: 'parkBench', x: 7.5, z: 3.5, turn: -1.57 }),
     // the side of the course: a tent beyond the left OB line (its footprint 5 m clear of the rough), front toward the fairway
     Object.freeze({ id: 'popupTent', x: -64, z: -70, turn: 1.57 }),
     // two flags behind the green, framing the hole flag in the approach view (≥ 8 m from the green's edge)
