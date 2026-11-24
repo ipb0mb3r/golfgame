@@ -4,7 +4,7 @@
 // from the shared library (src/biomes/library.js). No inheritance: every set names all its pieces and
 // all its colours. Physics never comes from a biome set (surfaces.js and the hole data keep it).
 // Pure: no Three.js, no DOM (coding rule 1). The game reads the set; this file only checks it.
-import { UI_COLORS, MINIMAP_DARKEN } from './config.js';
+import { UI_COLORS, MINIMAP_DARKEN, DEEP_ROUGH_DARKEN } from './config.js';
 import { createRng } from './rng.js';
 import { modelPieceError } from './assets.js';
 import { parseSeaSide } from './backdrop.js';
@@ -32,14 +32,21 @@ export const PALETTE_KEYS = Object.freeze({
 // apart from the trees' trunks and the chalets' wood: `propWood` → `wood` (the light top), `propWoodDark` → `trunk`.
 // AP7i: a fallback may instead be a fixed colour '#rrggbb' (no palette key is near-black or pink): the cow's coat,
 // patches and muzzle (docs/art/cow/SPEC.md §3), the same in every set that leaves them out.
-export const OPTIONAL_PALETTE_KEYS = Object.freeze({ propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b' });
+// S24: or a colour derived from another key, { from: '<key>', darken: k } (each RGB channel × (1 − k)): `roughDeep` = the
+// deep-rough SURFACE (in play, the 'deepRough' surface id), apart from `deepRough`, which is the ground beyond OB
+// (an older name). No set defines it today: it is the set's rough one fixed DEEP_ROUGH_DARKEN step darker.
+export const OPTIONAL_PALETTE_KEYS = Object.freeze({ propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b',
+  roughDeep: Object.freeze({ from: 'rough', darken: DEEP_ROUGH_DARKEN }) });
 export const ALL_PALETTE_KEYS = Object.freeze([...Object.values(PALETTE_KEYS).flat(), ...Object.keys(OPTIONAL_PALETTE_KEYS)]);
 // A palette's colour for a key, through the fallback of an optional key the set leaves out (a key or a fixed colour)
 export const paletteColour = (palette, key) => {
   if (palette[key] !== undefined || !Object.hasOwn(OPTIONAL_PALETTE_KEYS, key)) return palette[key];
   const fb = OPTIONAL_PALETTE_KEYS[key];
+  if (typeof fb === 'object') return palette[fb.from] === undefined ? undefined : darken(palette[fb.from], fb.darken);
   return fb.startsWith('#') ? fb : palette[fb];
 };
+// S24: the palette with every optional key it leaves out filled in from its fallback (what the course painter reads)
+export const fullPalette = palette => ({ ...palette, ...Object.fromEntries(Object.keys(OPTIONAL_PALETTE_KEYS).filter(k => !Object.hasOwn(palette, k)).map(k => [k, paletteColour(palette, k)])) });
 
 // The pick-list fields of a set and the library group each one picks from (src/biomes/library.js)
 export const PICKS = Object.freeze({
@@ -98,6 +105,10 @@ export const READABILITY = Object.freeze([
   ['green/rough', 'green', 'rough', 20, 10],
   ['sand/fairway', 'sand', 'fairway', 20, 10],
   ['sand/rough', 'sand', 'rough', 30, 15],
+  // S24: deep rough reads apart from the rough and the fairway (the fairway/rough thresholds) and from the ground beyond OB
+  ['roughDeep/rough', 'roughDeep', 'rough', 15, 8],
+  ['roughDeep/fairway', 'roughDeep', 'fairway', 15, 8],
+  ['roughDeep/ob', 'roughDeep', 'deepRough', 10, 5],
   ['water/fairway', 'water', 'fairway', 30, 0],
   ['water/rough', 'water', 'rough', 25, 0],
   ['water/green', 'water', 'green', 30, 0],
@@ -123,7 +134,7 @@ export const MINIMAP_READABILITY = Object.freeze([
   ['minimapRock/fairway', 'rock', 'fairway', 15, 8],
   ['minimapRock/rough', 'rock', 'rough', 15, 8],
 ]);
-const darken = (c, k) => '#' + parseColour(c).map(v => Math.round(v * (1 - k)).toString(16).padStart(2, '0')).join('');
+function darken(c, k) { return '#' + parseColour(c).map(v => Math.round(v * (1 - k)).toString(16).padStart(2, '0')).join(''); }
 const minimapRows = (palette, kind, c, look) => MINIMAP_READABILITY.filter(r => r[1] === kind).map(([id, , b, minE, minL]) => {
   const d = delta(c, colourOf(palette, b));
   return { id, look, a: c, b, dE: d.dE, dL: d.dL, minE, minL, ok: d.dE >= minE && d.dL >= minL };

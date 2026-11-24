@@ -315,6 +315,9 @@ export function createMinimap(hole, courseCanvas, cup, obstacles, biome, shore =
     const r = Math.max(1.5, (o.type === 'tree' ? o.canopy.rx : o.r) * sx);
     bctx.fillStyle = o.type === 'tree' ? colours.trees[looks.get(o)] : colours.rock;
     bctx.beginPath(); bctx.arc(px, pz, r, 0, 7); bctx.fill();
+    // S24: on deep rough (darker than the rough) a tree's or boulder's dot gets a thin ring in the rough's colour,
+    // which the minimap rules already keep apart from it (X26: minimapTree/rough, minimapRock/rough)
+    if (hole.surfaceAt?.(o.x, o.z) === 'deepRough') { bctx.strokeStyle = biome.palette.rough; bctx.lineWidth = 1.5; bctx.stroke(); }
   }
   // marks = play.aimMarks() (S22): for a full shot the line ends in a triangle, with ticks at 25/50/75%
   return function draw(ball, target, warn = null, marks = null) {

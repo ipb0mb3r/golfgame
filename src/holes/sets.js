@@ -17,6 +17,8 @@ import mtn09 from './mtn-09.js';
 import mdw01 from './mdw-01.js';
 import mdw02 from './mdw-02.js';
 import mdw03 from './mdw-03.js';
+// S24: dev only, the deep-rough practice spot (in no set or menu)
+import devDeepRough from './dev-deep-rough.js';
 import { validateHole } from '../core/validate.js';
 import { resolveBiome } from '../biomes/index.js';
 import { LIBRARY } from '../biomes/library.js';
@@ -31,6 +33,9 @@ export const MDW = [mdw01, mdw02, mdw03];
 // a page only pays for the holes it plays. node --test checks every hole in full (tests/validate.test.js).
 export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN, ...MDW].map(h => [h.id, h]));
 export const DEFAULT_HOLE = hole1.id;
+// S24: dev-only holes, played by ?hole=<id> or a dev test spot only: not in HOLES, so no set, menu or
+// every-hole check lists them (tests/deep-rough.test.js checks them).
+export const DEV_HOLES = Object.fromEntries([devDeepRough].map(h => [h.id, h]));
 
 // A set (course) is a playlist of hole ids of ANY length, and the same hole may appear in several
 // sets or several times in one (owner rule, DESIGN §8). ?set=<id> plays it as a round (Phase 6).
@@ -61,7 +66,8 @@ for (const s of SETS) {
 export function resolveHole(id) {
   const key = (id ?? '').trim().toLowerCase();
   if (!key) return { hole: HOLES[DEFAULT_HOLE], unknown: false };
-  return Object.hasOwn(HOLES, key) ? { hole: HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
+  if (Object.hasOwn(HOLES, key)) return { hole: HOLES[key], unknown: false };
+  return Object.hasOwn(DEV_HOLES, key) ? { hole: DEV_HOLES[key], unknown: false } : { hole: HOLES[DEFAULT_HOLE], unknown: true };
 }
 export const getHole = id => resolveHole(id).hole;
 

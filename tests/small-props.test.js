@@ -108,7 +108,7 @@ test('AP7c: the smallProps format: a bare id = weight 1, weights, clusters; { pi
   assert.throws(v({ pieces: ['grassTuft'], perHa: 99999, on: ['rough'] }), /smallProps\.perHa must be a number 0–4000/);
   assert.throws(v({ pieces: ['grassTuft'], perHa: 10, on: [] }), /smallProps\.on must list the surfaces/);
   // never on the course itself, whatever `on` says
-  for (const s of ['tee', 'fairway', 'fringe', 'green', 'sand', 'water', 'rock']) assert.throws(v({ pieces: ['grassTuft'], perHa: 10, on: ['rough', s] }), new RegExp(`smallProps\\.on: props may only stand on rough, ob \\(never on "${s}"\\)`));
+  for (const s of ['tee', 'fairway', 'fringe', 'green', 'sand', 'water', 'rock']) assert.throws(v({ pieces: ['grassTuft'], perHa: 10, on: ['rough', s] }), new RegExp(`smallProps\\.on: props may only stand on rough, ob, deepRough \\(never on "${s}"\\)`));
   assert.throws(v({ pieces: [], density: 3 }), /smallProps has an unknown key "density"/);
   // the same piece may be picked twice (two colourings); each pick has its own colours
   const two = withChange({ smallProps: { pieces: [{ id: 'flowerPatch', slots: { petal: 'propA' } }, { id: 'flowerPatch', slots: { petal: 'propB' } }], ...ok } });
@@ -320,7 +320,7 @@ test('AP7d: a pick carries its own perHa, on, cluster range; the rule validates 
   assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100, on: ['rough'], cluster: { count: [0, 2], radius: 1 } }] }), /cluster\.count must be/);
   assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 99999, on: ['rough'] }] }), /pieces\[0\]\.perHa must be a number 0–4000/);
   assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100 }] }), /smallProps\.on must list the surfaces/);
-  assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100, on: ['rough', 'fairway'] }] }), /pieces\[0\]\.on: props may only stand on rough, ob \(never on "fairway"\)/);
+  assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100, on: ['rough', 'fairway'] }] }), /pieces\[0\]\.on: props may only stand on rough, ob, deepRough \(never on "fairway"\)/);
   assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100, on: [] }] }), /pieces\[0\]\.on must list the surfaces/);
   // a pick without its own density still needs the set's perHa and on
   assert.throws(v({ pieces: [{ id: 'grassTuft', perHa: 100, on: ['rough'] }, 'flowerPatch'] }), /smallProps\.perHa must be a number 0–4000/);
