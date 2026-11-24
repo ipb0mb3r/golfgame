@@ -128,9 +128,9 @@ if (q.get('poses')) {
   }
 } else for (const [opt, sc] of rowsOf()) {
   const look = COWS[opt], views = q.get('far') === '0' ? ['close'] : q.get('far') === 'only' ? ['far'] : ['close', 'far'];
-  if (views.length === 1) NC = 1;
+  if (views.length === 1 || q.get('cols') === '1') NC = 1;
   for (const view of views) {
-    panels.push({ scene: view === 'close' ? closeUp(look, sc) : pasture(look, sc), view, cam: view === 'close' ? (NC === 1 ? [[1.5 * sc + 0.8, 0.85 * sc + 0.5, 3.0 * sc + 1.0], [0.75 * sc, 0.8 * sc, -1.0 * sc]] : [[2.6 * sc + 1.6, 1.3 * sc + 0.7, 4.6 * sc + 2.2], [0.2, 0.75 * sc, -0.6 * sc]]) : FAR,
+    panels.push({ scene: view === 'close' ? closeUp(look, sc) : pasture(look, sc), view, cam: view === 'close' ? (q.get('cols') === '1' ? [[2.3 * sc + 1, 1.0 * sc + 0.6, 4.8 * sc + 1.4], [0.6 * sc, 0.7 * sc, -1.0 * sc]] : NC === 1 ? [[1.5 * sc + 0.8, 0.85 * sc + 0.5, 3.0 * sc + 1.0], [0.75 * sc, 0.8 * sc, -1.0 * sc]] : [[2.6 * sc + 1.6, 1.3 * sc + 0.7, 4.6 * sc + 2.2], [0.2, 0.75 * sc, -0.6 * sc]]) : FAR,
       tag: (view === 'close' || NC === 1) ? `${q.get('scales') ? look.name.split(' · ')[0] + ' at ' + sc + '×' : look.name + ' at ' + sc + '×'}<small>${q.get('scales') ? (look.size.split(', ')[1]) + ' at 1× · ' : look.sub + ' · '}${tris(look.build())} triangles</small>` : '',
       row: view === 'close' ? 'close-up, 1.8 m golfer' : 'a herd of 4 in its pasture, seen from the rough (~35 m)' });
   }
