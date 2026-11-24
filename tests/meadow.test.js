@@ -146,3 +146,13 @@ test('mdw-06: downhill; at the flag holds the green, a miss left stays dry', () 
   assert.equal(shot(startAt(h), { at: { x: 12, z: -174 } }).surface, 'green');
   assert.notEqual(shot(startAt(h), { at: { x: -30, z: -178 } }).ev, 'penalty');
 });
+
+// S24 deep rough (owner, 2026-11-24): on mdw-02's left, too far from the fairway is a punch-out; the brave gap stays open
+test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the brave gap and the fairway stay clear of it', () => {
+  const h = HOLES['mdw-02'];
+  assert.equal(shot(startAt(h), { at: { x: -50, z: -190 }, club: 'driver', power: 1 }).surface, 'deepRough');
+  assert.equal(shot(startAt(h), { at: { x: -42, z: -250 }, club: 'driver', power: 1 }).surface, 'fairway');
+  for (let z = -40; z >= -240; z -= 10) for (let x = -40; x <= 30; x += 2) if (h.surfaceAt(x, z) === 'deepRough') {
+    assert.ok(Math.hypot(x - -42, z - -250) > 20 || z < -230, `deep rough at (${x}, ${z}) in the brave landing`);
+  }
+});

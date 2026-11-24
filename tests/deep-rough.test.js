@@ -159,8 +159,8 @@ test('S24: the hole data format (deepRoughs: blobs and strips), painted over fai
   for (const bad of [{}, { pts: [{ x: 0, z: 0 }] }, { pts: [{ x: 0, z: 0 }, { x: 1, z: 1 }], w: -1 }, { cx: 0, cz: 0, rx: 0, rz: 3 }]) {
     assert.throws(() => makeMtnHole({ ...spec, deepRoughs: [bad] }).surfaceAt(0, 0), /hole "x-dr": deepRoughs\[0\] must be a blob/);
   }
-  // no real hole uses it yet
-  for (const hole of Object.values(HOLES)) assert.ok(!(hole.features.deepRoughs ?? []).length, hole.id);
+  // the first real use is Buttercup Meadows (mdw-02, owner 2026-11-24); no other course uses it yet
+  for (const hole of Object.values(HOLES)) if (!hole.id.startsWith('mdw-')) assert.ok(!(hole.features.deepRoughs ?? []).length, hole.id);
 });
 
 test('S24: validateHole accepts deep rough, its surfaceOverrides and a scenario on it; the dev practice spot', () => {

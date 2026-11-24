@@ -42,6 +42,9 @@ export default makeMdwHole({
     { cx: -58, cz: -315, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },
     { cx: -107, cz: -306, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 },
   ],
+  // S24 deep rough (owner): a band along the left of the clearing, beyond a strip of normal rough next to the fairway.
+  // Stray too far left of the fairway (or hook the brave drive) and the next shot is a punch-out.
+  deepRoughs: [{ pts: [{ x: -25, z: -40 }, { x: -28, z: -90 }, { x: -33, z: -135 }, { x: -44, z: -165 }, { x: -58, z: -195 }, { x: -66, z: -225 }, { x: -78, z: -250 }], w: 7 }],
   ob: { x0: -140, x1: 52, z0: -348, z1: 26 },
   // trees in play: clumps along the clearing's edge
   forest: { size: [1.0, 1.6], seed: 102, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false, clear: [{ pts: [{ x: 0, z: 0 }, { x: -45, z: -250 }], w: 9 }] },
