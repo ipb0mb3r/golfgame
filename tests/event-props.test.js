@@ -172,7 +172,7 @@ test('the set\'s optional eventProps list; checkHoleLooks fails a hole whose set
   assert.throws(() => checkHoleLooks(h), /hole "pl-01": scenery\.eventProps\[0\] \(popupTent\): biome set "proto-default" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_EVENT_PROPS_SET }));
   assert.doesNotThrow(() => validateHole(h, { shots: false }));
-  for (const hole of Object.values(HOLES)) assert.equal(hole.scenery.eventProps, undefined, hole.id);
+  for (const hole of Object.values(HOLES)) assert.doesNotThrow(() => checkHoleLooks(hole), hole.id); // Buttercup Meadows dresses its first tees
 });
 
 test('EVENT_PROP_SCALE: a tunable, default 1.3; the drawn props are scaled and dropped on the lowest ground', () => {

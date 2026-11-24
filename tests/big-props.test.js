@@ -107,8 +107,8 @@ test('checkHoleLooks (readyHole) fails a hole whose set does not offer its prop;
   const h = { ...mtn07, id: 'mtn-07', biome: 'meadow-day', scenery: { ...mtn07.scenery, bigProps: [{ id: 'chalet', x: 150, z: -150 }] } };
   assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.bigProps\[0\] \(chalet\): biome set "meadow-day" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_BIG_PROPS_SET }));
-  // every real hole today places none, and passes
-  for (const hole of Object.values(HOLES)) { assert.equal(hole.scenery.bigProps, undefined, hole.id); assert.doesNotThrow(() => checkHoleLooks(hole)); }
+  // every real hole passes (the Buttercup Meadows holes place windmills, docs/COURSE_PLAN_MEADOW.md)
+  for (const hole of Object.values(HOLES)) assert.doesNotThrow(() => checkHoleLooks(hole), hole.id);
 });
 
 test('?biome= override to a set without the prop: the prop is skipped, never an error', () => {

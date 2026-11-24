@@ -131,11 +131,11 @@ test('the set\'s optional fences list: offered ids only; the real sets are untou
   assert.equal(BIOMES['proto-default'].fences, undefined); assert.equal(BIOMES['mtn-default'].fences, undefined);
 });
 
-test('checkHoleLooks (readyHole) fails a hole whose set does not offer its fence; real holes have none', () => {
+test('checkHoleLooks (readyHole) fails a hole whose set does not offer its fence; every real hole passes', () => {
   const h = { ...withFences(DEV_FENCES['mtn-07']), biome: 'proto-default' };
   assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.fences\[0\] \(railFence\): biome set "proto-default" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_FENCES_SET }));
-  for (const hole of Object.values(HOLES)) assert.equal(hole.scenery.fences, undefined, hole.id);
+  for (const hole of Object.values(HOLES)) assert.doesNotThrow(() => checkHoleLooks(hole), hole.id); // Buttercup Meadows places rail fences
 });
 
 test('layout: a post on every point, equal spans ≤ spacing × scale per leg', () => {
