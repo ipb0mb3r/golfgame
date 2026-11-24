@@ -63,6 +63,7 @@ Stay inside the task IDs you are given; list unrelated issues at the end of your
 Budget: <TIME> (see "Budgets" in docs/AGENT_PROMPTS.md). Work in priority order. If you will go over,
 stop and report what's done and what's left instead of continuing. If the same thing fails 3 times, stop and report it.
 Sign your work: end every PR description, report and PR comment with the line "— Agent: <your agent name>" (e.g. "— Agent: dev").
+Save tokens (owner, 2026-11-24): at most 1–2 screenshots per PR, only what the owner needs to decide (QA: only for bugs); don't re-open images; don't message the PM when a PR is up (the owner tells the PM); keep PR text short.
 ```
 
 ---

@@ -137,6 +137,14 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Fewer screenshots in PM reviews:** look at one key before/after, not every image.
 - Agent costs seen: dev 150k–260k tokens per task, QA 40k–80k.
 
+**Owner token rules (2026-11-24, always apply):**
+- **No pings to the PM.** The artist, course designer and UI designer open their PR and stop; they do not `send_message` the PM. Every message wakes the PM on its whole long history.
+- **Art / course / UI PRs (data and docs only): the owner merges them himself**, no PM review. The PM reviews dev PRs (game code) only, or any PR the owner asks about.
+- **Screenshots: at most 1–2 per PR**, only what the owner needs to decide. QA: none unless there's a bug. The PM doesn't open images unless the owner asks.
+- **Short PR comments, only to record a decision.**
+- **Start a fresh PM session as soon as one gets long** (this playbook is the handoff).
+- Agent costs seen 2026-11-24: dev 165k–310k, QA 40k–60k.
+
 **Lessons from the 2026-11-18/19 session (keep doing this):**
 - **Fresh agent per task.** Don't keep resuming one dev for many tweaks: its history grows (one reached ~440k tokens) and every resume reloads it, which is slow and burns the 5-hour usage limit. My prompts stand alone; small follow-ups can go to a fresh dev too.
 - **Pin owner links to the full commit SHA** (`https://raw.githack.com/ipb0mb3r/golfgame/<sha>/index.html?...`). Branch links are cached by raw.githack and showed old versions several times.
