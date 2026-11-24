@@ -33,7 +33,7 @@ Flat-shaded toon (3-band ramp), fogged like the scenery.
 ## 3. Material slots → palette keys (owner: "their colour follows the accents of the biome palette")
 | Piece | Slot | Palette key | Meadow / Alpine / Island |
 |---|---|---|---|
-| featherFlag | body | `accent` | brick red / Swiss red / tropical orange |
+| featherFlag | body | `accent` → **`subAccent` in every set** (see below) | brick red / Swiss red / tropical orange |
 | | top | `subAccent` | buttercup / alpine gold / magenta |
 | | stripe, pole | `propSnow` | cream / white / white |
 | | base | `rock` | |
@@ -41,7 +41,9 @@ Flat-shaded toon (3-band ramp), fogged like the scenery.
 | | valance | `subAccent` | |
 | | leg | `propSnow` | |
 
-`accent` is the hole flag's colour and `subAccent` the tee markers', so the dressing always matches the course. A pick can swap slots (X33), e.g. a white tent with an accent valance: `{ id: 'popupTent', slots: { roof: 'propSnow', valance: 'accent' } }`.
+`accent` is the hole flag's colour and `subAccent` the tee markers', so the dressing always matches the course.
+
+**Flag colours swapped (owner, 2026-11-24):** a big accent-coloured banner behind the green read as a second hole flag (QA on #137). So every set lists the flag with its body and top swapped: **body = `subAccent`, top = `accent`**; the stripe and pole stay `propSnow`. In the set: `{ id: 'featherFlag', slots: { body: 'subAccent', top: 'accent' } }`. The library default stays as above. A pick can swap slots (X33), e.g. a white tent with an accent valance: `{ id: 'popupTent', slots: { roof: 'propSnow', valance: 'accent' } }`.
 
 ## 4. Placement (course designer)
 Hand-placed, like the big props, but **near the tee**:
@@ -50,18 +52,18 @@ Hand-placed, like the big props, but **near the tee**:
 scenery: {
   eventProps: [
     { id: 'popupTent',   x: -9,  z: 25, turn: 1.2 },     // beside and behind the tee, front toward the tee box
-    { id: 'featherFlag', x: 5.2, z: 15.5, turn: -0.35 },  // at the tee box's side
-    { id: 'featherFlag', x: 6,   z: 27,   turn: -0.6 },   // behind
+    { id: 'featherFlag', x: 6.3, z: 17.2, turn: -0.35 },  // at the tee box's front corner side
+    { id: 'featherFlag', x: 6.5, z: 27,   turn: -0.6 },   // behind
   ],
 }
 ```
-(x, z relative to the hole like other scenery; the example's tee is at (0, 20) and the hole plays toward −z.)
+(x, z relative to the hole like other scenery; the example's tee is at (0, 20) with a 7 × 9 m tee box (x ±3.5, z 15.5–24.5), and the hole plays toward −z. Every distance below is measured from the prop's **scaled footprint**, not its centre: at 1.3× a flag's footprint is ~1.0 m across the middle, a tent's ~2.9 m. So a flag's centre stands ≥ 2.5 m from the tee box edge and ≤ 3 m ahead of the tee.)
 
 - **Where (owner): three zones.** Every spot is **outside play**: the ball never has to fly or roll through a prop. A ball that rolls through one by bad luck is acceptable (no collider), but placements must make that rare.
   1. **The tee (main zone):** behind the tee and at its sides, never in front of the tee box toward the fairway.
      - **Keep the camera's spot clear:** nothing within 4 m either side of the aim line from the tee to 12 m behind it, because the aim camera sits 7 m behind the ball and turns as the player aims.
      - Not on the tee box itself (≥ 1.5 m from its edge).
-     - Flags 4–8 m to the side of the tee centre, up to 4 m ahead of the tee line (at the tee box's front corners) or behind it. The tent 6–12 m to the side, level with or behind the tee. Turn the fronts toward the tee box.
+     - Flags 6–9 m to the side of the tee centre (footprint ≥ 1.5 m from the tee box), no part more than 4 m ahead of the tee (the front corners) or behind it. The tent 6–12 m to the side, level with or behind the tee. Turn the fronts toward the tee box.
   2. **The side of the course (owner):** a tent or a few flags along a hole, so they never stand where a normal shot lands. Good spots: by a landing area seen from the tee, at a dogleg, on a slope above the fairway. Turn them toward the fairway.
      - **featherFlag:** at the outer edge of the rough or beyond OB.
      - **popupTent (owner: "not too close to the playing area"):** never in the rough. Fully outside play: beyond OB, or with its whole scaled footprint at least **5 m outside the rough's outer edge**. (Tents at the tee follow zone 1.)

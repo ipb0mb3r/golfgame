@@ -47,6 +47,10 @@ export default {
       { id: 'reeds', perTenM: 1.5, cluster: { count: [2, 3], radius: 1.2 }, on: ['waterEdge'] },
     ],
   },
-  bigProps: ['windmill'],     // the white smock mill (docs/art/big-props/SPEC.md); placed by hand beyond OB, high on a hill (course designer). Later: cow, fence
+  bigProps: ['windmill'],     // the white smock mill (docs/art/big-props/SPEC.md); placed by hand beyond OB, high on a hill (course designer). Later: cow
+  fences: ['railFence'],      // post & two rails (docs/art/fence/SPEC.md), along OB or around a pasture; look only
+  // a "tournament" set (owner 2026-11-24): feather flags (colours swapped so they never read as a hole flag) and tents
+  // at the tee, along the course and near the green (docs/art/tee-props/SPEC.md §4)
+  eventProps: [{ id: 'featherFlag', slots: { body: 'subAccent', top: 'accent' } }, 'popupTent'],
   notes: 'The default, classic theme: gentle open holes, wide fairways, plenty of trees along the fairways and a few in play, ponds, cream bunkers. Big props out of bounds: 1-3 windmills on the hills, a few cows grazing behind a wooden fence (never in play, no barns). Suggested weather: clear, light to medium wind.',
 };
