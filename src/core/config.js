@@ -294,6 +294,8 @@ export const GROUND_LOOK = Object.freeze({
     edge:      Object.freeze({ base: 0.98, speck: 0.04, dab: 0 }),
     green:     Object.freeze({ base: 0.99, speck: 0.025, dab: 0 }),
     rough:     Object.freeze({ base: 0.9, patch: Object.freeze([0.1, 22]), speck: 0.05, dab: 0.05 }),
+    // S24: deep rough, a denser grass than the rough: tighter patches, about twice the speckle and the dabs (≤ MASK_AMOUNT 0.1)
+    deepRough: Object.freeze({ base: 0.92, patch: Object.freeze([0.12, 9]), speck: 0.09, dab: 0.1 }),
     ob:        Object.freeze({ base: 0.88, patch: Object.freeze([0.12, 28]), speck: 0.05, dab: 0.06 }),
     sand:      Object.freeze({ base: 0.98, patch: Object.freeze([0.02, 3]), speck: 0.05, dab: 0 }),
     lip:       Object.freeze({ base: 0.96, speck: 0.06, dab: 0 }),
@@ -364,7 +366,7 @@ export const WATER_LOOK = Object.freeze({
 //   scale: per-copy size [from, spread] (seeded, the scatter's own stream; each copy also gets a random turn).
 export const SMALL_PROPS = Object.freeze({
   seed: 61,
-  surfaces: Object.freeze(['rough', 'ob']),   // the ground a prop may stand on (a pick's `on`)
+  surfaces: Object.freeze(['rough', 'ob', 'deepRough']), // the ground a prop may stand on (a pick's `on`; S24: deep rough too)
   waterEdge: 'waterEdge',                      // AP7d: the extra `on` name of a shore pick (reeds): land beside water (below)
   maxPerHa: 4000, maxProps: 20000, maxPerTenM: 20,
   cluster: Object.freeze({ maxCount: 30, maxRadius: 8 }),
@@ -375,7 +377,7 @@ export const SMALL_PROPS = Object.freeze({
   areaStep: 2,                                 // m, the grid that measures a pick's surfaces (per-pick perHa)
   // AP7d: the water-edge surface. A shore patch's centre stands on land `reach` m or less outside the water's
   // edge; `step` m is the grid that finds the shoreline (each boundary point stands for `step` m of it).
-  shore: Object.freeze({ reach: 1, step: 0.5, coarse: 2, land: Object.freeze(['rough', 'ob']) }),
+  shore: Object.freeze({ reach: 1, step: 0.5, coarse: 2, land: Object.freeze(['rough', 'ob', 'deepRough']) }),
   trunkClear: 1,                               // AP7d: m from a tree trunk's edge or an OB stake (nothing stands closer)
   stakeR: 0.05, sceneryTrunkR: 0.3,            // m: an OB stake's radius; a scenery tree's trunk (its real radius is not stored)
 });
@@ -479,6 +481,11 @@ export const UI_COLORS = Object.freeze({ aim: '#ffd447', warn: '#ff4a3a', aimDot
 // just pass the rule: 0.35 passed but left today's mountain trees only ΔL 9 from the rough, hard to see).
 // If it still fails, the set fails (validateBiomeSet).
 export const MINIMAP_DARKEN = 0.5;
+// S24: a set without its own `roughDeep` colour (the deep-rough surface, core/biome.js OPTIONAL_PALETTE_KEYS) draws it
+// as its `rough` with each RGB channel moved this share of the way to black (one fixed step, never searched). 0.3 passes
+// roughDeep/rough, roughDeep/fairway and roughDeep/ob (ΔE / ΔL) in every set today (tools/biome-check.mjs); 0.2 left
+// it only ΔE 14 from mtn-default's rough and ΔE 4–6 from the ground beyond OB.
+export const DEEP_ROUGH_DARKEN = 0.3;
 
 // --- HUD display thresholds ---
 // S22 (owner, playtest 1): the power bar is split into POWER_SECTIONS equal parts, and the aim line

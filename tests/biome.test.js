@@ -87,8 +87,9 @@ test('the colour maths matches CIE76 (and the artist\'s round-2 palettes pass ev
   assert.ok(Math.abs(delta('#ffffff', '#000000').dE - 100) < 0.01);
   assert.ok(Math.abs(delta('#ffffff', '#000000').dL - 100) < 0.01);
   assert.equal(delta('#3a80c4', '#3a80c4').dE, 0);
-  // (the rules on the dev's engine keys, e.g. the putting grid's gridLine, are left out: the artist's sheets don't have them)
-  const engine = new Set(PALETTE_KEYS.engine);
+  // (the rules on the dev's engine keys, e.g. the putting grid's gridLine, are left out: the artist's sheets don't have them;
+  // S24: nor the deep-rough surface's roughDeep, newer than those sheets: its fallback is checked on every real set)
+  const engine = new Set([...PALETTE_KEYS.engine, 'roughDeep']);
   for (const [id, p] of Object.entries(ARTIST_R2)) {
     const fails = checkReadability({ ...p, gridLine: '#000000' }).filter(r => !r.ok && !engine.has(r.a) && !engine.has(r.b)).map(r => r.id);
     assert.deepEqual(fails, [], id);
@@ -207,7 +208,7 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
 });
 
 test('X50: propWood / propWoodDark are optional palette keys (fallback wood / trunk); a set may define them', () => {
-  assert.deepEqual({ ...OPTIONAL_PALETTE_KEYS }, { propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b' }); // + AP7i's fixed defaults
+  assert.deepEqual({ ...OPTIONAL_PALETTE_KEYS }, { propWood: 'wood', propWoodDark: 'trunk', cowCoat: '#f6f1e4', cowPatch: '#2f3134', cowNose: '#f1a39b', roughDeep: { from: 'rough', darken: 0.3 } }); // + AP7i's fixed defaults, S24's derived one
   assert.ok(ALL_PALETTE_KEYS.includes('propWood') && ALL_PALETTE_KEYS.includes('propWoodDark'));
   const base = BIOMES['proto-default'];
   const bare = { ...base, palette: Object.fromEntries(Object.entries(base.palette).filter(([k]) => !(k in OPTIONAL_PALETTE_KEYS))) };
