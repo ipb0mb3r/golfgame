@@ -118,8 +118,8 @@ const SHAPES = {
 };
 export const BIG_PROP_PIECES = Object.freeze(Object.keys(SHAPES));
 
-// One merged draw part from a list of parts
-function merge(parts) {
+// One merged draw part from a list of parts (also used by core/fenceShapes.js and core/eventPropShapes.js)
+export function merge(parts) {
   const out = { positions: [], indices: [], w: [], lo: [], hi: [] };
   for (const p of parts) {
     const base = out.positions.length / 3, n = p.positions.length / 3;

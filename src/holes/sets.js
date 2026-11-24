@@ -17,6 +17,8 @@ import { validateHole } from '../core/validate.js';
 import { resolveBiome } from '../biomes/index.js';
 import { LIBRARY } from '../biomes/library.js';
 import { bigPropsError } from '../core/bigProps.js';
+import { fencesSetError } from '../core/fences.js';
+import { eventPropsSetError } from '../core/eventProps.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
 // X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
@@ -70,7 +72,8 @@ export function readyHole(hole) {
 export function checkHoleLooks(hole) {
   const set = resolveBiome(hole.biome);
   // AP7e: every big prop is offered by the hole's own set, in its scale range, its footprint clear of OB + 5 m
-  const e = bigPropsError(hole, hole.scenery?.bigProps, set, LIBRARY);
+  // AP7f / AP7g: every fence look and event prop is offered by the hole's own set (the zone rules are in validateHole)
+  const e = bigPropsError(hole, hole.scenery?.bigProps, set, LIBRARY) ?? fencesSetError(hole.scenery?.fences, set) ?? eventPropsSetError(hole.scenery?.eventProps, set);
   if (e) throw new Error(`hole "${hole.id}": ${e}`);
   (hole.obstacles ?? []).forEach((o, i) => {
     if (o.look !== undefined && !Object.hasOwn(LIBRARY.onTrees, o.look)) throw new Error(`hole "${hole.id}": obstacles[${i}].look "${o.look}" is not a tree piece (the library's onTrees: ${Object.keys(LIBRARY.onTrees).join(', ')})`);
