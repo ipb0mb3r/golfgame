@@ -37,7 +37,7 @@ Flat-shaded (crisp faces), the scene's 3-band toon ramp, fogged like the scenery
 | ropeFence | post | trunk → bank (sun-bleached driftwood) |
 | | rope | lip → propSnow |
 
-Every key exists in all three sets, so the same pieces work anywhere. In Alpine the rails come out dark chalet wood (`04`), which matches the chalets. A pick can swap a slot like the small props (X33), e.g. a white-painted paddock fence: `{ id: 'railFence', slots: { rail: 'propSnow', post: 'propSnow' } }`.
+Every key exists in all three sets, so the same pieces work anywhere. In Alpine the rails come out dark chalet wood (`04`), which matches the chalets. A pick can swap a slot like the small props (X33), e.g. a white-painted paddock fence: `{ id: 'railFence', slots: { post: 'propSnow', postTop: 'propSnow', rail: 'propSnow', railTop: 'propSnow' } }`. Each part goes from a foot slot to a top slot (`post` → `postTop`, `rail` → `railTop`), so an all-white fence needs all four.
 
 ## 4. Placement (course designer)
 A hole lists its fences in the scenery, like the big props:
