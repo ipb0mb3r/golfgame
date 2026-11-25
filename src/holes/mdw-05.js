@@ -48,7 +48,7 @@ export default makeMdwHole({
     lobes: [{ cx: 36, cz: -181, rx: 15, rz: 18 }, { cx: 78, cz: -178, rx: 24, rz: 20 }, { cx: 102, cz: -200, rx: 28, rz: 20 }] }],
   // deep rough (owner, 2026-11-25): the area right of the lake and between the lake and the second leg is no free
   // bail-out: a big deep-rough area (merged into the edge layer), about 10 m off the fairway, with trees in it
-  deepRoughs: [{ cx: 124, cz: -178, rx: 24, rz: 56, rot: -0.35, wob: 0.08, seed: 28, blend: 0.8, lobes: [{ cx: 98, cz: -226, rx: 20, rz: 8 }, { cx: 124, cz: -244, rx: 20, rz: 11 }] }],
+  deepRoughs: [{ cx: 124, cz: -178, rx: 24, rz: 56, rot: -0.35, wob: 0.08, seed: 28, blend: 0.8, lobes: [{ cx: 98, cz: -226, rx: 20, rz: 8 }, { cx: 124, cz: -244, rx: 20, rz: 11 }, { cx: 100, cz: -128, rx: 24, rz: 40 }] }],
   ob: { x0: -60, x1: 166, z0: -356, z1: 26 },
   forest: { size: [1.0, 1.6], seed: 105, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false, clear: [{ pts: [{ x: 0, z: 0 }, { x: 40, z: -225 }], w: 10 }] },
   // the big lone tree beyond the corner: the safe drive's aim point (map 19)
@@ -58,6 +58,8 @@ export default makeMdwHole({
     oak(42, -54, 1.2), oak(52, -47, 1.0), oak(33, -62, 0.9),
     oak(94, -78, 1.25), oak(104, -90, 1.0), oak(92, -92, 0.9),
     oak(134, -186, 1.1), oak(140, -200, 0.95),
+    // a clump above the lake, beside the brave landing (owner: the route stays, a bit harder)
+    oak(50, -200, 0.95), oak(58, -210, 1.1), oak(67, -201, 1.0), oak(76, -213, 0.95),
     // trees in the deep rough right of the lake
     oak(118, -150, 1.15), oak(126, -160, 0.95), oak(104, -226, 1.0), oak(84, -226, 0.9), oak(128, -232, 1.05),
     oak(26, -112, 1.0),
