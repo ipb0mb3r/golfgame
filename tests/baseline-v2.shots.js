@@ -96,6 +96,11 @@ export const SHOTS = [
   { name: 'MDW mdw2 safe drive in seeded wind', hole: 'mdw-02', seed: 52, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: -0.02, aimFrom: { x: 1, z: -206 }, aimOff: 0 },
   { name: 'MDW mdw3 tee shot to the raised green', hole: 'mdw-03', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
   { name: 'MDW mdw3 out of the front-left bunker', hole: 'mdw-03', seed: null, start: { x: -17, z: -131 }, strokes: 1, power: 0.45, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw4 default drive in seeded wind', hole: 'mdw-04', seed: 54, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.02, aimFrom: { x: -2, z: -232 }, aimOff: 0 },
+  { name: 'MDW mdw4 3 Wood up the hill in two', hole: 'mdw-04', seed: null, start: { x: 0, z: -284 }, strokes: 1, power: 1, acc: 0, aimOff: 0, club: '3w' },
+  { name: 'MDW mdw5 Driver over the pond', hole: 'mdw-05', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: -3, z: -195 }, aimOff: 0.1912, club: 'driver' },
+  { name: 'MDW mdw5 putt up a tier', hole: 'mdw-05', seed: null, start: { x: 114, z: -288 }, strokes: 2, power: 0.6, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw6 downhill tee shot in seeded wind', hole: 'mdw-06', seed: 56, start: { x: 0, z: 0 }, strokes: 0, power: 0.95, acc: 0, aimOff: 0 },
   // Phase BC (BC1/BC2): shaped shots. `impact` { x, y } = where the club hits the ball (core/shape.js;
   // left/right = start out then curve back, bottom/top = higher/lower). Every shot above is a centre hit.
   { name: 'BC h1 tee, left impact (starts left, curves right)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },

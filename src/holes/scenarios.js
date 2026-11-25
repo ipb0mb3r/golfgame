@@ -185,23 +185,23 @@ export const SCENARIOS = {
   },
   // Buttercup Meadows (course designer, docs/COURSE_PLAN_MEADOW.md): the key shot, a recovery spot and a putt per hole.
   'mdw1-drive-right': {
-    hole: 'mdw-01', ball: { x: 0, z: 0 }, aimAt: { x: 14, z: -240 }, strokes: 0, seed: 2101, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Meadows 1: drive down the right', text: 'Aimed down the right side, near the tree line: the open angle into the green, away from its front-left bunker.',
+    hole: 'mdw-01', ball: { x: 0, z: 0 }, aimAt: { x: 9, z: -240 }, strokes: 0, seed: 2101, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 1: thread the gap', text: 'A full Driver between the bunker on the left and the lone tree on the right: it leaves a wedge.',
   },
   'mdw1-bunker': {
-    hole: 'mdw-01', ball: { x: -24, z: -240 }, strokes: 1, seed: 2102, lie: 'sand',
-    name: 'Meadows 1: fairway bunker', text: 'The shallow bunker left of the landing zone, about 115 m out.',
+    hole: 'mdw-01', ball: { x: -5, z: -238 }, strokes: 1, seed: 2102, lie: 'sand',
+    name: 'Meadows 1: landing-zone bunker', text: 'In the big bunker in the left of the landing zone, about 115 m out.',
   },
   'mdw1-putt': {
     hole: 'mdw-01', ball: { x: -8, z: -341 }, strokes: 2, seed: 2103, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Meadows 1: across the big green', text: 'A 13 m putt across the big green to the cup in its centre: it breaks a little toward the front left.',
   },
   'mdw2-cut-the-corner': {
-    hole: 'mdw-02', ball: { x: 0, z: 0 }, aimAt: { x: -50, z: -248 }, strokes: 0, seed: 2201, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Meadows 2: cut the corner', text: 'Aimed left, just past the group of round trees: a full Driver leaves a short wedge. Hook it and you meet the trees.',
+    hole: 'mdw-02', ball: { x: 0, z: 0 }, aimAt: { x: -42, z: -250 }, strokes: 0, seed: 2201, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 2: cut the corner', text: 'Aimed across the inside of the bend, between the two clumps of trees: a full Driver leaves a short wedge. Come up short and the bunker waits.',
   },
   'mdw2-outside-bunker': {
-    hole: 'mdw-02', ball: { x: 22, z: -204 }, strokes: 1, seed: 2202, lie: 'sand',
+    hole: 'mdw-02', ball: { x: 30, z: -212 }, strokes: 1, seed: 2202, lie: 'sand',
     name: 'Meadows 2: outside the bend', text: 'In the shallow bunker on the outside of the bend, about 135 m from the green.',
   },
   'mdw2-downhill-putt': {
@@ -219,6 +219,38 @@ export const SCENARIOS = {
   'mdw3-putt': {
     hole: 'mdw-03', ball: { x: -9, z: -156 }, strokes: 1, seed: 2303, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Meadows 3: across the bean', text: 'A long putt from the left lobe across the green to the cup in the right lobe.',
+  },
+  'mdw4-reach-in-two': {
+    hole: 'mdw-04', ball: { x: 0, z: -284 }, aimAt: { x: 30, z: -472 }, strokes: 1, seed: 2401, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 4: go for it in two', text: 'After a big drive into the valley: a full 3 Wood up the hill reaches the green. Short and right is the pond.',
+  },
+  'mdw4-rough-gap': {
+    hole: 'mdw-04', ball: { x: 0, z: -332 }, strokes: 2, seed: 2402, wind: { x: 0, z: 0 }, lie: 'rough',
+    name: 'Meadows 4: the gap of rough', text: 'A short second shot finished in the rough between the two fairways, about 150 m from the green.',
+  },
+  'mdw4-uphill-pitch': {
+    hole: 'mdw-04', ball: { x: -8, z: -400 }, strokes: 2, seed: 2403, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 4: the lay-up', text: 'Laid up left of the pond: a pitch up the hill to the raised green. Short rolls back down.',
+  },
+  'mdw5-carry-the-pond': {
+    hole: 'mdw-05', ball: { x: 0, z: 0 }, aimAt: { x: 40, z: -225 }, strokes: 0, seed: 2501, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 5: carry the lake', text: 'Aimed over the corner of the big lake: a full Driver carries it onto the second leg and leaves a short iron. A weak one is wet.',
+  },
+  'mdw5-outside-bunker': {
+    hole: 'mdw-05', ball: { x: -27, z: -212 }, strokes: 1, seed: 2502, lie: 'sand',
+    name: 'Meadows 5: outside the bend', text: 'In the big bunker on the outside of the corner, about 160 m from the green.',
+  },
+  'mdw5-up-a-tier': {
+    hole: 'mdw-05', ball: { x: 114, z: -288 }, strokes: 2, seed: 2503, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 5: putt up a tier', text: 'From the lower front tier, up the step to the cup on the back tier.',
+  },
+  'mdw6-at-the-flag': {
+    hole: 'mdw-06', ball: { x: 0, z: 0 }, aimAt: { x: 12, z: -188 }, strokes: 0, seed: 2601, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 6: at the flag', text: 'From the hilltop tee, about 18 m down, straight at the flag in the lobe nearest the water. Take the ⚑ power: the ball flies a long way. Short and right is wet.',
+  },
+  'mdw6-left-bank': {
+    hole: 'mdw-06', ball: { x: -18, z: -170 }, strokes: 1, seed: 2602, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 6: the bail-out', text: 'On the patch of fairway short left of the green, the safe miss: a chip across the green toward the flag by the water.',
   },
 };
 
