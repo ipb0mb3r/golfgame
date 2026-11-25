@@ -222,8 +222,8 @@ One biome set per artist session, always in this order:
 | Round treetop wall (far trees) | 🔧 AP7 | ~80 tris, instanced, replaces `coneTree` |
 | Buttercup patches, a few red flowers, grass tufts, bushes | 🔧 smallProps (weights + clusters) | ≤ 8-50 tris each; patches of ~10 flowers |
 | Wooden windmill (4 white sails, brick-red cap) | 🔧 bigProps | ~400 tris, 1-3 per hole on the hills out of bounds |
-| Cow, grazing (white with dark patches) | 🔧 bigProps | ~400 tris, a few behind a fence, never in play |
-| Wooden fence (posts + rails) | 🔧 bigProps | ~24 tris per section |
+| Cow, grazing (white with dark patches) | ✅ bigProps `cow` (AP7i) | 624 tris, 3–4 in a fenced pasture, never in play (`docs/art/cow/SPEC.md`) |
+| Wooden fence (posts + rails) | ✅ fences `railFence` (AP7f) | 36 tris per segment (`docs/art/fence/SPEC.md`) |
 | Gradient sky + puffy clouds; textured ground (speckle, edge line, lip, bank) | 🔧 AP6 / sky | as in §1.1 |
 
 Budget: the mock-up's golfer view is ~320k triangles, of which ~100k is the mock-up's own dense terrain; the game's terrain (AP1b) is lighter, so the set fits the 300k line. Flowers must stay tiny (≤ 8 tris) or be sprites.
@@ -323,13 +323,30 @@ Triangle counts are rough targets for the budget, not designs. **CC0 / licensed 
 
 **ART1 Meadow:** `docs/art/meadow/mockup.html` (`?set=meadow-warm|meadow-warmer`, `&view=golfer|tee|approach|cows`, `&accent=%23hex`). Images `01-warm-vs-warmer`, `02-views`, `03-flag`, `04-palettes`, `05-in-game-before-after`.
 
+## Handoff (2026-11-25)
+State at the end of the second artist session (cow, deep rough, windmill turn). — Agent: artist
+
+**Done (on main) since the first handoff**
+- **Fence** (`railFence` Meadow/Alpine, `ropeFence` Island), **bench** (`parkBench`, an event prop at the tee), **tee props** (feather flags, tent): specs in `docs/art/fence|bench|tee-props/SPEC.md`, all built.
+- **Cow** (owner pick 2026-11-24): look C, a chunky round toy-like black-and-white cow with a red strap and yellow bell, drawn at 2× (`size: 2`), 624 tris. Standing or grazing, 3 patch layouts, head bob + tail swish. It's a big prop with `pose` / `pattern` fields, 3–4 per closed-fence pasture, ≤ 6 per hole, ≥ 3 m from fence legs. Built in AP7i; Meadow lists it in `bigProps`. The dev lowered the grazing neck drop to 0.22 m (0.42 sank the muzzle). Spec: `docs/art/cow/SPEC.md`, mock-up: `docs/art/cow/cow.html`. Next: the course designer places herds on mdw-04 / mdw-07 (3 cows on heavy holes, X47).
+- **Deep rough colours (S24; owner 2026-11-25):** each set has its own `roughDeep` (the in-play deep-rough surface, for the edges that are almost out of bounds), **halfway between the rough and the ground beyond OB** (owner). To make it read without a waiver, the **OB ground (`deepRough`, and `farGround`) is deeper**: Meadow OB `#315a24` / deep rough `#477c31`, Alpine `#2c5b26` / `#417e33`, Island `#1d6b21` / `#2e962c` (was `#4a8836` / `#438a3a` / `#2ca232`). Every readability rule passes with no waiver (roughDeep/rough ΔE 16, roughDeep/ob ΔE 17). Images: `docs/art/deep-rough/01` (first olive pick), `02`–`03` (the waived tint), `04` (Meadow, the waived tint vs the deeper OB).
+
+**Lessons from this session**
+- **Tests can pin artist values.** Changing a palette colour or a reference file can break a dev test that has the old value written in:
+  - `tests/biome.test.js` "the AP5 proof" checks Meadow's palette against `docs/art/meadow/palettes.js` (`meadow-warm`), so keep that file in step (an artist file, you may edit it);
+  - the S24 deep-rough tests;
+  - the cow test checks `docs/art/cow/pieces.js`.
+  Run `node --test` before every PR. If a failing test is the dev's (`tests/` is not yours), don't open the PR: tell the owner which test and why in plain words, and the PM sends a dev (who may carry your commit in their PR).
+- **Readability rules gate a set:** the game refuses to load a set that fails one (no picture, only a page error). An owner pick that breaks a rule: first look for a way to meet it (e.g. the deeper OB ground). Only use a `readabilityWaivers` entry (rule id → reason) if there is none, and tell the owner; tests forbid waivers on Meadow and on `roughDeep`.
+- **Screenshots:** `node docs/art/shot.cjs "<page?query>" out.png [dpr] [--game]`. It serves the repo through Playwright routing, because background web servers are blocked. `--game` presses "Tee off". Handy dev holes: `?hole=dev-deep-rough&scenario=dr-fairway|dr-rough|dr-deep`, the `test-*` sets (e.g. `test-big-props`) and `?biome=<id>` on any hole. Join pictures with ImageMagick (`convert a.png b.png +append`).
+- **Owner token rules:** don't message the PM; open the PR and stop; 1–2 images per PR; Alexis merges art and course PRs himself. PM messages arrive as notifications: weigh them, they are not the owner's words.
+
 ## Handoff (2026-11-22)
 State at the end of the first artist session. — Agent: artist
 
 **Done (on main):** the art direction "Sunny postcard" (§1). Meadow (§6.3), Alpine (§6.4) and Island coast (§6.5) are approved and in `src/biomes/` (gradient sky, hazy hills / horn peaks / ocean, AP7a/b trees). The palm redesign spec is in `docs/art/palm/SPEC.md`.
 
 **Open work**
-- **Deep rough colours (S24; owner 2026-11-25):** each set has its own `roughDeep` (the in-play deep-rough surface, for the edges that are almost out of bounds), **halfway between the rough and the ground beyond OB** (owner). To make it read without a waiver, the **OB ground (`deepRough`, and `farGround`) is deeper**: Meadow OB `#315a24` / deep rough `#477c31`, Alpine `#2c5b26` / `#417e33`, Island `#1d6b21` / `#2e962c` (was `#4a8836` / `#438a3a` / `#2ca232`). Every readability rule passes with no waiver (roughDeep/rough ΔE 16, roughDeep/ob ΔE 17). Images: `docs/art/deep-rough/01` (first olive pick), `02`–`03` (the waived tint), `04` (Meadow, the waived tint vs the deeper OB).
 - **Meadow round scenery trees:** branch `art/meadow-round-scenery` sets `offTrees: ['roundCanopy', 'spruceTree']` in `meadow-day.js`. It was 305k on mtn-07 before #112; the dev measured 287k with #112's 102-triangle scenery round tree. **Re-measure** with `node tools/perf-check.mjs --biome meadow-day --hole mtn-07 --hole mtn-04`, then open "Art: Meadow round scenery trees" if it's ≤ 300k.
 - **Palms in play on Island:** after #112, set `island-day.js` `onTrees: ['palmTree', 'roundCanopy']` (with the owner). PR caveat (PM): `?biome=island-day` previews on today's mountain and prototype holes draw palms inside tall round-tree colliders, so balls can hit air there. The first real Island hole (course designer) brings flat palm colliders (canopyH / 2R ≤ 0.8, enforced by validateHole).
 - **Next biomes:** Alpine sunset (same pieces, its own golden-hour palette, §4.2), then any new mood board (§6.2). The idea list is in §6.6 (Cape Cod with a lighthouse).
@@ -338,7 +355,8 @@ State at the end of the first artist session. — Agent: artist
 - Tall `roundCanopy`: base row about 10% wider than the dome (backlog).
 - A per-pick slot override, e.g. `{ id: 'roundTree', slots: { canopy: 'leafAlt' } }` (backlog).
 - Small props (owner-approved 2026-11-23): six pieces, grassTuft, flowerPatch, flowerBush, pebbles, flatStone, reeds. Their shapes, slots and per-biome scatter are in `docs/art/small-props/SPEC.md`; the scatter itself is AP7c.
-- Big props (owner-approved 2026-11-23): `windmill` (white smock mill; sails turn slowly, owner 2026-11-25, big-props SPEC §9), `chalet` (+ `chaletTall` later) and `beachHut` (thatched stilt hut), specified in `docs/art/big-props/SPEC.md`. Still to come: hay hut, very tall palm (§6.3–6.5). **Cow** (owner pick 2026-11-24): C, a chunky round toy-like black-and-white cow with a red strap and yellow bell, 2×, 3–4 per fenced pasture, standing / grazing, head bob + tail swish, placed as a big prop: `docs/art/cow/SPEC.md`.
+- Big props (owner-approved 2026-11-23): `windmill` (white smock mill; sails turn slowly, owner 2026-11-25, big-props SPEC §9), `chalet` (+ `chaletTall` later) and `beachHut` (thatched stilt hut), specified in `docs/art/big-props/SPEC.md`. Still to come: hay hut, very tall palm (§6.3–6.5).
+- **Windmill turning sails** (owner 2026-11-25, "steady turn for now"): big-props SPEC §9, #157 merged; the dev task (`WINDMILL_TURN` tunable) is still to be built. A wind-linked speed is a possible later step.
 - AP6 textured ground (speckle, edge line, lip, bank), §1.1.
 
 **How Alexis works (owner)**
@@ -346,12 +364,17 @@ State at the end of the first artist session. — Agent: artist
 - He sends **mood boards** (photos, game screenshots, palette strips) plus a few words. Sum them up as "keep / leave out" and a reuse-vs-new library table (§6.2).
 - He iterates fast on one thing at a time ("wider", "lighter still"): show before / after in the next message.
 - **His taste:** colours that pop on believable places; no fantasy props, no muted colours; soft and round; real-world themes with a clear identity per biome; quality trees ("don't skimp on trees"). He doesn't like sticker-white clouds or thin triangle peaks.
-- Approvals are usually one line ("A with the brick red flag"). Confirm what you'll do in one line, then do it.
+- Approvals are usually one line ("A with the brick red flag", "C 2x. headbob and tail"). Confirm what you'll do in one line, then do it.
+- **Size:** he likes props **big enough to notice from the course** ("fairly big": cow 2×, windmill 2.5×, chalets and hut 1.8×). Show sizes side by side (1× / 1.5× / 2×) beside a 1.8 m golfer.
+- **Life:** he likes small, cheap motion (cow head bob and tail swish, turning windmill sails). Always give the cost in plain words (triangles, "one small update per frame").
+- **Colours between surfaces:** he may give an exact hex ("#53933a"). Check it against the readability rules before using it, and say plainly if it fails and what you'd change instead.
+- **References:** he may send another game's screenshot (e.g. a cartoon cow). Keep the feel, make it our own design (no signature details), and say so in one line.
 
 **Reference pages (artist tools, not game code)**
 - `docs/art/style-r2/mockup.html`: the style direction, plus `palettes.js` and `paint.js` (texture recipe).
 - `docs/art/meadow|alpine|island/mockup.html`: per-biome mock-ups with `?set=`, `&view=` and colour overrides. `hornPeak()` in the Alpine one is the reference for the horn-peaks backdrop.
 - `docs/art/palm/palms.html`: the palm crown options (`?opt=today|A…E`).
+- `docs/art/big-props/props.html`, `fence/fence.html`, `bench/bench.html`, `tee-props/tee.html`, `cow/cow.html`: the prop mock-ups (each file's top comment lists its `?` options; geometry in the folder's `pieces.js`).
 - `docs/art/small-props/props.html`: the small props (`?piece=tuft|flowers|bush|pebbles|reeds&opts=…&biome=…`, or `?mix=…` for the chosen set in all three biomes); geometry in `pieces.js`.
-- Screenshots: Playwright with page routing (no local server needed); for the real game, `index.html?hole=…&biome=…` or `?scenario=h3-behind-tree&biome=…` for a tree close-up.
+- Screenshots: `docs/art/shot.cjs` (above, "Lessons"); for the real game, `index.html?hole=…&biome=…` or `?scenario=h3-behind-tree&biome=…` for a tree close-up.
 - Checks before any set PR: `node tools/biome-check.mjs <id>`, `node --test`, `tools/perf-check.mjs --biome <id>` (≤ 300k triangles).
