@@ -221,7 +221,10 @@ test('S24: the look: its own drawn kind (added last), the optional roughDeep col
   assert.deepEqual(READABILITY.filter(x => x[0].startsWith('roughDeep')).map(x => x.slice(1)), [['roughDeep', 'rough', 15, 8], ['roughDeep', 'fairway', 15, 8], ['roughDeep', 'deepRough', 10, 5]]);
   // a set may set its own colour: used as it is, must be a colour, and must pass the rules
   const base = BIOMES['meadow-day'];
-  const own = { ...base, palette: { ...base.palette, roughDeep: dark(dark(base.palette.rough)) } };
+  // its own colour: halfway between the rough and the OB ground (what the real sets aim for), computed, not listed;
+  // not the fallback (rough darkened), which may sit too close to a deeper OB ground
+  const mid = '#' + [1, 3, 5].map(i => Math.round((parseInt(base.palette.rough.slice(i, i + 2), 16) + parseInt(base.palette.deepRough.slice(i, i + 2), 16)) / 2).toString(16).padStart(2, '0')).join('');
+  const own = { ...base, palette: { ...base.palette, roughDeep: mid } };
   assert.doesNotThrow(() => validateBiomeSet(own, LIBRARY));
   assert.equal(paletteColour(own.palette, 'roughDeep'), own.palette.roughDeep);
   assert.throws(() => validateBiomeSet({ ...base, palette: { ...base.palette, roughDeep: 'dark' } }, LIBRARY), /palette\.roughDeep must be a colour/);
