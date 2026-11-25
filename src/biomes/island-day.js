@@ -15,8 +15,8 @@ export default {
     rough: '#3ec036', deepRough: '#2ca232', sand: '#feebb8', lip: '#c9a36a', water: '#00e0d8', waterDeep: '#0090e8', bank: '#e8c88a',
     rock: '#3e3a40', path: '#ead8b0',
     // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
-    // a dark jungle green with a touch of olive: dense tropical grass, apart from the bright ground beyond OB (artist, 2026-11-24)
-    roughDeep: '#3a8020',
+    // the owner's tint (2026-11-25), halfway between the rough and the ground beyond OB: a soft step toward OB
+    roughDeep: '#35b134',
     // sky, fog, light
     skyTop: '#1e90f0', skyHorizon: '#bff2ff', cloud: '#e4f2f8', fog: '#c8f0fa',
     sun: '#fff4dc', ambient: '#eefaff', shadow: '#2a7060',
@@ -55,5 +55,11 @@ export default {
   fences: ['ropeFence'],      // driftwood posts and two ropes (docs/art/fence/SPEC.md); look only
   // a "tournament" set (owner 2026-11-24): flags with swapped colours (magenta body, orange top) and tents
   eventProps: [{ id: 'featherFlag', slots: { body: 'subAccent', top: 'accent' } }, 'popupTent', 'parkBench'], // + the park bench by the tee (docs/art/bench/SPEC.md)
+  // owner pick 2026-11-25: deep rough sits halfway between the rough and the ground beyond OB, closer than the rules ask;
+  // the denser deep-rough grass texture (S24) and the lie readout tell it apart
+  readabilityWaivers: {
+    'roughDeep/rough': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+    'roughDeep/ob': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+  },
   notes: 'The course follows the ocean: run fairways along the beach, the sea on one side (often the left), waste bunkers and lava-rock edges, a few really tall palms as landmarks. Low, near sea level. No lighthouse. Suggested weather: sunny, sea wind.',
 };

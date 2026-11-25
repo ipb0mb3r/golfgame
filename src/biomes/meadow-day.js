@@ -14,8 +14,8 @@ export default {
     rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
     rock: '#a89b8c', path: '#e8d8ae',
     // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
-    // a darker olive: long, seedy grass, warmer than the green ground beyond OB (artist, 2026-11-24)
-    roughDeep: '#566e26',
+    // the owner's tint (2026-11-25), halfway between the rough and the ground beyond OB: a soft step toward OB
+    roughDeep: '#53933a',
     // sky, fog, light
     skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#e2ecf6', fog: '#d2ecfa',
     sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',
@@ -55,5 +55,11 @@ export default {
   // a "tournament" set (owner 2026-11-24): feather flags (colours swapped so they never read as a hole flag) and tents
   // at the tee, along the course and near the green (docs/art/tee-props/SPEC.md §4)
   eventProps: [{ id: 'featherFlag', slots: { body: 'subAccent', top: 'accent' } }, 'popupTent', 'parkBench'], // + the park bench by the tee (docs/art/bench/SPEC.md)
+  // owner pick 2026-11-25: deep rough sits halfway between the rough and the ground beyond OB, closer than the rules ask;
+  // the denser deep-rough grass texture (S24) and the lie readout tell it apart
+  readabilityWaivers: {
+    'roughDeep/rough': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+    'roughDeep/ob': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+  },
   notes: 'The default, classic theme: gentle open holes, wide fairways, plenty of trees along the fairways and a few in play, ponds, cream bunkers. Big props out of bounds: 1-3 windmills on the hills, a few cows grazing behind a wooden fence (never in play, no barns). Suggested weather: clear, light to medium wind.',
 };

@@ -15,8 +15,8 @@ export default {
     rough: '#56a040', deepRough: '#438a3a', sand: '#f2ecd6', lip: '#b8b29c', water: '#2a9ad8', waterDeep: '#1e6cb4', bank: '#8a8478',
     rock: '#9aa2ac', path: '#c9c6be',
     // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
-    // a dark mossy olive: thick mountain grass, apart from the cooler green ground beyond OB (artist, 2026-11-24)
-    roughDeep: '#4a6a30',
+    // the owner's tint (2026-11-25), halfway between the rough and the ground beyond OB: a soft step toward OB
+    roughDeep: '#4d953d',
     // sky, fog, light (owner: a lighter azure)
     skyTop: '#5cb4f2', skyHorizon: '#b4e4fc', cloud: '#e4eef8', fog: '#bee6fa',
     sun: '#fff6e8', ambient: '#e2eeff', shadow: '#2e5e6a',
@@ -56,5 +56,11 @@ export default {
   fences: ['railFence'],      // post & two rails in dark chalet wood (docs/art/fence/SPEC.md); look only
   // not a tournament set (owner 2026-11-24): no flags or tents, only the park bench by the tee (docs/art/bench/SPEC.md)
   eventProps: ['parkBench'],
+  // owner pick 2026-11-25: deep rough sits halfway between the rough and the ground beyond OB, closer than the rules ask;
+  // the denser deep-rough grass texture (S24) and the lie readout tell it apart
+  readabilityWaivers: {
+    'roughDeep/rough': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+    'roughDeep/ob': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
+  },
   notes: 'Swiss Alps: rolling, elevated holes with raised tees and greens, creeks and small ponds, pines along the fairways, the big peaks always in view. Big props out of bounds: chalets on the slopes, hay huts dotted near the holes, never in play. Suggested weather: clear, light wind.',
 };
