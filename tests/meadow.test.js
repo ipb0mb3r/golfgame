@@ -159,7 +159,7 @@ test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the br
 
 // Owner rule L20 (2026-11-25): deep rough is the layer between the rough and OB (holes redone in the map-study style)
 test('Buttercup Meadows (map-study holes): deep rough lies between the rough and OB on both sides, its width varying', () => {
-  for (const id of ['mdw-01', 'mdw-02']) {
+  for (const id of ['mdw-01', 'mdw-02', 'mdw-03']) {
     const h = HOLES[id], widths = { left: [], right: [] };
     for (let z = -40; z >= -260; z -= 10) {
       for (const [side, dir] of [['left', -1], ['right', 1]]) {
