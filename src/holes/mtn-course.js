@@ -326,6 +326,10 @@ function buildMtnHole(spec0, meta) {
     return bilerp(GRID) + gOut;
   };
   const landGap = land ? (x, z) => { gridCell(x, z); return bilerp(LGRID) + gOut; } : null;
+  // owner (2026-11-25): land.open = blobs where no tree grows (in play or scenery), so a view (a pasture, a windmill)
+  // is seen from the course
+  const opens = land?.length ? spec.land.open ?? [] : [];
+  const inOpen = (x, z) => opens.some(b => blobR(x, z, b) < 1);
   // S24 deep rough as a perimeter band: deepBand = m, or { w, wob, seed } for a width that swells and thins (a blob, not a ring)
   const DB = land ? spec.land.deepBand ?? 0 : 0, dbW = typeof DB === 'number' ? DB : DB.w, dbWob = DB.wob ?? 0, dbK = DB.seed ?? 1;
   const DEEP_JOIN = spec.land?.deepJoin ?? 18; // m: how round the join between the layer and a deep-rough blob is
@@ -481,7 +485,7 @@ function buildMtnHole(spec0, meta) {
         count: Math.round((220 + lenZ * 0.6) * (land ? spec.land.forest ?? 1.6 : 1)), xSpan: (OB.x1 - OB.x0) + 260, zTop: OB.z1 + 110, zSpan: lenZ + 300, sink: 0.2,
         // with a land outline the forest grows right up to the clearing (3 m back from its edge), inside the OB box too
         exclude: land
-          ? (x, z) => landGap(x, z) < 3 || (Math.abs(x - tee.x) < 20 && z > tee.z)
+          ? (x, z) => landGap(x, z) < 3 || (Math.abs(x - tee.x) < 20 && z > tee.z) || inOpen(x, z)
           : (x, z) => (x > OB.x0 - 5 && x < OB.x1 + 5 && z > OB.z0 - 5 && z < OB.z1 + 5) || (Math.abs(x - tee.x) < 20 && z > tee.z),
       },
       hills: { count: 18, dist: [520 + lenZ * 0.4, 140], xz: [110, 70], y: [70, 60], posY: -18, cz: midZ },
@@ -490,7 +494,7 @@ function buildMtnHole(spec0, meta) {
       ...(spec.scenery ?? {}),
     },
   };
-  if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways, land && { land, landGap })];
+  if (spec.forest) hole.obstacles = [...hole.obstacles, ...plantForest(hole, spec, fairways, land && { land, landGap, inOpen })];
   return hole;
 }
 
@@ -574,7 +578,8 @@ function plantForest(hole, spec, fairways, edge = null) {
     .filter(t => t.x > OB.x0 + 3 && t.x < OB.x1 - 3 && t.z > OB.z0 + 3 && t.z < OB.z1 - 3)
     .filter(t => Math.hypot(t.x - hole.tee.x, t.z - hole.tee.z) > 16)
     .filter(t => far(t.x, t.z, keep * 0.5) && far(t.x, t.z, keep))
-    .filter(t => !clear.some(c => polyDist(t.x, t.z, c.pts).d < c.w));
+    .filter(t => !clear.some(c => polyDist(t.x, t.z, c.pts).d < c.w))
+    .filter(t => !edge?.inOpen(t.x, t.z));
   // thin out trees that stand on top of each other
   const out = [];
   for (const t of trees) if (!out.some(o => Math.hypot(o.x - t.x, o.z - t.z) < 5.5)) out.push(t);

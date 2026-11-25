@@ -224,9 +224,9 @@ export const SCENARIOS = {
     hole: 'mdw-04', ball: { x: 0, z: -284 }, aimAt: { x: 30, z: -472 }, strokes: 1, seed: 2401, wind: { x: 0, z: 0 }, lie: 'fairway',
     name: 'Meadows 4: go for it in two', text: 'After a big drive into the valley: a full 3 Wood up the hill reaches the green. Short and right is the pond.',
   },
-  'mdw4-cross-bunker': {
-    hole: 'mdw-04', ball: { x: -6, z: -330 }, strokes: 2, seed: 2402, wind: { x: 0, z: 0 }, lie: 'sand',
-    name: 'Meadows 4: cross bunker', text: 'In the bunker across the fairway, short of the hill, about 150 m from the green.',
+  'mdw4-rough-gap': {
+    hole: 'mdw-04', ball: { x: 0, z: -332 }, strokes: 2, seed: 2402, wind: { x: 0, z: 0 }, lie: 'rough',
+    name: 'Meadows 4: the gap of rough', text: 'A short second shot finished in the rough between the two fairways, about 150 m from the green.',
   },
   'mdw4-uphill-pitch': {
     hole: 'mdw-04', ball: { x: -8, z: -400 }, strokes: 2, seed: 2403, wind: { x: 0, z: 0 }, lie: 'fairway',
