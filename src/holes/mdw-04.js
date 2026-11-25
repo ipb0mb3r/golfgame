@@ -1,5 +1,6 @@
 // Buttercup Meadows, hole 4: par 5, about 480 m, the first real hill. Difficulty 2.
-// Plan (docs/COURSE_PLAN_MEADOW.md): the drive runs down into a gentle valley, then the fairway climbs to a raised
+// Map study (docs/course/MAP_STUDY.md): a clearing, a snaking fairway with a cross bunker in its pinch and a lay-up
+// bulge left of the pond, deep rough at the edge (L20). Plan (docs/COURSE_PLAN_MEADOW.md): the drive runs down into a gentle valley, then the fairway climbs to a raised
 // green. The course's first water: a pond right of the second landing area. Safe: lay up left of the pond and pitch
 // up the hill. Brave: a long second shot past the pond's left edge to reach in two. A cross bunker sits in the middle
 // of the fairway short of the hill (owner, L14). Props: a fenced pasture with cows on the left hillside beyond OB,
@@ -22,15 +23,18 @@ export default makeMdwHole({
   hills: [
     { x: 46, z: -120, r: 30, h: 3.2 },   // banks either side of the valley
     { x: -46, z: -170, r: 28, h: 2.8 },
-    { x: -125, z: -250, r: 55, h: 12 },  // the pasture's hillside, beyond the left OB line
+    { x: -135, z: -250, r: 50, h: 12 },  // the pasture's hillside, beyond the left OB line
     { x: -150, z: -300, r: 34, h: 6 },   // the windmill's knoll above it
     { x: 40, z: -525, r: 34, h: 3.5 },   // a bank behind the green (a backdrop)
   ],
   // a raised blob green (a short ball rolls back down the bank), tilted gently from back right to front left
   green: { cx: 30, cz: -472, rx: 16, rz: 12, rot: 0.4, wob: 0.07, seed: 11, blend: 0.5, lobes: [{ cx: 36, cz: -478, rx: 10, rz: 9 }, { cx: 20, cz: -465, rx: 10, rz: 9 }], raise: 1.0, bank: 1.2,
     contour: (x, z) => 0.012 * (x - 30) - 0.012 * (z + 472) },
-  blend: 16,
-  fairways: [{ pts: [{ x: 0, z: -28, w: 12 }, { x: 0, z: -140, w: 23 }, { x: -2, z: -255, w: 26 }, { x: -8, z: -350, w: 22 }, { x: -6, z: -405, w: 21 }, { x: 10, z: -445, w: 16 }, { x: 22, z: -460, w: 13 }] }],
+  // map study: the clearing follows the hole and opens up round the pond and the green; deep rough is its edge layer
+  land: { pts: [[-13, 20], [13, 20], [20, -30], [34, -110], [44, -190], [40, -260], [52, -320], [68, -380], [70, -440], [62, -500], [40, -530], [10, -534], [-14, -516], [-18, -480], [-26, -440], [-46, -404], [-54, -340], [-52, -270], [-46, -200], [-36, -120], [-22, -50], [-16, -10]], deepBand: { w: 8, wob: 0.75, seed: 11 } },
+  // the fairway snakes: narrow off the tee, a wide valley landing zone, a pinch around the cross bunker, a lay-up
+  // zone bulging left of the pond, then a neck climbing to the green's front
+  fairwayShapes: [{ pts: [[-5, -28], [5, -28], [14, -90], [22, -170], [27, -235], [20, -290], [13, -322], [18, -362], [25, -396], [25, -428], [30, -452], [36, -462], [16, -467], [2, -449], [-10, -430], [-32, -420], [-39, -392], [-30, -362], [-17, -340], [-15, -310], [-25, -280], [-27, -235], [-19, -170], [-10, -90]] }],
   bunkers: [
     // L14: a cross bunker in the middle of the fairway, short of the hill (a short second shot finds it; carry it or stop short)
     { cx: -6, cz: -330, rx: 12, rz: 6, rot: 0.08, wob: 0.12, seed: 12, depth: 1.1, blend: 0.5, lobes: [{ cx: 6, cz: -334, rx: 7, rz: 5 }] },
@@ -41,9 +45,11 @@ export default makeMdwHole({
     { cx: 39, cz: -494, rx: 9, rz: 6, rot: 0.4, wob: 0.1, seed: 15, depth: 1.5 },
   ],
   // the first water: a pond right of the second landing area, on the direct line to the green (the brave line)
-  ponds: [{ cx: 45, cz: -408, rx: 13, rz: 22, rot: -0.15, wob: 0.1, seed: 16, depth: 2.2, lip: 'rough', lipW: 2.5, blend: 0.5, lobes: [{ cx: 40, cz: -429, rx: 9, rz: 10 }] }],
-  ob: { x0: -60, x1: 70, z0: -540, z1: 18 },
-  forest: { gap: 9, rows: 2, spacing: 13, size: [1.0, 1.5], seed: 104, keep: 6 },
+  ponds: [{ cx: 45, cz: -408, rx: 13, rz: 22, rot: -0.15, wob: 0.1, seed: 16, depth: 2.0, lip: 'rough', lipW: 2.5, blend: 0.5, lobes: [{ cx: 40, cz: -429, rx: 9, rz: 10 }] }],
+  // the layer swells into a dangerous area left of the climb to the green (a big pull on the approach is a punch-out)
+  deepRoughs: [{ cx: -34, cz: -468, rx: 12, rz: 30, rot: 0.25, wob: 0.08, seed: 17 }],
+  ob: { x0: -60, x1: 74, z0: -540, z1: 24 },
+  forest: { size: [1.0, 1.6], seed: 104, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false },
   obstacles: [],
   scenery: {
     // a pasture on the left hillside (a closed fence = a pasture), its cows and a windmill on the knoll above
