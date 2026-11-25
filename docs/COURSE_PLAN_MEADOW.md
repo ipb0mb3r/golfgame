@@ -48,6 +48,20 @@
 - **No blind shots:** the uphill holes (4, 8) keep the green in view from the landing areas; the raised tee on 6 shows the whole hole; windmills and props stay out of every shot's line.
 - **Engine features only:** no new mechanic or piece is needed (cows are art, waiting on the artist; the pastures are fences).
 
+## As built, holes 1–6 (map-study style, 2026-11-25, PR #151)
+The holes were rebuilt after the owner's map study (`docs/course/MAP_STUDY.md`, `docs/course/HANDBOOK.md`): a
+clearing in the forest, outlined fairways, a blobby deep-rough layer, bigger bowl bunkers, blob greens. Where the
+table above differs, this is what exists.
+
+| # | Par, length | As built |
+|---|---|---|
+| 1 | 4, 348 m | Fairway leans right, pinches before the green. Landing bunker left + a lone tree right (lay back short = safe, thread = wedge). Big feature bunker back left of the green; cup dead centre. Big deep-rough area on the left. Full tournament tee, flags behind the green, windmill. |
+| 2 | 4, 335 m | Bends left; the inside of the bend is rough with two tree clumps and a bunker in the gap (brave = through the gap, 70 m left). Pinch bunkers outside the corner; big lone tree as the safe aim. Deep rough swells into a big area under the left trees. |
+| 3 | 3, 146 m | Tee clearing opening into a round clearing; fairway blob in front; bean green, cup in the right lobe beside a big feature bunker wrapping the right. |
+| 4 | 5, 481 m | Two fairways split by a gap of rough (no cross bunker, owner); lay-up fairway runs to the pond; neck up to the raised green ("the small hill into the green", owner likes it). Open view to the pasture (4 cows) and windmill, no trees in front (`land.open`). |
+| 5 | 4, 361 m | Dogleg right round a **big lake** (owner: "a lot bigger"). Brave = carry its corner (~35 m of water); a weak carry is wet. Deep rough and trees close the bail-out right of and above the lake; a knoll on the shore; trees round the lake on the grass. |
+| 6 | 3, 188 m | Hilltop tee **~23 m above** a bowl (owner: "much deeper", unlike hole 3). Diagonal kidney green, cup by the water short right; bunkers behind (long back left, pot back right); fairway bail-out short left running under the green. Two windmills behind. Use the ⚑ power (HANDBOOK §4). |
+
 ## Building notes
 - **Phone budget ≤ 300k triangles per hole** (`node tools/perf-check.mjs`); X47: `meadow-day` is heavy on long holes, so check every hole, and on a heavy one (likely 4, 7, 9) use fewer trees, props or fence.
 - Props follow `docs/art/big-props/SPEC.md` §4, `docs/art/fence/SPEC.md` §4, `docs/art/tee-props/SPEC.md` §4 and `docs/art/bench/SPEC.md` §4.

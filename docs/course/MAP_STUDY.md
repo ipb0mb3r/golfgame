@@ -3,7 +3,8 @@
 > Course designer, from 15 hole maps the owner (Alexis) shared from games he likes (2026-11-24). We keep the
 > principles, never the holes, names or art. The owner's diagnosis of our first holes: "the main problem is the shape
 > of everything. The fairways are too straight and the bunkers and rough are not interesting at all from a gameplay
-> perspective" (heights come later). This is the brief for every hole from now on, together with GENRE_NOTES L12–L19.
+> perspective" (heights come later). This is the brief for every hole from now on, together with GENRE_NOTES L12–L21.
+> How to build it with the hole kit, and the traps we hit: `docs/course/HANDBOOK.md`.
 
 ## 1. The hole sits in a place, not a field
 - The playable land is a **shaped clearing**: forest, sea, a river or a drop all around, and outside is clearly "out".
