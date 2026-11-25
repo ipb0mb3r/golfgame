@@ -233,15 +233,15 @@ export const SCENARIOS = {
     name: 'Meadows 4: the lay-up', text: 'Laid up left of the pond: a pitch up the hill to the raised green. Short rolls back down.',
   },
   'mdw5-carry-the-pond': {
-    hole: 'mdw-05', ball: { x: 0, z: 0 }, aimAt: { x: 60, z: -250 }, strokes: 0, seed: 2501, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Meadows 5: carry the pond', text: 'Aimed over the corner of the pond: a full Driver carries it and leaves a short iron. A weak one is wet.',
+    hole: 'mdw-05', ball: { x: 0, z: 0 }, aimAt: { x: 40, z: -225 }, strokes: 0, seed: 2501, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 5: carry the lake', text: 'Aimed over the corner of the big lake: a full Driver carries it onto the second leg and leaves a short iron. A weak one is wet.',
   },
   'mdw5-outside-bunker': {
-    hole: 'mdw-05', ball: { x: -24, z: -238 }, strokes: 1, seed: 2502, lie: 'sand',
-    name: 'Meadows 5: outside the bend', text: 'In the big bunker on the outside of the bend, about 160 m from the green.',
+    hole: 'mdw-05', ball: { x: -27, z: -212 }, strokes: 1, seed: 2502, lie: 'sand',
+    name: 'Meadows 5: outside the bend', text: 'In the big bunker on the outside of the corner, about 160 m from the green.',
   },
   'mdw5-up-a-tier': {
-    hole: 'mdw-05', ball: { x: 93, z: -313 }, strokes: 2, seed: 2503, wind: { x: 0, z: 0 }, lie: 'green',
+    hole: 'mdw-05', ball: { x: 114, z: -288 }, strokes: 2, seed: 2503, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Meadows 5: putt up a tier', text: 'From the lower front tier, up the step to the cup on the back tier.',
   },
   'mdw6-at-the-flag': {

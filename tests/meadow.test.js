@@ -8,7 +8,7 @@ import { holeLength } from '../src/core/vec.js';
 import { shot, startAt, layup } from './mtn.test.js';
 
 // The plan: [par, length m, difficulty]
-const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 373, 2], 'mdw-06': [3, 174, 2] };
+const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 361, 2], 'mdw-06': [3, 174, 2] };
 const LENGTH = { 3: [120, 210], 4: [285, 440], 5: [460, 550] }; // HOLE_GUIDELINES §4
 
 test('Buttercup Meadows: every hole validates, is dressed in meadow-day, and has its plan par, length and difficulty', () => {
@@ -130,14 +130,17 @@ test('mdw-04: a real hill (down into the valley, up to the green); safe lay-up l
   assert.equal(shot(push, { club: '3w', power: 0.85, at: { x: 46, z: -472 } }).ev, 'penalty');
 });
 
-test('mdw-05: carrying the pond leaves a shorter approach than the safe drive to the elbow', () => {
+test('mdw-05 (map study): carrying the big lake\'s corner leaves a short iron; a weak carry is wet; the safe drive stays dry', () => {
   const h = HOLES['mdw-05'];
-  const safe = shot(startAt(h), { club: 'driver', power: 1 });
-  const brave = shot(startAt(h), { club: 'driver', power: 1, at: { x: 60, z: -250 } });
+  const safe = shot(startAt(h));
+  assert.notEqual(safe.ev, 'penalty');
+  const brave = shot(startAt(h), { club: 'driver', power: 1, at: { x: 40, z: -225 } });
   assert.equal(brave.surface, 'fairway');
   assert.ok(brave.toCup < safe.toCup - 25, `brave ${brave.toCup.toFixed(0)} m, safe ${safe.toCup.toFixed(0)} m`);
-  const wet = shot(startAt(h), { club: 'driver', power: 0.7, at: { x: 60, z: -250 } });
-  assert.equal(wet.ev, 'penalty', 'a weak drive on the brave line finds the pond');
+  assert.equal(shot(startAt(h), { club: 'driver', power: 0.9, at: { x: 40, z: -225 } }).ev, 'penalty', 'a weak brave drive finds the lake');
+  // the lake is big (owner): more than 4,000 m² of water
+  let water = 0; for (let z = -40; z > -260; z -= 2) for (let x = 0; x < 150; x += 2) if (h.surfaceAt(x, z) === 'water') water += 4;
+  assert.ok(water > 4000, `${water} m² of water`);
 });
 
 test('mdw-06: downhill; at the flag holds the green, a miss left stays dry', () => {
