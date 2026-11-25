@@ -328,6 +328,7 @@ function buildMtnHole(spec0, meta) {
   const landGap = land ? (x, z) => { gridCell(x, z); return bilerp(LGRID) + gOut; } : null;
   // S24 deep rough as a perimeter band: deepBand = m, or { w, wob, seed } for a width that swells and thins (a blob, not a ring)
   const DB = land ? spec.land.deepBand ?? 0 : 0, dbW = typeof DB === 'number' ? DB : DB.w, dbWob = DB.wob ?? 0, dbK = DB.seed ?? 1;
+  const DEEP_JOIN = spec.land?.deepJoin ?? 18; // m: how round the join between the layer and a deep-rough blob is
   const bandW = (x, z) => dbW * (1 + dbWob * (0.6 * Math.sin(x / 21 + dbK) + 0.4 * Math.sin(z / 17 + 2.3 * dbK)));
 
   // the creek's distance and half-width, cached on the same 1 m grid as the fairway
@@ -436,7 +437,13 @@ function buildMtnHole(spec0, meta) {
     for (const r of roughs) if (blobR(x, z, r) < 1) return 'rough'; // L6: rough that bites into the fairway
     if (fairwayGap(x, z) < 0) return 'fairway';
     // owner's option B (2026-11-25): a band of deep rough just inside the clearing's edge, between the rough and OB
-    if (dbW > 0 && landGap(x, z) > -bandW(x, z)) return 'deepRough';
+    if (dbW > 0) {
+      // the layer and the deep-rough blobs join with a ROUNDED fillet (owner, 2026-11-25: "no sharp angles, everything
+      // round"): a smooth minimum of their signed distances (m), so no inside corner where a blob meets the layer
+      let f = -landGap(x, z) - bandW(x, z);
+      for (const d of deepRoughs) if (!d.pts) f = smin(f, (blobR(x, z, d) - 1) * Math.min(d.rx, d.rz), DEEP_JOIN);
+      if (f < 0) return 'deepRough';
+    }
     return 'rough';
   }
 
