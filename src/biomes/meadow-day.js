@@ -11,11 +11,12 @@ export default {
   palette: {
     // surfaces
     tee: '#9ad45e', fairwayA: '#98d25a', fairwayB: '#88c44e', edge: '#4e8a30', fringe: '#93cc56', greenA: '#c8f07e', greenB: '#beec72',
-    rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
+    rough: '#5c9e3e', deepRough: '#315a24', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
     rock: '#a89b8c', path: '#e8d8ae',
     // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
-    // a darker olive: long, seedy grass, warmer than the green ground beyond OB (artist, 2026-11-24)
-    roughDeep: '#566e26',
+    // owner (2026-11-25): halfway between the rough and the ground beyond OB; the OB ground (`deepRough`) was made
+    // deeper so this midpoint passes every readability rule with no waiver
+    roughDeep: '#477c31',
     // sky, fog, light
     skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#e2ecf6', fog: '#d2ecfa',
     sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',
@@ -28,7 +29,7 @@ export default {
     wood: '#c58a52', roof: '#bc4749', propSnow: '#f4ecd8', propA: '#ffd43a', propB: '#e8573e', glass: '#c4e2f2',
     // engine keys (temporary, DESIGN §8b): the putting grid (fill = greenA, lines a darker green), the far
     // ground (= deepRough), the pond surface (= water), the boulders (= rock)
-    gridFill: '#c8f07e', gridLine: '#9ad65a', farGround: '#4a8836', pondSurface: '#2c8ad8', boulder: '#a89b8c',
+    gridFill: '#c8f07e', gridLine: '#9ad65a', farGround: '#315a24', pondSurface: '#2c8ad8', boulder: '#a89b8c',
   },
   textures: [],               // none yet (AP6): flat painted colours
   onTrees: ['roundCanopy', 'pineTree'], // the soft round tree + a soft pine (AP7a)

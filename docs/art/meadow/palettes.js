@@ -13,7 +13,7 @@ const base = {
 export const PALETTES = {
   'meadow-warm': { ...base, id: 'meadow-warm', label: 'Meadow · warm',
     tee: '#9AD45E', fairwayA: '#98D25A', fairwayB: '#88C44E', greenA: '#C8F07E', greenB: '#BEEC72',
-    rough: '#5C9E3E', deepRough: '#4A8836', sand: '#F3E8CA', lip: '#C8AE7A', accent: '#BC4749' },
+    rough: '#5C9E3E', deepRough: '#315A24', sand: '#F3E8CA', lip: '#C8AE7A', accent: '#BC4749' }, // deepRough (OB ground) deeper, owner 2026-11-25 (was #4A8836)
   'meadow-warmer': { ...base, id: 'meadow-warmer', label: 'Meadow · warmer',
     tee: '#A6D45A', fairwayA: '#A4D256', fairwayB: '#94C44A', greenA: '#D2F07C', greenB: '#C8EC6E',
     rough: '#6A9C3A', deepRough: '#568832', sand: '#F5E6C4', lip: '#CAAA74', accent: '#BC4749',
