@@ -8,7 +8,7 @@ import { holeLength } from '../src/core/vec.js';
 import { shot, startAt, layup } from './mtn.test.js';
 
 // The plan: [par, length m, difficulty]
-const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 361, 2], 'mdw-06': [3, 174, 2] };
+const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 361, 2], 'mdw-06': [3, 188, 2] };
 const LENGTH = { 3: [120, 210], 4: [285, 440], 5: [460, 550] }; // HOLE_GUIDELINES §4
 
 test('Buttercup Meadows: every hole validates, is dressed in meadow-day, and has its plan par, length and difficulty', () => {
@@ -31,7 +31,9 @@ test('Buttercup Meadows: the default first shot stays out of trouble, and the sa
   for (const h of MDW) {
     const e = shot(startAt(h));
     assert.notEqual(e.ev, 'penalty', h.id);
-    assert.ok(['fairway', 'green', 'fringe'].includes(e.surface), `${h.id}: the default tee shot ends on ${e.surface}`);
+    // mdw-06's big drop: the default tee aim is the club's flat carry (engine S21), so on a drop it lands short in the
+    // rough on the slope (never a penalty); the player takes the ⚑ power
+    if (h.id !== 'mdw-06') assert.ok(['fairway', 'green', 'fringe'].includes(e.surface), `${h.id}: the default tee shot ends on ${e.surface}`);
     const p = startAt(h);
     for (let k = 0; k < 8 && !p.finished; k++) shot(p);
     assert.ok(p.finished && p.finished.strokes <= h.par, `${h.id}: ${p.finished?.strokes} strokes on a par ${h.par}`);
@@ -143,11 +145,12 @@ test('mdw-05 (map study): carrying the big lake\'s corner leaves a short iron; a
   assert.ok(water > 4000, `${water} m² of water`);
 });
 
-test('mdw-06: downhill; at the flag holds the green, a miss left stays dry', () => {
+test('mdw-06: a big drop (owner); at the flag holds, a push is wet, the bail-out left is dry fairway', () => {
   const h = HOLES['mdw-06'];
-  assert.ok(h.heightAt(0, 0) - h.heightAt(2, -182) > 6, 'the tee sits well above the green');
-  assert.equal(shot(startAt(h), { at: { x: 12, z: -174 } }).surface, 'green');
-  assert.notEqual(shot(startAt(h), { at: { x: -30, z: -178 } }).ev, 'penalty');
+  assert.ok(h.heightAt(0, 0) - h.heightAt(2, -196) > 16, 'the tee sits well above the green (a big drop)');
+  assert.equal(layup(startAt(h), { x: 12, z: -188 }, { club: '7i' }).surface, 'green');
+  assert.equal(layup(startAt(h), { x: 12, z: -188 }, { club: '7i', acc: -0.06 }).ev, 'penalty');
+  assert.equal(layup(startAt(h), { x: -18, z: -170 }, { club: '7i' }).surface, 'fairway');
 });
 
 // S24 deep rough (owner, 2026-11-24): on mdw-02's left, too far from the fairway is a punch-out; the brave gap stays open
@@ -162,7 +165,7 @@ test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the br
 
 // Owner rule L20 (2026-11-25): deep rough is the layer between the rough and OB (holes redone in the map-study style)
 test('Buttercup Meadows (map-study holes): deep rough lies between the rough and OB on both sides, its width varying', () => {
-  for (const id of ['mdw-01', 'mdw-02', 'mdw-03']) {
+  for (const id of ['mdw-01', 'mdw-02', 'mdw-03', 'mdw-04', 'mdw-05', 'mdw-06']) {
     const h = HOLES[id], widths = { left: [], right: [] };
     for (let z = -40; z >= -260; z -= 10) {
       for (const [side, dir] of [['left', -1], ['right', 1]]) {

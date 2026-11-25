@@ -245,12 +245,12 @@ export const SCENARIOS = {
     name: 'Meadows 5: putt up a tier', text: 'From the lower front tier, up the step to the cup on the back tier.',
   },
   'mdw6-at-the-flag': {
-    hole: 'mdw-06', ball: { x: 0, z: 0 }, aimAt: { x: 12, z: -174 }, strokes: 0, seed: 2601, wind: { x: 0, z: 0 }, lie: 'tee',
-    name: 'Meadows 6: at the flag', text: 'Downhill, straight at the flag in the lobe nearest the water. Short and right is wet.',
+    hole: 'mdw-06', ball: { x: 0, z: 0 }, aimAt: { x: 12, z: -188 }, strokes: 0, seed: 2601, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 6: at the flag', text: 'From the hilltop tee, about 18 m down, straight at the flag in the lobe nearest the water. Take the ⚑ power: the ball flies a long way. Short and right is wet.',
   },
   'mdw6-left-bank': {
-    hole: 'mdw-06', ball: { x: -30, z: -168 }, strokes: 1, seed: 2602, wind: { x: 0, z: 0 }, lie: 'rough',
-    name: 'Meadows 6: the safe miss', text: 'On the bank left of the green, the safe miss: a chip across the green toward the water side.',
+    hole: 'mdw-06', ball: { x: -18, z: -170 }, strokes: 1, seed: 2602, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 6: the bail-out', text: 'On the patch of fairway short left of the green, the safe miss: a chip across the green toward the flag by the water.',
   },
 };
 
