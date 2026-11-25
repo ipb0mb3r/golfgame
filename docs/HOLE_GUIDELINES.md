@@ -2,6 +2,8 @@
 
 > **Status: test run, not final content.** This first 9 is a prototype course. It tests the engine (rounds, obstacles, rivals, menus) and the **course designer's workflow**. After it come an **art and assets pass**, then the real courses (each with its own genre talk with the owner first). Expect these holes to be reworked or replaced. Favour quick iteration over polish.
 
+> **Real courses (since Buttercup Meadows, 2026-11-25):** start with `docs/course/HANDBOOK.md` and `docs/course/MAP_STUDY.md`; the newer owner rules in GENRE_NOTES §6d (L12–L21) override the prototype notes below.
+
 > **For the course designer:** this is your brief, together with **`docs/GENRE_NOTES.md`** (the owner's principles from the genre study, 2026-11-18: read it first). For the prototype, **you design all 9 holes**; **Alexis (owner / game designer)** plays each one and comments, and may bring his own ideas. The PM reviews each hole's PR against this document. Rules marked **MUST** are not negotiable; the rest are guidance. If this file and GENRE_NOTES disagree, ask the PM.
 
 ## 1. The course
