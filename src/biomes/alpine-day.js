@@ -12,11 +12,12 @@ export default {
   palette: {
     // surfaces
     tee: '#92d45a', fairwayA: '#90d256', fairwayB: '#80c44a', edge: '#3e8a3a', fringe: '#88ca52', greenA: '#c2ee78', greenB: '#b8ea6c',
-    rough: '#56a040', deepRough: '#438a3a', sand: '#f2ecd6', lip: '#b8b29c', water: '#2a9ad8', waterDeep: '#1e6cb4', bank: '#8a8478',
+    rough: '#56a040', deepRough: '#2c5b26', sand: '#f2ecd6', lip: '#b8b29c', water: '#2a9ad8', waterDeep: '#1e6cb4', bank: '#8a8478',
     rock: '#9aa2ac', path: '#c9c6be',
     // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
-    // the owner's tint (2026-11-25), halfway between the rough and the ground beyond OB: a soft step toward OB
-    roughDeep: '#4d953d',
+    // owner (2026-11-25): halfway between the rough and the ground beyond OB; the OB ground (`deepRough`) was made
+    // deeper so this midpoint passes every readability rule with no waiver
+    roughDeep: '#417e33',
     // sky, fog, light (owner: a lighter azure)
     skyTop: '#5cb4f2', skyHorizon: '#b4e4fc', cloud: '#e4eef8', fog: '#bee6fa',
     sun: '#fff6e8', ambient: '#e2eeff', shadow: '#2e5e6a',
@@ -30,7 +31,7 @@ export default {
     wood: '#6a4128', roof: '#7a7470', propSnow: '#ffffff', propA: '#f4f4f8', propB: '#4a62d8', glass: '#cfe6f5',
     // engine keys (temporary, DESIGN §8b): the putting grid (fill = greenA, lines a darker green), the far
     // ground (= deepRough), the pond surface (= water), the boulders (= rock)
-    gridFill: '#c2ee78', gridLine: '#96d25e', farGround: '#438a3a', pondSurface: '#2a9ad8', boulder: '#9aa2ac',
+    gridFill: '#c2ee78', gridLine: '#96d25e', farGround: '#2c5b26', pondSurface: '#2a9ad8', boulder: '#9aa2ac',
   },
   textures: [],               // none yet (AP6): flat painted colours
   onTrees: ['pineTree', 'spruceTree', 'birchTree'], // soft pines, teal spruces (leafAlt) and a few birches (AP7a)
@@ -56,11 +57,5 @@ export default {
   fences: ['railFence'],      // post & two rails in dark chalet wood (docs/art/fence/SPEC.md); look only
   // not a tournament set (owner 2026-11-24): no flags or tents, only the park bench by the tee (docs/art/bench/SPEC.md)
   eventProps: ['parkBench'],
-  // owner pick 2026-11-25: deep rough sits halfway between the rough and the ground beyond OB, closer than the rules ask;
-  // the denser deep-rough grass texture (S24) and the lie readout tell it apart
-  readabilityWaivers: {
-    'roughDeep/rough': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
-    'roughDeep/ob': 'owner pick 2026-11-25: deep rough is halfway between the rough and the ground beyond OB, a soft step (the denser texture tells it apart)',
-  },
   notes: 'Swiss Alps: rolling, elevated holes with raised tees and greens, creeks and small ponds, pines along the fairways, the big peaks always in view. Big props out of bounds: chalets on the slopes, hay huts dotted near the holes, never in play. Suggested weather: clear, light wind.',
 };
