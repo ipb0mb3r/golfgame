@@ -24,8 +24,8 @@ export default makeMdwHole({
   ],
   // the clearing: a small hilltop tee clearing, the slope, then a round bowl around the green; deep rough at its edge
   land: { pts: [[-12, 16], [12, 16], [16, -30], [26, -80], [46, -120], [62, -160], [60, -212], [42, -240], [10, -252], [-24, -248], [-50, -228], [-60, -188], [-50, -142], [-30, -96], [-18, -46], [-14, -10]], deepBand: { w: 7, wob: 0.75, seed: 31 } },
-  // the bail-out: a patch of fairway short left of the green (the front of the green is rough, sloping to the water)
-  fairwayShapes: [{ pts: [[-44, -152], [-26, -146], [-14, -158], [-12, -178], [-20, -192], [-36, -190], [-48, -172]] }],
+  // the bail-out (owner's sketch): fairway short left of the green, running up under it and along its left side
+  fairwayShapes: [{ pts: [[-36, -152], [-10, -148], [4, -158], [8, -176], [4, -196], [-6, -212], [-24, -222], [-40, -212], [-44, -186]] }],
   // a long kidney on the diagonal (front right to back left); the cup's lobe tilts gently toward the water
   green: { cx: 2, cz: -196, rx: 19, rz: 10, rot: 0.55, wob: 0.07, seed: 31, blend: 0.5, lobes: [{ cx: 12, cz: -188, rx: 9, rz: 8 }, { cx: -9, cz: -205, rx: 10, rz: 9 }], raise: 0.15,
     contour: (x, z) => -0.011 * (x - 2) - 0.006 * (z + 196) },
