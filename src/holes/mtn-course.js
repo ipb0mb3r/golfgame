@@ -326,6 +326,7 @@ function buildMtnHole(spec0, meta) {
     return bilerp(GRID) + gOut;
   };
   const landGap = land ? (x, z) => { gridCell(x, z); return bilerp(LGRID) + gOut; } : null;
+  const deepBand = land ? spec.land.deepBand ?? 0 : 0; // m (S24 deep rough as a perimeter band)
 
   // the creek's distance and half-width, cached on the same 1 m grid as the fairway
   const CD = creek ? new Float32Array(GW * GH) : null, CW = creek ? new Float32Array(GW * GH) : null;
@@ -432,6 +433,8 @@ function buildMtnHole(spec0, meta) {
     if (deepRoughs.length && inDeepRough(x, z)) return 'deepRough'; // S24
     for (const r of roughs) if (blobR(x, z, r) < 1) return 'rough'; // L6: rough that bites into the fairway
     if (fairwayGap(x, z) < 0) return 'fairway';
+    // owner's option B (2026-11-25): a band of deep rough just inside the clearing's edge, between the rough and OB
+    if (deepBand > 0 && landGap(x, z) > -deepBand) return 'deepRough';
     return 'rough';
   }
 

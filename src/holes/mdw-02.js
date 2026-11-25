@@ -12,7 +12,8 @@ const TEE = { x: 0, z: 0 };
 const CORNER = { x: -2, z: -212 };
 const CUP = { x: -96, z: -291 }; // in the middle of the bean's left lobe, by the left bunker
 
-export default makeMdwHole({
+// the hole's data (also used by the dev comparison copy mdw-02b, src/holes/mdw-02b.js)
+export const MDW02 = {
   id: 'mdw-02', number: 2, name: 'Buttercup Meadows · 2', par: 4, difficulty: 1,
   tee: TEE, cup: CUP,
   aimTarget: { x: 3, z: -206 },
@@ -72,4 +73,6 @@ export default makeMdwHole({
     ],
     blurb: 'Buttercup Meadows, hole 2: a par 4 bending left around clumps of trees.',
   }),
-});
+};
+
+export default makeMdwHole(MDW02);
