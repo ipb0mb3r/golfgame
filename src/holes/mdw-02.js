@@ -42,9 +42,9 @@ export default makeMdwHole({
     { cx: -58, cz: -315, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },
     { cx: -107, cz: -306, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 },
   ],
-  // S24 deep rough (owner's sketch, 2026-11-25): one long blob on the left of the clearing, beyond a strip of normal rough.
+  // S24 deep rough (owner's sketch, 2026-11-25): one blob far left, under the trees, never close to the fairway.
   // Stray too far left of the fairway (or hook the brave drive) and the next shot is a punch-out.
-  deepRoughs: [{ cx: -39, cz: -158, rx: 8.5, rz: 42, rot: -0.32, wob: 0.1, seed: 8, blend: 0.8, lobes: [{ cx: -23, cz: -100, rx: 6.5, rz: 32 }, { cx: -59, cz: -215, rx: 8, rz: 38 }] }],
+  deepRoughs: [{ cx: -45, cz: -128, rx: 15, rz: 46, rot: -0.22, wob: 0.1, seed: 8, blend: 0.8, lobes: [{ cx: -62, cz: -206, rx: 8.5, rz: 34 }] }],
   ob: { x0: -140, x1: 52, z0: -348, z1: 26 },
   // trees in play: clumps along the clearing's edge
   forest: { size: [1.0, 1.6], seed: 102, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false, clear: [{ pts: [{ x: 0, z: 0 }, { x: -45, z: -250 }], w: 9 }] },
