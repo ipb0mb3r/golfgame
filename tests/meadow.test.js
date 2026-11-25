@@ -156,3 +156,25 @@ test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the br
     assert.ok(Math.hypot(x - -42, z - -250) > 20 || z < -230, `deep rough at (${x}, ${z}) in the brave landing`);
   }
 });
+
+// Owner rule L20 (2026-11-25): deep rough is the layer between the rough and OB (holes redone in the map-study style)
+test('Buttercup Meadows (map-study holes): deep rough lies between the rough and OB on both sides, its width varying', () => {
+  for (const id of ['mdw-01', 'mdw-02']) {
+    const h = HOLES[id], widths = { left: [], right: [] };
+    for (let z = -40; z >= -260; z -= 10) {
+      for (const [side, dir] of [['left', -1], ['right', 1]]) {
+        let w = 0, seenOb = false;
+        for (let x = dir; Math.abs(x) < 160 && !seenOb; x += dir) {
+          const s = h.surfaceAt(x, z);
+          if (s === 'deepRough') w++; else if (s === 'ob') seenOb = true; else if (w) w = 0; // count the run that touches OB
+        }
+        if (seenOb) widths[side].push(w);
+      }
+    }
+    for (const side of ['left', 'right']) {
+      const ws = widths[side];
+      assert.ok(ws.filter(w => w > 0).length >= ws.length * 0.7, `${id} ${side}: deep rough touches OB along most of the side (${ws.join(',')})`);
+      assert.ok(Math.max(...ws) - Math.min(...ws) >= 5, `${id} ${side}: the layer's width varies (a blob, not a ring): ${ws.join(',')}`);
+    }
+  }
+});

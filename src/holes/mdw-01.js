@@ -24,7 +24,8 @@ export default makeMdwHole({
     { x: 10, z: -445, r: 34, h: 9 },     // the windmill's hill, beyond OB
   ],
   // the playable land: a clearing in the forest, its edge irregular (owner's maps). Beyond it is out of bounds.
-  land: { pts: [[-13, 22], [13, 22], [22, -14], [34, -64], [52, -122], [64, -190], [58, -250], [36, -290], [42, -330], [36, -376], [18, -399], [-6, -402], [-28, -390], [-40, -360], [-30, -322], [-38, -292], [-60, -250], [-64, -196], [-44, -150], [-30, -100], [-24, -48], [-18, -8]] },
+  // Deep rough (owner rule L20) is the layer between the rough and OB: a blob band, its width swelling and thinning.
+  land: { pts: [[-13, 22], [13, 22], [22, -14], [34, -64], [52, -122], [64, -190], [58, -250], [36, -290], [42, -330], [36, -376], [18, -399], [-6, -402], [-28, -390], [-40, -360], [-30, -322], [-38, -292], [-60, -250], [-64, -196], [-44, -150], [-30, -100], [-24, -48], [-18, -8]], deepBand: { w: 8, wob: 0.75, seed: 5 } },
   // the fairway as an outline: narrow off the tee, a fat landing zone leaning right, a pinch, then the green's width
   fairwayShapes: [{ pts: [[-6, -26], [4, -26], [13, -80], [28, -150], [36, -206], [29, -256], [9, -293], [15, -334], [-11, -334], [-13, -295], [-15, -258], [-15, -208], [-8, -150], [-9, -82]] }],
   // a big bean, the cup in its centre; gently tilted (back right high): putts break a little toward the front left

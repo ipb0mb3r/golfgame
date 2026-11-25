@@ -57,6 +57,8 @@
 - **Height shows as terraces and bands**: banks stepping down to water (map 21), contour bands around a hill with
   the fairway curving round its foot (map 22), a beach with terraces climbing away from it (map 17).
 - **Owner (2026-11-24): Meadow keeps the dense forest outside the clearing** (option B), as in the hole 1 pilot.
+- **Owner (2026-11-25): deep rough is the layer between the rough and OB** (GENRE_NOTES L20): a blob band inside the
+  clearing's edge, swelling into a bigger area where it adds a decision.
 
 ## 9. Not yet (later steps)
 - **Heights:** the maps barely show them. A separate pass with the owner.
