@@ -20,8 +20,6 @@ import mdw03 from './mdw-03.js';
 import mdw04 from './mdw-04.js';
 import mdw05 from './mdw-05.js';
 import mdw06 from './mdw-06.js';
-// dev comparison: mdw-02 with deep rough as a perimeter band (owner's option B), in no set or menu
-import mdw02b from './mdw-02b.js';
 // S24: dev only, the deep-rough practice spot (in no set or menu)
 import devDeepRough from './dev-deep-rough.js';
 import { validateHole } from '../core/validate.js';
@@ -40,7 +38,7 @@ export const HOLES = Object.fromEntries([hole1, hole2, hole3, ...MTN, ...MDW].ma
 export const DEFAULT_HOLE = hole1.id;
 // S24: dev-only holes, played by ?hole=<id> or a dev test spot only: not in HOLES, so no set, menu or
 // every-hole check lists them (tests/deep-rough.test.js checks them).
-export const DEV_HOLES = Object.fromEntries([devDeepRough, mdw02b].map(h => [h.id, h]));
+export const DEV_HOLES = Object.fromEntries([devDeepRough].map(h => [h.id, h]));
 
 // A set (course) is a playlist of hole ids of ANY length, and the same hole may appear in several
 // sets or several times in one (owner rule, DESIGN §8). ?set=<id> plays it as a round (Phase 6).

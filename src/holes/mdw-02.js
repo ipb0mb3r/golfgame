@@ -12,7 +12,6 @@ const TEE = { x: 0, z: 0 };
 const CORNER = { x: -2, z: -212 };
 const CUP = { x: -96, z: -291 }; // in the middle of the bean's left lobe, by the left bunker
 
-// the hole's data (also used by the dev comparison copy mdw-02b, src/holes/mdw-02b.js)
 export const MDW02 = {
   id: 'mdw-02', number: 2, name: 'Buttercup Meadows · 2', par: 4, difficulty: 1,
   tee: TEE, cup: CUP,
@@ -28,7 +27,7 @@ export const MDW02 = {
     { x: -50, z: -170, r: 30, h: 1.4 },  // a soft knoll under the trees inside the bend
   ],
   // the clearing follows the bend; the inside of the bend is part of it (rough, trees, a bunker: the shortcut)
-  land: { pts: [[-14, 22], [14, 22], [24, -20], [34, -90], [47, -168], [45, -236], [24, -282], [-14, -306], [-52, -330], [-90, -340], [-122, -328], [-136, -300], [-128, -270], [-104, -256], [-84, -232], [-76, -196], [-72, -148], [-56, -98], [-34, -58], [-22, -18]] },
+  land: { pts: [[-14, 22], [14, 22], [24, -20], [34, -90], [47, -168], [45, -236], [24, -282], [-14, -306], [-52, -330], [-90, -340], [-122, -328], [-136, -300], [-128, -270], [-104, -256], [-84, -232], [-76, -196], [-72, -148], [-56, -98], [-34, -58], [-22, -18]], deepBand: { w: 8, wob: 0.75, seed: 3 } },
   // the fairway snakes: narrow off the tee, fat at the corner, then a pinched second leg into the green's front
   fairwayShapes: [{ pts: [[-5, -26], [5, -26], [12, -90], [22, -160], [27, -210], [18, -246], [-6, -262], [-34, -277], [-58, -294], [-76, -304], [-88, -286], [-62, -270], [-50, -244], [-42, -224], [-25, -196], [-14, -150], [-9, -90]] }],
   // a wide bean across the line of the approach; back-to-front along the line of play (the back left is high)
@@ -43,9 +42,10 @@ export const MDW02 = {
     { cx: -58, cz: -315, rx: 6, rz: 10, rot: 0.7, wob: 0.1, seed: 5, depth: 1.5 },
     { cx: -107, cz: -306, rx: 8, rz: 6, rot: -0.5, wob: 0.12, seed: 6, depth: 1.5 },
   ],
-  // S24 deep rough (owner's sketch, 2026-11-25): one blob far left, under the trees, never close to the fairway.
-  // Stray too far left of the fairway (or hook the brave drive) and the next shot is a punch-out.
-  deepRoughs: [{ cx: -45, cz: -128, rx: 15, rz: 46, rot: -0.22, wob: 0.1, seed: 8, blend: 0.8, lobes: [{ cx: -62, cz: -206, rx: 8.5, rz: 34 }] }],
+  // S24 deep rough (owner, 2026-11-25: the A + B mix). B: a band just inside the clearing's edge, between the rough and
+  // the OB forest, its width swelling and thinning (land.deepBand). A: on the left it widens into a dangerous area under
+  // the trees, merged into the band as one shape, never close to the fairway (16 m at least).
+  deepRoughs: [{ cx: -51, cz: -128, rx: 21, rz: 47, rot: -0.22, wob: 0.1, seed: 8, blend: 0.8, lobes: [{ cx: -63, cz: -206, rx: 12, rz: 35 }] }],
   ob: { x0: -140, x1: 52, z0: -348, z1: 26 },
   // trees in play: clumps along the clearing's edge
   forest: { size: [1.0, 1.6], seed: 102, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false, clear: [{ pts: [{ x: 0, z: 0 }, { x: -45, z: -250 }], w: 9 }] },
