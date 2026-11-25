@@ -181,3 +181,13 @@ test('Buttercup Meadows (map-study holes): deep rough lies between the rough and
     }
   }
 });
+
+// Owner (2026-11-25): trees stand on the grass, never in the water or right at its edge
+test('Buttercup Meadows: no tree stands in the water or within 2 m of it', () => {
+  for (const h of MDW) for (const o of h.obstacles) {
+    if (o.type !== 'tree') continue;
+    for (let a = 0; a < 16; a++) for (const r of [0, 1, 2]) {
+      assert.notEqual(h.surfaceAt(o.x + Math.cos(a * Math.PI / 8) * r, o.z + Math.sin(a * Math.PI / 8) * r), 'water', `${h.id}: tree at (${o.x}, ${o.z}) is at the water`);
+    }
+  }
+});

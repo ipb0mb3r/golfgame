@@ -56,10 +56,10 @@ export default makeMdwHole({
     oak(-36, -238, 1.6),
     // round trees on the lake's shore (owner: "more natural"), never on the brave carry
     oak(42, -54, 1.2), oak(52, -47, 1.0), oak(33, -62, 0.9),
-    oak(94, -78, 1.25), oak(104, -90, 1.0), oak(92, -92, 0.9),
+    oak(94, -78, 1.25), oak(104, -90, 1.0), oak(100, -100, 0.9),
     oak(134, -186, 1.1), oak(140, -200, 0.95),
     // a clump above the lake, beside the brave landing (owner: the route stays, a bit harder)
-    oak(50, -200, 0.95), oak(58, -210, 1.1), oak(67, -201, 1.0), oak(76, -213, 0.95),
+    oak(50, -200, 0.95), oak(58, -210, 1.1), oak(67, -219, 1.0), oak(76, -213, 0.95),
     // trees in the deep rough right of the lake
     oak(118, -150, 1.15), oak(126, -160, 0.95), oak(104, -226, 1.0), oak(84, -226, 0.9), oak(128, -232, 1.05),
     oak(26, -112, 1.0),
