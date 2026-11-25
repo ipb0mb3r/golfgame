@@ -41,6 +41,9 @@ export default makeMdwHole({
   ],
   // the lone tree right of the landing bunker stands on a ring of rough in the fairway (owner's pick A)
   roughs: [{ cx: 24, cz: -210, rx: 7.5, rz: 7.5, wob: 0.15, seed: 4 }],
+  // deep rough (owner, 2026-11-25): the layer swells into a big area across the left side, out from under the trees
+  // but never close to the fairway (13 m at least): a hooked drive is a punch-out
+  deepRoughs: [{ cx: -49, cz: -205, rx: 19, rz: 95, rot: 0.04, wob: 0.08, seed: 6 }],
   ob: { x0: -68, x1: 68, z0: -405, z1: 26 },
   // trees in play: clumps along the clearing's edge (the land outline), no back arc (the forest edge frames the green)
   forest: { size: [1.0, 1.6], seed: 101, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false },

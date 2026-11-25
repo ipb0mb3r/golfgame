@@ -45,7 +45,7 @@ export const MDW02 = {
   // S24 deep rough (owner, 2026-11-25: the A + B mix). B: a band just inside the clearing's edge, between the rough and
   // the OB forest, its width swelling and thinning (land.deepBand). A: on the left it widens into a dangerous area under
   // the trees, merged into the band as one shape, never close to the fairway (16 m at least).
-  deepRoughs: [{ cx: -51, cz: -128, rx: 21, rz: 47, rot: -0.22, wob: 0.1, seed: 8, blend: 0.8, lobes: [{ cx: -63, cz: -206, rx: 12, rz: 35 }] }],
+  deepRoughs: [{ cx: -54, cz: -150, rx: 20, rz: 66, rot: -0.26, wob: 0.08, seed: 8 }],
   ob: { x0: -140, x1: 52, z0: -348, z1: 26 },
   // trees in play: clumps along the clearing's edge
   forest: { size: [1.0, 1.6], seed: 102, keep: 5, edgeGap: [5, 15], inset: [3, 9], clump: 3, back: false, clear: [{ pts: [{ x: 0, z: 0 }, { x: -45, z: -250 }], w: 9 }] },
