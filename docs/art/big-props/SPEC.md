@@ -17,7 +17,7 @@ Each picture shows a close-up on top and the view from the fairway (~100 m) belo
 ## 1. The owner's picks
 | Piece id | Look | Mock-up | Triangles | Size | Biome |
 |---|---|---|---|---|---|
-| `windmill` | C white smock mill, **sails still** (owner: no turning) | `PIECES.windmill.C` | **328** | 13 m tall (cap 12.2 m), sails reach 6.8 m from the hub | Meadow |
+| `windmill` | C white smock mill, **sails turn slowly** (owner 2026-11-25: "steady turn for now"; was still) | `PIECES.windmill.C` | **328** | 13 m tall (cap 12.2 m), sails reach 6.8 m from the hub | Meadow |
 | `chalet` | A classic chalet | `PIECES.chalet.A` | **404** | 12 × 9 m, 8.5 m tall (+ chimney) | Alpine |
 | `chaletTall` | B tall chalet: second priority, "if we have some time" | `PIECES.chalet.B` | **404** | 10 × 9 m, 11 m tall | Alpine |
 | `beachHut` | A thatched stilt hut | `PIECES.hut.A` | **114** | 3.6 × 3.6 m (+ deck), 4.7 m tall | Island |
@@ -69,7 +69,7 @@ Because these are slots, another biome can reuse a piece with its own colours. E
    - the footprint (piece radius × scale) reaches inside the OB box plus a 5 m margin.
 2. **No collider:** big props are never in play (owner), so physics is unchanged. The ball can't reach them (beyond OB, with OB ending the shot), so no shared collider is needed. If a ball rolls through one after going OB, that's acceptable.
 3. **Drawing:** flat-shaded toon, fogged, one draw call per piece per hole, instanced when there are several copies. A scenery LOD isn't needed at these counts. They are never hidden by the small-props rule; only the camera can be inside one, so keep them ≥ 10 m from OB.
-4. **The windmill sails stay still** (owner: "No, still"), so there's no moving part. Keep them a separate part in the library so turning could be added later.
+4. **The windmill sails turn** (owner 2026-11-25: "steady turn for now"; before: still). See §9.
 5. **Minimap:** optional. A small dot in `roof` colour would help orientation, but none is required.
 
 ## 7. Requests for course designer
@@ -77,3 +77,25 @@ Because these are slots, another biome can reuse a piece with its own colours. E
 
 ## 8. Size in the game (owner 2026-11-23)
 `BIG_PROP_SCALE` 2.5 (#128) draws every big prop at 2.5× the sizes above, so it is easy to notice from the tee. Close up, the beach hut's door then stands about twice a golfer's height and the chalet's about three times (`04-hut-sizes.jpg`, `05-chalet-sizes.jpg`: 2.5 / 1.8 / 1.5× beside a 1.8 m golfer). **Owner's pick:** the **beach hut and both chalets at 1.8×**, the **windmill at 2.5×**. This needs a per-piece cap or factor; see the dev request on the "Art: big props in Meadow, Alpine, Island" PR.
+
+## 9. Turning sails (owner 2026-11-25)
+The owner wants the windmill sails to turn: **a steady turn for now**. A wind-linked speed (faster on windy holes) is a possible later step, not asked for.
+
+- **What turns:** the `sails` part (the 4 sails, their spars and the hub) spins about the hub's axis. That is the tower's front axis (+z), through the hub centre at 10.7 m (before the piece's size and scale). The tower, the cap and the gallery stay still.
+- **Direction:** clockwise as seen from the front, like most real windmills.
+- **Speed:** slow and calm, **one full turn every ~9 s** (≈ 0.7 rad/s), even and with no easing. Add a `?tune=` value, e.g. `WINDMILL_TURN` in seconds per turn (range 4–30, 0 = still), so the owner can pick it on his phone.
+- **Variety:** each windmill starts at its own angle (from its index or position), so a pair on a hill never turns in step. It doesn't need its own speed.
+- **Off when not seen:** stop updating when the windmill is off screen (or farther than the fog). From far away it can keep turning, since it is the landmark.
+- **Cost:** no extra triangles and no extra draw calls (the sails are already their own instanced part). It is one instance matrix per windmill per frame, and a hole has 1–2 windmills. It can share the per-frame update the cows use (AP7i).
+
+### Request for dev
+1. **Turning windmill sails:** the sails part turns about the hub axis as described above.
+   - Build the sails part about the hub point and move it into place by the instance matrix, the same way the cow's head turns about the neck.
+   - It turns steadily clockwise, about one turn every 9 s, using a `WINDMILL_TURN` tunable (seconds per turn, 4–30, 0 = still).
+   - Each windmill gets its own start angle.
+   - No new triangles; the windmill stays 328.
+2. **Test:** the sails' turn keeps every vertex at the same distance from the hub axis; the tower doesn't move; 0 = still.
+3. **QA Light:** check on a Meadow hole with a windmill:
+   - the sails turn smoothly about the hub, without wobbling off it or cutting through the tower;
+   - two windmills don't turn in step;
+   - perf-check is unchanged.

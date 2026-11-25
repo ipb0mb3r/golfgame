@@ -338,7 +338,7 @@ State at the end of the first artist session. — Agent: artist
 - Tall `roundCanopy`: base row about 10% wider than the dome (backlog).
 - A per-pick slot override, e.g. `{ id: 'roundTree', slots: { canopy: 'leafAlt' } }` (backlog).
 - Small props (owner-approved 2026-11-23): six pieces, grassTuft, flowerPatch, flowerBush, pebbles, flatStone, reeds. Their shapes, slots and per-biome scatter are in `docs/art/small-props/SPEC.md`; the scatter itself is AP7c.
-- Big props (owner-approved 2026-11-23): `windmill` (white smock mill, still sails), `chalet` (+ `chaletTall` later) and `beachHut` (thatched stilt hut), specified in `docs/art/big-props/SPEC.md`. Still to come: hay hut, very tall palm (§6.3–6.5). **Cow** (owner pick 2026-11-24): C, a chunky round toy-like black-and-white cow with a red strap and yellow bell, 2×, 3–4 per fenced pasture, standing / grazing, head bob + tail swish, placed as a big prop: `docs/art/cow/SPEC.md`.
+- Big props (owner-approved 2026-11-23): `windmill` (white smock mill; sails turn slowly, owner 2026-11-25, big-props SPEC §9), `chalet` (+ `chaletTall` later) and `beachHut` (thatched stilt hut), specified in `docs/art/big-props/SPEC.md`. Still to come: hay hut, very tall palm (§6.3–6.5). **Cow** (owner pick 2026-11-24): C, a chunky round toy-like black-and-white cow with a red strap and yellow bell, 2×, 3–4 per fenced pasture, standing / grazing, head bob + tail swish, placed as a big prop: `docs/art/cow/SPEC.md`.
 - AP6 textured ground (speckle, edge line, lip, bank), §1.1.
 
 **How Alexis works (owner)**
