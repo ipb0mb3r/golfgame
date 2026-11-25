@@ -13,6 +13,9 @@ export default {
     tee: '#9ad45e', fairwayA: '#98d25a', fairwayB: '#88c44e', edge: '#4e8a30', fringe: '#93cc56', greenA: '#c8f07e', greenB: '#beec72',
     rough: '#5c9e3e', deepRough: '#4a8836', sand: '#f3e8ca', lip: '#c8ae7a', water: '#2c8ad8', waterDeep: '#1d62b8', bank: '#9a7a50',
     rock: '#a89b8c', path: '#e8d8ae',
+    // deep rough (S24, the in-play surface 'deepRough'; not `deepRough` above, which is the ground beyond OB):
+    // a darker olive: long, seedy grass, warmer than the green ground beyond OB (artist, 2026-11-24)
+    roughDeep: '#566e26',
     // sky, fog, light
     skyTop: '#1c76e2', skyHorizon: '#c9eaff', cloud: '#e2ecf6', fog: '#d2ecfa',
     sun: '#fff0d2', ambient: '#eaf4ff', shadow: '#356a40',

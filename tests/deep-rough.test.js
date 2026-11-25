@@ -194,17 +194,29 @@ test('S24: the look: its own drawn kind (added last), the optional roughDeep col
   const g = GROUND_LOOK.kinds.deepRough, r = GROUND_LOOK.kinds.rough;
   assert.ok(g.speck > r.speck && g.dab > r.dab && g.patch[1] < r.patch[1], 'denser specks and dabs, tighter patches');
   assert.ok(g.speck <= 0.1 && g.dab <= 0.1, 'within the shader mask (MASK_AMOUNT)');
-  // the fallback, and no real set defines it (the artist may)
+  // a set that lists roughDeep uses it as listed; one that doesn't gets the rough, darker (which sets list it is the artist's choice)
   const dark = c => '#' + [1, 3, 5].map(i => Math.round(parseInt(c.slice(i, i + 2), 16) * (1 - DEEP_ROUGH_DARKEN)).toString(16).padStart(2, '0')).join('');
+  let withKey = 0, withoutKey = 0;
   for (const [id, set] of Object.entries(BIOMES)) {
-    assert.ok(!Object.hasOwn(set.palette, 'roughDeep'), id);
-    assert.equal(paletteColour(set.palette, 'roughDeep'), dark(set.palette.rough), id);
-    assert.equal(fullPalette(set.palette).roughDeep, dark(set.palette.rough), id);
+    const listed = Object.hasOwn(set.palette, 'roughDeep');
+    if (listed) { withKey++; assert.equal(paletteColour(set.palette, 'roughDeep'), set.palette.roughDeep, id); }
+    else { withoutKey++; assert.equal(paletteColour(set.palette, 'roughDeep'), dark(set.palette.rough), id); }
+    const want = listed ? set.palette.roughDeep : dark(set.palette.rough);
+    assert.equal(fullPalette(set.palette).roughDeep, want, id);
     assert.equal(fullPalette(set.palette).rough, set.palette.rough, id);
-    // the readability rules pass on the fallback in every set (validateBiomeSet runs them; no waiver)
+    // the readability rules pass on the colour in use in every set (validateBiomeSet runs them; no waiver)
     for (const row of checkReadability(set.palette).filter(x => x.id.startsWith('roughDeep/'))) assert.ok(row.ok, `${id} ${row.id} ΔE ${row.dE.toFixed(1)} ΔL ${row.dL.toFixed(1)}`);
     assert.ok(!Object.keys(set.readabilityWaivers ?? {}).some(k => k.startsWith('roughDeep')), id);
-    // and the boulders' minimap colour reads on it too (the trees get a rough-coloured ring there, hud.js)
+  }
+  assert.ok(withKey + withoutKey === Object.keys(BIOMES).length);
+  // the fallback is always checked, on a copy of every set with the key removed (whatever the real sets list)
+  for (const [id, set] of Object.entries(BIOMES)) {
+    const { roughDeep: _drop, ...palette } = set.palette;
+    assert.ok(!Object.hasOwn(palette, 'roughDeep'), id);
+    assert.equal(paletteColour(palette, 'roughDeep'), dark(palette.rough), id);
+    assert.equal(fullPalette(palette).roughDeep, dark(palette.rough), id);
+    for (const row of checkReadability(palette).filter(x => x.id.startsWith('roughDeep/'))) assert.ok(row.ok, `${id} (key removed) ${row.id}`);
+    assert.doesNotThrow(() => validateBiomeSet({ ...set, palette }, LIBRARY), id);
   }
   assert.deepEqual(READABILITY.filter(x => x[0].startsWith('roughDeep')).map(x => x.slice(1)), [['roughDeep', 'rough', 15, 8], ['roughDeep', 'fairway', 15, 8], ['roughDeep', 'deepRough', 10, 5]]);
   // a set may set its own colour: used as it is, must be a colour, and must pass the rules
