@@ -52,6 +52,25 @@ Tokens: give every agent a budget (see AGENT_PROMPTS "Budgets"). If an agent run
 Things this environment **can't** do (as of 2026-11-17): delete branches from a cloud session (the owner deletes them on GitHub; auto-delete on merge is ON), change repo settings, fetch most docs sites directly.
 
 ## 4. Current status (update on every merge)
+
+### ▶ START HERE: fifth PM session handoff (2026-11-24/25)
+**State:** main `cb86022`, **756 tests pass**, no PR open, no agent running. The owner is starting fresh conversations for the PM, artist and course designer.
+
+**Merged this session:**
+- **Cow prop:** #147 spec → #148 AP7i build + #149 QA → #150 (X54 tests + cow in Meadow's `bigProps`).
+- **Meadow course "Buttercup Meadows":** #144 plan, #145 holes 1–3, #151 holes 4–6 (owner merges course PRs himself, no QA until the whole nine is done).
+- **S24 deep rough:** #152 + QA #153. Owner picked **option C** (cap 30%, window ×0.25, shape 0.1: a punch-out lie, "player should not land in deep rough"); auto-pick keeps rule 3 (owner A).
+- **Deep rough colours:** #154 (X57) → #155 (X58): deep rough sits halfway between rough and a **darker OB ground**, no readability waivers (the owner's idea).
+- **Windmill sails turn slowly** (#157, artist). Handoffs: artist #158 (`docs/ART_STYLE.md` "Open work"), course designer #159 (`docs/course/HANDBOOK.md`, as-built notes in `docs/COURSE_PLAN_MEADOW.md`). PM docs #156.
+
+**For the next PM:**
+- **Read the two handoffs above** before relaunching the artist or the course designer: start each in a fresh session with `create_session` and a role override in `append_system_prompt` (see "The owner's sessions").
+- **Meadow holes 7–9 are next** (course designer, with the owner). Herds of cows on mdw-04 / mdw-07: 3 cows on heavy holes (X47, meadow-day near 300k). Then one **QA Full on the whole nine**.
+- **Backlog the owner asked for:** **X59** flat 10-stroke "picked up" limit on every hole (small sonnet dev, when he says go). **X60** make the set-reading tests rule-based (after the Meadow course).
+- **Pattern (4×: #140, X54, X57, X58):** an art data change breaks a test that copied set data. The artist doesn't open the PR; the PM runs `node --test` on the art branch, then a sonnet dev branches **from the art branch**, fixes the test only, and opens **one PR** carrying the artist's commit (≈ 2–4 min, 80–95k tokens). X60 should end this.
+- QA can run on a build from before a pure numbers tune (#153 checked the S24 mechanics at 60%; the option C values came after). Say so to the owner.
+- Agent costs seen: dev 250k (AP7i, S24), sonnet test fixes 80–95k, QA 40–50k.
+
 **Done:** Phase 0, Feel passes 1–3, Gate A + Fix passes 1–2, Phase K, Phase 6 (rounds), Phase 7 menus (#40). PM role moved to Claude Code (#41, 2026-11-17). On 2026-11-18/19 (first Claude Code PM session):
 - **Phase T: AI rivals** (#44, QA #46). Owner's PM rules (#45).
 - **Genre study** (#48, `docs/GENRE_NOTES.md`), **C0 plan** (#49), **Mountain 9 prototype** (#50 + rework after playtest 1, hole 5 island #55; QA #51, #54). Owner exception: all 9 holes in one PR.
@@ -124,9 +143,9 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 - **Owner backlog idea (2026-11-24): X53 a ball that visibly rolls** (pattern + mesh rotation; artist picks the look, dev builds; look only). X47–X49, X52 also written into TASKS.
 
 **Next (owner's choice, ask him):**
-0. **Recommended next (PM, 2026-11-23): the first real course** (Meadow, Alpine or Island) with the course designer: all the art (ground, small / big props, water) only shows on real holes; follow HOLE_GUIDELINES incl. the big-prop placement rules. Other open picks: AP8 pixel setting, Phase MP menus.
+0. **In progress (2026-11-25): Meadow course, holes 7–9**, then QA Full on all nine, then the back nine plan. Small dev jobs waiting for the owner's go: X59 (10-stroke limit), X60 (rule-based set tests). Other open picks: AP8 pixel setting, Phase MP menus.
 1. **Phase MP: main menu pass** (`ui-designer` designs MP0 with the owner in its own session, like the artist → dev builds MP1–MP5), then Phase U for the HUD (X18, X19, X24, X28; keep the red tree warning prominent: QA on #106).
-2. More art: ~~AP7 small / big props~~ ✅, ~~AP6 ground~~ ✅ (2026-11-23) → AP8 pixel setting; later big props (fence, cow, hay hut, very tall palm), Alpine sunset biome.
+2. More art: ~~AP7 small / big props~~ ✅, ~~AP6 ground~~ ✅ (2026-11-23) → AP8 pixel setting; later big props (~~fence~~ ✅, ~~cow~~ ✅, hay hut, very tall palm), Alpine sunset biome.
 3. **Gate B:** all 5 reviewers in parallel → owner marks APPROVED/SKIP (PM triages first) → dev fix pass → tech lead → PM turns proposals into tasks.
 4. **Real courses** (a genre talk per theme first, dressed with biome sets; island holes need flat palm colliders and a wide `hole.map`, HOLE_GUIDELINES) and **Phase 5: rain**.
 5. Small, whenever: X17 (pin chip spot text).
