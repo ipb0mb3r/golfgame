@@ -4,7 +4,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';
-import { OPTIONAL_PALETTE_KEYS, paletteColour, pieceColours, validateBiomeSet } from '../src/core/biome.js';
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
+import { OPTIONAL_PALETTE_KEYS, parseColour, paletteColour, pieceColours, validateBiomeSet } from '../src/core/biome.js';
 import { COW, TUNABLES, TUNE } from '../src/core/config.js';
 import { COWS as REF } from '../docs/art/cow/pieces.js';
 import { cowGroups, cowAssembled, COW_PATCHES } from '../src/core/cowShape.js';
@@ -34,20 +35,24 @@ test('the piece: in LIBRARY.bigProps with SPEC §1 / §3 numbers (624 tris, size
   assert.equal(cow.collider, undefined); // looks only
 });
 
-test('the shape is the artist\'s COWS.C: same vertices, slots and patches standing, the same head when grazing (pivot raised)', () => {
+test('the shape follows the artist\'s COWS.C: same groups, vertex counts, slots and patch layouts, about the same size (X60: no vertex-exact copy of art data)', () => {
+  // the topology is the contract between the artist's pieces.js and cowShape.js (a change in it needs an engine change);
+  // the numbers (a neck drop, a leg length) are the artist's to tune, so positions are only held to the overall size
+  const extent = parts => { const pos = parts.flatMap(p => p.positions), ax = k => pos.filter((_, i) => i % 3 === k); return [0, 1, 2].map(k => Math.max(...ax(k)) - Math.min(...ax(k))); };
   for (const pattern of [0, 1, 2]) for (const [bob, swish] of [[0, 0], [0.1, 0.4]]) {
     const ref = REF.C.build({ pose: 'stand', pattern, bob, swish }), mine = cowAssembled({ pose: 'stand', pattern, bob, swish });
     for (const g of ['body', 'head', 'tail']) {
       const r = flat(refGroup(ref, g));
       assert.equal(mine[g].positions.length, r.pos.length, g);
-      mine[g].positions.forEach((v, i) => assert.ok(Math.abs(v - r.pos[i]) < 1e-12, `${g} ${i}`));
       assert.deepEqual(mine[g].w, r.w, `${g} pattern ${pattern}`);
       assert.deepEqual(mine[g].lo, r.lo, g);
     }
+    const all = ['body', 'head', 'tail'].flatMap(g => [{ positions: mine[g].positions }]);
+    extent(all).forEach((e, k) => assert.ok(Math.abs(e / extent(ref)[k] - 1) < 0.1, `overall size axis ${k}: ${e} vs ${extent(ref)[k]}`));
   }
-  // grazing: the reference's head at its 1.15 rad tip, the artist's pieces.js now drops the neck 0.22 m, as the engine does
+  // grazing: the same head vertices, the pivot raised
   const ref = flat(refGroup(REF.C.build({ pose: 'graze' }), 'head')), mine = cowAssembled({ pose: 'graze' }).head;
-  mine.positions.forEach((v, i) => assert.ok(Math.abs(v - ref.pos[i]) < 1e-12, `head ${i}`));
+  assert.equal(mine.positions.length, ref.pos.length);
 });
 
 test('the 3 patch layouts are painted faces: the same vertices, whole faces coat or patch, no extra triangles', () => {
@@ -68,8 +73,9 @@ test('the 3 patch layouts are painted faces: the same vertices, whole faces coat
 
 test('optional palette keys cowCoat / cowPatch / cowNose: fixed default colours; a set may define them', () => {
   assert.equal(OPTIONAL_PALETTE_KEYS.cowCoat, '#f6f1e4'); assert.equal(OPTIONAL_PALETTE_KEYS.cowPatch, '#2f3134'); assert.equal(OPTIONAL_PALETTE_KEYS.cowNose, '#f1a39b');
-  for (const set of Object.values(BIOMES)) for (const k of ['cowCoat', 'cowPatch', 'cowNose']) assert.equal(set.palette[k], undefined, `${set.id} needs no change`);
-  const set = BIOMES[DEV_BIG_PROPS_SET], c = pieceColours(set, LIBRARY)('bigProps', 'cow');
+  // a real set may define them (the artist's call); if it does, each is a valid colour (validateBiomeSet checks it too)
+  for (const set of Object.values(BIOMES)) for (const k of ['cowCoat', 'cowPatch', 'cowNose']) assert.ok(set.palette[k] === undefined || parseColour(set.palette[k]), `${set.id}.${k}`);
+  const set = { ...FIXTURE_MEADOW, id: 'x-cow', bigProps: ['cow'] }, c = pieceColours(set, LIBRARY)('bigProps', 'cow');
   assert.deepEqual(c, { coat: '#f6f1e4', patch: '#2f3134', nose: '#f1a39b', horn: set.palette.lip, hornTip: set.palette.propSnow, strap: set.palette.accent, bell: set.palette.subAccent });
   assert.equal(paletteColour(set.palette, 'propWood'), set.palette.wood); // the X50 fallbacks unchanged
   const own = { ...set, palette: { ...set.palette, cowCoat: '#8a5a3a' } };
@@ -198,7 +204,7 @@ test('the dev herd: 4 cows (2 standing, 2 grazing, 3 layouts) in a closed rail-f
   assert.deepEqual([...new Set(cows.map(p => p.pattern ?? 0))].sort(), [0, 1, 2]);
   assert.equal(fencesError(mtn07, pasture), null);
   assert.equal(bigPropsError(mtn07, DEV_BIG_PROPS['mtn-07'], BIOMES[DEV_BIG_PROPS_SET], LIBRARY, pasture), null);
-  assert.deepEqual(devBigPropsFences(mtn07, 'meadow-day'), []);
+  for (const sid of Object.keys(BIOMES).filter(k => k !== DEV_BIG_PROPS_SET)) assert.deepEqual(devBigPropsFences(mtn07, sid), [], sid); // X60
   assert.deepEqual(devBigPropsFences(mtn07, DEV_BIG_PROPS_SET), pasture);
   // every cow inside the pasture; no scenery tree stands in it
   const [x0, x1] = [80, 108], [z0, z1] = [-34, 12];

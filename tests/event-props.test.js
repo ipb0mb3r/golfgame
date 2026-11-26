@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { EVENT_PROPS, TUNABLES } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
 import { validateBiomeSet, pieceColours, pickId } from '../src/core/biome.js';
 import { validateHole } from '../src/core/validate.js';
 import { eventPropShape, EVENT_PROP_PIECES } from '../src/core/eventPropShapes.js';
@@ -151,7 +152,7 @@ test('surfaceNear: finds a surface within R m (grid + rim), null when none', () 
 test('the set\'s optional eventProps list; checkHoleLooks fails a hole whose set does not offer the piece', () => {
   assert.equal(eventPropsSetError(DEV_EVENT_PROPS['pl-01'], BIOMES[DEV_EVENT_PROPS_SET]), null);
   assert.match(eventPropsSetError([{ id: 'popupTent' }], BIOMES['proto-default']), /biome set "proto-default" does not offer it \(its eventProps: none\)/);
-  const set = { ...BIOMES['meadow-day'], id: 'x', eventProps: ['featherFlag'] };
+  const set = { ...FIXTURE_MEADOW, id: 'x', eventProps: ['featherFlag'] }; // X60: a frozen fixture, not the artist's live set
   assert.match(eventPropsSetError([{ id: 'popupTent' }], set), /its eventProps: featherFlag/);
   assert.doesNotThrow(() => validateBiomeSet(set, LIBRARY));
   assert.throws(() => validateBiomeSet({ ...set, eventProps: ['tent'] }, LIBRARY), /eventProps: unknown piece "tent" \(the library's eventProps: featherFlag, popupTent, parkBench\)/);
@@ -196,7 +197,7 @@ test('scenery trees keep out of a footprint (+ 3 m) and its sight corridor to th
 });
 
 test('the dev overlay: only with test-event-props, a dressed pl-01 tee, a course-side tent, two flags behind the green; every entry valid', () => {
-  assert.deepEqual(holeEventProps(pl01, 'meadow-day'), []);
+  for (const sid of Object.keys(BIOMES).filter(k => k !== DEV_EVENT_PROPS_SET)) assert.deepEqual(holeEventProps(pl01, sid), [], sid); // X60: no real set gets the overlay
   assert.deepEqual(holeEventProps(pl01, DEV_EVENT_PROPS_SET), DEV_EVENT_PROPS['pl-01']);
   assert.deepEqual(holeEventProps(HOLES['mtn-07'], DEV_EVENT_PROPS_SET), []);
   for (const [id, list] of Object.entries(DEV_EVENT_PROPS)) {

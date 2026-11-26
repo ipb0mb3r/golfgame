@@ -6,6 +6,7 @@ import { MODEL_PATH, MODEL_PICKS, modelPieceError, modelFiles, libraryModelFiles
 import { validateBiomeSet } from '../src/core/biome.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES } from '../src/biomes/index.js';
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
 import { HOLES } from '../src/holes/sets.js';
 
 const root = new URL('../', import.meta.url);
@@ -30,9 +31,15 @@ test('AP3: the test cube piece is the AP2 fixture, credited in assets/CREDITS.md
 });
 
 test('AP3: which files a hole needs: only the test-models set names one; today\'s sets need nothing (no loading card)', () => {
+  // X60: the dev-only test-models set names exactly the AP2 cube; a real set may name model files (the artist's call), and
+  // each one must exist under assets/ and be credited in assets/CREDITS.md; a set with none needs no loading card
+  const credits = readFileSync(new URL('../assets/CREDITS.md', import.meta.url), 'utf8');
   for (const [id, set] of Object.entries(BIOMES)) {
-    assert.deepEqual(modelFiles(set, LIBRARY), id === 'test-models' ? ['assets/models/test-cube.glb'] : [], id);
+    const files = modelFiles(set, LIBRARY);
+    if (id === 'test-models') { assert.deepEqual(files, ['assets/models/test-cube.glb'], id); continue; }
+    for (const f of files) { assert.ok(existsSync(new URL('../' + f, import.meta.url)), `${id}: ${f} exists`); assert.ok(credits.includes(f), `${id}: ${f} is in CREDITS.md`); }
   }
+  for (const id of ['mtn-default', 'proto-default']) assert.deepEqual(modelFiles(BIOMES[id], LIBRARY), [], id); // the dev's sets stay procedural
   // no hole uses the dev-only set
   for (const h of Object.values(HOLES)) assert.notEqual(h.biome, 'test-models', h.id);
   // each file once, sorted, whatever picks it
@@ -54,7 +61,7 @@ test('AP3: a model piece must name a .glb path under assets/ and a procedural fa
   const twoModels = { ...lib({ model: 'assets/r.glb', fallback: 'n' }), rocks: { ...lib({ model: 'assets/r.glb', fallback: 'n' }).rocks, n: { desc: 'x', slots: {}, model: 'assets/n.glb', fallback: 'roundBoulder' } } };
   assert.match(modelPieceError(twoModels, 'rocks', 'm'), /must be a procedural piece/);
   // validateBiomeSet runs it on the pieces a set picks, and only the picks that can draw a model may use one
-  const set = { ...BIOMES['meadow-day'], id: 'x-models', rocks: ['m'] };
+  const set = { ...FIXTURE_MEADOW, id: 'x-models', rocks: ['m'] }; // X60: frozen fixture
   assert.ok(validateBiomeSet(set, lib({ model: 'assets/r.glb' })));
   assert.throws(() => validateBiomeSet(set, lib({ model: 'assets/r.png' })), /biome set "x-models": rocks: piece "m" model must be a \.glb/);
   const treeLib = { ...LIBRARY, onTrees: { ...LIBRARY.onTrees, t: { ...LIBRARY.onTrees.roundTree, model: 'assets/t.glb', fallback: 'roundTree' } } };
