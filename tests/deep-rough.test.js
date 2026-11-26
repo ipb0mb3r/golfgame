@@ -12,6 +12,7 @@ import { validateHole, validateScenario } from '../src/core/validate.js';
 import { KIND, KINDS, KIND_KEYS, kindOf } from '../src/core/ground.js';
 import { paletteColour, fullPalette, validateBiomeSet, delta, checkReadability, READABILITY } from '../src/core/biome.js';
 import { BIOMES } from '../src/biomes/index.js';
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { HOLES, DEV_HOLES, getHole, checkHoleLooks, SETS } from '../src/holes/sets.js';
 import { SCENARIOS, DEV_SCENARIOS, resolveScenario } from '../src/holes/scenarios.js';
@@ -220,7 +221,7 @@ test('S24: the look: its own drawn kind (added last), the optional roughDeep col
   }
   assert.deepEqual(READABILITY.filter(x => x[0].startsWith('roughDeep')).map(x => x.slice(1)), [['roughDeep', 'rough', 15, 8], ['roughDeep', 'fairway', 15, 8], ['roughDeep', 'deepRough', 10, 5]]);
   // a set may set its own colour: used as it is, must be a colour, and must pass the rules
-  const base = BIOMES['meadow-day'];
+  const base = FIXTURE_MEADOW; // X60: frozen fixture; the real sets are checked in the loops above
   // its own colour: halfway between the rough and the OB ground (what the real sets aim for), computed, not listed;
   // not the fallback (rough darkened), which may sit too close to a deeper OB ground
   const mid = '#' + [1, 3, 5].map(i => Math.round((parseInt(base.palette.rough.slice(i, i + 2), 16) + parseInt(base.palette.deepRough.slice(i, i + 2), 16)) / 2).toString(16).padStart(2, '0')).join('');

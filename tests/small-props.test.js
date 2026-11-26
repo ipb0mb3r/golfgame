@@ -10,7 +10,8 @@ import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
 import { HOLES } from '../src/holes/sets.js';
 
-const meadow = BIOMES['meadow-day'];
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
+const meadow = FIXTURE_MEADOW; // X60: engine-behaviour tests use the frozen fixture, not the artist's live set
 // the artist's own eventProps / fences lists (X51: they may carry X33 slot overrides) are left out of the base set
 const withChange = change => ({ ...meadow, eventProps: undefined, fences: undefined, id: 'x-test', ...change });
 // the AP7c form: weights share one set-level perHa (still valid), clusters of a fixed count

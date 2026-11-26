@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { FENCES, TUNABLES } from '../src/core/config.js';
 import { LIBRARY } from '../src/biomes/library.js';
 import { BIOMES, resolveBiome } from '../src/biomes/index.js';
+import { FIXTURE_MEADOW } from './fixtures/fixture-meadow.js';
 import { validateBiomeSet, pieceColours, paletteColour, pickId } from '../src/core/biome.js';
 import { validateHole } from '../src/core/validate.js';
 import { fenceShape, FENCE_PIECES } from '../src/core/fenceShapes.js';
@@ -108,7 +109,7 @@ test('segmentToBox: 0 across or inside the box, else the true distance', () => {
 test('the set\'s optional fences list: offered ids only; the real sets are untouched (no list = none)', () => {
   assert.equal(fencesSetError([{ id: 'railFence', points: [] }], BIOMES[DEV_FENCES_SET]), null);
   assert.match(fencesSetError([{ id: 'ropeFence', points: [] }], BIOMES['proto-default']), /biome set "proto-default" does not offer it \(its fences: none\)/);
-  const set = { ...BIOMES['meadow-day'], id: 'x', fences: ['railFence'] };
+  const set = { ...FIXTURE_MEADOW, id: 'x', fences: ['railFence'] }; // X60: a frozen fixture, not the artist's live set
   assert.match(fencesSetError([{ id: 'ropeFence' }], set), /its fences: railFence/);
   // validateBiomeSet: the list is optional; unknown pieces and bad slot overrides fail; an X33 override works
   assert.doesNotThrow(() => validateBiomeSet(set, LIBRARY));
@@ -128,6 +129,8 @@ test('the set\'s optional fences list: offered ids only; the real sets are untou
     assert.deepEqual(resolveBiome(id).fences, list?.map(pickId), id);
     for (const p of list ?? []) assert.ok(LIBRARY.fences[pickId(p)], `${id}: ${pickId(p)}`);
   }
+  // design rule (owner): every artist set offers at least one fence look
+  for (const id of ['meadow-day', 'alpine-day', 'island-day']) assert.ok(BIOMES[id].fences?.length > 0, `${id} has fences`);
   assert.equal(BIOMES['proto-default'].fences, undefined); assert.equal(BIOMES['mtn-default'].fences, undefined);
 });
 
@@ -201,7 +204,7 @@ test('FENCE_SCALE: a tunable, default 1.5 (owner to compare 1 / 1.5 / 2 with ?tu
 });
 
 test('the dev overlay: only with test-fences, both looks beyond OB on mtn-07, ~600 m, every entry valid', () => {
-  assert.deepEqual(holeFences(mtn07, 'meadow-day'), []);
+  for (const sid of Object.keys(BIOMES).filter(k => k !== DEV_FENCES_SET)) assert.deepEqual(holeFences(mtn07, sid), [], sid); // X60: no real set gets the overlay
   assert.deepEqual(holeFences(mtn07, DEV_FENCES_SET), DEV_FENCES['mtn-07']);
   assert.deepEqual(holeFences(HOLES['pl-01'], DEV_FENCES_SET), []);
   const total = DEV_FENCES['mtn-07'].reduce((n, f) => n + fenceLength(f.points), 0);

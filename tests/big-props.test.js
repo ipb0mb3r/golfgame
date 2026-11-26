@@ -94,10 +94,15 @@ test('placement rules: the set must offer the id, the scale in range, the footpr
   // beyond the far end (behind the green) and inside the box
   assert.equal(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -475 - 5 - footprintOf({ id: 'chalet', scale: LIBRARY.bigProps.chalet.size }) - 0.01 }], offerAll, LIBRARY), null);
   assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 0, z: -200 }], offerAll, LIBRARY), /comes within/);
-  // the set must offer it: a library piece meadow-day does not list (whatever its list is)
-  const meadowIds = BIOMES['meadow-day'].bigProps.map(p => p.id ?? p), notMeadow = Object.keys(LIBRARY.bigProps).find(k => !meadowIds.includes(k));
-  assert.ok(notMeadow, 'some big prop is not in meadow-day');
-  assert.match(bigPropsError(withProps([]), [{ id: notMeadow, x: 200, z: -150 }], BIOMES['meadow-day'], LIBRARY), new RegExp(`biome set "meadow-day" does not offer it \\(its bigProps: ${meadowIds.join(', ')}\\)`));
+  // the set must offer it (X60: a fixture set that lists only the windmill, not a real set's list)
+  const onlyWindmill = { ...BIOMES['mtn-default'], id: 'x-windmill', bigProps: ['windmill'] };
+  assert.equal(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], onlyWindmill, LIBRARY), null);
+  assert.match(bigPropsError(withProps([]), [{ id: 'chalet', x: 200, z: -150 }], onlyWindmill, LIBRARY), /biome set "x-windmill" does not offer it \(its bigProps: windmill\)/);
+  // and the message names a real set's own list, whatever it is
+  for (const id of ['meadow-day', 'alpine-day', 'island-day']) {
+    const ids = (BIOMES[id].bigProps ?? []).map(p => p.id ?? p), absent = Object.keys(LIBRARY.bigProps).find(k => !ids.includes(k));
+    if (absent) assert.match(bigPropsError(withProps([]), [{ id: absent, x: 200, z: -150 }], BIOMES[id], LIBRARY), new RegExp(`biome set "${id}" does not offer it \\(its bigProps: ${ids.join(', ') || 'none'}\\)`), id);
+  }
   assert.match(bigPropsError(withProps([]), [{ id: 'windmill', x: 200, z: -150 }], BIOMES['mtn-default'], LIBRARY), /biome set "mtn-default" does not offer it \(its bigProps: none\)/);
   assert.match(bigPropsError(withProps([]), [{ id: 'hayHut', x: 200, z: -150 }], offerAll, LIBRARY), /not a big-prop piece/);
   // the scale range; the beach hut never below 0.9
@@ -106,8 +111,8 @@ test('placement rules: the set must offer the id, the scale in range, the footpr
 });
 
 test('checkHoleLooks (readyHole) fails a hole whose set does not offer its prop; a hole with none is normal', () => {
-  const h = { ...mtn07, id: 'mtn-07', biome: 'meadow-day', scenery: { ...mtn07.scenery, bigProps: [{ id: 'chalet', x: 150, z: -150 }] } };
-  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.bigProps\[0\] \(chalet\): biome set "meadow-day" does not offer it/);
+  const h = { ...mtn07, id: 'mtn-07', biome: 'mtn-default', scenery: { ...mtn07.scenery, bigProps: [{ id: 'chalet', x: 150, z: -150 }] } };
+  assert.throws(() => checkHoleLooks(h), /hole "mtn-07": scenery\.bigProps\[0\] \(chalet\): biome set "mtn-default" does not offer it/);
   assert.doesNotThrow(() => checkHoleLooks({ ...h, biome: DEV_BIG_PROPS_SET }));
   // every real hole passes (the Buttercup Meadows holes place windmills, docs/COURSE_PLAN_MEADOW.md)
   for (const hole of Object.values(HOLES)) assert.doesNotThrow(() => checkHoleLooks(hole), hole.id);
@@ -145,7 +150,7 @@ test('scenery trees keep out of a prop\'s footprint (+ treeClear) and its sight 
 
 test('the dev overlay: only with test-big-props, one of each beyond OB on mtn-07, every entry valid', () => {
   assert.deepEqual(DEV_BIG_PROPS['mtn-07'].map(p => p.id).sort(), ['beachHut', 'chalet', 'chaletTall', 'cow', 'cow', 'cow', 'cow', 'windmill']); // AP7i: + a herd of 4
-  assert.deepEqual(holeBigProps(mtn07, 'meadow-day'), []);
+  for (const sid of Object.keys(BIOMES).filter(k => k !== DEV_BIG_PROPS_SET)) assert.deepEqual(holeBigProps(mtn07, sid), [], sid); // X60: no real set gets the overlay
   assert.deepEqual(holeBigProps(mtn07, DEV_BIG_PROPS_SET), DEV_BIG_PROPS['mtn-07']);
   assert.deepEqual(holeBigProps(HOLES['pl-01'], DEV_BIG_PROPS_SET), []);
   for (const [id, list] of Object.entries(DEV_BIG_PROPS)) {
@@ -192,5 +197,5 @@ test('the real sets: each validates, offers only library pieces of its biome; mt
   }
   for (const id of ids) assert.doesNotThrow(() => validateBiomeSet(BIOMES[id], LIBRARY), id);
   // the piece names say their biome (SPEC): Meadow / Alpine / Island
-  for (const id of ['meadow-day', 'alpine-day', 'island-day']) for (const p of BIOMES[id].bigProps) assert.match(LIBRARY.bigProps[p.id ?? p].desc, new RegExp(`^${id.split('-')[0]}`, 'i'), id);
+  for (const id of ['meadow-day', 'alpine-day', 'island-day']) for (const p of BIOMES[id].bigProps ?? []) assert.match(LIBRARY.bigProps[p.id ?? p].desc, new RegExp(`^${id.split('-')[0]}`, 'i'), id);
 });

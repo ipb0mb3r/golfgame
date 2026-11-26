@@ -111,8 +111,8 @@ test('meadow-day (the AP5 proof): the artist\'s Meadow palette, today\'s pieces 
   assert.equal(validateBiomeSet(m, LIBRARY), m);
   assert.equal(m.readabilityWaivers, undefined);
   assert.deepEqual(checkReadability(m.palette).filter(r => !r.ok), []);
-  // every artist key is the artist's Meadow value (only the engine keys are the dev's)
-  for (const k of Object.values(PALETTE_KEYS).slice(0, -1).flat()) assert.equal(m.palette[k], ARTIST_R2.meadow[k].toLowerCase(), k);
+  // every artist key is present and a valid colour (X60: the values are the artist's to change; the readability rules above are the check)
+  for (const k of Object.values(PALETTE_KEYS).slice(0, -1).flat()) assert.ok(parseColour(m.palette[k]), k);
   // the first real course (docs/COURSE_PLAN_MEADOW.md) is the only one dressed in it
   const meadows = SETS.find(s => s.id === 'meadows').holes;
   for (const h of Object.values(HOLES)) assert.equal(h.biome === 'meadow-day', meadows.includes(h.id), h.id);
@@ -186,7 +186,9 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
     assert.ok(r.rows.every(x => x.ok) && r.rows.length === 2, set.id);
   }
   // a dark boulder that already passes (Island coast's dark lava #3e3a40 on a bright course) is not darkened
-  const lava = minimapShade(BIOMES['meadow-day'].palette, 'rock', '#3e3a40');
+  // (X60: on a fixture palette, not a real set's fairway / rough)
+  const brightCourse = { fairwayA: '#8fd05a', fairwayB: '#9bd966', rough: '#5fae3e' };
+  const lava = minimapShade(brightCourse, 'rock', '#3e3a40');
   assert.deepEqual([lava.darkened, lava.colour, lava.rows.every(x => x.ok)], [false, '#3e3a40', true]);
   // a canopy that passes is used as it is; one that fails is darkened by MINIMAP_DARKEN
   const p = base.palette;
@@ -195,7 +197,8 @@ test('X26: the minimap takes the set\'s colours; a tree too close to fairway or 
   assert.equal(m.darkened, true);
   assert.deepEqual(parseColour(m.colour), parseColour(p.leaf).map(v => Math.round(v * (1 - MINIMAP_DARKEN))));
   assert.ok(m.rows.every(r => r.ok));
-  assert.equal(minimapShade(BIOMES['meadow-day'].palette, 'tree', BIOMES['meadow-day'].palette.leaf).darkened, true); // ΔE 8 from its rough
+  // a real set's own canopy: darkened exactly when the raw colour fails the rule (X60: no copy of today's answer)
+  for (const set of Object.values(BIOMES)) assert.equal(minimapShade(set.palette, 'tree', set.palette.leaf).darkened, !passesRaw(set.palette, set.palette.leaf), set.id);
   // a tree the step cannot save fails the set, named by rule and look; a waiver by name lets it through
   // a canopy the colour of the fairway, with a rough exactly one step darker: darkened, it lands on the rough
   const fw = mixColour(p.fairwayA, p.fairwayB);
