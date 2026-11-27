@@ -252,6 +252,18 @@ export const SCENARIOS = {
     hole: 'mdw-06', ball: { x: -18, z: -170 }, strokes: 1, seed: 2602, wind: { x: 0, z: 0 }, lie: 'fairway',
     name: 'Meadows 6: the bail-out', text: 'On the patch of fairway short left of the green, the safe miss: a chip across the green toward the flag by the water.',
   },
+  'mdw7-the-shelf': {
+    hole: 'mdw-07', ball: { x: 0, z: 0 }, aimAt: { x: -15, z: -238 }, strokes: 0, seed: 2701, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 7: up to the shelf', text: 'The brave drive, up the high left side to the flat shelf. Short or left is the bunker in the bank, and the trees above it.',
+  },
+  'mdw7-low-side-bunker': {
+    hole: 'mdw-07', ball: { x: 27, z: -242 }, strokes: 1, seed: 2702, lie: 'sand',
+    name: 'Meadows 7: fed into the bunker', text: 'The slope fed the drive right, into the long bunker on the low side: about 170 m uphill to the green, over its front bunker.',
+  },
+  'mdw7-tilted-putt': {
+    hole: 'mdw-07', ball: { x: -30, z: -406 }, strokes: 2, seed: 2703, wind: { x: 0, z: 0 }, lie: 'green',
+    name: 'Meadows 7: across the tilt', text: 'A 13 m putt across the tilting green: straight at the cup misses by about 2 m. Aim high.',
+  },
 };
 
 // S24: dev-only test spots on dev-only holes (sets.js DEV_HOLES): ?scenario=<id> only, no menu lists them.

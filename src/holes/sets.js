@@ -20,6 +20,7 @@ import mdw03 from './mdw-03.js';
 import mdw04 from './mdw-04.js';
 import mdw05 from './mdw-05.js';
 import mdw06 from './mdw-06.js';
+import mdw07 from './mdw-07.js';
 // S24: dev only, the deep-rough practice spot (in no set or menu)
 import devDeepRough from './dev-deep-rough.js';
 import { validateHole } from '../core/validate.js';
@@ -30,7 +31,7 @@ import { fencesSetError } from '../core/fences.js';
 import { eventPropsSetError } from '../core/eventProps.js';
 
 export const MTN = [mtn01, mtn02, mtn03, mtn04, mtn05, mtn06, mtn07, mtn08, mtn09];
-export const MDW = [mdw01, mdw02, mdw03, mdw04, mdw05, mdw06];
+export const MDW = [mdw01, mdw02, mdw03, mdw04, mdw05, mdw06, mdw07];
 // X12: the registry builds nothing. A Mountain 9 hole builds its grids and forest on first use
 // (src/holes/lazy.js), and a hole is checked (Gate A T7) when the page first plays it (readyHole), so
 // a page only pays for the holes it plays. node --test checks every hole in full (tests/validate.test.js).

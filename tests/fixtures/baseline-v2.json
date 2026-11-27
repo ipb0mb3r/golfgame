@@ -2263,6 +2263,93 @@
       }
     },
     {
+      "name": "MDW mdw7 default drive along the slope in seeded wind",
+      "hole": "mdw-07",
+      "seed": 57,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": 0.02,
+      "aimFrom": {
+        "x": -4,
+        "z": -232
+      },
+      "aimOff": 0,
+      "end": {
+        "x": -1.9750436457475864,
+        "y": 1.5442832214167397,
+        "z": -226.18335530790534,
+        "event": "stopped",
+        "reason": "settled",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": -0.9098901157974387,
+          "z": 0.07358960367560707
+        }
+      }
+    },
+    {
+      "name": "MDW mdw7 Driver up to the shelf",
+      "hole": "mdw-07",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimFrom": {
+        "x": -4,
+        "z": -232
+      },
+      "aimOff": -0.0457,
+      "club": "driver",
+      "end": {
+        "x": -12.525067778765864,
+        "y": 2.529740669870305,
+        "z": -244.41616683548204,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "MDW mdw7 putt across the tilt",
+      "hole": "mdw-07",
+      "seed": null,
+      "start": {
+        "x": -30,
+        "z": -406
+      },
+      "strokes": 2,
+      "power": 0.55,
+      "acc": 0,
+      "aimOff": 0,
+      "end": {
+        "x": -39.5149183593242,
+        "y": 3.7779811998396235,
+        "z": -400.4062840932381,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 3,
+        "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
       "name": "BC h1 tee, left impact (starts left, curves right)",
       "hole": "pl-01",
       "seed": null,
