@@ -5,7 +5,7 @@
 // leaving a longer approach across the slope over the front-right bunker. Brave: up the high left side to a flat
 // shelf (a clear look up the length of the green), past a big bunker cut into the bank and a clump of trees above it.
 // The first tricky green: a big bean tilting hard from high back-left down to low front-right, the cup in the upper
-// lobe. Props: a fenced pasture with 3 cows down the slope beyond the green's low right side, beyond OB.
+// lobe. Props: a fenced pasture with 3 cows on a knoll right behind the green, beyond OB: the hole's showpiece.
 import { ss } from '../core/terrain.js';
 import { makeMdwHole, mdwIntro, oak } from './mdw-course.js';
 
@@ -39,6 +39,7 @@ export default makeMdwHole({
   hills: [
     { x: -92, z: -210, r: 55, h: 14 },   // the big hillside: it climbs above the left rough and beyond OB
     { x: -100, z: -420, r: 40, h: 6 },   // the hill behind the green (a backdrop)
+    { x: 24, z: -490, r: 30, h: 6 },     // the pasture's knoll behind the green, beyond OB: the cows stand up as its backdrop
   ],
   // a big bean on the diagonal; it tilts hard toward the low front right; the cup's upper lobe is gentler
   green: { cx: GX, cz: GZ, rx: 18, rz: 12, rot: 0.7, wob: 0.07, seed: 71, blend: 0.5, lobes: [{ cx: -42, cz: -401, rx: 10, rz: 9 }, { cx: -26, cz: -386, rx: 10, rz: 9 }], raise: 0.3,
@@ -46,10 +47,10 @@ export default makeMdwHole({
   // the clearing follows the slope: room on the low right for the run-off, a bay on the high left round the green
   land: { pts: [[-13, 20], [13, 20], [22, -30], [40, -100], [56, -170], [62, -240], [56, -300], [34, -350], [16, -392], [4, -428], [-20, -442], [-50, -438], [-72, -412], [-76, -370], [-66, -320], [-58, -262], [-56, -200], [-44, -130], [-26, -60], [-16, -10]], deepBand: { w: 8, wob: 0.75, seed: 71 },
     // the view (owner): no tree between the green and the pasture with its cows, down the slope behind it on the right
-    open: [{ cx: 44, cz: -462, rx: 46, rz: 22, wob: 0.06, seed: 7 },
+    open: [{ cx: 18, cz: -462, rx: 50, rz: 26, wob: 0.06, seed: 7 },
       // (owner, 2026-11-27: "remove the trees in front of the pasture so we can see") the right edge from the landing
       // zone to behind the green, and the forest beyond it
-      { cx: 42, cz: -345, rx: 26, rz: 92, rot: -0.3, wob: 0.06, seed: 8 }, { cx: 12, cz: -412, rx: 18, rz: 28, wob: 0.06, seed: 9 }] },
+      { cx: 42, cz: -345, rx: 26, rz: 92, rot: -0.3, wob: 0.06, seed: 8 }, { cx: 14, cz: -416, rx: 32, rz: 28, wob: 0.06, seed: 9 }] },
   // one long blob: narrow off the tee, a fat landing zone that swells up to the shelf on the left, a waist at the
   // bend, then the approach widening into the green's front
   fairwayShapes: [{ pts: [[-5, -28], [5, -28], [12, -90], [20, -160], [25, -215], [23, -262], [12, -296], [-4, -320], [-20, -340], [-30, -356], [-34, -372], [-38, -386], [-52, -390], [-56, -376], [-54, -358], [-45, -336], [-31, -304], [-27, -280], [-29, -250], [-28, -222], [-19, -190], [-11, -130], [-7, -70]] }],
@@ -73,13 +74,13 @@ export default makeMdwHole({
     oak(-40, -214, 1.15), oak(-44, -226, 1.0), oak(-36, -228, 0.9),
   ],
   scenery: {
-    // the pasture down the slope beyond the green's low right side (a closed fence = a pasture), seen past the green
-    // from the tee and the approach; 3 cows (phone budget)
-    fences: [{ id: 'railFence', points: [[16, -466], [98, -462], [112, -514], [56, -530], [16, -512], [16, -466]] }],
+    // the pasture on a knoll right behind the green (owner, 2026-11-27: "bring them closer", the hole's visual
+    // attraction), as close as the OB + 5 m rule allows (a closed fence = a pasture); 3 cows (phone budget)
+    fences: [{ id: 'railFence', points: [[-16, -460], [60, -460], [66, -496], [24, -508], [-16, -492], [-16, -460]] }],
     bigProps: [
-      { id: 'cow', x: 38, z: -482, turn: 0.4, pose: 'graze', pattern: 0 },
-      { id: 'cow', x: 62, z: -494, turn: -0.3, pose: 'stand', pattern: 1 },
-      { id: 'cow', x: 84, z: -480, turn: 1.1, pose: 'graze', pattern: 2, scale: 0.95 },
+      { id: 'cow', x: 4, z: -472, turn: 0.5, pose: 'graze', pattern: 0 },
+      { id: 'cow', x: 26, z: -483, turn: -0.4, pose: 'stand', pattern: 1 },
+      { id: 'cow', x: 42, z: -474, turn: 1.0, pose: 'graze', pattern: 2, scale: 0.95 },
     ],
   },
   intro: mdwIntro({
