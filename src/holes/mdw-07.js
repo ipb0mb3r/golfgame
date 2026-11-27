@@ -46,7 +46,10 @@ export default makeMdwHole({
   // the clearing follows the slope: room on the low right for the run-off, a bay on the high left round the green
   land: { pts: [[-13, 20], [13, 20], [22, -30], [40, -100], [56, -170], [62, -240], [56, -300], [34, -350], [16, -392], [4, -428], [-20, -442], [-50, -438], [-72, -412], [-76, -370], [-66, -320], [-58, -262], [-56, -200], [-44, -130], [-26, -60], [-16, -10]], deepBand: { w: 8, wob: 0.75, seed: 71 },
     // the view (owner): no tree between the green and the pasture with its cows, down the slope behind it on the right
-    open: [{ cx: 44, cz: -462, rx: 46, rz: 22, wob: 0.06, seed: 7 }] },
+    open: [{ cx: 44, cz: -462, rx: 46, rz: 22, wob: 0.06, seed: 7 },
+      // (owner, 2026-11-27: "remove the trees in front of the pasture so we can see") the right edge from the landing
+      // zone to behind the green, and the forest beyond it
+      { cx: 42, cz: -345, rx: 26, rz: 92, rot: -0.3, wob: 0.06, seed: 8 }, { cx: 12, cz: -412, rx: 18, rz: 28, wob: 0.06, seed: 9 }] },
   // one long blob: narrow off the tee, a fat landing zone that swells up to the shelf on the left, a waist at the
   // bend, then the approach widening into the green's front
   fairwayShapes: [{ pts: [[-5, -28], [5, -28], [12, -90], [20, -160], [25, -215], [23, -262], [12, -296], [-4, -320], [-20, -340], [-30, -356], [-34, -372], [-38, -386], [-52, -390], [-56, -376], [-54, -358], [-45, -336], [-31, -304], [-27, -280], [-29, -250], [-28, -222], [-19, -190], [-11, -130], [-7, -70]] }],
@@ -68,8 +71,6 @@ export default makeMdwHole({
   obstacles: [
     // the clump on the bank above the bunker: too far left on the brave line is under the trees
     oak(-40, -214, 1.15), oak(-44, -226, 1.0), oak(-36, -228, 0.9),
-    // a lone tree on the low side: a drive that runs off down the right has it in its way
-    oak(21, -294, 1.25),
   ],
   scenery: {
     // the pasture down the slope beyond the green's low right side (a closed fence = a pasture), seen past the green
