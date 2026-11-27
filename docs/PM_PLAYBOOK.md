@@ -53,6 +53,11 @@ Things this environment **can't** do (as of 2026-11-17): delete branches from a 
 
 ## 4. Current status (update on every merge)
 
+### Sixth PM session (2026-11-26/27)
+- **Merged: #161 X60** (rule-based tests for the real biome sets; dev-owned snapshot `tests/fixtures/fixture-meadow.js`; 756 pass, main 862f7a8). Art data changes should no longer need a test-fix dev job: run `node --test` on the art branch once to confirm.
+- **Meadow hole 7 started (2026-11-27):** course-designer session `session_01Rv6NgBXRQicPwA8NYtMvMy` ("Pocket Links: Course designer (Meadow hole 7)"); the owner chats with it directly → PR "Course: mdw-07 …" on `course/mdw-07`, owner merges. ≤ 3 cows (X47). Then holes 8–9, then QA Full on all nine.
+- Still waiting for the owner's go: **X59** (10-stroke limit).
+
 ### ▶ START HERE: fifth PM session handoff (2026-11-24/25)
 **State:** main `cb86022`, **756 tests pass**, no PR open, no agent running. The owner is starting fresh conversations for the PM, artist and course designer.
 
