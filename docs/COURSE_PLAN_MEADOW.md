@@ -48,7 +48,7 @@
 - **No blind shots:** the uphill holes (4, 8) keep the green in view from the landing areas; the raised tee on 6 shows the whole hole; windmills and props stay out of every shot's line.
 - **Engine features only:** no new mechanic or piece is needed (cows are art, waiting on the artist; the pastures are fences).
 
-## As built, holes 1–7 (map-study style, 2026-11-25, PR #151; hole 7 2026-11-27)
+## As built, holes 1–8 (map-study style, 2026-11-25, PR #151; holes 7–8 2026-11-27/28)
 The holes were rebuilt after the owner's map study (`docs/course/MAP_STUDY.md`, `docs/course/HANDBOOK.md`): a
 clearing in the forest, outlined fairways, a blobby deep-rough layer, bigger bowl bunkers, blob greens. Where the
 table above differs, this is what exists.
@@ -62,6 +62,7 @@ table above differs, this is what exists.
 | 5 | 4, 361 m | Dogleg right round a **big lake** (owner: "a lot bigger"). Brave = carry its corner (~35 m of water); a weak carry is wet. Deep rough and trees close the bail-out right of and above the lake; a knoll on the shore; trees round the lake on the grass. |
 | 6 | 3, 188 m | Hilltop tee **~23 m above** a bowl (owner: "much deeper", unlike hole 3). Diagonal kidney green, cup by the water short right; bunkers behind (long back left, pot back right); fairway bail-out short left running under the green. Two windmills behind. Use the ⚑ power (HANDBOOK §4). |
 | 7 | 4, 407 m | Owner's pick A (2026-11-27). The ground falls right the whole way (about 9 %, steeper off the right of the landing zone). Brave: a flat shelf on the high left, past a bunker cut into the bank and a clump of oaks. Safe: the middle; a drive down the right is fed into the long low-side bunker or the rough, and from there the approach carries a bunker at the green's front right. Bean green tilting hard (about 3.8 %, 2.8 % at the cup) to the low front right; cup in the upper back-left lobe; a pot behind it. The showpiece (owner): a fenced pasture with 3 cows on a knoll right behind the green, as close as OB + 5 m allows; no trees between the course and the pasture (owner: "so we can see"). |
+| 8 | 4, 306 m | Owner's pick B (2026-11-28, "round the shoulder"). A dogleg left climbing round a hill to a big, gentle green on its top (about 9 m up). Safe: an iron to the corner on the right (≈ 130 m left), a pitch up. Brave: a Driver straight over the shoulder (trees either side of the line, a bunker cut into the face) onto a swelling of fairway high on the hill; a full one runs down its far side to ≈ 45 m. Bunkers: the shoulder, the outside of the corner, a deep one by the green's right, a feature bunker behind it where the hilltop falls away. A windmill on a knoll beyond the green. |
 
 ## Ideas kept for later holes (owner, 2026-11-27: "keep the other ideas, I like them")
 Offered for hole 7 next to the chosen option A (the hillside); the owner wants them used on a later hole (e.g. the back nine).

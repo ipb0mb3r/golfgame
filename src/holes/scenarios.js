@@ -264,6 +264,18 @@ export const SCENARIOS = {
     hole: 'mdw-07', ball: { x: -30, z: -406 }, strokes: 2, seed: 2703, wind: { x: 0, z: 0 }, lie: 'green',
     name: 'Meadows 7: across the tilt', text: 'A 13 m putt across the tilting green: straight at the cup misses by about 2 m. Aim high.',
   },
+  'mdw8-over-the-shoulder': {
+    hole: 'mdw-08', ball: { x: 0, z: 0 }, aimAt: { x: -46, z: -205 }, strokes: 0, seed: 2801, wind: { x: 0, z: 0 }, lie: 'tee',
+    name: 'Meadows 8: over the shoulder', text: 'Straight over the hill\'s shoulder, past the trees: a full Driver reaches the fairway high on the hill and can run down its far side, leaving a short pitch. Come up short and the bunker waits.',
+  },
+  'mdw8-shoulder-bunker': {
+    hole: 'mdw-08', ball: { x: -38, z: -180 }, strokes: 1, seed: 2802, lie: 'sand',
+    name: 'Meadows 8: the shoulder bunker', text: 'The brave drive came up short, into the bunker cut into the shoulder: about 100 m up the hill to the green.',
+  },
+  'mdw8-pitch-up': {
+    hole: 'mdw-08', ball: { x: 10, z: -195 }, strokes: 1, seed: 2803, wind: { x: 0, z: 0 }, lie: 'fairway',
+    name: 'Meadows 8: up to the hilltop', text: 'The safe drive, at the corner: a pitch of about 120 m up the hill to the green on top, under the windmill.',
+  },
 };
 
 // S24: dev-only test spots on dev-only holes (sets.js DEV_HOLES): ?scenario=<id> only, no menu lists them.

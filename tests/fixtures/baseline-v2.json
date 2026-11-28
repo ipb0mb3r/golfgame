@@ -2336,13 +2336,74 @@
       "acc": 0,
       "aimOff": 0,
       "end": {
-        "x": -39.5149183593242,
-        "y": 3.7779811998396235,
+        "x": -39.514918359324184,
+        "y": 3.777986301123504,
         "z": -400.4062840932381,
         "event": "stopped",
         "reason": "still",
         "strokes": 3,
         "club": "putter",
+        "wind": {
+          "x": 0,
+          "z": 0
+        }
+      }
+    },
+    {
+      "name": "MDW mdw8 default tee shot to the corner in seeded wind",
+      "hole": "mdw-08",
+      "seed": 58,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 0.9,
+      "acc": 0.02,
+      "aimFrom": {
+        "x": 10,
+        "z": -175
+      },
+      "aimOff": 0,
+      "end": {
+        "x": 9.63200974166743,
+        "y": 0.10982809236501921,
+        "z": -164.58125118792665,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "5i",
+        "wind": {
+          "x": 0.0008400623233504004,
+          "z": 2.921733070817933
+        }
+      }
+    },
+    {
+      "name": "MDW mdw8 Driver over the shoulder",
+      "hole": "mdw-08",
+      "seed": null,
+      "start": {
+        "x": 0,
+        "z": 0
+      },
+      "strokes": 0,
+      "power": 1,
+      "acc": 0,
+      "aimFrom": {
+        "x": 10,
+        "z": -175
+      },
+      "aimOff": -0.2778,
+      "club": "driver",
+      "end": {
+        "x": -49.95164285724928,
+        "y": 6.273014661371814,
+        "z": -240.47190149457373,
+        "event": "stopped",
+        "reason": "still",
+        "strokes": 1,
+        "club": "driver",
         "wind": {
           "x": 0,
           "z": 0
