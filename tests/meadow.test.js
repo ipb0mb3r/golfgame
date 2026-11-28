@@ -8,7 +8,7 @@ import { holeLength } from '../src/core/vec.js';
 import { shot, startAt, layup } from './mtn.test.js';
 
 // The plan: [par, length m, difficulty]
-const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 361, 2], 'mdw-06': [3, 188, 2] };
+const PLAN = { 'mdw-01': [4, 348, 1], 'mdw-02': [4, 335, 1], 'mdw-03': [3, 146, 1], 'mdw-04': [5, 481, 2], 'mdw-05': [4, 361, 2], 'mdw-06': [3, 188, 2], 'mdw-07': [4, 407, 3] };
 const LENGTH = { 3: [120, 210], 4: [285, 440], 5: [460, 550] }; // HOLE_GUIDELINES §4
 
 test('Buttercup Meadows: every hole validates, is dressed in meadow-day, and has its plan par, length and difficulty', () => {
@@ -153,6 +153,45 @@ test('mdw-06: a big drop (owner); at the flag holds, a push is wet, the bail-out
   assert.equal(layup(startAt(h), { x: -18, z: -170 }, { club: '7i' }).surface, 'fairway');
 });
 
+// Hole 7 (owner's pick A, 2026-11-27): along the side of a big slope, to the first green that tilts hard
+test('mdw-07: the slope falls right and feeds a right drive into the low side; the shelf holds the brave drive; the low side approach carries the front bunker', () => {
+  const h = HOLES['mdw-07'];
+  assert.ok(h.heightAt(-20, -240) - h.heightAt(20, -240) > 3.5, 'the ground falls to the right across the landing zone');
+  const grad = (x, z) => Math.abs(h.heightAt(x - 2, z) - h.heightAt(x + 2, z)) / 4;
+  assert.ok(grad(-15, -238) < 0.5 * grad(12, -245), 'the shelf on the high left is flatter than the low side');
+  const safe = shot(startAt(h));
+  assert.equal(safe.surface, 'fairway');
+  const brave = shot(startAt(h), { at: { x: -15, z: -238 }, club: 'driver', power: 1 });
+  assert.equal(brave.surface, 'fairway');
+  assert.ok(brave.x < -8, `the brave drive stays up on the shelf (x ${brave.x.toFixed(1)})`);
+  // aimed down the right edge, the slope feeds a full drive off the fairway (sand or rough, never a penalty)
+  const right = shot(startAt(h), { at: { x: 16, z: -240 }, club: 'driver', power: 1 });
+  assert.ok(['sand', 'rough'].includes(right.surface), `a drive down the right ends on the ${right.surface}`);
+  assert.ok(right.x > brave.x + 25, 'the slope carried it well right');
+  // a slightly weak approach (92 %) at the flag: from the low right rough it finds the front bunker; from the shelf it runs up the fairway
+  const cup = { x: -42, z: -401 };
+  assert.equal(shot(startAt(h, { x: 22, z: -262 }), { at: cup, power: 'pin', pk: 0.92 }).surface, 'sand');
+  assert.equal(shot(startAt(h, { x: -14, z: -237 }), { at: cup, power: 'pin', pk: 0.92 }).surface, 'fairway');
+});
+
+test('mdw-07: the green tilts hard (about 3–4 %), gentler at the cup; a putt across it straight at the cup misses well', () => {
+  const h = HOLES['mdw-07'];
+  let steep = 0;
+  for (let z = -412; z <= -380; z += 1) for (let x = -56; x <= -18; x += 1) {
+    // the putting surface itself, 1.5 m in from its edge (the bank and the bunkers' bowls are not the tilt)
+    if ([[0, 0], [1.5, 0], [-1.5, 0], [0, 1.5], [0, -1.5]].some(([dx, dz]) => h.surfaceAt(x + dx, z + dz) !== 'green')) continue;
+    const g = Math.hypot(h.heightAt(x + 0.5, z) - h.heightAt(x - 0.5, z), h.heightAt(x, z + 0.5) - h.heightAt(x, z - 0.5));
+    steep = Math.max(steep, g);
+  }
+  assert.ok(steep > 0.032 && steep < 0.04, `steepest part of the green: ${(100 * steep).toFixed(1)} % (a stopped ball must still hold)`);
+  const cupG = Math.hypot(h.heightAt(-41.5, -401) - h.heightAt(-42.5, -401), h.heightAt(-42, -400.5) - h.heightAt(-42, -401.5));
+  assert.ok(cupG < 0.03, `the cup sits on a gentler spot (${(100 * cupG).toFixed(1)} %)`);
+  const p = startAt(h, { x: -30, z: -406 }, 2);
+  const e = shot(p, { at: { x: -42, z: -401 }, power: 'pin' });
+  assert.equal(e.surface, 'green');
+  assert.ok(e.toCup > 1.2, `a 13 m putt across the tilt, aimed straight, ends ${e.toCup.toFixed(1)} m away`);
+});
+
 // S24 deep rough (owner, 2026-11-24): on mdw-02's left, too far from the fairway is a punch-out; the brave gap stays open
 test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the brave gap and the fairway stay clear of it', () => {
   const h = HOLES['mdw-02'];
@@ -165,7 +204,7 @@ test('mdw-02: a drive pulled well left of the fairway ends in deep rough; the br
 
 // Owner rule L20 (2026-11-25): deep rough is the layer between the rough and OB (holes redone in the map-study style)
 test('Buttercup Meadows (map-study holes): deep rough lies between the rough and OB on both sides, its width varying', () => {
-  for (const id of ['mdw-01', 'mdw-02', 'mdw-03', 'mdw-04', 'mdw-05', 'mdw-06']) {
+  for (const id of ['mdw-01', 'mdw-02', 'mdw-03', 'mdw-04', 'mdw-05', 'mdw-06', 'mdw-07']) {
     const h = HOLES[id], widths = { left: [], right: [] };
     for (let z = -40; z >= -260; z -= 10) {
       for (const [side, dir] of [['left', -1], ['right', 1]]) {

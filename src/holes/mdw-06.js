@@ -49,7 +49,7 @@ export default makeMdwHole({
     ],
   },
   intro: mdwIntro({
-    par: 3, prev: 'mdw-05', // next: 'mdw-07' once it exists
+    par: 3, prev: 'mdw-05', next: 'mdw-07',
     tagline: 'A big drop from a hilltop tee. Water short and right. The windmills watch.',
     steps: [
       'The green sits about 18 m below the tee: the ball flies a lot further. Take less club.',

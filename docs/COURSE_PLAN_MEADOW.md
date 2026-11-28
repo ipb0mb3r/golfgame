@@ -48,7 +48,7 @@
 - **No blind shots:** the uphill holes (4, 8) keep the green in view from the landing areas; the raised tee on 6 shows the whole hole; windmills and props stay out of every shot's line.
 - **Engine features only:** no new mechanic or piece is needed (cows are art, waiting on the artist; the pastures are fences).
 
-## As built, holes 1–6 (map-study style, 2026-11-25, PR #151)
+## As built, holes 1–7 (map-study style, 2026-11-25, PR #151; hole 7 2026-11-27)
 The holes were rebuilt after the owner's map study (`docs/course/MAP_STUDY.md`, `docs/course/HANDBOOK.md`): a
 clearing in the forest, outlined fairways, a blobby deep-rough layer, bigger bowl bunkers, blob greens. Where the
 table above differs, this is what exists.
@@ -61,6 +61,17 @@ table above differs, this is what exists.
 | 4 | 5, 481 m | Two fairways split by a gap of rough (no cross bunker, owner); lay-up fairway runs to the pond; neck up to the raised green ("the small hill into the green", owner likes it). Open view to the pasture (4 cows) and windmill, no trees in front (`land.open`). |
 | 5 | 4, 361 m | Dogleg right round a **big lake** (owner: "a lot bigger"). Brave = carry its corner (~35 m of water); a weak carry is wet. Deep rough and trees close the bail-out right of and above the lake; a knoll on the shore; trees round the lake on the grass. |
 | 6 | 3, 188 m | Hilltop tee **~23 m above** a bowl (owner: "much deeper", unlike hole 3). Diagonal kidney green, cup by the water short right; bunkers behind (long back left, pot back right); fairway bail-out short left running under the green. Two windmills behind. Use the ⚑ power (HANDBOOK §4). |
+| 7 | 4, 407 m | Owner's pick A (2026-11-27). The ground falls right the whole way (about 9 %, steeper off the right of the landing zone). Brave: a flat shelf on the high left, past a bunker cut into the bank and a clump of oaks. Safe: the middle; a drive down the right is fed into the long low-side bunker or the rough, and from there the approach carries a bunker at the green's front right. Bean green tilting hard (about 3.8 %, 2.8 % at the cup) to the low front right; cup in the upper back-left lobe; a pot behind it. The showpiece (owner): a fenced pasture with 3 cows on a knoll right behind the green, as close as OB + 5 m allows; no trees between the course and the pasture (owner: "so we can see"). |
+
+## Ideas kept for later holes (owner, 2026-11-27: "keep the other ideas, I like them")
+Offered for hole 7 next to the chosen option A (the hillside); the owner wants them used on a later hole (e.g. the back nine).
+- **Two terraces:** the fairway splits into two levels with a steep bank of rough between them. The upper terrace
+  (one side) is narrow and closer to the green; the lower one is wide and safe but plays up the hill. The green sits
+  on the upper level, tilting back toward the bank. Keep it different from mdw-04's split (no gap of rough across
+  the hole: the split runs along it).
+- **Climb across the slope:** the hole curves and climbs diagonally up a hill to a green on a shelf cut into the
+  hillside, tilting hard toward its front. Brave: cut the corner over the rough and bunkers inside the bend. Safe:
+  round the outside, where the slope keeps kicking the ball down and away.
 
 ## Building notes
 - **Phone budget ≤ 300k triangles per hole** (`node tools/perf-check.mjs`); X47: `meadow-day` is heavy on long holes, so check every hole, and on a heavy one (likely 4, 7, 9) use fewer trees, props or fence.
