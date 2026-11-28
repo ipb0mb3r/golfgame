@@ -104,6 +104,8 @@ export const SHOTS = [
   { name: 'MDW mdw7 default drive along the slope in seeded wind', hole: 'mdw-07', seed: 57, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.02, aimFrom: { x: -4, z: -232 }, aimOff: 0 },
   { name: 'MDW mdw7 Driver up to the shelf', hole: 'mdw-07', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: -4, z: -232 }, aimOff: -0.0457, club: 'driver' },
   { name: 'MDW mdw7 putt across the tilt', hole: 'mdw-07', seed: null, start: { x: -30, z: -406 }, strokes: 2, power: 0.55, acc: 0, aimOff: 0 },
+  { name: 'MDW mdw8 default tee shot to the corner in seeded wind', hole: 'mdw-08', seed: 58, start: { x: 0, z: 0 }, strokes: 0, power: 0.9, acc: 0.02, aimFrom: { x: 10, z: -175 }, aimOff: 0 },
+  { name: 'MDW mdw8 Driver over the shoulder', hole: 'mdw-08', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimFrom: { x: 10, z: -175 }, aimOff: -0.2778, club: 'driver' },
   // Phase BC (BC1/BC2): shaped shots. `impact` { x, y } = where the club hits the ball (core/shape.js;
   // left/right = start out then curve back, bottom/top = higher/lower). Every shot above is a centre hit.
   { name: 'BC h1 tee, left impact (starts left, curves right)', hole: 'pl-01', seed: null, start: { x: 0, z: 0 }, strokes: 0, power: 1, acc: 0, aimOff: 0, impact: { x: -1, y: 0 } },
